@@ -7,7 +7,7 @@ import { DataTable } from '@/components/data-table';
 import { GenericCreateFormModal } from '@/components/generic-create-form';
 import { createProposal } from '@/lib/actions/proposal/api';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Copy, Check, Sparkles } from 'lucide-react';
 import { Container } from '@/components/container';
 import type { Proposal } from '@/lib/actions/proposal/types';
 import { useState, useMemo, useCallback } from 'react';
@@ -19,6 +19,7 @@ import Modal from '@/components/modal';
 import { getProposalColumns } from './components/proposal-columns';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { Textarea } from '@/components/ui/textarea';
 
 export default function ProposalsPage() {
   const { t } = useTranslation('proposal');
@@ -28,6 +29,7 @@ export default function ProposalsPage() {
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
   const [globalFilter, setGlobalFilter] = useState('');
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const [copied, setCopied] = useState(false);
 
   const sendProposalMutation = useSendProposal();
   const approveProposalMutation = useApproveProposal();
@@ -117,6 +119,115 @@ export default function ProposalsPage() {
     [t, handleView, handleSend, handleApprove]
   );
 
+  const promptTemplate = `Crie uma proposta comercial em formato JSON seguindo esta estrutura:
+
+## Estrutura do JSON
+
+{
+  "version": "v1",
+  "components": [
+    // Array de componentes
+  ]
+}
+
+## Componentes Disponíveis
+
+### 1. Title - Títulos
+{
+  "object": "Title",
+  "value": "Texto do título",
+  "level": 1  // Níveis: 1, 2, 3 ou 4
+}
+
+### 2. Text - Parágrafos
+{
+  "object": "Text",
+  "value": "Texto do parágrafo"
+}
+
+### 3. Container - Agrupar componentes
+{
+  "object": "Container",
+  "value": [
+    // Outros componentes aqui
+  ]
+}
+
+### 4. Topic - Tópico com lista
+{
+  "object": "Topic",
+  "value": {
+    "title": "Título do tópico",
+    "description": "Descrição opcional",
+    "items": [
+      "Item 1",
+      "Item 2"
+    ]
+  }
+}
+
+### 5. Image - Imagens
+{
+  "object": "Image",
+  "value": "https://url-da-imagem.com/image.jpg",
+  "alt": "Texto alternativo",
+  "caption": "Legenda da imagem"
+}
+
+## Exemplo Completo
+
+{
+  "version": "v1",
+  "components": [
+    {
+      "object": "Title",
+      "value": "Proposta de Desenvolvimento Web",
+      "level": 1
+    },
+    {
+      "object": "Text",
+      "value": "Apresentamos nossa proposta comercial para desenvolvimento de sistema."
+    },
+    {
+      "object": "Topic",
+      "value": {
+        "title": "Tecnologias",
+        "items": ["Next.js", "NestJS", "PostgreSQL"]
+      }
+    },
+    {
+      "object": "Container",
+      "value": [
+        {
+          "object": "Title",
+          "value": "Investimento",
+          "level": 2
+        },
+        {
+          "object": "Text",
+          "value": "R$ 150.000,00"
+        }
+      ]
+    }
+  ]
+}
+
+## Sua Tarefa
+
+Crie uma proposta comercial completa seguindo este formato. Seja criativo e profissional!`;
+
+  const handleCopyPrompt = async () => {
+    try {
+      await navigator.clipboard.writeText(promptTemplate);
+      setCopied(true);
+      toast.success('Prompt copiado para a área de transferência!');
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      toast.error('Erro ao copiar prompt');
+    }
+  };
+  const [llmOpen, setLlmOpen] = useState(false);
+
   return (
     <Container variant="dataTable" border={false}>
       <DataTable
@@ -147,6 +258,12 @@ export default function ProposalsPage() {
           placeholder={t('filterByStatus') || 'Filtrar por status'}
         />
         <DataTable.Actions className="sm:justify-end sm:w-full">
+
+               <Button variant="outline" onClick={()=>setLlmOpen(true)}>
+                <Sparkles className="mr-2 h-4 w-4" />
+                Prompt LLM
+              </Button>
+          
           <GenericCreateFormModal
             trigger={
               <Button>
@@ -173,6 +290,37 @@ export default function ProposalsPage() {
           />
         </DataTable.Actions>
       </DataTable>
+
+       <Modal
+            title='Prompt para LLM - Criar Proposta'
+          description={`Copie este prompt e envie para uma IA (ChatGPT, Claude, etc) para gerar o JSON da proposta`}
+          open={llmOpen}
+          onOpenChange={(open) => {
+            setLlmOpen(open);
+          }}
+>
+            
+                <Textarea
+                  value={promptTemplate}
+                  readOnly
+                  rows={20}
+                  className="font-mono text-xs resize-none"
+                />
+                <Button onClick={handleCopyPrompt} className="w-full">
+                  {copied ? (
+                    <>
+                      <Check className="mr-2 h-4 w-4" />
+                      Copiado!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="mr-2 h-4 w-4" />
+                      Copiar Prompt
+                    </>
+                  )}
+                </Button>
+          </Modal>
+
     </Container>
   );
 }

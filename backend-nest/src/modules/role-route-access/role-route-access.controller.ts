@@ -151,9 +151,9 @@ export class RoleRouteAccessController {
     @CurrentUser() currentUser: AuthenticatedUser,
   ) {
     return await this.roleRouteAccessService.remove(
+      currentUser.id,
       roleId,
       routeId,
-      currentUser.id,
     );
   }
 
