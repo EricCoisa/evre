@@ -22,6 +22,7 @@ import { TasksModule } from './modules/tasks/tasks.module';
 import { UserConfigurationModule } from './modules/user-configuration/user-configuration.module';
 import { UserConfigurationDefinitionModule } from './modules/user-configuration-definition/user-configuration-definition.module';
 import { CompanyModule } from './modules/company/company.module';
+import { ProposalModule } from './modules/proposal/proposal.module';
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { CompanyModule } from './modules/company/company.module';
     UserConfigurationModule,
     TasksModule,
     CompanyModule,
+    ProposalModule,
   ],
 })
 export class AppModule {}

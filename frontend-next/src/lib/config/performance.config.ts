@@ -15,6 +15,7 @@ export const QUERY_CONFIG = {
     ME: 10 * 60 * 1000,                // 5 minutos - usuário
     COMPANIES: 5 * 60 * 1000,          // 5 minutos - lista de empresas
     COMPANY: 10 * 60 * 1000,           // 10 minutos - empresa individual
+    PROPOSALS: 5 * 60 * 1000,          // 5 minutos - lista de propostas
   },
   
   // Garbage Collection Times (tempo que dados ficam no cache após stale)
@@ -27,6 +28,7 @@ export const QUERY_CONFIG = {
     ME: 15 * 60 * 1000,                // 15 minutos - usuário
     COMPANIES: 10 * 60 * 1000,         // 10 minutos - lista de empresas
     COMPANY: 15 * 60 * 1000,           // 15 minutos - empresa individual
+    PROPOSALS: 10 * 60 * 1000,         // 10 minutos - lista de propostas
   },
   
   // Configurações de retry

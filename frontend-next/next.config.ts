@@ -14,6 +14,12 @@ const nextConfig: NextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 31536000, // 1 year
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+    ],
   },
 
   // Output optimization

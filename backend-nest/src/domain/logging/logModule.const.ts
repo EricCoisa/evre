@@ -10,6 +10,7 @@ export const LogModuleConst = {
   USER_CONFIGURATION: 'USER_CONFIGURATION',
   USER_CONFIGURATION_DEFINITION: 'USER_CONFIGURATION_DEFINITION',
   COMPANY: 'COMPANY',
+  PROPOSAL: 'PROPOSAL',
 };
 
 export type LogModule = keyof typeof LogModuleConst;

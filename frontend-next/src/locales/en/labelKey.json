@@ -8,6 +8,7 @@
     "ROUTE_SETTINGS": "Settings",
     "ROUTE_SYSTEM_CONFIGURATION": "System Configuration",
     "ROUTE_COMPANY": "Company",
+    "ROUTE_PROPOSAL": "Proposal",
     "SYSTEMCONFIG_THEME": "Theme",
     "SYSTEMCONFIG_SUPORTURL": "Support URL",
     "SYSTEMCONFIG_LOG_LIMITE": "Log retention limit",
@@ -61,5 +62,9 @@
 
     "ACTIVE": "Active",
     "INACTIVE": "Inactive",
-    "SUSPENDED": "Suspended"
+    "SUSPENDED": "Suspended",
+
+    "APPROVED": "Approved",
+    "DRAFT": "Draft",
+    "SENT": "Sent"
 }

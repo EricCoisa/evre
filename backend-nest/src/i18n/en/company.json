@@ -1,4 +1,5 @@
 {
+	"not_found": "Company not found",
 	"errors": {
 		"duplicate_name": "A company with this name already exists."
 	}

@@ -28,6 +28,12 @@ enum CompanyStatus {
   ACTIVE
 }
 
+enum ProposalStatus {
+  DRAFT
+  SENT
+  APPROVED
+}
+
 enum LogModule {
   USER
   AUTH
@@ -40,6 +46,7 @@ enum LogModule {
   USER_CONFIGURATION
   USER_CONFIGURATION_DEFINITION
   COMPANY
+  PROPOSAL
 }
 
 // Example model - customize as needed
@@ -213,6 +220,23 @@ model Company {
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
   users     User[]
+  proposals Proposal[]
 
   @@map("companies")
+}
+
+model Proposal {
+  id                    String         @id @default(uuid())
+  companyId             String
+  status                ProposalStatus @default(DRAFT)
+  contentSchemaVersion  String         @default("v1")
+  content               String         // JSON armazenado como string
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  company               Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([status])
+  @@map("proposals")
 }

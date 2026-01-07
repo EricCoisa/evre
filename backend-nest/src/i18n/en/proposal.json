@@ -1,0 +1,9 @@
+{
+	"not_found": "Proposal not found",
+	"cannot_edit_non_draft": "Cannot edit a proposal that is not in DRAFT status",
+	"already_sent_or_approved": "Proposal has already been sent or approved",
+	"already_approved": "Proposal has already been approved",
+	"content": {
+		"invalid_json": "Invalid JSON content"
+	}
+}
