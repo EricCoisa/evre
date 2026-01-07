@@ -11,7 +11,7 @@ interface ContainerProps {
 export function Container({ value, className }: ContainerProps) {
   return (
     <div className={cn(
-      'bg-card/50 backdrop-blur-sm rounded-xl p-6 md:p-8 my-6 border border-border shadow-sm',
+      'bg-card/50 backdrop-blur-sm rounded-lg md:rounded-xl p-3 md:p-6 lg:p-8 my-3 md:my-6 border border-border shadow-sm',
       className
     )}>
       {value}

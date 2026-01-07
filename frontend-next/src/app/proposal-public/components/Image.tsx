@@ -13,7 +13,7 @@ interface ImageComponentProps {
 
 export function ImageComponent({ value, alt, caption, className }: ImageComponentProps) {
   return (
-    <figure className={cn('my-8', className)}>
+    <figure className={cn('my-4 md:my-8', className)}>
       <div className="relative w-full h-64 md:h-96 lg:h-[500px] rounded-xl overflow-hidden shadow-lg">
         <Image
           src={value}

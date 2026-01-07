@@ -19,7 +19,7 @@ export function Topic({ value, className }: TopicProps) {
   const { title, description, items = [] } = value;
 
   return (
-    <Card className={cn('my-6 border-l-4 border-l-primary', className)}>
+    <Card className={cn('my-3 md:my-6 border-l-4 border-l-primary', className)}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <CheckCircle2 className="h-5 w-5 text-primary" />

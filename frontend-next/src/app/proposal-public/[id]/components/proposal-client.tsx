@@ -20,7 +20,7 @@ interface ApproveActionProps {
 export function ProposalClient({ proposal }: ApproveActionProps) {
   const router = useRouter();
   const [onApprove, setOnApprove] = useState(false);
-  
+
   const handleApprove = async () => {
     setOnApprove(true);
     try {
@@ -40,14 +40,14 @@ export function ProposalClient({ proposal }: ApproveActionProps) {
   const isApproved = proposal.status === 'APPROVED';
 
   return (
-    <PageContainer className="max-w-4xl mx-auto py-8">
-      <div className="space-y-6">
+    <div className="p-2 max-w-4xl mx-auto">
+      <div className="space-y-3 md:space-y-6">
         {/* Content Card com Tabs */}
-        <Card>
-          <CardContent>
+   
+    
                 <ProposalRenderer content={proposal.content} />
-          </CardContent>
-        </Card>
+       
+      
 
         {/* Info Card */}
         <Card>
@@ -115,6 +115,6 @@ export function ProposalClient({ proposal }: ApproveActionProps) {
           </Card>
         )}
       </div>
-    </PageContainer>
+    </div>
   );
 }

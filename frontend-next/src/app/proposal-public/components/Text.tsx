@@ -11,7 +11,7 @@ interface TextProps {
 export function Text({ value, className }: TextProps) {
   return (
     <p className={cn(
-      'text-base md:text-lg leading-relaxed text-muted-foreground mb-4',
+      'text-sm md:text-base lg:text-lg leading-relaxed text-muted-foreground mb-2 md:mb-4',
       className
     )}>
       {value}
