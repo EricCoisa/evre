@@ -1,0 +1,20 @@
+{
+  "createAccount": "Criar uma conta",
+  "enterInfo": "Digite suas informações abaixo para criar sua conta",
+  "fullName": "Nome Completo",
+  "email": "E-mail",
+  "password": "Senha",
+  "confirmPassword": "Confirmar Senha",
+  "mustBeAtLeast6": "Deve ter pelo menos 6 caracteres.",
+  "confirmYourPassword": "Por favor, confirme sua senha.",
+  "weWillUseEmail": "Usaremos isso para entrar em contato com você. Não compartilharemos seu e-mail com ninguém.",
+  "createAccountButton": "Criar Conta",
+  "alreadyHaveAccount": "Já tem uma conta?",
+  "signIn": "Entrar",
+  "nameRequired": "Nome obrigatório",
+  "invalidEmail": "E-mail inválido",
+  "passwordMin": "Senha deve ter pelo menos 6 caracteres",
+  "confirmPasswordMin": "Confirme a senha",
+  "passwordsDoNotMatch": "As senhas não coincidem",
+  "errorCreatingAccount": "Erro ao criar conta"
+}

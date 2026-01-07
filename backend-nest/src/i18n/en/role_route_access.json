@@ -1,0 +1,32 @@
+{
+  "create": {
+    "title": "Grant role route access",
+    "description": "Grant access to a route for a specific role"
+  },
+  "bulk_create": {
+    "title": "Bulk grant role route access",
+    "description": "Grant access to multiple routes for a specific role"
+  },
+  "list": {
+    "title": "List role route accesses"
+  },
+  "find_by_role": {
+    "title": "List route accesses by role",
+    "description": "Returns all route accesses for a specific role"
+  },
+  "find": {
+    "title": "Get role route access"
+  },
+  "delete": {
+    "title": "Remove role route access"
+  },
+  "delete_by_role": {
+    "title": "Remove all role route accesses",
+    "description": "Removes all route accesses for a specific role"
+  },
+  "not_found": "Role route access not found",
+  "already_exists": "This role already has access to this route",
+  "all_already_exist": "All specified routes already have access granted for this role",
+  "deleted": "Role route access removed successfully",
+  "deleted_bulk": "Role route accesses removed successfully"
+}

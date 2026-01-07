@@ -1,0 +1,31 @@
+{
+  "grant": {
+    "title": "Grant route access to user",
+    "description": "Give a user access to a specific route"
+  },
+  "bulk_grant": {
+    "title": "Grant multiple route accesses",
+    "description": "Give a user access to multiple routes at once"
+  },
+  "list": {
+    "title": "List all user route accesses"
+  },
+  "find_by_user": {
+    "title": "Find route accesses by user",
+    "description": "List all routes a specific user has access to"
+  },
+  "revoke": {
+    "title": "Revoke route access",
+    "description": "Remove a user's access to a specific route"
+  },
+  "revoke_all": {
+    "title": "Revoke all user route accesses",
+    "description": "Remove all route accesses for a user"
+  },
+  "already_granted": "User already has access to this route",
+  "all_already_granted": "User already has access to all specified routes",
+  "bulk_granted_success": "Route accesses granted successfully",
+  "access_not_found": "Route access not found",
+  "revoked_successfully": "Route access revoked successfully",
+  "all_revoked_successfully": "All route accesses revoked successfully"
+}

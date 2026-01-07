@@ -1,0 +1,32 @@
+{
+  "create": {
+    "title": "Conceder acesso de rota para papel",
+    "description": "Concede acesso a uma rota para um papel específico"
+  },
+  "bulk_create": {
+    "title": "Conceder acesso em massa para papel",
+    "description": "Concede acesso a múltiplas rotas para um papel específico"
+  },
+  "list": {
+    "title": "Listar acessos de rota por papel"
+  },
+  "find_by_role": {
+    "title": "Listar acessos de rota por papel",
+    "description": "Retorna todos os acessos de rota para um papel específico"
+  },
+  "find": {
+    "title": "Obter acesso de rota por papel"
+  },
+  "delete": {
+    "title": "Remover acesso de rota por papel"
+  },
+  "delete_by_role": {
+    "title": "Remover todos os acessos de rota do papel",
+    "description": "Remove todos os acessos de rota para um papel específico"
+  },
+  "not_found": "Acesso de rota por papel não encontrado",
+  "already_exists": "Este papel já possui acesso a esta rota",
+  "all_already_exist": "Todas as rotas especificadas já possuem acesso concedido para este papel",
+  "deleted": "Acesso de rota por papel removido com sucesso",
+  "deleted_bulk": "Acessos de rota por papel removidos com sucesso"
+}

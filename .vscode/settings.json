@@ -1,0 +1,8 @@
+{
+    "i18n-ally.localesPaths": [
+        "frontend-next/src/locales",
+        "frontend-next/messages",
+        "backend-nest/src/i18n"
+    ],
+    "i18n-ally.keystyle": "nested"
+}

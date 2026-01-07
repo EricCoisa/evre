@@ -1,0 +1,18 @@
+{
+  "dashboard": "Dashboard",
+  "dashboardDescription": "Visão geral do sistema e estatísticas",
+  "statistics": "Estatísticas",
+  "users": "Usuários",
+  "totalUsers": "Total de usuários cadastrados",
+  "activeSessions": "Sessões Ativas",
+  "usersOnline": "Usuários online agora",
+  "system": "Sistema",
+  "serverStatus": "Status do servidor",
+  "online": "Online",
+  "recentActivities": "Atividades Recentes",
+  "loginPerformed": "Login realizado",
+  "adminLoggedIn": "Admin fez login no sistema",
+  "minutesAgo": "Há {0} minutos",
+  "systemStarted": "Sistema iniciado",
+  "backendFrontendOperational": "Backend e frontend operacionais"
+}

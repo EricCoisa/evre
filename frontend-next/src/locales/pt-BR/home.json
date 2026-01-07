@@ -1,0 +1,15 @@
+{
+  "title": "Bem-vindo!",
+  "description": "Você está autenticado e pode acessar esta página.",
+  "informationTitle": "Informações",
+  "authJWT": "Autenticação via JWT funcionando",
+  "protectedPage": "Página protegida com Server-Side Rendering",
+  "httpOnlyCookies": "Tokens salvos em cookies HttpOnly",
+  "autoRefresh": "Refresh token automático configurado",
+  "sharedHeader": "Header compartilhado em todas as páginas privadas",
+  "routeStructureTitle": "📌 Estrutura de Rotas",
+  "routeStructureDesc": "As páginas privadas estão no grupo",
+  "thisPage": "Esta página",
+  "adminPanel": "Painel administrativo",
+  "sharedLayout": "Todas compartilham o mesmo layout e header"
+}

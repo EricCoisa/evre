@@ -1,0 +1,8 @@
+{
+	"title": "Login",
+	"subtitle": "Enter your credentials to access the system",
+	"forgotPassword": "Forgot your password?",
+	"noAccount": "Don't have an account?",
+	"createAccount": "Create account",
+	"backToHome": "← Back to home page"
+}

@@ -1,0 +1,29 @@
+{
+  "create": {
+    "title": "Create new route",
+    "description": "Register a new route in the system"
+  },
+  "list": {
+    "title": "List routes"
+  },
+  "tree": {
+    "title": "List routes in tree structure",
+    "description": "Returns active routes organized hierarchically"
+  },
+  "find": {
+    "title": "Get route by ID"
+  },
+  "update": {
+    "title": "Update route"
+  },
+  "delete": {
+    "title": "Delete route"
+  },
+  "not_found": "Route not found",
+  "path_already_exists": "A route with this path already exists",
+  "parent_not_found": "Parent route not found",
+  "cannot_be_parent_of_itself": "A route cannot be its own parent",
+  "has_children": "Cannot delete route with child routes",
+  "deleted_successfully": "Route deleted successfully",
+  "some_not_found": "Some routes were not found"
+}

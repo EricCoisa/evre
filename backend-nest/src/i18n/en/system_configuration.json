@@ -1,0 +1,4 @@
+{
+  "not_found": "Configuration not found",
+  "labelkey_already_exists": "Configuration with this labelKey already exists"
+}

@@ -1,0 +1,18 @@
+{
+  "errors": {
+    "internal_server": "Internal server error",
+    "bad_request": "Bad request",
+    "unauthorized": "Unauthorized",
+    "forbidden": "Access denied. Required roles: {roles}",
+    "not_found": "Resource not found",
+    "conflict": "Resource already exists"
+  },
+  "success": {
+    "created": "Created successfully",
+    "updated": "Updated successfully",
+    "deleted": "Deleted successfully"
+  },
+  "health": {
+    "title": "Health check endpoint"
+  }
+}

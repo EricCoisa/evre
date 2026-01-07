@@ -1,0 +1,20 @@
+{
+  "title": "Logs do Sistema",
+  "description": "Logs de auditoria e atividades do sistema.",
+  "logSettings": "Configurações de Log",
+  "logsTable": "Tabela de Logs",
+  "module": "Módulo",
+  "action": "Ação",
+  "message": "Mensagem",
+  "performedBy": "Executado por",
+  "metadata": "Metadados",
+  "createdAt": "Criado em",
+  "noLogs": "Nenhum log encontrado",
+  "loading": "Carregando logs...",
+  "entity": "log",
+  "entityPlural": "logs",
+  "searchPlaceholder": "Pesquisar logs...",
+  "searchText": "Pesquisar (Ação, Módulo, Mensagem)",
+  "filterByAction": "Filtrar por ação",
+  "filterByModule": "Filtrar por módulo"
+}

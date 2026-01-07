@@ -1,0 +1,18 @@
+{
+  "email": {
+    "required": "E-mail é obrigatório",
+    "invalid": "E-mail inválido"
+  },
+  "password": {
+    "required": "Senha é obrigatória",
+    "min_length": "Senha deve ter no mínimo {min} caracteres",
+    "too_weak": "Senha muito fraca"
+  },
+  "name": {
+    "required": "Nome é obrigatório",
+    "max_length": "Nome deve ter no máximo {max} caracteres"
+  },
+  "role": {
+    "invalid": "Role inválida"
+  }
+}

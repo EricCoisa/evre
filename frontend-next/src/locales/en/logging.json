@@ -1,0 +1,20 @@
+{
+  "title": "System Logs",
+  "description": "Audit and system activity logs.",
+  "logSettings": "Log Settings",
+  "logsTable": "Logs Table",
+  "module": "Module",
+  "action": "Action",
+  "message": "Message",
+  "performedBy": "Performed by",
+  "metadata": "Metadata",
+  "createdAt": "Created at",
+  "noLogs": "No logs found",
+  "loading": "Loading logs...",
+  "entity": "log",
+  "entityPlural": "logs",
+  "searchPlaceholder": "Search logs...",
+  "searchText": "Search (Action, Module, Message)",
+  "filterByAction": "Filter by action",
+  "filterByModule": "Filter by module"
+}

@@ -1,0 +1,10 @@
+{
+  "definition_not_found": "User configuration definition not found",
+  "definition_already_exists": "User configuration definition with this key already exists",
+  "definition_deleted": "User configuration definition deleted successfully",
+  "configuration_reset": "User configuration reset to default",
+  "all_configurations_reset": "All user configurations reset to default",
+  "value_must_be_number": "Value must be a valid number",
+  "value_must_be_boolean": "Value must be true or false",
+  "value_must_be_json": "Value must be valid JSON"
+}

@@ -1,0 +1,31 @@
+{
+  "grant": {
+    "title": "Conceder acesso à rota para usuário",
+    "description": "Dar acesso de uma rota específica para um usuário"
+  },
+  "bulk_grant": {
+    "title": "Conceder múltiplos acessos a rotas",
+    "description": "Dar acesso a múltiplas rotas para um usuário de uma vez"
+  },
+  "list": {
+    "title": "Listar todos os acessos de rotas de usuários"
+  },
+  "find_by_user": {
+    "title": "Buscar acessos por usuário",
+    "description": "Listar todas as rotas que um usuário específico tem acesso"
+  },
+  "revoke": {
+    "title": "Revogar acesso à rota",
+    "description": "Remover acesso de um usuário a uma rota específica"
+  },
+  "revoke_all": {
+    "title": "Revogar todos os acessos de rotas do usuário",
+    "description": "Remover todos os acessos de rotas de um usuário"
+  },
+  "already_granted": "Usuário já possui acesso a esta rota",
+  "all_already_granted": "Usuário já possui acesso a todas as rotas especificadas",
+  "bulk_granted_success": "Acessos às rotas concedidos com sucesso",
+  "access_not_found": "Acesso à rota não encontrado",
+  "revoked_successfully": "Acesso à rota revogado com sucesso",
+  "all_revoked_successfully": "Todos os acessos às rotas foram revogados com sucesso"
+}

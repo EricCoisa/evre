@@ -1,0 +1,14 @@
+# Ignore environment files and secrets from Docker build context
+.env
+.env.*
+.env.local
+
+# Node and Next build artifacts
+node_modules
+.next
+dist
+
+# Git and system files
+.git
+.DS_Store
+npm-debug.log

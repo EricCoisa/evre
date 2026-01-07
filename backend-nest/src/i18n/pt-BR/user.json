@@ -1,0 +1,42 @@
+{
+  "profile": {
+    "title": "Perfil completo do usuário autenticado (busca no banco)",
+    "updated": "Perfil atualizado com sucesso"
+  },
+  "not_found": "Usuário não encontrado",
+  "email_already_exists": "Email já está em uso",
+  "current_password_invalid": "Senha atual incorreta",
+  "new_password_same_as_current": "A nova senha não pode ser igual à senha atual.",
+  "new_passwords_do_not_match": "As novas senhas não coincidem.",
+  "forbidden": "Você não tem permissão para acessar este recurso",
+  "roles": {
+    "ADMIN": "Administrador",
+    "USER": "Usuário",
+    "MODERATOR": "Moderador"
+  },
+  "statuses": {
+    "ACTIVE": "Ativo",
+    "INACTIVE": "Inativo",
+    "SUSPENDED": "Suspenso"
+  },
+  "public_data": {
+    "title": "Endpoint público (sem autenticação)",
+    "message": "Este endpoint é público, qualquer um pode acessar"
+  },
+  "admin_only": {
+    "title": "Apenas ADMINs podem acessar",
+    "message": "Dados exclusivos para administradores",
+    "secret_data": "Informações confidenciais do sistema"
+  },
+  "moderators": {
+    "title": "ADMINs e MODERATORs podem acessar",
+    "message": "Área de moderação"
+  },
+  "all_authenticated": {
+    "title": "Qualquer usuário autenticado pode acessar",
+    "message": "Conteúdo para usuários autenticados"
+  },
+  "image_empty": "A imagem está vazia.",
+  "image_too_large": "A imagem excede o tamanho máximo de 40MB.",
+  "image_invalid": "Imagem inválida."
+}

@@ -1,0 +1,20 @@
+{
+  "createAccount": "Create an account",
+  "enterInfo": "Enter your information below to create your account",
+  "fullName": "Full Name",
+  "email": "Email",
+  "password": "Password",
+  "confirmPassword": "Confirm Password",
+  "mustBeAtLeast6": "Must be at least 6 characters long.",
+  "confirmYourPassword": "Please confirm your password.",
+  "weWillUseEmail": "We'll use this to contact you. We will not share your email with anyone else.",
+  "createAccountButton": "Create Account",
+  "alreadyHaveAccount": "Already have an account?",
+  "signIn": "Sign in",
+  "nameRequired": "Name is required",
+  "invalidEmail": "Invalid email",
+  "passwordMin": "Password must be at least 6 characters",
+  "confirmPasswordMin": "Please confirm your password",
+  "passwordsDoNotMatch": "Passwords do not match",
+  "errorCreatingAccount": "Error creating account"
+}

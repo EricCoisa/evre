@@ -1,0 +1,18 @@
+{
+  "errors": {
+    "internal_server": "Erro interno do servidor",
+    "bad_request": "Requisição inválida",
+    "unauthorized": "Não autorizado",
+    "forbidden": "Acesso negado. Roles necessárias: {roles}",
+    "not_found": "Recurso não encontrado",
+    "conflict": "Recurso já existe"
+  },
+  "success": {
+    "created": "Criado com sucesso",
+    "updated": "Atualizado com sucesso",
+    "deleted": "Removido com sucesso"
+  },
+  "health": {
+    "title": "Health check endpoint"
+  }
+}

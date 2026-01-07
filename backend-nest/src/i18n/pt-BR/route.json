@@ -1,0 +1,29 @@
+{
+  "create": {
+    "title": "Criar nova rota",
+    "description": "Registrar uma nova rota no sistema"
+  },
+  "list": {
+    "title": "Listar rotas"
+  },
+  "tree": {
+    "title": "Listar rotas em árvore",
+    "description": "Retorna rotas ativas organizadas hierarquicamente"
+  },
+  "find": {
+    "title": "Buscar rota por ID"
+  },
+  "update": {
+    "title": "Atualizar rota"
+  },
+  "delete": {
+    "title": "Excluir rota"
+  },
+  "not_found": "Rota não encontrada",
+  "path_already_exists": "Já existe uma rota com este caminho",
+  "parent_not_found": "Rota pai não encontrada",
+  "cannot_be_parent_of_itself": "Uma rota não pode ser pai de si mesma",
+  "has_children": "Não é possível excluir rota com rotas filhas",
+  "deleted_successfully": "Rota excluída com sucesso",
+  "some_not_found": "Algumas rotas não foram encontradas"
+}

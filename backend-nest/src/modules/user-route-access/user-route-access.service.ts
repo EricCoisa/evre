@@ -1,0 +1,513 @@
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
+import { I18nService } from 'nestjs-i18n';
+import type { PaginationQuery } from '../../common/schemas/pagination.schema';
+import type { PaginatedResponse } from '../../common/types/pagination.types';
+import type { UserRouteAccessDto } from './dto/user-route-access.dto';
+import type { GrantUserRouteAccessDto } from './dto/grant-user-route-access.dto';
+import { Route } from '@prisma/client';
+import { LoggingService } from '../logging/logging.service';
+import { LogActions } from 'src/common/types/logging.types';
+import { IBaseService } from 'src/domain/interface/base-service.interface';
+
+@Injectable()
+export class UserRouteAccessService implements Omit<
+  IBaseService<UserRouteAccessDto>,
+  'create' | 'update' | 'remove' | 'findOne'
+> {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly i18n: I18nService,
+    private readonly loggingService: LoggingService,
+  ) {}
+
+  async findAll(
+    query: PaginationQuery,
+  ): Promise<PaginatedResponse<UserRouteAccessDto> | UserRouteAccessDto[]> {
+    const { page, limit, pagination, search } = query;
+
+    const where = search
+      ? {
+          OR: [
+            { user: { email: { contains: search } } },
+            { user: { name: { contains: search } } },
+            { route: { labelKey: { contains: search } } },
+            { route: { path: { contains: search } } },
+          ],
+        }
+      : {};
+
+    const include = {
+      user: {
+        select: {
+          id: true,
+          email: true,
+          name: true,
+        },
+      },
+      route: {
+        select: {
+          id: true,
+          path: true,
+          labelKey: true,
+        },
+      },
+      grantedByUser: {
+        select: {
+          id: true,
+          email: true,
+          name: true,
+        },
+      },
+    };
+
+    if (!pagination) {
+      const accesses = await this.prisma.userRouteAccess.findMany({
+        where,
+        include,
+        orderBy: { createdAt: 'desc' },
+      });
+      return accesses.map((access) => ({
+        ...access,
+        route: access.route
+          ? {
+              id: access.route.id,
+              path: access.route.path,
+              labelKey: (access.route as Route).labelKey,
+            }
+          : undefined,
+        createdAt: access.createdAt.toISOString(),
+      }));
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.prisma.userRouteAccess.findMany({
+        where,
+        include,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.userRouteAccess.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: data.map((access) => ({
+        ...access,
+        route: access.route
+          ? {
+              id: access.route.id,
+              path: access.route.path,
+              labelKey: (access.route as Route).labelKey,
+            }
+          : undefined,
+        createdAt: access.createdAt.toISOString(),
+      })),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+      },
+    };
+  }
+
+  async findAllByOne(
+    userId: string,
+    query: PaginationQuery,
+  ): Promise<PaginatedResponse<UserRouteAccessDto> | UserRouteAccessDto[]> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException(this.i18n.t('user.not_found'));
+    }
+
+    const { page, limit, pagination } = query;
+
+    const where = { userId };
+
+    const include = {
+      route: {
+        select: {
+          id: true,
+          path: true,
+          labelKey: true,
+          isActive: true,
+        },
+      },
+    };
+
+    if (!pagination) {
+      const accesses = await this.prisma.userRouteAccess.findMany({
+        where,
+        include,
+        orderBy: { route: { path: 'asc' } },
+      });
+
+      return accesses.map((access) => ({
+        ...access,
+        route: access.route
+          ? {
+              id: access.route.id,
+              path: access.route.path,
+              labelKey: (access.route as Route).labelKey,
+              isActive: access.route.isActive,
+            }
+          : undefined,
+        createdAt: access.createdAt.toISOString(),
+      }));
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.prisma.userRouteAccess.findMany({
+        where,
+        include,
+        skip,
+        take: limit,
+        orderBy: { route: { path: 'asc' } },
+      }),
+      this.prisma.userRouteAccess.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: data.map((access) => ({
+        ...access,
+        route: access.route
+          ? {
+              id: access.route.id,
+              path: access.route.path,
+              labelKey: (access.route as Route).labelKey,
+              isActive: access.route.isActive,
+            }
+          : undefined,
+        createdAt: access.createdAt.toISOString(),
+      })),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+      },
+    };
+  }
+
+  async grant(dto: GrantUserRouteAccessDto, performedById: string) {
+    // Verifica se o usuário existe
+    const user = await this.prisma.user.findUnique({
+      where: { id: dto.userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException(this.i18n.t('user.not_found'));
+    }
+
+    // Verifica se a rota existe
+    const route = await this.prisma.route.findUnique({
+      where: { id: dto.routeId },
+    });
+
+    if (!route) {
+      throw new NotFoundException(this.i18n.t('route.not_found'));
+    }
+
+    // Verifica se já existe o acesso
+    const existing = await this.prisma.userRouteAccess.findUnique({
+      where: {
+        userId_routeId: {
+          userId: dto.userId,
+          routeId: dto.routeId,
+        },
+      },
+    });
+
+    if (existing) {
+      throw new ConflictException(
+        this.i18n.t('user_route_access.already_granted'),
+      );
+    }
+
+    const access = await this.prisma.userRouteAccess.create({
+      data: {
+        userId: dto.userId,
+        routeId: dto.routeId,
+        grantedBy: performedById,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
+        route: {
+          select: {
+            id: true,
+            path: true,
+            labelKey: true,
+          },
+        },
+        grantedByUser: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    // Log da ação
+    await this.loggingService.create(
+      {
+        module: 'USER_ROUTE_ACCESS',
+        action: LogActions.GRANT,
+        message: `Acesso à rota ${route.path} concedido ao usuário ${user.email}`,
+        metadata: {
+          userId: user.id,
+          userEmail: user.email,
+          routeId: route.id,
+          routePath: route.path,
+          routeLabelKey: route.labelKey,
+        },
+      },
+      performedById,
+    );
+
+    return {
+      ...access,
+      route: access.route
+        ? {
+            id: access.route.id,
+            path: access.route.path,
+            labelKey: (access.route as Route).labelKey,
+          }
+        : undefined,
+      createdAt: access.createdAt.toISOString(),
+    };
+  }
+
+  async revoke(userId: string, routeId: string, performedById: string) {
+    const access = await this.prisma.userRouteAccess.findUnique({
+      where: {
+        userId_routeId: {
+          userId,
+          routeId,
+        },
+      },
+      include: {
+        user: {
+          select: {
+            email: true,
+          },
+        },
+        route: {
+          select: {
+            path: true,
+            labelKey: true,
+          },
+        },
+      },
+    });
+
+    if (!access) {
+      throw new NotFoundException(
+        this.i18n.t('user_route_access.access_not_found'),
+      );
+    }
+
+    await this.prisma.userRouteAccess.delete({
+      where: {
+        userId_routeId: {
+          userId,
+          routeId,
+        },
+      },
+    });
+
+    // Log da ação
+    await this.loggingService.create(
+      {
+        module: 'USER_ROUTE_ACCESS',
+        action: LogActions.REVOKE,
+        message: `Acesso à rota ${access.route.path} revogado do usuário ${access.user.email}`,
+        metadata: {
+          userId,
+          userEmail: access.user.email,
+          routeId,
+          routePath: access.route.path,
+          routeLabelKey: access.route.labelKey,
+        },
+      },
+      performedById,
+    );
+
+    return { message: this.i18n.t('user_route_access.revoked_successfully') };
+  }
+
+  async revokeAll(userId: string, performedById: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        userRouteAccesses: {
+          include: {
+            route: {
+              select: {
+                path: true,
+                labelKey: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException(this.i18n.t('user.not_found'));
+    }
+
+    const accessCount = user.userRouteAccesses.length;
+    const revokedRoutes = user.userRouteAccesses.map((access) => ({
+      path: access.route.path,
+      labelKey: access.route.labelKey,
+    }));
+
+    const result = await this.prisma.userRouteAccess.deleteMany({
+      where: { userId },
+    });
+
+    // Log da ação
+    await this.loggingService.create(
+      {
+        module: 'USER_ROUTE_ACCESS',
+        action: LogActions.BULK_REVOKE,
+        message: `Todos os acessos (${accessCount}) revogados do usuário ${user.email}`,
+        metadata: {
+          userId,
+          userEmail: user.email,
+          totalRevoked: result.count,
+          revokedRoutes,
+        },
+      },
+      performedById,
+    );
+
+    return {
+      message: this.i18n.t('user_route_access.all_revoked_successfully'),
+      count: result.count,
+    };
+  }
+
+  async findAllRoutesWithUserAccess(
+    userId: string,
+    query: PaginationQuery,
+  ): Promise<PaginatedResponse<any> | any[]> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException(this.i18n.t('user.not_found'));
+    }
+
+    const { page, limit, pagination, search } = query;
+
+    const where = search
+      ? {
+          OR: [
+            {
+              path: { contains: search },
+            },
+            { labelKey: { contains: search } },
+          ],
+        }
+      : {};
+
+    if (!pagination) {
+      const routes = await this.prisma.route.findMany({
+        where,
+        include: {
+          userRouteAccesses: {
+            where: { userId },
+            select: {
+              id: true,
+              grantedBy: true,
+              createdAt: true,
+            },
+          },
+        },
+        orderBy: { path: 'asc' },
+      });
+
+      return routes.map((route) => ({
+        id: route.id,
+        path: route.path,
+        labelKey: route.labelKey,
+        icon: route.icon,
+        isActive: route.isActive,
+        hasAccess: route.userRouteAccesses.length > 0,
+        accessInfo: route.userRouteAccesses[0] || null,
+        createdAt: route.createdAt.toISOString(),
+        updatedAt: route.updatedAt.toISOString(),
+      }));
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.prisma.route.findMany({
+        where,
+        include: {
+          userRouteAccesses: {
+            where: { userId },
+            select: {
+              id: true,
+              grantedBy: true,
+              createdAt: true,
+            },
+          },
+        },
+        skip,
+        take: limit,
+        orderBy: { path: 'asc' },
+      }),
+      this.prisma.route.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: data.map((route) => ({
+        id: route.id,
+        path: route.path,
+        labelKey: route.labelKey,
+        icon: route.icon,
+        isActive: route.isActive,
+        hasAccess: route.userRouteAccesses.length > 0,
+        accessInfo: route.userRouteAccesses[0] || null,
+        createdAt: route.createdAt.toISOString(),
+        updatedAt: route.updatedAt.toISOString(),
+      })),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+      },
+    };
+  }
+}

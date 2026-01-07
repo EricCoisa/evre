@@ -1,0 +1,42 @@
+{
+  "profile": {
+    "title": "Complete authenticated user profile (from database)",
+    "updated": "Profile updated successfully"
+  },
+  "not_found": "User not found",
+  "email_already_exists": "Email is already in use",
+  "current_password_invalid": "Current password is incorrect",
+  "new_password_same_as_current": "The new password cannot be the same as the current password.",
+  "new_passwords_do_not_match": "The new passwords do not match.",
+  "forbidden": "You don't have permission to access this resource",
+  "roles": {
+    "ADMIN": "Administrator",
+    "USER": "User",
+    "MODERATOR": "Moderator"
+  },
+  "statuses": {
+    "ACTIVE": "Active",
+    "INACTIVE": "Inactive",
+    "SUSPENDED": "Suspended"
+  },
+  "public_data": {
+    "title": "Public endpoint (no authentication)",
+    "message": "This endpoint is public, anyone can access"
+  },
+  "admin_only": {
+    "title": "Only ADMINs can access",
+    "message": "Exclusive data for administrators",
+    "secret_data": "Confidential system information"
+  },
+  "moderators": {
+    "title": "ADMINs and MODERATORs can access",
+    "message": "Moderation area"
+  },
+  "all_authenticated": {
+    "title": "Any authenticated user can access",
+    "message": "Content for authenticated users"
+  },
+  "image_empty": "The image is empty.",
+  "image_too_large": "The image exceeds the maximum size of 40MB.",
+  "image_invalid": "Invalid image."
+}

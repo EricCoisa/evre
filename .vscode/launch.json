@@ -1,0 +1,47 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.s
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "attach",
+            "name": "Debug Backend (NestJS)",
+            "port": 9229,
+            "restart": true,
+            "skipFiles": ["<node_internals>/**"],
+            "sourceMaps": true,
+            "outFiles": ["${workspaceFolder}/backend-nest/dist/**/*.js"],
+            "resolveSourceMapLocations": [
+                "${workspaceFolder}/backend-nest/**",
+                "!**/node_modules/**"
+            ],
+            "preLaunchTask": "Start Backend (Debug Mode)"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Debug Frontend (Next.js)",
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}/frontend-next",
+            "sourceMapPathOverrides": {
+                "webpack://_N_E/*": "${webRoot}/*"
+            },
+            "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+            "preLaunchTask": "Start Frontend (Dev Mode)"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Debug Full Stack (Frontend + Backend)",
+            "configurations": [
+                "Debug Backend (NestJS)",
+                "Debug Frontend (Next.js)"
+            ],
+            "presentation": {
+                "order": 1
+            }
+        }
+    ]
+}

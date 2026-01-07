@@ -1,0 +1,197 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+  MODERATOR
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum LogModule {
+  USER
+  AUTH
+  SYSTEM
+  HEALTH
+  USER_ROUTE_ACCESS
+  SYSTEM_CONFIGURATION
+  ROUTE
+  ROLE_ROUTE_ACCESS
+  USER_CONFIGURATION
+  USER_CONFIGURATION_DEFINITION
+}
+
+// Example model - customize as needed
+model User {
+  id                  String               @id @default(uuid())
+  email               String               @unique
+  password            String
+  name                String?
+  image               Bytes?               // Campo para armazenar foto do usuário (máx 40MB)
+  role                UserRole             @default(USER)
+  status              UserStatus           @default(ACTIVE)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  systemLogs          SystemLog[]
+  refreshTokens       RefreshToken[]
+  passwordResetTokens PasswordResetToken[]
+  userRouteAccesses   UserRouteAccess[]
+  grantedRouteAccesses UserRouteAccess[]   @relation("GrantedBy")
+  userConfigurations  UserConfiguration[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  tokenHash String    @unique
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+}
+
+model SystemLog {
+  id            String    @id @default(uuid())
+  module        LogModule
+  action        String
+  message       String
+  metadata      String?   // SQLite não suporta Json nativo, usa String
+  performedById String?
+  createdAt     DateTime  @default(now())
+  performedBy   User?     @relation(fields: [performedById], references: [id])
+
+  @@index([module, createdAt])
+  @@index([performedById])
+  @@map("system_log")
+}
+
+model Route {
+  id                String            @id @default(uuid())
+  path              String            @unique
+  labelKey          String
+  icon              String?           // Nome do ícone lucide-react
+  parentId          String?
+  ordem             Int               @default(0)
+  isHome            Boolean           @default(false)
+  isActive          Boolean           @default(true)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  
+  parent            Route?            @relation("RouteHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children          Route[]           @relation("RouteHierarchy")
+  userRouteAccesses UserRouteAccess[]
+  roleRouteAccesses RoleRouteAccess[]
+
+  @@index([parentId])
+  @@index([isActive])
+  @@index([ordem])
+  @@index([isHome])
+  @@map("routes")
+}
+
+model UserRouteAccess {
+  id          String   @id @default(uuid())
+  userId      String
+  routeId     String
+  grantedBy   String?
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  route       Route    @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  grantedByUser User?  @relation("GrantedBy", fields: [grantedBy], references: [id], onDelete: SetNull)
+
+  @@unique([userId, routeId])
+  @@index([userId])
+  @@index([routeId])
+  @@index([grantedBy])
+  @@map("user_route_accesses")
+}
+
+model RoleRouteAccess {
+  roleId   UserRole
+  routeId  String
+  
+  route    Route    @relation(fields: [routeId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, routeId])
+  @@index([roleId])
+  @@index([routeId])
+  @@map("role_route_accesses")
+}
+
+model SystemConfiguration {
+  id        String   @id @default(uuid())
+  labelKey  String   @unique
+  valueType String
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("system_configurations")
+}
+
+model UserConfigurationDefinition {
+  id                   String              @id @default(uuid())
+  labelKey             String              @unique
+  valueType            String
+  defaultValue         String?
+  isRequired           Boolean             @default(false)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  
+  userConfigurations   UserConfiguration[]
+
+  @@map("user_configuration_definitions")
+}
+
+model UserConfiguration {
+  id            String   @id @default(uuid())
+  userId        String
+  definitionId  String
+  value         String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  definition    UserConfigurationDefinition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, definitionId])
+  @@index([userId])
+  @@index([definitionId])
+  @@map("user_configurations")
+}
