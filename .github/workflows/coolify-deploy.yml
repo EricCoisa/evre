@@ -3,7 +3,7 @@ name: Deploy Monorepo via Coolify
 on:
   push:
     branches:
-      - development
+      - main
 
 jobs:
   detect-changes:
