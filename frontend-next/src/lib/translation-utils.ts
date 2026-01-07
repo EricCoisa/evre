@@ -11,6 +11,7 @@ import ptBRSignup from '../locales/pt-BR/signup.json';
 import ptBRforgotPassword from '../locales/pt-BR/forgotPassword.json';
 import ptBRresetPassword from '../locales/pt-BR/resetPassword.json';
 import ptBRLogin from '../locales/pt-BR/login.json';
+import ptBRCompany from '../locales/pt-BR/company.json';
 import enCommon from '../locales/en/common.json';
 import enAccess from '../locales/en/access.json';
 import enDashboard from '../locales/en/dashboard.json';
@@ -24,6 +25,8 @@ import enSignup from '../locales/en/signup.json';
 import enforgotPassword from '../locales/en/forgotPassword.json';
 import enresetPassword from '../locales/en/resetPassword.json';
 import enLogin from '../locales/en/login.json';
+import enCompany from '../locales/en/company.json';
+
 
 
 export const resources = {
@@ -41,6 +44,7 @@ export const resources = {
     forgotPassword: ptBRforgotPassword,
     resetPassword: ptBRresetPassword,
     login: ptBRLogin,
+    company: ptBRCompany,
 	},
 	en: {
 		common: enCommon,
@@ -56,6 +60,7 @@ export const resources = {
     forgotPassword: enforgotPassword,
     resetPassword: enresetPassword,
     login: enLogin,
+    company: enCompany,
 	},
 };
 

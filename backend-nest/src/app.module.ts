@@ -21,6 +21,7 @@ import { SystemConfigurationModule } from './modules/system-configuration/system
 import { TasksModule } from './modules/tasks/tasks.module';
 import { UserConfigurationModule } from './modules/user-configuration/user-configuration.module';
 import { UserConfigurationDefinitionModule } from './modules/user-configuration-definition/user-configuration-definition.module';
+import { CompanyModule } from './modules/company/company.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { UserConfigurationDefinitionModule } from './modules/user-configuration-
     UserConfigurationDefinitionModule,
     UserConfigurationModule,
     TasksModule,
+    CompanyModule,
   ],
 })
 export class AppModule {}

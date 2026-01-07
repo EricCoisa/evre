@@ -181,6 +181,19 @@ async function main() {
     },
   });
 
+  const companyRoute = await prisma.route.upsert({
+    where: { path: '/company' },
+    update: {},
+    create: {
+      path: '/company',
+      labelKey: 'ROUTE_COMPANY',
+      icon: 'Building2',
+      ordem: 8,
+      isHome: false,
+      isActive: true,
+    },
+  });
+
   // const systemConfigurationRoute = await prisma.route.upsert({
   //   where: { path: '/systemConfiguration' },
   //   update: {},
@@ -206,6 +219,7 @@ async function main() {
     { roleId: 'ADMIN' as const, routeId: logsRoute.id },
     { roleId: 'ADMIN' as const, routeId: profileRoute.id },
     { roleId: 'ADMIN' as const, routeId: settingsRoute.id },
+    { roleId: 'ADMIN' as const, routeId: companyRoute.id },
     // { roleId: 'ADMIN' as const, routeId: systemConfigurationRoute.id },
   ];
 
@@ -228,6 +242,7 @@ async function main() {
     { roleId: 'MODERATOR' as const, routeId: dashboardRoute.id },
     { roleId: 'MODERATOR' as const, routeId: usersRoute.id },
     { roleId: 'MODERATOR' as const, routeId: logsRoute.id },
+    { roleId: 'MODERATOR' as const, routeId: companyRoute.id },
   ];
 
   for (const access of moderatorRoleAccesses) {
@@ -269,6 +284,7 @@ async function main() {
     { userId: adminUser.id, routeId: logsRoute.id },
     { userId: adminUser.id, routeId: profileRoute.id },
     { userId: adminUser.id, routeId: settingsRoute.id },
+    { userId: adminUser.id, routeId: companyRoute.id },
     // { userId: adminUser.id, routeId: systemConfigurationRoute.id },
   ];
 

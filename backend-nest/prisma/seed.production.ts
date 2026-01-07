@@ -163,6 +163,25 @@ async function main() {
     });
   }
 
+  let companyRoute = await prisma.route.findUnique({
+    where: { path: '/company' },
+  });
+
+  if (!companyRoute) {
+    companyRoute = await prisma.route.upsert({
+      where: { path: '/company' },
+      update: {},
+      create: {
+        path: '/company',
+        labelKey: 'ROUTE_COMPANY',
+        icon: 'Building2',
+        ordem: 8,
+        isHome: false,
+        isActive: true,
+      },
+    });
+  }
+
   console.log('✅ Routes created');
 
   // Criar acessos padrão por role
@@ -175,6 +194,7 @@ async function main() {
     { roleId: 'ADMIN' as const, routeId: logsRoute.id },
     { roleId: 'ADMIN' as const, routeId: profileRoute.id },
     { roleId: 'ADMIN' as const, routeId: settingsRoute.id },
+    { roleId: 'ADMIN' as const, routeId: companyRoute.id },
     // { roleId: 'ADMIN' as const, routeId: systemConfigurationRoute.id },
   ];
 
@@ -231,6 +251,7 @@ async function main() {
     { userId: adminUser.id, routeId: logsRoute.id },
     { userId: adminUser.id, routeId: profileRoute.id },
     { userId: adminUser.id, routeId: settingsRoute.id },
+    { userId: adminUser.id, routeId: companyRoute.id },
     // { userId: adminUser.id, routeId: systemConfigurationRoute.id },
   ];
 

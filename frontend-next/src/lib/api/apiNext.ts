@@ -2,7 +2,7 @@
 
 export const APINEXT = {
     async GET<T>(url: string, config?: RequestInit): Promise<T | null> {
-        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+        const siteUrl = process.env.NEXTAUTH_URL || 'http://localhost:3002';
         const response = await fetch(`${siteUrl}/api${url}`, {
             method: 'GET',
             credentials: 'include',

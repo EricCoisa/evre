@@ -112,7 +112,7 @@ npx shadcn@latest add [component-name]
 Crie o arquivo `.env.local`:
 
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_API_URL=http://localhost:3002
 ```
 
 ### **2. Instalação**
@@ -127,7 +127,7 @@ npm install
 npm run dev
 ```
 
-Aplicação rodará em: `http://localhost:3000`
+Aplicação rodará em: `http://localhost:3002`
 
 ### **4. Build de Produção**
 

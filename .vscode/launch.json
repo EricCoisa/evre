@@ -23,7 +23,7 @@
             "type": "chrome",
             "request": "launch",
             "name": "Debug Frontend (Next.js)",
-            "url": "http://localhost:3000",
+            "url": "http://localhost:3002",
             "webRoot": "${workspaceFolder}/frontend-next",
             "sourceMapPathOverrides": {
                 "webpack://_N_E/*": "${webRoot}/*"

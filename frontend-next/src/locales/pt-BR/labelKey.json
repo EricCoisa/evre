@@ -7,6 +7,7 @@
     "ROUTE_HOME": "Home",
     "ROUTE_SETTINGS": "Configurações",
     "ROUTE_SYSTEM_CONFIGURATION": "Configuração do Sistema",
+    "ROUTE_COMPANY": "Empresa",
     "SYSTEMCONFIG_THEME": "Tema",
     "SYSTEMCONFIG_SUPORTURL": "URL de Suporte",
     "SYSTEMCONFIG_LOG_LIMITE": "Limite de retenção de logs",

@@ -5,7 +5,7 @@ import { ApiError } from "next/dist/server/api-utils";
 import { ApiErrorResponse } from "../actions/auth/types";
 import { getServerAccessToken, getServerLang } from "../actions/auth/server-auth";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3003";
 
 const api: AxiosInstance = axios.create({
     baseURL: BASE_URL,

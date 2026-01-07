@@ -1,0 +1,5 @@
+{
+	"errors": {
+		"duplicate_name": "Já existe uma empresa com este nome."
+	}
+}

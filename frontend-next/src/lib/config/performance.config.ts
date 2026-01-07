@@ -12,7 +12,9 @@ export const QUERY_CONFIG = {
     USER_ROUTE_ACCESS: 5 * 60 * 1000,  // 5 minutos - acessos de usuário
     LOGGING: 2 * 60 * 1000,            // 2 minutos - logs (mudam frequentemente)
     USER: 10 * 60 * 1000,              // 5 minutos - usuário
-    ME: 10 * 60 * 1000,              // 5 minutos - usuário
+    ME: 10 * 60 * 1000,                // 5 minutos - usuário
+    COMPANIES: 5 * 60 * 1000,          // 5 minutos - lista de empresas
+    COMPANY: 10 * 60 * 1000,           // 10 minutos - empresa individual
   },
   
   // Garbage Collection Times (tempo que dados ficam no cache após stale)
@@ -22,7 +24,9 @@ export const QUERY_CONFIG = {
     ROUTES: 20 * 60 * 1000,            // 20 minutos - rotas mudam raramente
     LOGGING: 5 * 60 * 1000,            // 5 minutos - logs podem ser removidos rapidamente
     USER: 15 * 60 * 1000,              // 15 minutos - usuário
-    ME: 15 * 60 * 1000,              // 15 minutos - usuário
+    ME: 15 * 60 * 1000,                // 15 minutos - usuário
+    COMPANIES: 10 * 60 * 1000,         // 10 minutos - lista de empresas
+    COMPANY: 15 * 60 * 1000,           // 15 minutos - empresa individual
   },
   
   // Configurações de retry

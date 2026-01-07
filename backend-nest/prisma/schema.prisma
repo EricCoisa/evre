@@ -22,6 +22,12 @@ enum UserStatus {
   SUSPENDED
 }
 
+enum CompanyStatus {
+  DRAFT
+  INVITED
+  ACTIVE
+}
+
 enum LogModule {
   USER
   AUTH
@@ -33,6 +39,7 @@ enum LogModule {
   ROLE_ROUTE_ACCESS
   USER_CONFIGURATION
   USER_CONFIGURATION_DEFINITION
+  COMPANY
 }
 
 // Example model - customize as needed
@@ -44,6 +51,7 @@ model User {
   image               Bytes?               // Campo para armazenar foto do usuário (máx 40MB)
   role                UserRole             @default(USER)
   status              UserStatus           @default(ACTIVE)
+  companyId           String?              // Relação opcional com Company
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   systemLogs          SystemLog[]
@@ -52,7 +60,9 @@ model User {
   userRouteAccesses   UserRouteAccess[]
   grantedRouteAccesses UserRouteAccess[]   @relation("GrantedBy")
   userConfigurations  UserConfiguration[]
+  company             Company?             @relation(fields: [companyId], references: [id], onDelete: SetNull)
 
+  @@index([companyId])
   @@map("users")
 }
 
@@ -194,4 +204,15 @@ model UserConfiguration {
   @@index([userId])
   @@index([definitionId])
   @@map("user_configurations")
+}
+
+model Company {
+  id        String        @id @default(uuid())
+  name      String
+  status    CompanyStatus @default(DRAFT)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  users     User[]
+
+  @@map("companies")
 }
