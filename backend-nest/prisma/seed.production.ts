@@ -201,6 +201,24 @@ async function main() {
     });
   }
 
+  let projectRoute = await prisma.route.findUnique({
+    where: { path: '/project' },
+  });
+  if (!projectRoute) {
+    projectRoute = await prisma.route.upsert({
+      where: { path: '/project' },
+      update: {},
+      create: {
+        path: '/project',
+        labelKey: 'ROUTE_PROJECT',
+        icon: 'FolderKanban',
+        ordem: 9,
+        isHome: false,
+        isActive: true,
+      },
+    });
+  }
+
   console.log('✅ Routes created');
 
   // Criar acessos padrão por role
@@ -215,6 +233,7 @@ async function main() {
     { roleId: 'ADMIN' as const, routeId: settingsRoute.id },
     { roleId: 'ADMIN' as const, routeId: companyRoute.id },
     { roleId: 'ADMIN' as const, routeId: proposalRoute.id },
+    { roleId: 'ADMIN' as const, routeId: projectRoute.id },
     // { roleId: 'ADMIN' as const, routeId: systemConfigurationRoute.id },
   ];
 
@@ -273,6 +292,7 @@ async function main() {
     { userId: adminUser.id, routeId: settingsRoute.id },
     { userId: adminUser.id, routeId: companyRoute.id },
     { userId: adminUser.id, routeId: proposalRoute.id },
+    { userId: adminUser.id, routeId: projectRoute.id },
     // { userId: adminUser.id, routeId: systemConfigurationRoute.id },
   ];
 

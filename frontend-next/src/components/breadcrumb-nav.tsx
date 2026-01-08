@@ -20,6 +20,17 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { useMe } from '@/lib/actions/auth/queries';
 
+// Helper function to get nested property value from object using dot notation
+function getNestedProperty<T, K extends string>(obj: T, path: K): unknown {
+  console.log("getNestedProperty: ", obj, path);
+  return path.split('.').reduce<unknown>((current, key) => {
+    if (current && typeof current === 'object' && key in current) {
+      return (current as Record<string, unknown>)[key];
+    }
+    return undefined;
+  }, obj);
+}
+
 export function BreadcrumbNav() {
   const { data: user } = useMe();
 
@@ -61,9 +72,12 @@ export function BreadcrumbNav() {
   // Atualiza o contexto de breadcrumb fora do render
   useEffect(() => {
     if (isUUID(idUser) && penultimate != null && !isUUID(penultimate)) {
-      const name = route && query.data && query.data[route?.key as keyof typeof query.data] ? String(query.data[route?.key as keyof typeof query.data]) : null;
+      const name = route && query.data && route.key 
+        ? getNestedProperty(query.data, route.key) 
+        : null;
+        console.log("BreadcrumbNav: ", query.data, name);
       if (name && name !== items) {
-        setItem(name);
+        setItem(String(name));
       }
     } else {
       if (items !== null) setItem(null);

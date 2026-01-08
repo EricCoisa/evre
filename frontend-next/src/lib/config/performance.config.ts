@@ -16,6 +16,13 @@ export const QUERY_CONFIG = {
     COMPANIES: 5 * 60 * 1000,          // 5 minutos - lista de empresas
     COMPANY: 10 * 60 * 1000,           // 10 minutos - empresa individual
     PROPOSALS: 5 * 60 * 1000,          // 5 minutos - lista de propostas
+    PROJECTS: 5 * 60 * 1000,           // 5 minutos - lista de projetos
+    PROJECT: 10 * 60 * 1000,           // 10 minutos - projeto individual
+    STAGES: 5 * 60 * 1000,             // 5 minutos - lista de stages
+    ACTIVITIES: 2 * 60 * 1000,         // 2 minutos - lista de atividades
+    COMMENTS: 2 * 60 * 1000,           // 2 minutos - lista de comentários
+    APPROVALS: 5 * 60 * 1000,          // 5 minutos - lista de aprovações
+    HISTORY: 1 * 60 * 1000,            // 1 minuto - histórico de ações
   },
   
   // Garbage Collection Times (tempo que dados ficam no cache após stale)
@@ -29,6 +36,13 @@ export const QUERY_CONFIG = {
     COMPANIES: 10 * 60 * 1000,         // 10 minutos - lista de empresas
     COMPANY: 15 * 60 * 1000,           // 15 minutos - empresa individual
     PROPOSALS: 10 * 60 * 1000,         // 10 minutos - lista de propostas
+    PROJECTS: 10 * 60 * 1000,          // 10 minutos - lista de projetos
+    PROJECT: 15 * 60 * 1000,           // 15 minutos - projeto individual
+    STAGES: 10 * 60 * 1000,            // 10 minutos - lista de stages
+    ACTIVITIES: 5 * 60 * 1000,          // 5 minutos - lista de atividades
+    COMMENTS: 5 * 60 * 1000,           // 5 minutos - lista de comentários
+    APPROVALS: 10 * 60 * 1000,          // 10 minutos - lista de aprovações
+    HISTORY: 2 * 60 * 1000,            // 2 minutos - histórico de ações
   },
   
   // Configurações de retry

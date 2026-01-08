@@ -3,9 +3,10 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import type { Company } from '@/lib/actions/company/types';
 import { Button } from '@/components/ui/button';
-import { ArrowDown, ArrowUp, ArrowUpDown, Pencil } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Eye, Pencil } from 'lucide-react';
 import { DataCell, TableHead } from '@/components/table-utils';
 import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
 const statusColorMap: Record<string, string> = {
   DRAFT: 'bg-yellow-500',
@@ -13,12 +14,7 @@ const statusColorMap: Record<string, string> = {
   ACTIVE: 'bg-green-500',
 };
 
-interface GetCompanyColumnsProps {
-  t: (key: string) => string;
-  onEdit: (company: Company) => void;
-}
-
-export function getCompanyColumns({ t, onEdit }: GetCompanyColumnsProps): ColumnDef<Company>[] {
+export function getCompanyColumns(   t: (key: string) => string): ColumnDef<Company>[] {
   return [
     {
       accessorKey: 'name',
@@ -91,17 +87,18 @@ export function getCompanyColumns({ t, onEdit }: GetCompanyColumnsProps): Column
       cell: ({ row }) => {
         const company = row.original;
         return (
-          <DataCell>
+         <DataCell>
             <div className="flex gap-2 items-center">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onEdit(company)}
-                title={t('editCompanyTooltip') || 'Editar empresa'}
-                className="h-6 p-0 min-h-0"
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
+              <Link href={`/company/${company.id}`}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  title={t('viewCompany') || 'Ver empresa'}
+                  className="h-6 p-0 min-h-0"
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+              </Link>
             </div>
           </DataCell>
         );

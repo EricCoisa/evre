@@ -9,6 +9,7 @@
     "ROUTE_SYSTEM_CONFIGURATION": "System Configuration",
     "ROUTE_COMPANY": "Company",
     "ROUTE_PROPOSAL": "Proposal",
+    "ROUTE_PROJECT": "Project",
     "SYSTEMCONFIG_THEME": "Theme",
     "SYSTEMCONFIG_SUPORTURL": "Support URL",
     "SYSTEMCONFIG_LOG_LIMITE": "Log retention limit",

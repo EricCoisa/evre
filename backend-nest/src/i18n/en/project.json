@@ -1,0 +1,12 @@
+{
+  "errors": {
+    "company_not_found": "Company not found",
+    "proposal_not_found": "Proposal not found",
+    "not_found": "Project not found"
+  },
+  "messages": {
+    "created": "Project created successfully",
+    "updated": "Project updated successfully",
+    "deleted": "Project deleted successfully"
+  }
+}

@@ -25,13 +25,6 @@ export default function CompaniesPage() {
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
   const [globalFilter, setGlobalFilter] = useState('');
   const [filters, setFilters] = useState<Record<string, string>>({});
-  const [editingCompany, setEditingCompany] = useState<Company | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-
-  const handleEdit = useCallback((company: Company) => {
-    setEditingCompany(company);
-    setIsEditDialogOpen(true);
-  }, []);
 
   const queryParams = {
     page: pagination.pageIndex + 1,
@@ -58,8 +51,8 @@ export default function CompaniesPage() {
   } satisfies FieldConfig<typeof createCompanySchema>), [t]);
 
   const columns = useMemo(() =>
-    getCompanyColumns({ t, onEdit: handleEdit }),
-    [t, handleEdit]
+    getCompanyColumns(t),
+    [t]
   );
 
   return (
@@ -118,19 +111,6 @@ export default function CompaniesPage() {
           />
         </DataTable.Actions>
       </DataTable>
-
-      {/* Modal de edição de empresa */}
-      <Modal
-        open={isEditDialogOpen}
-        onOpenChange={(open) => {
-          setIsEditDialogOpen(open);
-          if (!open) setEditingCompany(null);
-        }}
-        title={editingCompany ? `Editar ${editingCompany.name}` : 'Editar Empresa'}
-        description="Preencha os dados para modificar a empresa no sistema."
-      >
-        <CompanyEditPage company={editingCompany} onCancel={() => setIsEditDialogOpen(false)} />
-      </Modal>
     </Container>
   );
 }

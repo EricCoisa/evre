@@ -23,6 +23,12 @@ import { UserConfigurationModule } from './modules/user-configuration/user-confi
 import { UserConfigurationDefinitionModule } from './modules/user-configuration-definition/user-configuration-definition.module';
 import { CompanyModule } from './modules/company/company.module';
 import { ProposalModule } from './modules/proposal/proposal.module';
+import { ProjectModule } from './modules/project/project.module';
+import { StageModule } from './modules/stage/stage.module';
+import { ActivityModule } from './modules/activity/activity.module';
+import { CommentModule } from './modules/comment/comment.module';
+import { ApprovalModule } from './modules/approval/approval.module';
+import { ProjectHistoryModule } from './modules/project-history/project-history.module';
 
 @Module({
   imports: [
@@ -65,6 +71,12 @@ import { ProposalModule } from './modules/proposal/proposal.module';
     TasksModule,
     CompanyModule,
     ProposalModule,
+    ProjectModule,
+    StageModule,
+    ActivityModule,
+    CommentModule,
+    ApprovalModule,
+    ProjectHistoryModule,
   ],
 })
 export class AppModule {}

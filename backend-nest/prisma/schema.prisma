@@ -34,6 +34,30 @@ enum ProposalStatus {
   APPROVED
 }
 
+enum ProjectStatus {
+  PROPOSAL
+  REQUIREMENTS
+  DEVELOPMENT
+  DONE
+}
+
+enum ActivityStatus {
+  TODO
+  DOING
+  DONE
+}
+
+enum ApprovalStatus {
+  APPROVED
+  REJECTED
+}
+
+enum ProjectHistoryType {
+  STATUS_CHANGE
+  COMMENT
+  APPROVAL
+}
+
 enum LogModule {
   USER
   AUTH
@@ -47,6 +71,12 @@ enum LogModule {
   USER_CONFIGURATION_DEFINITION
   COMPANY
   PROPOSAL
+  PROJECT
+  STAGE
+  ACTIVITY
+  COMMENT
+  APPROVAL
+  PROJECT_HISTORY
 }
 
 // Example model - customize as needed
@@ -68,6 +98,8 @@ model User {
   grantedRouteAccesses UserRouteAccess[]   @relation("GrantedBy")
   userConfigurations  UserConfiguration[]
   company             Company?             @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  comments            Comment[]
+  approvals           Approval[]
 
   @@index([companyId])
   @@map("users")
@@ -221,6 +253,7 @@ model Company {
   updatedAt DateTime      @updatedAt
   users     User[]
   proposals Proposal[]
+  projects  Project[]
 
   @@map("companies")
 }
@@ -228,6 +261,7 @@ model Company {
 model Proposal {
   id                    String         @id @default(uuid())
   companyId             String
+  projectId             String?        // Vínculo opcional com Project
   status                ProposalStatus @default(DRAFT)
   contentSchemaVersion  String         @default("v1")
   content               String         // JSON armazenado como string
@@ -235,8 +269,112 @@ model Proposal {
   updatedAt             DateTime       @updatedAt
 
   company               Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  project               Project?       @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   @@index([companyId])
+  @@index([projectId])
   @@index([status])
   @@map("proposals")
+}
+
+model Project {
+  id          String        @id @default(uuid())
+  companyId   String
+  proposalId  String?       // Vínculo opcional com Proposal
+  name        String
+  description String?       @db.Text
+  status      ProjectStatus @default(PROPOSAL)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  company     Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  stages      Stage[]
+  comments    Comment[]
+  histories   ProjectHistory[]
+  proposals   Proposal[]
+
+  @@index([companyId])
+  @@index([proposalId])
+  @@index([status])
+  @@map("projects")
+}
+
+model Stage {
+  id        String   @id @default(uuid())
+  projectId String
+  name      String
+  order     Int
+  status    String   // Status informativo (não tem enum específico)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  activities Activity[]
+  approvals  Approval[]
+
+  @@index([projectId])
+  @@index([order])
+  @@map("stages")
+}
+
+model Activity {
+  id          String         @id @default(uuid())
+  stageId     String
+  title       String
+  description String?        @db.Text
+  status      ActivityStatus @default(TODO)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  stage       Stage          @relation(fields: [stageId], references: [id], onDelete: Cascade)
+
+  @@index([stageId])
+  @@index([status])
+  @@map("activities")
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  projectId String
+  userId    String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([userId])
+  @@map("comments")
+}
+
+model Approval {
+  id        String         @id @default(uuid())
+  stageId   String
+  userId    String
+  status    ApprovalStatus
+  comment   String?        @db.Text
+  createdAt DateTime       @default(now())
+
+  stage     Stage          @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([stageId])
+  @@index([userId])
+  @@map("approvals")
+}
+
+model ProjectHistory {
+  id        String             @id @default(uuid())
+  projectId String
+  type      ProjectHistoryType
+  payload   String             // JSON armazenado como string
+  createdAt DateTime           @default(now())
+
+  project   Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("project_histories")
 }

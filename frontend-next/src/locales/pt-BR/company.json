@@ -25,5 +25,6 @@
   "searchPlaceholder": "Buscar empresas...",
   "searchText": "Buscar",
   "filterByStatus": "Filtrar por status",
-  "editCompanyTooltip": "Editar empresa"
+  "editCompanyTooltip": "Editar empresa",
+  "viewCompany": "View company"
 }
