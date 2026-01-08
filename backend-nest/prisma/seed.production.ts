@@ -219,6 +219,24 @@ async function main() {
     });
   }
 
+  let contactRoute = await prisma.route.findUnique({
+    where: { path: '/contact' },
+  });
+  if (!contactRoute) {
+    contactRoute = await prisma.route.upsert({
+      where: { path: '/contact' },
+      update: {},
+      create: {
+        path: '/contact',
+        labelKey: 'ROUTE_CONTACT',
+        icon: 'Contact',
+        ordem: 9,
+        isHome: false,
+        isActive: true,
+      },
+    });
+  }
+
   console.log('✅ Routes created');
 
   // Criar acessos padrão por role
@@ -234,6 +252,7 @@ async function main() {
     { roleId: 'ADMIN' as const, routeId: companyRoute.id },
     { roleId: 'ADMIN' as const, routeId: proposalRoute.id },
     { roleId: 'ADMIN' as const, routeId: projectRoute.id },
+    { roleId: 'ADMIN' as const, routeId: contactRoute.id },
     // { roleId: 'ADMIN' as const, routeId: systemConfigurationRoute.id },
   ];
 
@@ -293,6 +312,7 @@ async function main() {
     { userId: adminUser.id, routeId: companyRoute.id },
     { userId: adminUser.id, routeId: proposalRoute.id },
     { userId: adminUser.id, routeId: projectRoute.id },
+    { userId: adminUser.id, routeId: contactRoute.id },
     // { userId: adminUser.id, routeId: systemConfigurationRoute.id },
   ];
 
@@ -410,6 +430,21 @@ async function main() {
         valueType: 'String',
         value:
           '[{"content":"Aqui é a Home","selectorId":"tour-nav-0","position":"right"},{"content":"Aqui é a DashBoard","selectorId":"tour-nav-1","position":"right"},{"content":"Aqui são os Acessos","selectorId":"tour-nav-3","position":"right"}]',
+      },
+    });
+  }
+
+  const SYSTEM_CONTACT_EMAIL = await prisma.systemConfiguration.findUnique({
+    where: { labelKey: 'SYSTEM_CONTACT_EMAIL' },
+  });
+  if (!SYSTEM_CONTACT_EMAIL) {
+    await prisma.systemConfiguration.upsert({
+      where: { labelKey: 'SYSTEM_CONTACT_EMAIL' },
+      update: {},
+      create: {
+        labelKey: 'SYSTEM_CONTACT_EMAIL',
+        valueType: 'string',
+        value: 'contact@evre.com.br',
       },
     });
   }

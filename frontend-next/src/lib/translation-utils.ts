@@ -14,6 +14,7 @@ import ptBRLogin from '../locales/pt-BR/login.json';
 import ptBRCompany from '../locales/pt-BR/company.json';
 import ptBRProposal from '../locales/pt-BR/proposal.json';
 import ptProjects from '../locales/pt-BR/projects.json';
+import ptContact from '../locales/pt-BR/contact.json';
 
 import enCommon from '../locales/en/common.json';
 import enAccess from '../locales/en/access.json';
@@ -31,6 +32,7 @@ import enLogin from '../locales/en/login.json';
 import enCompany from '../locales/en/company.json';
 import enProposal from '../locales/en/proposal.json';
 import enProjects from '../locales/en/projects.json';
+import enContact from '../locales/en/contact.json';
 
 
 
@@ -53,6 +55,7 @@ export const resources = {
     company: ptBRCompany,
     proposal: ptBRProposal,
     projects: ptProjects,
+    contact: ptContact,
 	},
 	en: {
 		common: enCommon,
@@ -71,6 +74,7 @@ export const resources = {
     company: enCompany,
     proposal: enProposal,
     projects: enProjects,
+    contact: enContact,
 	},
 };
 

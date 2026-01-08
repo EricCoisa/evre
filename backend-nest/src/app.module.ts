@@ -29,7 +29,7 @@ import { ActivityModule } from './modules/activity/activity.module';
 import { CommentModule } from './modules/comment/comment.module';
 import { ApprovalModule } from './modules/approval/approval.module';
 import { ProjectHistoryModule } from './modules/project-history/project-history.module';
-
+import { ContactModule } from './modules/contact/contact.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -77,6 +77,7 @@ import { ProjectHistoryModule } from './modules/project-history/project-history.
     CommentModule,
     ApprovalModule,
     ProjectHistoryModule,
+    ContactModule
   ],
 })
 export class AppModule {}

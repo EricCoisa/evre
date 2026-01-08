@@ -39,5 +39,7 @@
   "system_email_smtp_secure_desc": "Habilitar conexão segura (SSL/TLS)",
   "configuration_valid": "Configuração é válida",
   "configuration_invalid": "Configuração é inválida",
-  "validate_configuration": "Validar Configuração"
+  "validate_configuration": "Validar Configuração",
+  "systemconfig_email_contact": "Email de contato",
+  "systemconfig_email_contact_desc": "Endereço de email usado para mensagens de contato do site"
 }

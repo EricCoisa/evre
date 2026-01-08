@@ -35,7 +35,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             }}
         >
             <>
-                <Toaster />
                 {isDevelopment() &&<><ReactScan enabled={reactScan} /><DevTools /></>}
                 {children}
             </>

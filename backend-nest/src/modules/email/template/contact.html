@@ -1,0 +1,30 @@
+
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1" />
+		<title>Novo contato recebido</title>
+		<style>
+			body { font-family: Arial, Helvetica, sans-serif; background:#f6f7fb; margin:0; padding:20px }
+			.card { background:#fff; border-radius:8px; padding:24px; max-width:600px; margin:0 auto; box-shadow:0 6px 18px rgba(0,0,0,0.06)}
+			.muted { color:#6b7280 }
+			.label { font-weight: bold; color: #222; }
+			.value { color: #444; }
+		</style>
+	</head>
+	<body>
+		<div class="card">
+			<h2>Novo contato recebido pelo site</h2>
+			<p><span class="label">Nome:</span> <span class="value">{{name}}</span></p>
+			<p><span class="label">E-mail:</span> <span class="value">{{email}}</span></p>
+			<p><span class="label">Telefone:</span> <span class="value">{{telefone}}</span></p>
+			<p><span class="label">Mensagem:</span></p>
+			<div style="background:#f6f7fb; border-radius:6px; padding:16px; margin-bottom:16px; color:#333;">
+				{{text}}
+			</div>
+			<hr />
+			<p class="muted">Este e-mail foi enviado automaticamente pelo site EVRE.</p>
+		</div>
+	</body>
+</html>

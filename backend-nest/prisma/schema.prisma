@@ -379,3 +379,15 @@ model ProjectHistory {
   @@index([createdAt])
   @@map("project_histories")
 }
+
+model Contact {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  telefone  String
+  text      String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("contacts")
+}

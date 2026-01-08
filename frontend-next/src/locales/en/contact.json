@@ -1,0 +1,11 @@
+{
+	"searchPlaceholder": "Search contacts...",
+	"loading": "Loading...",
+	"noLogs": "No contacts found",
+	"entity": "contact",
+	"entityPlural": "contacts",
+	"searchText": "Search",
+	"emptyMessage": "No contacts found",
+  "createdAt": "Created At",
+  "name": "Name"
+}

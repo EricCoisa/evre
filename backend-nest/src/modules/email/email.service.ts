@@ -52,6 +52,18 @@ export class EmailService {
         from: params.from,
       });
 
+      if (sendResult.status === false) {
+        await this.prisma.systemLog.create({
+          data: {
+            module: 'SYSTEM',
+            action: 'MAIL_SEND',
+            message: 'Failed to send email',
+            metadata: JSON.stringify({ data: sendResult }),
+            performedById: performedById ?? null,
+          },
+        });
+      }
+
       return sendResult;
     } catch (error) {
       const errorInfo = {

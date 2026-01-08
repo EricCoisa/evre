@@ -5,6 +5,7 @@ import { QueryProvider } from "@/contexts/query-provider";
 import { ThemeProvider } from "@/contexts/theme-provider";
 import { SystemConfiguration } from "@/lib/actions/systemConfiguration/types";
 import { APINEXT } from "@/lib/api/apiNext";
+import { Toaster } from "sonner";
 
 
 export default async function RootLayout({
@@ -20,6 +21,7 @@ const config = await APINEXT.GET<SystemConfiguration<string>>(`/public-proxy?url
         <QueryProvider>
             <ThemeProvider defaultTheme={config ? config.value : undefined}>
               {children}
+                            <Toaster />
             </ThemeProvider>
         </QueryProvider>
       </body>

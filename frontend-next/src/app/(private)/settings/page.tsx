@@ -54,6 +54,20 @@ function SystemConfig({ t }: { t: (key: string) => string }) {
         </div>
         <SystemConfiguration disableLabel={true} labelKey="SYSTEMCONFIG_SUPORTURL" />
       </div>
+
+      <Separator />
+      <br />
+
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-medium">{t('systemconfig_email_contact')}</h3>
+          <p className="text-muted-foreground text-sm">
+            {t('systemconfig_email_contact_desc')}
+          </p>
+        </div>
+        <SystemConfiguration disableLabel={true} labelKey="SYSTEMCONFIG_CONTACT_EMAIL" />
+      </div>
+
     </Container>
   )
 }

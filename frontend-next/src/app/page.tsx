@@ -1,34 +1,86 @@
-'use client';
+  'use client';
 
-import { motion, useInView } from 'motion/react';
-import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react';
-import { useRef } from 'react';
+  import { motion, useInView } from 'motion/react';
+  import Image from 'next/image';
+  import { Button } from '@/components/ui/button';
+  import { ArrowRight, Code2, Layers, Zap } from 'lucide-react';
+  import { GenericCreateForm } from '@/components/generic-create-form';
+  import { z } from 'zod';
+  import { createContact } from '@/lib/actions/contact/api';
+  import { useMemo, useRef, useState } from 'react';
+  import { FieldConfig } from '@/lib/form/field-config';
+  import { toast } from 'sonner';
+  import Modal from '@/components/modal';
 
-// Componente de Seção com Animação Sutil
-function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-80px" });
+  // Componente de Seção com Animação Sutil
+  function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+    const ref = useRef(null);
+    const isInView = useInView(ref, { once: true, margin: "-80px" });
 
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 24 }}
-      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
-      transition={{ duration: 0.5, delay, ease: [0.21, 0.47, 0.32, 0.98] }}
-    >
-      {children}
-    </motion.div>
-  );
-}
+    return (
+      <motion.div
+        ref={ref}
+        initial={{ opacity: 0, y: 24 }}
+        animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+        transition={{ duration: 0.5, delay, ease: [0.21, 0.47, 0.32, 0.98] }}
+      >
+        {children}
+      </motion.div>
+    );
+  }
 
-export default function EvrePage() {
-  return (
-    <div className="min-h-screen bg-neutral-50 antialiased">
-      
-      {/* Hero Section */}
-      <section className="border-b border-neutral-200">
-        <div className="max-w-6xl mx-auto px-6 lg:px-8 py-32 md:py-40">
+  export default function EvrePage() {
+    const [ isContact, setContact ] = useState(false);
+    // Schema e config do formulário de contato
+    const contactSchema = z.object({
+      name: z.string().min(2, 'Nome obrigatório').max(100, 'Nome muito longo'),
+      email: z.string().email('E-mail inválido').max(100, 'E-mail muito longo'),
+      telefone: z.string().min(6, 'Telefone obrigatório').max(30, 'Telefone muito longo'),
+      text: z.string().min(1, 'Mensagem obrigatória').max(2000, 'Mensagem muito longa'),
+    });
+
+    const contactFieldConfig = useMemo(() => ({
+      name: {
+        label: 'Nome',
+        placeholder: 'Seu nome',
+        description: 'Como devemos te chamar?',
+      },
+      email: {
+        label: 'E-mail',
+        placeholder: 'seu@email.com',
+        description: 'Para entrarmos em contato',
+        type: 'email',
+      },
+      telefone: {
+        label: 'Telefone',
+        placeholder: '(99) 99999-9999',
+        description: 'WhatsApp ou telefone',
+      },
+      text: {
+        label: 'Mensagem',
+        placeholder: 'Como podemos ajudar?',
+        description: 'Conte um pouco sobre seu projeto ou dúvida',
+        type: 'textarea',
+      },
+    } satisfies FieldConfig<typeof contactSchema>), []);
+
+
+    return (
+      <div className="min-h-screen bg-neutral-50 antialiased">
+
+        {/* Hero Section */}
+        <section className="border-b border-neutral-200">
+          <div className="max-w-6xl mx-auto px-6 lg:px-8 py-32 md:py-40">
+          {/* Logo */}
+          <motion.div 
+            className="flex items-center gap-3 mb-16"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <span className="text-2xl font-semibold text-neutral-900 tracking-tight">EVRE</span>
+          </motion.div>
+
           <div className="max-w-3xl">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -36,179 +88,199 @@ export default function EvrePage() {
               transition={{ duration: 0.5, ease: [0.21, 0.47, 0.32, 0.98] }}
             >
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-medium text-neutral-900 leading-[1.1] tracking-tight mb-8">
-                Desenvolvemos software<br />sob medida para o<br />seu negócio
+                Software sob medida<br />para o seu negócio
               </h1>
             </motion.div>
-            
-            <motion.p 
+
+            <motion.p
               className="text-xl md:text-2xl text-neutral-600 leading-relaxed mb-12 max-w-2xl"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1, ease: [0.21, 0.47, 0.32, 0.98] }}
             >
-              Somos uma fábrica de software focada em criar sistemas robustos, escaláveis e fáceis de manter. 
-              Trabalhamos com startups, empresas de médio porte e times que precisam tirar ideias do papel.
+              Criamos sistemas robustos e escaláveis para startups, empresas de médio porte 
+              e times que precisam transformar ideias em produtos reais.
             </motion.p>
-            
+
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2, ease: [0.21, 0.47, 0.32, 0.98] }}
             >
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Button 
-                  size="lg" 
-                  className="text-base px-8 py-6 bg-neutral-900 hover:bg-neutral-800 text-white transition-all hover:shadow-lg"
-                >
-                  Agendar uma conversa
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <Button
+                    onClick={() => setContact(true)}
+                    size="lg"
+                    className="text-base px-8 py-6 bg-neutral-900 hover:bg-neutral-800 text-white transition-all hover:shadow-lg"
+                  >
+                    Entrar em contato
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </motion.div>
               </motion.div>
-              
-              <p className="text-sm text-neutral-500 mt-4">
-                Respondemos em até 24 horas
-              </p>
-            </motion.div>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Sobre a EVRE */}
-      <section className="border-b border-neutral-200 bg-white">
-        <div className="max-w-6xl mx-auto px-6 lg:px-8 py-24 md:py-32">
-          <FadeIn>
-            <div className="max-w-3xl mb-20">
-              <h2 className="text-3xl md:text-4xl font-medium text-neutral-900 mb-6">
-                Não trabalhamos com teatro ágil ou promessas vazias
+        {/* Sobre a EVRE */}
+        <section className="border-b border-neutral-200 bg-white">
+          <div className="max-w-6xl mx-auto px-6 lg:px-8 py-24 md:py-32">
+            <FadeIn>
+              <div className="max-w-3xl mb-20">
+                <h2 className="text-3xl md:text-4xl font-medium text-neutral-900 mb-6">
+                Como trabalhamos
               </h2>
               <p className="text-lg text-neutral-600 leading-relaxed">
-                Construímos software que resolve problemas reais. Não vendemos buzzwords — 
-                vendemos código limpo, arquitetura sólida e entregas consistentes.
+                Construímos software com processos claros, ciclos curtos e entregas frequentes. 
+                Cada decisão técnica é fundamentada, cada entrega é validada.
               </p>
             </div>
           </FadeIn>
 
           <div className="grid md:grid-cols-3 gap-6">
             <FadeIn delay={0.1}>
-              <motion.div 
-                className="bg-neutral-50 border border-neutral-200 rounded-2xl p-8 hover:bg-white hover:border-neutral-300 hover:shadow-lg transition-all duration-300"
+              <motion.div
+                className="bg-white border border-neutral-200 rounded-xl overflow-hidden hover:border-neutral-400 hover:shadow-lg transition-all duration-300"
                 whileHover={{ y: -4 }}
               >
-                <div className="w-12 h-12 bg-neutral-900 rounded-xl flex items-center justify-center mb-6">
-                  <div className="text-white text-xl font-bold">01</div>
+                {/* Simula barra de janela */}
+                <div className="h-8 bg-neutral-100 border-b border-neutral-200 flex items-center px-3 gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-neutral-300"></div>
+                  <div className="w-2.5 h-2.5 rounded-full bg-neutral-300"></div>
+                  <div className="w-2.5 h-2.5 rounded-full bg-neutral-300"></div>
                 </div>
-                <h3 className="text-xl font-medium text-neutral-900 mb-4">
-                  Como pensamos
-                </h3>
-                <p className="text-neutral-600 leading-relaxed">
-                  Software é investimento, não custo. Acreditamos em ciclos curtos, 
-                  feedback constante e evolução incremental. Nada de big bang.
-                </p>
+                <div className="p-8">
+                  <Code2 className="w-8 h-8 text-neutral-900 mb-4" />
+                  <h3 className="text-xl font-medium text-neutral-900 mb-3">
+                    Código interno
+                  </h3>
+                  <p className="text-neutral-600 leading-relaxed text-sm">
+                    Todo o desenvolvimento é feito pela nossa equipe. Decisões técnicas 
+                    são tomadas por quem escreve o código e entende o projeto.
+                  </p>
+                </div>
               </motion.div>
             </FadeIn>
 
             <FadeIn delay={0.2}>
-              <motion.div 
-                className="bg-neutral-50 border border-neutral-200 rounded-2xl p-8 hover:bg-white hover:border-neutral-300 hover:shadow-lg transition-all duration-300"
+              <motion.div
+                className="bg-white border border-neutral-200 rounded-xl overflow-hidden hover:border-neutral-400 hover:shadow-lg transition-all duration-300"
                 whileHover={{ y: -4 }}
               >
-                <div className="w-12 h-12 bg-neutral-900 rounded-xl flex items-center justify-center mb-6">
-                  <div className="text-white text-xl font-bold">02</div>
+                <div className="h-8 bg-neutral-100 border-b border-neutral-200 flex items-center px-3 gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-neutral-300"></div>
+                  <div className="w-2.5 h-2.5 rounded-full bg-neutral-300"></div>
+                  <div className="w-2.5 h-2.5 rounded-full bg-neutral-300"></div>
                 </div>
-                <h3 className="text-xl font-medium text-neutral-900 mb-4">
-                  O que nos diferencia
-                </h3>
-                <p className="text-neutral-600 leading-relaxed">
-                  Não terceirizamos a cabeça. Todo código sai daqui. Todo questionamento técnico 
-                  é respondido por quem está no projeto.
-                </p>
+                <div className="p-8">
+                  <Layers className="w-8 h-8 text-neutral-900 mb-4" />
+                  <h3 className="text-xl font-medium text-neutral-900 mb-3">
+                    Arquitetura sólida
+                  </h3>
+                  <p className="text-neutral-600 leading-relaxed text-sm">
+                    Planejamos estrutura antes de codificar. Escolhemos tecnologias 
+                    com critério e documentamos decisões importantes.
+                  </p>
+                </div>
               </motion.div>
             </FadeIn>
 
             <FadeIn delay={0.3}>
-              <motion.div 
-                className="bg-neutral-50 border border-neutral-200 rounded-2xl p-8 hover:bg-white hover:border-neutral-300 hover:shadow-lg transition-all duration-300"
+              <motion.div
+                className="bg-white border border-neutral-200 rounded-xl overflow-hidden hover:border-neutral-400 hover:shadow-lg transition-all duration-300"
                 whileHover={{ y: -4 }}
               >
-                <div className="w-12 h-12 bg-neutral-900 rounded-xl flex items-center justify-center mb-6">
-                  <div className="text-white text-xl font-bold">03</div>
+                <div className="h-8 bg-neutral-100 border-b border-neutral-200 flex items-center px-3 gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-neutral-300"></div>
+                  <div className="w-2.5 h-2.5 rounded-full bg-neutral-300"></div>
+                  <div className="w-2.5 h-2.5 rounded-full bg-neutral-300"></div>
                 </div>
-                <h3 className="text-xl font-medium text-neutral-900 mb-4">
-                  Stack principal
-                </h3>
-                <p className="text-neutral-600 leading-relaxed">
-                  TypeScript, React, Node.js, PostgreSQL, AWS. Tecnologias maduras, comunidade ativa, mercado consolidado.
-                </p>
+                <div className="p-8">
+                  <Zap className="w-8 h-8 text-neutral-900 mb-4" />
+                  <h3 className="text-xl font-medium text-neutral-900 mb-3">
+                    Stack moderna
+                  </h3>
+                  <p className="text-neutral-600 leading-relaxed text-sm">
+                    TypeScript, React, Node.js, PostgreSQL, Tecnologias maduras, 
+                    comunidade ativa, mercado consolidado.
+                  </p>
+                </div>
               </motion.div>
             </FadeIn>
           </div>
         </div>
       </section>
 
-      {/* Serviços */}
-      <section className="border-b border-neutral-200">
-        <div className="max-w-6xl mx-auto px-6 lg:px-8 py-24 md:py-32">
-          <FadeIn>
-            <h2 className="text-3xl md:text-4xl font-medium text-neutral-900 mb-20">
-              O que entregamos
-            </h2>
-          </FadeIn>
+        {/* Serviços */}
+        <section className="border-b border-neutral-200">
+          <div className="max-w-6xl mx-auto px-6 lg:px-8 py-24 md:py-32">
+            <FadeIn>
+              <h2 className="text-3xl md:text-4xl font-medium text-neutral-900 mb-20">
+                O que entregamos
+              </h2>
+            </FadeIn>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            <FadeIn delay={0.1}>
-              <motion.div 
-                className="bg-white border border-neutral-200 rounded-2xl p-8 hover:border-neutral-900 hover:shadow-xl transition-all duration-300 group"
+            <div className="grid md:grid-cols-3 gap-6">
+              <FadeIn delay={0.1}>
+                <motion.div
+                className="bg-white border border-neutral-200 rounded-xl p-8 hover:border-neutral-900 hover:shadow-xl transition-all duration-300"
                 whileHover={{ y: -6 }}
               >
-                <div className="text-5xl font-bold text-neutral-200 group-hover:text-neutral-300 transition-colors mb-6">01</div>
+                <div className="inline-flex items-center justify-center w-10 h-10 bg-neutral-900 text-white text-sm font-semibold rounded-lg mb-6">01</div>
                 <h3 className="text-2xl font-medium text-neutral-900 mb-4">
                   Desenvolvimento web & mobile
                 </h3>
                 <p className="text-neutral-600 leading-relaxed mb-6">
-                  Sistemas personalizados, plataformas internas, painéis administrativos, 
-                  integrações complexas.
+                  Sistemas personalizados, plataformas internas, painéis administrativos 
+                  e integrações complexas.
                 </p>
-                <p className="text-sm text-neutral-500">
-                  Arquitetura escalável · Código documentado · Testes automatizados
-                </p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="text-xs px-3 py-1 bg-neutral-100 text-neutral-700 rounded-full">Arquitetura escalável</span>
+                  <span className="text-xs px-3 py-1 bg-neutral-100 text-neutral-700 rounded-full">Código documentado</span>
+                  <span className="text-xs px-3 py-1 bg-neutral-100 text-neutral-700 rounded-full">Testes automatizados</span>
+                </div>
               </motion.div>
             </FadeIn>
 
             <FadeIn delay={0.2}>
-              <motion.div 
-                className="bg-white border border-neutral-200 rounded-2xl p-8 hover:border-neutral-900 hover:shadow-xl transition-all duration-300 group"
+              <motion.div
+                className="bg-white border border-neutral-200 rounded-xl p-8 hover:border-neutral-900 hover:shadow-xl transition-all duration-300"
                 whileHover={{ y: -6 }}
               >
-                <div className="text-5xl font-bold text-neutral-200 group-hover:text-neutral-300 transition-colors mb-6">02</div>
+                <div className="inline-flex items-center justify-center w-10 h-10 bg-neutral-900 text-white text-sm font-semibold rounded-lg mb-6">02</div>
                 <h3 className="text-2xl font-medium text-neutral-900 mb-4">
-                  MVPs e validação rápida
+                  MVPs e validação
                 </h3>
                 <p className="text-neutral-600 leading-relaxed mb-6">
-                  Precisa testar uma ideia com usuários reais em semanas, não meses? 
-                  A gente já fez isso dezenas de vezes.
+                  Teste sua ideia com usuários reais em semanas. Processos ágeis, 
+                  escopo enxuto, entregas frequentes.
                 </p>
-                <p className="text-sm text-neutral-500">
-                  Entrega rápida · Código escalável · Validação com usuários
-                </p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="text-xs px-3 py-1 bg-neutral-100 text-neutral-700 rounded-full">Entrega rápida</span>
+                  <span className="text-xs px-3 py-1 bg-neutral-100 text-neutral-700 rounded-full">Código escalável</span>
+                  <span className="text-xs px-3 py-1 bg-neutral-100 text-neutral-700 rounded-full">Validação com usuários</span>
+                </div>
               </motion.div>
             </FadeIn>
 
             <FadeIn delay={0.3}>
-              <motion.div 
-                className="bg-white border border-neutral-200 rounded-2xl p-8 hover:border-neutral-900 hover:shadow-xl transition-all duration-300 group"
+              <motion.div
+                className="bg-white border border-neutral-200 rounded-xl p-8 hover:border-neutral-900 hover:shadow-xl transition-all duration-300"
                 whileHover={{ y: -6 }}
               >
-                <div className="text-5xl font-bold text-neutral-200 group-hover:text-neutral-300 transition-colors mb-6">03</div>
+                <div className="inline-flex items-center justify-center w-10 h-10 bg-neutral-900 text-white text-sm font-semibold rounded-lg mb-6">03</div>
                 <h3 className="text-2xl font-medium text-neutral-900 mb-4">
                   Manutenção e evolução
                 </h3>
                 <p className="text-neutral-600 leading-relaxed mb-6">
-                  Software não é projeto — é produto. Assumimos projetos legados, 
-                  refatoramos código antigo e oferecemos suporte contínuo.
+                  Assumimos projetos existentes, refatoramos código legado e oferecemos 
+                  suporte contínuo.
                 </p>
-                <p className="text-sm text-neutral-500">
-                  Suporte contínuo · Refatoração · Otimização de performance
-                </p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="text-xs px-3 py-1 bg-neutral-100 text-neutral-700 rounded-full">Suporte contínuo</span>
+                  <span className="text-xs px-3 py-1 bg-neutral-100 text-neutral-700 rounded-full">Refatoração</span>
+                  <span className="text-xs px-3 py-1 bg-neutral-100 text-neutral-700 rounded-full">Otimização</span>
+                </div>
               </motion.div>
             </FadeIn>
           </div>
@@ -216,215 +288,217 @@ export default function EvrePage() {
       </section>
 
       {/* Como Trabalhamos */}
-      <section className="border-b border-neutral-200">
+      <section className="border-b border-neutral-200 bg-neutral-50">
         <div className="max-w-6xl mx-auto px-6 lg:px-8 py-24 md:py-32">
           <FadeIn>
             <h2 className="text-3xl md:text-4xl font-medium text-neutral-900 mb-20">
-              Como trabalhamos
+              Nosso processo
             </h2>
           </FadeIn>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            <FadeIn delay={0.1}>
-              <motion.div 
-                className="bg-white border border-neutral-200 rounded-2xl p-8 hover:border-neutral-300 hover:shadow-lg transition-all duration-300"
-                whileHover={{ x: 4 }}
-              >
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-10 h-10 bg-neutral-900 rounded-lg flex items-center justify-center text-white font-medium text-sm">
-                    01
+            <div className="grid md:grid-cols-2 gap-6">
+              <FadeIn delay={0.1}>
+                <motion.div
+                  className="bg-white border border-neutral-200 rounded-xl p-8 hover:border-neutral-300 hover:shadow-lg transition-all duration-300"
+                  whileHover={{ x: 4 }}
+                >
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-8 h-8 bg-neutral-900 rounded-lg flex items-center justify-center text-white font-medium text-xs">
+                      01
+                    </div>
+                    <h3 className="text-xl font-medium text-neutral-900">
+                      Entendimento e escopo
+                    </h3>
                   </div>
-                  <h3 className="text-xl font-medium text-neutral-900">
-                    Entendimento e escopo
-                  </h3>
-                </div>
-                <p className="text-neutral-600 leading-relaxed">
-                  Primeiro, a gente precisa entender o problema de verdade. Não só o que você quer 
-                  construir — por que você quer construir. Definimos escopo realista, prazos honestos 
-                  e métricas de sucesso.
-                </p>
-              </motion.div>
-            </FadeIn>
+                  <p className="text-neutral-600 leading-relaxed">
+                    Definimos o problema, o objetivo e as métricas de sucesso. 
+                    Escopo realista, prazos honestos.
+                  </p>
+                </motion.div>
+              </FadeIn>
 
-            <FadeIn delay={0.2}>
-              <motion.div 
-                className="bg-white border border-neutral-200 rounded-2xl p-8 hover:border-neutral-300 hover:shadow-lg transition-all duration-300"
-                whileHover={{ x: 4 }}
-              >
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-10 h-10 bg-neutral-900 rounded-lg flex items-center justify-center text-white font-medium text-sm">
-                    02
+              <FadeIn delay={0.2}>
+                <motion.div
+                  className="bg-white border border-neutral-200 rounded-xl p-8 hover:border-neutral-300 hover:shadow-lg transition-all duration-300"
+                  whileHover={{ x: 4 }}
+                >
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-8 h-8 bg-neutral-900 rounded-lg flex items-center justify-center text-white font-medium text-xs">
+                      02
+                    </div>
+                    <h3 className="text-xl font-medium text-neutral-900">
+                      Arquitetura e planejamento
+                    </h3>
                   </div>
-                  <h3 className="text-xl font-medium text-neutral-900">
-                    Arquitetura e planejamento técnico
-                  </h3>
-                </div>
-                <p className="text-neutral-600 leading-relaxed">
-                  Antes de escrever código, desenhamos a estrutura. Escolhemos tecnologias, 
-                  definimos integrações, planejamos deploy e escalabilidade. Você valida tudo 
-                  antes de começar.
-                </p>
-              </motion.div>
-            </FadeIn>
+                  <p className="text-neutral-600 leading-relaxed">
+                    Desenhamos a estrutura antes de codificar. Tecnologias, integrações, 
+                    deploy e escalabilidade são validados antes do início.
+                  </p>
+                </motion.div>
+              </FadeIn>
 
-            <FadeIn delay={0.3}>
-              <motion.div 
-                className="bg-white border border-neutral-200 rounded-2xl p-8 hover:border-neutral-300 hover:shadow-lg transition-all duration-300"
-                whileHover={{ x: 4 }}
-              >
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-10 h-10 bg-neutral-900 rounded-lg flex items-center justify-center text-white font-medium text-sm">
-                    03
+              <FadeIn delay={0.3}>
+                <motion.div
+                  className="bg-white border border-neutral-200 rounded-xl p-8 hover:border-neutral-300 hover:shadow-lg transition-all duration-300"
+                  whileHover={{ x: 4 }}
+                >
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-8 h-8 bg-neutral-900 rounded-lg flex items-center justify-center text-white font-medium text-xs">
+                      03
+                    </div>
+                    <h3 className="text-xl font-medium text-neutral-900">
+                      Ciclos curtos de desenvolvimento
+                    </h3>
                   </div>
-                  <h3 className="text-xl font-medium text-neutral-900">
-                    Desenvolvimento em ciclos curtos
-                  </h3>
-                </div>
-                <p className="text-neutral-600 leading-relaxed">
-                  Trabalhamos em sprints de 1-2 semanas. Você acompanha o progresso em tempo real, 
-                  testa funcionalidades prontas e dá feedback constante. Sem caixas-pretas.
-                </p>
-              </motion.div>
-            </FadeIn>
+                  <p className="text-neutral-600 leading-relaxed">
+                    Sprints de 1-2 semanas. Progresso em tempo real, testes contínuos 
+                    e feedback constante.
+                  </p>
+                </motion.div>
+              </FadeIn>
 
-            <FadeIn delay={0.4}>
-              <motion.div 
-                className="bg-white border border-neutral-200 rounded-2xl p-8 hover:border-neutral-300 hover:shadow-lg transition-all duration-300"
-                whileHover={{ x: 4 }}
-              >
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-10 h-10 bg-neutral-900 rounded-lg flex items-center justify-center text-white font-medium text-sm">
-                    04
+              <FadeIn delay={0.4}>
+                <motion.div
+                  className="bg-white border border-neutral-200 rounded-xl p-8 hover:border-neutral-300 hover:shadow-lg transition-all duration-300"
+                  whileHover={{ x: 4 }}
+                >
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-8 h-8 bg-neutral-900 rounded-lg flex items-center justify-center text-white font-medium text-xs">
+                      04
+                    </div>
+                    <h3 className="text-xl font-medium text-neutral-900">
+                      Deploy e evolução
+                    </h3>
                   </div>
-                  <h3 className="text-xl font-medium text-neutral-900">
-                    Deploy e evolução contínua
-                  </h3>
-                </div>
-                <p className="text-neutral-600 leading-relaxed">
-                  Depois do go-live, o trabalho não acaba. Monitoramos, ajustamos, evoluímos. 
-                  Você decide se quer suporte pontual ou uma parceria contínua.
+                  <p className="text-neutral-600 leading-relaxed">
+                    Após o lançamento, monitoramos e ajustamos o sistema. 
+                    Suporte pontual ou parceria contínua.
+                  </p>
+                </motion.div>
+              </FadeIn>
+            </div>
+          </div>
+        </section>
+
+        {/* Cases / Social Proof */}
+        <section className="border-b border-neutral-200 bg-white">
+          <div className="max-w-6xl mx-auto px-6 lg:px-8 py-24 md:py-32">
+            <FadeIn>
+              <div className="max-w-3xl">
+                <h2 className="text-3xl md:text-4xl font-medium text-neutral-900 mb-12">
+                  Já ajudamos times a lançar produtos, validar MVPs e escalar plataformas
+                </h2>
+                <p className="text-lg text-neutral-600 leading-relaxed mb-12">
+                  Trabalhamos com startups em estágio inicial, empresas de médio porte e times internos
+                  que precisam de reforço técnico. Cada projeto é diferente — mas a abordagem é a mesma:
+                  clareza, código sólido e entregas consistentes.
                 </p>
-              </motion.div>
+                <div className="flex items-center gap-12 text-sm text-neutral-500">
+                  <div>
+                    <div className="text-3xl font-medium text-neutral-900 mb-2">30+</div>
+                    <div>Projetos entregues</div>
+                  </div>
+                  <div>
+                    <div className="text-3xl font-medium text-neutral-900 mb-2">100%</div>
+                    <div>Código próprio</div>
+                  </div>
+
+                </div>
+              </div>
             </FadeIn>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Cases / Social Proof */}
-      <section className="border-b border-neutral-200 bg-white">
-        <div className="max-w-6xl mx-auto px-6 lg:px-8 py-24 md:py-32">
-          <FadeIn>
-            <div className="max-w-3xl">
-              <h2 className="text-3xl md:text-4xl font-medium text-neutral-900 mb-12">
-                Já ajudamos times a lançar produtos, validar MVPs e escalar plataformas
-              </h2>
-              <p className="text-lg text-neutral-600 leading-relaxed mb-12">
-                Trabalhamos com startups em estágio inicial, empresas de médio porte e times internos 
-                que precisam de reforço técnico. Cada projeto é diferente — mas a abordagem é a mesma: 
-                clareza, código sólido e entregas consistentes.
-              </p>
-              <div className="flex items-center gap-12 text-sm text-neutral-500">
-                <div>
-                  <div className="text-3xl font-medium text-neutral-900 mb-2">30+</div>
-                  <div>Projetos entregues</div>
+        {/* CTA Final */}
+        <section className="bg-neutral-900 text-white">
+          <div className="max-w-6xl mx-auto px-6 lg:px-8 py-24 md:py-32">
+            <FadeIn>
+              <div className="max-w-2xl">
+                <h2 className="text-3xl md:text-4xl font-medium mb-8">
+                  Vamos conversar sobre o seu projeto
+                </h2>
+
+                <p className="text-xl text-neutral-400 leading-relaxed mb-12">
+                  Agende 30 minutos com a gente. Sem compromisso, sem discurso de vendas.
+                  Só uma conversa direta sobre o que você precisa construir.
+                </p>
+
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <Button
+                    onClick={() => setContact(true)}
+                    size="lg"
+                    className="text-base px-8 py-6 bg-white hover:bg-neutral-100 text-neutral-900 transition-all hover:shadow-xl mb-6"
+                  >
+                    Entrar em contato
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </motion.div>
+              </div>
+            </FadeIn>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="bg-neutral-900 border-t border-neutral-800 text-neutral-500">
+          <div className="max-w-6xl mx-auto px-6 lg:px-8 py-12">
+            <div className="grid md:grid-cols-3 gap-12 mb-12">
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-lg font-medium text-white">EVRE</span>
                 </div>
-                <div>
-                  <div className="text-3xl font-medium text-neutral-900 mb-2">100%</div>
-                  <div>Código próprio</div>
-                </div>
-         
+                <p className="text-sm leading-relaxed">
+                  Fábrica de software sob medida
+                </p>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-medium text-white mb-4">Serviços</h4>
+                <ul className="space-y-2 text-sm">
+                  <li><a href="/servicos" className="hover:text-white transition-colors">Desenvolvimento web</a></li>
+                  <li><a href="/mvps" className="hover:text-white transition-colors">MVPs</a></li>
+                  <li><a href="/manutencao" className="hover:text-white transition-colors">Manutenção</a></li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-medium text-white mb-4">Empresa</h4>
+                <ul className="space-y-2 text-sm">
+                  <li><a href="/sobre" className="hover:text-white transition-colors">Sobre nós</a></li>
+                  <li><a href="/processo" className="hover:text-white transition-colors">Nosso processo</a></li>
+                  <li><a href="/contato" className="hover:text-white transition-colors">Contato</a></li>
+                </ul>
               </div>
             </div>
-          </FadeIn>
-        </div>
-      </section>
 
-      {/* CTA Final */}
-      <section className="bg-neutral-900 text-white">
-        <div className="max-w-6xl mx-auto px-6 lg:px-8 py-24 md:py-32">
-          <FadeIn>
-            <div className="max-w-2xl">
-              <h2 className="text-3xl md:text-4xl font-medium mb-8">
-                Vamos conversar sobre o seu projeto
-              </h2>
-              
-              <p className="text-xl text-neutral-400 leading-relaxed mb-12">
-                Agende 30 minutos com a gente. Sem compromisso, sem discurso de vendas. 
-                Só uma conversa direta sobre o que você precisa construir.
-              </p>
-              
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Button 
-                  size="lg" 
-                  className="text-base px-8 py-6 bg-white hover:bg-neutral-100 text-neutral-900 transition-all hover:shadow-xl mb-6"
-                >
-                  Agendar conversa
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </motion.div>
-
-              <p className="text-sm text-neutral-500">
-                Ou mande um e-mail direto:{' '}
-                <a href="mailto:contato@evre.com.br" className="text-white hover:text-neutral-300 underline transition-colors">
-                  contato@evre.com.br
-                </a>
-              </p>
-            </div>
-          </FadeIn>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-neutral-900 border-t border-neutral-800 text-neutral-500">
-        <div className="max-w-6xl mx-auto px-6 lg:px-8 py-12">
-          <div className="grid md:grid-cols-4 gap-12 mb-12">
-            <div>
-              <div className="text-lg font-medium text-white mb-4">EVRE</div>
-              <p className="text-sm leading-relaxed">
-                Fábrica de software sob medida
-              </p>
-            </div>
-            
-            <div>
-              <h4 className="text-sm font-medium text-white mb-4">Serviços</h4>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-white transition-colors">Desenvolvimento web</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">MVPs</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Manutenção</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="text-sm font-medium text-white mb-4">Empresa</h4>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-white transition-colors">Sobre nós</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Como trabalhamos</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contato</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="text-sm font-medium text-white mb-4">Contato</h4>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <a href="mailto:contato@evre.com.br" className="hover:text-white transition-colors">
-                    contato@evre.com.br
-                  </a>
-                </li>
-                <li>
-                  <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
-                    LinkedIn
-                  </a>
-                </li>
-              </ul>
+            <div className="border-t border-neutral-800 pt-8 text-sm text-center">
+              <p>© 2026 EVRE — Todos os direitos reservados</p>
             </div>
           </div>
-          
-          <div className="border-t border-neutral-800 pt-8 text-sm text-center">
-            <p>© 2026 EVRE — Todos os direitos reservados</p>
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
-}
+        </footer>
+        <Modal
+          open={isContact}
+          onOpenChange={(open) => {
+            setContact(open);
+          }}
+          title="Entrar em contato"
+          description="Conte um pouco sobre seu projeto ou envie uma dúvida. Retornamos em até 24h."
+        >
+          <GenericCreateForm
+            schema={contactSchema}
+            fieldConfig={contactFieldConfig}
+            submitLabel="Enviar mensagem"
+            onCancel={()=>{
+              setContact(false);
+            }}
+            onSubmit={async (data) => {
+              return await createContact(data);
+            }}
+            onSuccess={() => {
+              setContact(false);
+              toast("Mensagem enviada!")
+            }}
+          />
+        </Modal>
+      </div>
+    );
+  }

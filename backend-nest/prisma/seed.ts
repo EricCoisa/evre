@@ -220,6 +220,20 @@ async function main() {
     },
   });
 
+  const contactRoute = await prisma.route.upsert({
+    where: { path: '/contact' },
+    update: {},
+    create: {
+      path: '/contact',
+      labelKey: 'ROUTE_CONTACT',
+      icon: 'Contact',
+      ordem: 8,
+      isHome: false,
+      isActive: true,
+    },
+  });
+  
+
   // const systemConfigurationRoute = await prisma.route.upsert({
   //   where: { path: '/systemConfiguration' },
   //   update: {},
@@ -248,6 +262,7 @@ async function main() {
     { roleId: 'ADMIN' as const, routeId: companyRoute.id },
     { roleId: 'ADMIN' as const, routeId: proposalRoute.id },
     { roleId: 'ADMIN' as const, routeId: projectRoute.id },
+    { roleId: 'ADMIN' as const, routeId: contactRoute.id },
     // { roleId: 'ADMIN' as const, routeId: systemConfigurationRoute.id },
   ];
 
@@ -273,6 +288,7 @@ async function main() {
     { roleId: 'MODERATOR' as const, routeId: companyRoute.id },
     { roleId: 'MODERATOR' as const, routeId: proposalRoute.id },
     { roleId: 'MODERATOR' as const, routeId: projectRoute.id },
+    { roleId: 'MODERATOR' as const, routeId: contactRoute.id },
   ];
 
   for (const access of moderatorRoleAccesses) {
@@ -317,6 +333,7 @@ async function main() {
     { userId: adminUser.id, routeId: companyRoute.id },
     { userId: adminUser.id, routeId: proposalRoute.id },
     { userId: adminUser.id, routeId: projectRoute.id },
+    { userId: adminUser.id, routeId: contactRoute.id },
     // { userId: adminUser.id, routeId: systemConfigurationRoute.id },
   ];
 
@@ -414,6 +431,16 @@ async function main() {
       valueType: 'String',
       value:
         '[{"content":"Aqui é a Home","selectorId":"tour-nav-0","position":"right"},{"content":"Aqui é a DashBoard","selectorId":"tour-nav-1","position":"right"},{"content":"Aqui são os Acessos","selectorId":"tour-nav-3","position":"right"}]',
+    },
+  });
+
+  await prisma.systemConfiguration.upsert({
+    where: { labelKey: 'SYSTEMCONFIG_CONTACT_EMAIL' },
+    update: {},
+    create: {
+      labelKey: 'SYSTEMCONFIG_CONTACT_EMAIL',
+      valueType: 'string',
+      value: 'contact@evre.com.br',
     },
   });
 
