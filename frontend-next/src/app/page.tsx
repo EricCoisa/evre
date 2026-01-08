@@ -1,285 +1,427 @@
 'use client';
 
-import Link from 'next/link';
+import { motion, useInView } from 'motion/react';
 import { Button } from '@/components/ui/button';
-import { useTranslation } from '@/hooks/use-translation';
+import { ArrowRight } from 'lucide-react';
+import { useRef } from 'react';
 
-export default function Home() {
-  const { t } = useTranslation();
+// Componente de Seção com Animação Sutil
+function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-80px" });
 
   return (
-    <div className="flex min-h-screen flex-col">
-      {/* Header */}
-        <header className="border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-50">
-        <div className="container mx-auto flex h-16 items-center justify-between px-6">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl flex items-center justify-center">
-              <span className="text-sm font-bold text-white">E</span>
-            </div>
-            <span className="text-xl font-bold text-foreground">EVRE</span>
-          </div>
-          <Link href="/login">
-              <Button>
-              {t('login')}
-            </Button>
-          </Link>
-        </div>
-      </header>
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 24 }}
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+      transition={{ duration: 0.5, delay, ease: [0.21, 0.47, 0.32, 0.98] }}
+    >
+      {children}
+    </motion.div>
+  );
+}
 
+export default function EvrePage() {
+  return (
+    <div className="min-h-screen bg-neutral-50 antialiased">
+      
       {/* Hero Section */}
-      <main className="flex flex-1 flex-col">
-        <section className="flex flex-1 items-center justify-center  from-background via-background to-primary/5 px-6 py-24">
-          <div className="text-center">
-            <div className="mb-8 inline-flex items-center rounded-full bg-primary/10 border border-primary/20 px-6 py-2 text-sm font-medium text-primary">
-              ✨ Template Moderno e Seguro
-            </div>
-
-            <h1 className="mb-8 text-5xl font-bold tracking-tight text-foreground sm:text-7xl lg:text-8xl ">
-              Comece seu projeto com velocidade e qualidade
-            </h1>
-
-            <p className="mb-12 text-xl leading-relaxed text-muted-foreground max-w-3xl mx-auto">
-              Template profissional com Next.js 15, autenticação JWT segura,
-              componentes modernos e as melhores práticas de desenvolvimento.
-              Pronto para produção.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/login">
-                  <Button size="lg" className="text-base px-8 py-3">
-                  Começar Agora
+      <section className="border-b border-neutral-200">
+        <div className="max-w-6xl mx-auto px-6 lg:px-8 py-32 md:py-40">
+          <div className="max-w-3xl">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: [0.21, 0.47, 0.32, 0.98] }}
+            >
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-medium text-neutral-900 leading-[1.1] tracking-tight mb-8">
+                Desenvolvemos software<br />sob medida para o<br />seu negócio
+              </h1>
+            </motion.div>
+            
+            <motion.p 
+              className="text-xl md:text-2xl text-neutral-600 leading-relaxed mb-12 max-w-2xl"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1, ease: [0.21, 0.47, 0.32, 0.98] }}
+            >
+              Somos uma fábrica de software focada em criar sistemas robustos, escaláveis e fáceis de manter. 
+              Trabalhamos com startups, empresas de médio porte e times que precisam tirar ideias do papel.
+            </motion.p>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2, ease: [0.21, 0.47, 0.32, 0.98] }}
+            >
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Button 
+                  size="lg" 
+                  className="text-base px-8 py-6 bg-neutral-900 hover:bg-neutral-800 text-white transition-all hover:shadow-lg"
+                >
+                  Agendar uma conversa
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
-              </Link>
-              <Link href="#features">
-                <Button size="lg" variant="outline" className="text-base px-8 py-3 border-2">
-                  Saiba Mais
-                </Button>
-              </Link>
-            </div>
+              </motion.div>
+              
+              <p className="text-sm text-neutral-500 mt-4">
+                Respondemos em até 24 horas
+              </p>
+            </motion.div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Features Section */}
-        <section id="features" className="border-t border-border bg-card/30 backdrop-blur-sm px-6 py-24">
-          <div>
-            <div className="mb-16 text-center ">
-              <h2 className="mb-6 text-4xl font-bold text-foreground tracking-tight">
-                Recursos Incluídos
+      {/* Sobre a EVRE */}
+      <section className="border-b border-neutral-200 bg-white">
+        <div className="max-w-6xl mx-auto px-6 lg:px-8 py-24 md:py-32">
+          <FadeIn>
+            <div className="max-w-3xl mb-20">
+              <h2 className="text-3xl md:text-4xl font-medium text-neutral-900 mb-6">
+                Não trabalhamos com teatro ágil ou promessas vazias
               </h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Tudo que você precisa para começar rapidamente com qualidade profissional
+              <p className="text-lg text-neutral-600 leading-relaxed">
+                Construímos software que resolve problemas reais. Não vendemos buzzwords — 
+                vendemos código limpo, arquitetura sólida e entregas consistentes.
               </p>
             </div>
+          </FadeIn>
 
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {/* Feature 1 */}
-              <div className="rounded-xl border border-border bg-card p-8">
-                <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 ">
-                  <svg
-                    className="h-7 w-7 text-primary"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                    />
-                  </svg>
+          <div className="grid md:grid-cols-3 gap-6">
+            <FadeIn delay={0.1}>
+              <motion.div 
+                className="bg-neutral-50 border border-neutral-200 rounded-2xl p-8 hover:bg-white hover:border-neutral-300 hover:shadow-lg transition-all duration-300"
+                whileHover={{ y: -4 }}
+              >
+                <div className="w-12 h-12 bg-neutral-900 rounded-xl flex items-center justify-center mb-6">
+                  <div className="text-white text-xl font-bold">01</div>
                 </div>
-                <h3 className="mb-3 text-xl font-semibold text-foreground transition-colors duration-200 group-hover:text-primary">
-                  Segurança em Primeiro Lugar
+                <h3 className="text-xl font-medium text-neutral-900 mb-4">
+                  Como pensamos
                 </h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Autenticação JWT com HttpOnly cookies, proteção contra XSS,
-                  CSRF, timing attacks e rate limiting.
+                <p className="text-neutral-600 leading-relaxed">
+                  Software é investimento, não custo. Acreditamos em ciclos curtos, 
+                  feedback constante e evolução incremental. Nada de big bang.
                 </p>
-              </div>
+              </motion.div>
+            </FadeIn>
 
-              {/* Feature 2 */}
-              <div className="group rounded-xl border border-border bg-card p-8 shadow-sm hover:shadow-md transition-all duration-300 hover:border-primary/20">
-                <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 group-hover:bg-primary/20 transition-colors">
-                  <svg
-                    className="h-7 w-7 text-primary"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 10V3L4 14h7v7l9-11h-7z"
-                    />
-                  </svg>
+            <FadeIn delay={0.2}>
+              <motion.div 
+                className="bg-neutral-50 border border-neutral-200 rounded-2xl p-8 hover:bg-white hover:border-neutral-300 hover:shadow-lg transition-all duration-300"
+                whileHover={{ y: -4 }}
+              >
+                <div className="w-12 h-12 bg-neutral-900 rounded-xl flex items-center justify-center mb-6">
+                  <div className="text-white text-xl font-bold">02</div>
                 </div>
-                <h3 className="mb-3 text-xl font-semibold text-foreground group-hover:text-primary transition-colors">
-                  Performance Otimizada
+                <h3 className="text-xl font-medium text-neutral-900 mb-4">
+                  O que nos diferencia
                 </h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Next.js 15 com App Router, SSR, componentes React otimizados e
-                  cache inteligente para máxima velocidade.
+                <p className="text-neutral-600 leading-relaxed">
+                  Não terceirizamos a cabeça. Todo código sai daqui. Todo questionamento técnico 
+                  é respondido por quem está no projeto.
                 </p>
-              </div>
+              </motion.div>
+            </FadeIn>
 
-              {/* Feature 3 */}
-              <div className="group rounded-xl border border-border bg-card p-8 shadow-sm hover:shadow-md transition-all duration-300 hover:border-primary/20">
-                <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 group-hover:bg-primary/20 transition-colors">
-                  <svg
-                    className="h-7 w-7 text-primary"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
-                    />
-                  </svg>
+            <FadeIn delay={0.3}>
+              <motion.div 
+                className="bg-neutral-50 border border-neutral-200 rounded-2xl p-8 hover:bg-white hover:border-neutral-300 hover:shadow-lg transition-all duration-300"
+                whileHover={{ y: -4 }}
+              >
+                <div className="w-12 h-12 bg-neutral-900 rounded-xl flex items-center justify-center mb-6">
+                  <div className="text-white text-xl font-bold">03</div>
                 </div>
-                <h3 className="mb-3 text-xl font-semibold text-foreground group-hover:text-primary transition-colors">
-                  Design System Completo
+                <h3 className="text-xl font-medium text-neutral-900 mb-4">
+                  Stack principal
                 </h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  shadcn/ui, Tailwind CSS, componentes acessíveis e responsivos
-                  prontos para uso profissional.
+                <p className="text-neutral-600 leading-relaxed">
+                  TypeScript, React, Node.js, PostgreSQL, AWS. Tecnologias maduras, comunidade ativa, mercado consolidado.
                 </p>
-              </div>
-
-              {/* Feature 4 */}
-              <div className="rounded-lg border border-border bg-card p-6">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
-                  <svg
-                    className="h-6 w-6 text-primary"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="mb-2 text-xl font-semibold text-foreground">
-                  TypeScript Strict
-                </h3>
-                <p className="text-muted-foreground">
-                  100% tipado com TypeScript, validação com Zod, e ESLint
-                  configurado para qualidade de código.
-                </p>
-              </div>
-
-              {/* Feature 5 */}
-              <div className="rounded-lg border border-border bg-card p-6">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
-                  <svg
-                    className="h-6 w-6 text-primary"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="mb-2 text-xl font-semibold text-foreground">
-                  Backend Integrado
-                </h3>
-                <p className="text-muted-foreground">
-                  API NestJS com PostgreSQL, Prisma ORM, i18n e documentação
-                  Swagger automática.
-                </p>
-              </div>
-
-              {/* Feature 6 */}
-              <div className="rounded-lg border border-border bg-card p-6">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
-                  <svg
-                    className="h-6 w-6 text-primary"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="mb-2 text-xl font-semibold text-foreground">
-                  Pronto para Produção
-                </h3>
-                <p className="text-muted-foreground">
-                  Logging, error handling, health checks, migrations e deploy
-                  configurations incluídas.
-                </p>
-              </div>
-            </div>
+              </motion.div>
+            </FadeIn>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Tech Stack Section */}
-        <section className="border-t border-border bg-muted/30 px-4 py-20">
-          <div className="mx-auto max-w-6xl text-center">
-            <h2 className="mb-4 text-3xl font-bold text-foreground">
-              Stack Tecnológica
+      {/* Serviços */}
+      <section className="border-b border-neutral-200">
+        <div className="max-w-6xl mx-auto px-6 lg:px-8 py-24 md:py-32">
+          <FadeIn>
+            <h2 className="text-3xl md:text-4xl font-medium text-neutral-900 mb-20">
+              O que entregamos
             </h2>
-            <p className="mb-12 text-muted-foreground">
-              Construído com as melhores tecnologias do mercado
-            </p>
+          </FadeIn>
 
-            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-lg bg-card p-6 shadow-sm">
-                <div className="mb-3 text-4xl">⚛️</div>
-                <h3 className="mb-1 font-semibold text-foreground">Next.js 15</h3>
-                <p className="text-sm text-muted-foreground">App Router + SSR</p>
-              </div>
-              <div className="rounded-lg bg-card p-6 shadow-sm">
-                <div className="mb-3 text-4xl">🎨</div>
-                <h3 className="mb-1 font-semibold text-foreground">
-                  Tailwind CSS
+          <div className="grid md:grid-cols-3 gap-6">
+            <FadeIn delay={0.1}>
+              <motion.div 
+                className="bg-white border border-neutral-200 rounded-2xl p-8 hover:border-neutral-900 hover:shadow-xl transition-all duration-300 group"
+                whileHover={{ y: -6 }}
+              >
+                <div className="text-5xl font-bold text-neutral-200 group-hover:text-neutral-300 transition-colors mb-6">01</div>
+                <h3 className="text-2xl font-medium text-neutral-900 mb-4">
+                  Desenvolvimento web & mobile
                 </h3>
-                <p className="text-sm text-muted-foreground">Utility-first CSS</p>
-              </div>
-              <div className="rounded-lg bg-card p-6 shadow-sm">
-                <div className="mb-3 text-4xl">🚀</div>
-                <h3 className="mb-1 font-semibold text-foreground">NestJS</h3>
-                <p className="text-sm text-muted-foreground">Backend Framework</p>
-              </div>
-              <div className="rounded-lg bg-card p-6 shadow-sm">
-                <div className="mb-3 text-4xl">🐘</div>
-                <h3 className="mb-1 font-semibold text-foreground">PostgreSQL</h3>
-                <p className="text-sm text-muted-foreground">Database + Prisma</p>
+                <p className="text-neutral-600 leading-relaxed mb-6">
+                  Sistemas personalizados, plataformas internas, painéis administrativos, 
+                  integrações complexas.
+                </p>
+                <p className="text-sm text-neutral-500">
+                  Arquitetura escalável · Código documentado · Testes automatizados
+                </p>
+              </motion.div>
+            </FadeIn>
+
+            <FadeIn delay={0.2}>
+              <motion.div 
+                className="bg-white border border-neutral-200 rounded-2xl p-8 hover:border-neutral-900 hover:shadow-xl transition-all duration-300 group"
+                whileHover={{ y: -6 }}
+              >
+                <div className="text-5xl font-bold text-neutral-200 group-hover:text-neutral-300 transition-colors mb-6">02</div>
+                <h3 className="text-2xl font-medium text-neutral-900 mb-4">
+                  MVPs e validação rápida
+                </h3>
+                <p className="text-neutral-600 leading-relaxed mb-6">
+                  Precisa testar uma ideia com usuários reais em semanas, não meses? 
+                  A gente já fez isso dezenas de vezes.
+                </p>
+                <p className="text-sm text-neutral-500">
+                  Entrega rápida · Código escalável · Validação com usuários
+                </p>
+              </motion.div>
+            </FadeIn>
+
+            <FadeIn delay={0.3}>
+              <motion.div 
+                className="bg-white border border-neutral-200 rounded-2xl p-8 hover:border-neutral-900 hover:shadow-xl transition-all duration-300 group"
+                whileHover={{ y: -6 }}
+              >
+                <div className="text-5xl font-bold text-neutral-200 group-hover:text-neutral-300 transition-colors mb-6">03</div>
+                <h3 className="text-2xl font-medium text-neutral-900 mb-4">
+                  Manutenção e evolução
+                </h3>
+                <p className="text-neutral-600 leading-relaxed mb-6">
+                  Software não é projeto — é produto. Assumimos projetos legados, 
+                  refatoramos código antigo e oferecemos suporte contínuo.
+                </p>
+                <p className="text-sm text-neutral-500">
+                  Suporte contínuo · Refatoração · Otimização de performance
+                </p>
+              </motion.div>
+            </FadeIn>
+          </div>
+        </div>
+      </section>
+
+      {/* Como Trabalhamos */}
+      <section className="border-b border-neutral-200">
+        <div className="max-w-6xl mx-auto px-6 lg:px-8 py-24 md:py-32">
+          <FadeIn>
+            <h2 className="text-3xl md:text-4xl font-medium text-neutral-900 mb-20">
+              Como trabalhamos
+            </h2>
+          </FadeIn>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <FadeIn delay={0.1}>
+              <motion.div 
+                className="bg-white border border-neutral-200 rounded-2xl p-8 hover:border-neutral-300 hover:shadow-lg transition-all duration-300"
+                whileHover={{ x: 4 }}
+              >
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-10 h-10 bg-neutral-900 rounded-lg flex items-center justify-center text-white font-medium text-sm">
+                    01
+                  </div>
+                  <h3 className="text-xl font-medium text-neutral-900">
+                    Entendimento e escopo
+                  </h3>
+                </div>
+                <p className="text-neutral-600 leading-relaxed">
+                  Primeiro, a gente precisa entender o problema de verdade. Não só o que você quer 
+                  construir — por que você quer construir. Definimos escopo realista, prazos honestos 
+                  e métricas de sucesso.
+                </p>
+              </motion.div>
+            </FadeIn>
+
+            <FadeIn delay={0.2}>
+              <motion.div 
+                className="bg-white border border-neutral-200 rounded-2xl p-8 hover:border-neutral-300 hover:shadow-lg transition-all duration-300"
+                whileHover={{ x: 4 }}
+              >
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-10 h-10 bg-neutral-900 rounded-lg flex items-center justify-center text-white font-medium text-sm">
+                    02
+                  </div>
+                  <h3 className="text-xl font-medium text-neutral-900">
+                    Arquitetura e planejamento técnico
+                  </h3>
+                </div>
+                <p className="text-neutral-600 leading-relaxed">
+                  Antes de escrever código, desenhamos a estrutura. Escolhemos tecnologias, 
+                  definimos integrações, planejamos deploy e escalabilidade. Você valida tudo 
+                  antes de começar.
+                </p>
+              </motion.div>
+            </FadeIn>
+
+            <FadeIn delay={0.3}>
+              <motion.div 
+                className="bg-white border border-neutral-200 rounded-2xl p-8 hover:border-neutral-300 hover:shadow-lg transition-all duration-300"
+                whileHover={{ x: 4 }}
+              >
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-10 h-10 bg-neutral-900 rounded-lg flex items-center justify-center text-white font-medium text-sm">
+                    03
+                  </div>
+                  <h3 className="text-xl font-medium text-neutral-900">
+                    Desenvolvimento em ciclos curtos
+                  </h3>
+                </div>
+                <p className="text-neutral-600 leading-relaxed">
+                  Trabalhamos em sprints de 1-2 semanas. Você acompanha o progresso em tempo real, 
+                  testa funcionalidades prontas e dá feedback constante. Sem caixas-pretas.
+                </p>
+              </motion.div>
+            </FadeIn>
+
+            <FadeIn delay={0.4}>
+              <motion.div 
+                className="bg-white border border-neutral-200 rounded-2xl p-8 hover:border-neutral-300 hover:shadow-lg transition-all duration-300"
+                whileHover={{ x: 4 }}
+              >
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-10 h-10 bg-neutral-900 rounded-lg flex items-center justify-center text-white font-medium text-sm">
+                    04
+                  </div>
+                  <h3 className="text-xl font-medium text-neutral-900">
+                    Deploy e evolução contínua
+                  </h3>
+                </div>
+                <p className="text-neutral-600 leading-relaxed">
+                  Depois do go-live, o trabalho não acaba. Monitoramos, ajustamos, evoluímos. 
+                  Você decide se quer suporte pontual ou uma parceria contínua.
+                </p>
+              </motion.div>
+            </FadeIn>
+          </div>
+        </div>
+      </section>
+
+      {/* Cases / Social Proof */}
+      <section className="border-b border-neutral-200 bg-white">
+        <div className="max-w-6xl mx-auto px-6 lg:px-8 py-24 md:py-32">
+          <FadeIn>
+            <div className="max-w-3xl">
+              <h2 className="text-3xl md:text-4xl font-medium text-neutral-900 mb-12">
+                Já ajudamos times a lançar produtos, validar MVPs e escalar plataformas
+              </h2>
+              <p className="text-lg text-neutral-600 leading-relaxed mb-12">
+                Trabalhamos com startups em estágio inicial, empresas de médio porte e times internos 
+                que precisam de reforço técnico. Cada projeto é diferente — mas a abordagem é a mesma: 
+                clareza, código sólido e entregas consistentes.
+              </p>
+              <div className="flex items-center gap-12 text-sm text-neutral-500">
+                <div>
+                  <div className="text-3xl font-medium text-neutral-900 mb-2">30+</div>
+                  <div>Projetos entregues</div>
+                </div>
+                <div>
+                  <div className="text-3xl font-medium text-neutral-900 mb-2">100%</div>
+                  <div>Código próprio</div>
+                </div>
+         
               </div>
             </div>
-          </div>
-        </section>
-      </main>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* CTA Final */}
+      <section className="bg-neutral-900 text-white">
+        <div className="max-w-6xl mx-auto px-6 lg:px-8 py-24 md:py-32">
+          <FadeIn>
+            <div className="max-w-2xl">
+              <h2 className="text-3xl md:text-4xl font-medium mb-8">
+                Vamos conversar sobre o seu projeto
+              </h2>
+              
+              <p className="text-xl text-neutral-400 leading-relaxed mb-12">
+                Agende 30 minutos com a gente. Sem compromisso, sem discurso de vendas. 
+                Só uma conversa direta sobre o que você precisa construir.
+              </p>
+              
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Button 
+                  size="lg" 
+                  className="text-base px-8 py-6 bg-white hover:bg-neutral-100 text-neutral-900 transition-all hover:shadow-xl mb-6"
+                >
+                  Agendar conversa
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </motion.div>
+
+              <p className="text-sm text-neutral-500">
+                Ou mande um e-mail direto:{' '}
+                <a href="mailto:contato@evre.com.br" className="text-white hover:text-neutral-300 underline transition-colors">
+                  contato@evre.com.br
+                </a>
+              </p>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-muted/30">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <div className="flex items-center gap-2">
-              <div className="h-6 w-6 rounded bg-linear-to-br from-blue-600 to-cyan-600" />
-              <span className="font-semibold text-foreground">Template Base</span>
+      <footer className="bg-neutral-900 border-t border-neutral-800 text-neutral-500">
+        <div className="max-w-6xl mx-auto px-6 lg:px-8 py-12">
+          <div className="grid md:grid-cols-4 gap-12 mb-12">
+            <div>
+              <div className="text-lg font-medium text-white mb-4">EVRE</div>
+              <p className="text-sm leading-relaxed">
+                Fábrica de software sob medida
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} - Template
-            </p>
+            
+            <div>
+              <h4 className="text-sm font-medium text-white mb-4">Serviços</h4>
+              <ul className="space-y-2 text-sm">
+                <li><a href="#" className="hover:text-white transition-colors">Desenvolvimento web</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">MVPs</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Manutenção</a></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="text-sm font-medium text-white mb-4">Empresa</h4>
+              <ul className="space-y-2 text-sm">
+                <li><a href="#" className="hover:text-white transition-colors">Sobre nós</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Como trabalhamos</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Contato</a></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="text-sm font-medium text-white mb-4">Contato</h4>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <a href="mailto:contato@evre.com.br" className="hover:text-white transition-colors">
+                    contato@evre.com.br
+                  </a>
+                </li>
+                <li>
+                  <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                    LinkedIn
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="border-t border-neutral-800 pt-8 text-sm text-center">
+            <p>© 2026 EVRE — Todos os direitos reservados</p>
           </div>
         </div>
       </footer>
