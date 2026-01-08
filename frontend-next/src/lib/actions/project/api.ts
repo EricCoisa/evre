@@ -10,9 +10,11 @@ import type {
   Stage,
   CreateStageDto,
   UpdateStageDto,
+  ReorderStagesDto,
   Activity,
   CreateActivityDto,
   UpdateActivityDto,
+  MoveActivityDto,
   Comment,
   CreateCommentDto,
   Approval,
@@ -84,6 +86,12 @@ export async function deleteStage(
   return await DELETE<{ status: boolean; message: string }>(`/stage/${id}`);
 }
 
+export async function reorderStages(
+  data: ReorderStagesDto,
+): Promise<ApiResponse<{ status: boolean; message: string }>> {
+  return await PATCH<{ status: boolean; message: string }>('/stage/reorder', data);
+}
+
 // Activity API
 export async function getActivities(
   params?: PaginationParams,
@@ -114,6 +122,12 @@ export async function deleteActivity(
   id: string,
 ): Promise<ApiResponse<{ status: boolean; message: string }>> {
   return await DELETE<{ status: boolean; message: string }>(`/activity/${id}`);
+}
+
+export async function moveActivity(
+  data: MoveActivityDto,
+): Promise<ApiResponse<{ status: boolean; message: string }>> {
+  return await PATCH<{ status: boolean; message: string }>('/activity/move', data);
 }
 
 // Comment API

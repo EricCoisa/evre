@@ -41,11 +41,18 @@ export class StageService implements IBaseService<
       );
     }
 
+    // Calcula o próximo order (ignora o valor enviado)
+    const lastStage = await this.prisma.stage.findFirst({
+      where: { projectId: createStageDto.projectId },
+      orderBy: { order: 'desc' },
+    });
+    const nextOrder = lastStage ? lastStage.order + 1 : 1;
+
     const stage = await this.prisma.stage.create({
       data: {
         projectId: createStageDto.projectId,
         name: createStageDto.name,
-        order: createStageDto.order,
+        order: nextOrder,
         status: createStageDto.status || '',
       },
     });
@@ -64,6 +71,20 @@ export class StageService implements IBaseService<
       },
       performedById,
     );
+
+    // Registra no histórico do projeto
+    await this.prisma.projectHistory.create({
+      data: {
+        projectId: stage.projectId,
+        type: 'STAGE_CREATED',
+        payload: JSON.stringify({
+          stageId: stage.id,
+          name: stage.name,
+          order: stage.order,
+          performedById,
+        }),
+      },
+    });
 
     return this.mapToDto(stage);
   }
@@ -170,6 +191,20 @@ export class StageService implements IBaseService<
       performedById,
     );
 
+    // Registra no histórico do projeto
+    await this.prisma.projectHistory.create({
+      data: {
+        projectId: stage.projectId,
+        type: 'STAGE_UPDATED',
+        payload: JSON.stringify({
+          stageId: stage.id,
+          name: stage.name,
+          changes: updateStageDto,
+          performedById,
+        }),
+      },
+    });
+
     return this.mapToDto(stage);
   }
 
@@ -191,6 +226,19 @@ export class StageService implements IBaseService<
       where: { id },
     });
 
+    // Reorganiza order das stages restantes no mesmo projeto
+    const remainingStages = await this.prisma.stage.findMany({
+      where: { projectId: existing.projectId },
+      orderBy: { order: 'asc' },
+    });
+
+    for (let i = 0; i < remainingStages.length; i++) {
+      await this.prisma.stage.update({
+        where: { id: remainingStages[i].id },
+        data: { order: i + 1 },
+      });
+    }
+
     // Log da ação
     await this.loggingService.create(
       {
@@ -205,6 +253,19 @@ export class StageService implements IBaseService<
       performedById,
     );
 
+    // Registra no histórico do projeto
+    await this.prisma.projectHistory.create({
+      data: {
+        projectId: existing.projectId,
+        type: 'STAGE_DELETED',
+        payload: JSON.stringify({
+          stageId: existing.id,
+          name: existing.name,
+          performedById,
+        }),
+      },
+    });
+
     return {
       status: true,
       message:
@@ -214,5 +275,68 @@ export class StageService implements IBaseService<
 
   private mapToDto(stage: Stage): StageDto {
     return new StageDto(stage);
+  }
+
+  async reorder(
+    stages: Array<{ stageId: string; order: number }>,
+    performedById: string,
+  ): Promise<{ status: boolean; message: string }> {
+    if (stages.length === 0) {
+      throw new NotFoundException('No stages provided');
+    }
+
+    // Valida que todas as stages existem e pertencem ao mesmo projeto
+    const stageIds = stages.map((s) => s.stageId);
+    const existingStages = await this.prisma.stage.findMany({
+      where: { id: { in: stageIds } },
+    });
+
+    if (existingStages.length !== stages.length) {
+      throw new NotFoundException('One or more stages not found');
+    }
+
+    const projectIds = [...new Set(existingStages.map((s) => s.projectId))];
+    if (projectIds.length !== 1) {
+      throw new NotFoundException('All stages must belong to the same project');
+    }
+
+    // Atualiza order de cada stage
+    for (const stageData of stages) {
+      await this.prisma.stage.update({
+        where: { id: stageData.stageId },
+        data: { order: stageData.order },
+      });
+    }
+
+    // Log da ação
+    await this.loggingService.create(
+      {
+        module: 'STAGE',
+        action: LogActions.UPDATE,
+        message: 'Stages reordered',
+        metadata: {
+          projectId: projectIds[0],
+          stages: stages,
+        },
+      },
+      performedById,
+    );
+
+    // Registra no histórico do projeto
+    await this.prisma.projectHistory.create({
+      data: {
+        projectId: projectIds[0],
+        type: 'STAGE_REORDERED',
+        payload: JSON.stringify({
+          stages: stages.map((s) => ({ stageId: s.stageId, order: s.order })),
+          performedById,
+        }),
+      },
+    });
+
+    return {
+      status: true,
+      message: 'Stages reordered successfully',
+    };
   }
 }

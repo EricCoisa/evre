@@ -55,6 +55,13 @@ export interface UpdateStageDto {
   status?: string;
 }
 
+export interface ReorderStagesDto {
+  stages: Array<{
+    stageId: string;
+    order: number;
+  }>;
+}
+
 // Activity Types
 export interface Activity {
   id: string;
@@ -79,6 +86,11 @@ export interface UpdateActivityDto {
   title?: string;
   description?: string;
   status?: ActivityStatus;
+}
+
+export interface MoveActivityDto {
+  activityId: string;
+  targetStageId: string;
 }
 
 export const ActivityStatusColors = {
@@ -145,7 +157,18 @@ export interface ProjectHistory {
   createdAt: string;
 }
 
-export type ProjectHistoryType = 'STATUS_CHANGE' | 'COMMENT' | 'APPROVAL';
+export type ProjectHistoryType = 
+  | 'STATUS_CHANGE' 
+  | 'COMMENT' 
+  | 'APPROVAL' 
+  | 'STAGE_CREATED' 
+  | 'STAGE_UPDATED' 
+  | 'STAGE_DELETED' 
+  | 'STAGE_REORDERED' 
+  | 'ACTIVITY_CREATED' 
+  | 'ACTIVITY_UPDATED' 
+  | 'ACTIVITY_DELETED' 
+  | 'ACTIVITY_MOVED';
 
 // With Relations
 export interface ProjectWithDetails extends Project {

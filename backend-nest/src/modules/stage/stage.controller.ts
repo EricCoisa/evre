@@ -4,6 +4,8 @@ import { StageService } from './stage.service';
 import { CreateStageDto } from './dto/create-stage.dto';
 import { UpdateStageDto } from './dto/update-stage.dto';
 import { StageDto } from './dto/stage.dto';
+import { ReorderStagesDto } from './dto/reorder-stages.dto';
+import { StatusResponseDto } from '../../common/schemas/status-response.dto';
 import {
   GetApi,
   PostApi,
@@ -149,5 +151,29 @@ export class StageController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<void> {
     await this.stageService.remove(user.id, id);
+  }
+
+  @PatchApi({
+    path: 'reorder',
+    summary: 'Reorder stages',
+    description: 'Reorders stages within a project',
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Stages reordered successfully',
+          schema: { dto: StatusResponseDto },
+        },
+      ],
+    },
+    authenticated: true,
+    roles: ['ADMIN'],
+  })
+  @Roles('ADMIN')
+  async reorder(
+    @Body() reorderDto: ReorderStagesDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ status: boolean; message: string }> {
+    return this.stageService.reorder(reorderDto.stages, user.id);
   }
 }

@@ -9,10 +9,12 @@ import {
   createStage,
   updateStage,
   deleteStage,
+  reorderStages,
   getActivities,
   createActivity,
   updateActivity,
   deleteActivity,
+  moveActivity,
   getCommentsByEntity,
   createComment,
   deleteComment,
@@ -26,8 +28,10 @@ import type {
   UpdateProjectDto,
   CreateStageDto,
   UpdateStageDto,
+  ReorderStagesDto,
   CreateActivityDto,
   UpdateActivityDto,
+  MoveActivityDto,
   CreateCommentDto,
   CreateApprovalDto,
 } from './types';
@@ -153,6 +157,21 @@ export function useDeleteStage() {
   });
 }
 
+export function useReorderStages() {
+  const queryClient = useQueryClient();
+  const { emulateError } = useApp();
+
+  return useMutation({
+    mutationFn: (data: ReorderStagesDto) => {
+      EmulateMutationError(emulateError, 'Emulated error from useReorderStages');
+      return Alive(() => reorderStages(data))();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['stages'] });
+    },
+  });
+}
+
 // Activity Queries
 export function useActivities(params?: PaginationParams) {
   return useQuery({
@@ -203,6 +222,22 @@ export function useDeleteActivity() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['activities'] });
+    },
+  });
+}
+
+export function useMoveActivity() {
+  const queryClient = useQueryClient();
+  const { emulateError } = useApp();
+
+  return useMutation({
+    mutationFn: (data: MoveActivityDto) => {
+      EmulateMutationError(emulateError, 'Emulated error from useMoveActivity');
+      return Alive(() => moveActivity(data))();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['activities'] });
+      queryClient.invalidateQueries({ queryKey: ['stages'] });
     },
   });
 }

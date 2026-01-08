@@ -63,6 +63,20 @@ export class ActivityService implements IBaseService<
       performedById,
     );
 
+    // Registra no histórico do projeto
+    await this.prisma.projectHistory.create({
+      data: {
+        projectId: stage.projectId,
+        type: 'ACTIVITY_CREATED',
+        payload: JSON.stringify({
+          activityId: activity.id,
+          stageId: activity.stageId,
+          title: activity.title,
+          performedById,
+        }),
+      },
+    });
+
     return this.mapToDto(activity);
   }
 
@@ -176,6 +190,26 @@ export class ActivityService implements IBaseService<
       performedById,
     );
 
+    // Registra no histórico do projeto
+    const stage = await this.prisma.stage.findUnique({
+      where: { id: activity.stageId },
+    });
+
+    if (stage) {
+      await this.prisma.projectHistory.create({
+        data: {
+          projectId: stage.projectId,
+          type: 'ACTIVITY_UPDATED',
+          payload: JSON.stringify({
+            activityId: activity.id,
+            title: activity.title,
+            changes: updateActivityDto,
+            performedById,
+          }),
+        },
+      });
+    }
+
     return this.mapToDto(activity);
   }
 
@@ -210,6 +244,25 @@ export class ActivityService implements IBaseService<
       performedById,
     );
 
+    // Registra no histórico do projeto
+    const stage = await this.prisma.stage.findUnique({
+      where: { id: existing.stageId },
+    });
+
+    if (stage) {
+      await this.prisma.projectHistory.create({
+        data: {
+          projectId: stage.projectId,
+          type: 'ACTIVITY_DELETED',
+          payload: JSON.stringify({
+            activityId: existing.id,
+            title: existing.title,
+            performedById,
+          }),
+        },
+      });
+    }
+
     return {
       status: true,
       message:
@@ -220,5 +273,88 @@ export class ActivityService implements IBaseService<
 
   private mapToDto(activity: Activity): ActivityDto {
     return new ActivityDto(activity);
+  }
+
+  async move(
+    activityId: string,
+    targetStageId: string,
+    performedById: string,
+  ): Promise<{ status: boolean; message: string }> {
+    // Valida que activity existe
+    const activity = await this.prisma.activity.findUnique({
+      where: { id: activityId },
+      include: { stage: true },
+    });
+
+    if (!activity) {
+      throw new NotFoundException(
+        this.i18n.t('activity.errors.not_found') || 'Activity not found',
+      );
+    }
+
+    // Valida que target stage existe
+    const targetStage = await this.prisma.stage.findUnique({
+      where: { id: targetStageId },
+    });
+
+    if (!targetStage) {
+      throw new NotFoundException(
+        this.i18n.t('activity.errors.target_stage_not_found') ||
+          'Target stage not found',
+      );
+    }
+
+    // Valida que ambas stages pertencem ao mesmo projeto
+    if (activity.stage.projectId !== targetStage.projectId) {
+      throw new NotFoundException(
+        'Activity and target stage must belong to the same project',
+      );
+    }
+
+    const oldStageId = activity.stageId;
+    const oldStageName = activity.stage.name;
+
+    // Move a activity
+    await this.prisma.activity.update({
+      where: { id: activityId },
+      data: { stageId: targetStageId },
+    });
+
+    // Log da ação
+    await this.loggingService.create(
+      {
+        module: 'ACTIVITY',
+        action: LogActions.UPDATE,
+        message: `Activity ${activity.title} moved`,
+        metadata: {
+          activityId: activity.id,
+          fromStageId: oldStageId,
+          toStageId: targetStageId,
+        },
+      },
+      performedById,
+    );
+
+    // Registra no histórico do projeto
+    await this.prisma.projectHistory.create({
+      data: {
+        projectId: activity.stage.projectId,
+        type: 'ACTIVITY_MOVED',
+        payload: JSON.stringify({
+          activityId: activity.id,
+          title: activity.title,
+          fromStageId: oldStageId,
+          fromStageName: oldStageName,
+          toStageId: targetStageId,
+          toStageName: targetStage.name,
+          performedById,
+        }),
+      },
+    });
+
+    return {
+      status: true,
+      message: `Activity moved from "${oldStageName}" to "${targetStage.name}"`,
+    };
   }
 }

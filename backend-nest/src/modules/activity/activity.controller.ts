@@ -4,6 +4,8 @@ import { ActivityService } from './activity.service';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
 import { ActivityDto } from './dto/activity.dto';
+import { MoveActivityDto } from './dto/move-activity.dto';
+import { StatusResponseDto } from '../../common/schemas/status-response.dto';
 import {
   GetApi,
   PostApi,
@@ -134,5 +136,34 @@ export class ActivityController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<void> {
     await this.activityService.remove(user.id, id);
+  }
+
+  @PatchApi({
+    path: 'move',
+    summary: 'Move activity to another stage',
+    description:
+      'Moves an activity to a different stage within the same project',
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Activity moved successfully',
+          schema: { dto: StatusResponseDto },
+        },
+      ],
+    },
+    authenticated: true,
+    roles: ['ADMIN'],
+  })
+  @Roles('ADMIN')
+  async move(
+    @Body() moveDto: MoveActivityDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ status: boolean; message: string }> {
+    return this.activityService.move(
+      moveDto.activityId,
+      moveDto.targetStageId,
+      user.id,
+    );
   }
 }
