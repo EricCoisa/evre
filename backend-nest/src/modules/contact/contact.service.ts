@@ -11,17 +11,30 @@ import { EmailService } from '../email/email.service';
 import { SystemConfigurationService } from '../system-configuration/system-configuration.service';
 
 @Injectable()
-export class ContactService implements Omit<IBaseService<Contact, CreateContactDto>, 'update' | 'remove'> {
+export class ContactService implements Omit<
+  IBaseService<Contact, CreateContactDto>,
+  'update' | 'remove'
+> {
   constructor(
     private readonly prisma: PrismaService,
     private emailService: EmailService,
     private systemConfigurationService: SystemConfigurationService,
-  ) { }
+  ) {}
 
-  async findAll(params?: PaginationQuery): Promise<PaginatedResponse<Contact> | Contact[]> {
+  async findAll(
+    params?: PaginationQuery,
+  ): Promise<PaginatedResponse<Contact> | Contact[]> {
     const { page = 1, limit = 10, pagination = true, search } = params || {};
 
-    const where: any = {};
+    const where: {
+      OR?: Array<{
+        name?: { contains: string; mode: 'insensitive' };
+        email?: { contains: string; mode: 'insensitive' };
+        telefone?: { contains: string; mode: 'insensitive' };
+        text?: { contains: string; mode: 'insensitive' };
+      }>;
+    } = {};
+
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
@@ -42,12 +55,22 @@ export class ContactService implements Omit<IBaseService<Contact, CreateContactD
     };
 
     if (!pagination) {
-      return await this.prisma.contact.findMany({ where, select, orderBy: { createdAt: 'desc' } });
+      return await this.prisma.contact.findMany({
+        where,
+        select,
+        orderBy: { createdAt: 'desc' },
+      });
     }
 
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
-      this.prisma.contact.findMany({ where, select, skip, take: limit, orderBy: { createdAt: 'desc' } }),
+      this.prisma.contact.findMany({
+        where,
+        select,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
       this.prisma.contact.count({ where }),
     ]);
     const totalPages = Math.ceil(total / limit);
@@ -92,7 +115,9 @@ export class ContactService implements Omit<IBaseService<Contact, CreateContactD
     });
 
     const emailContact = (
-      await this.systemConfigurationService.findByLabelKey('SYSTEMCONFIG_CONTACT_EMAIL')
+      await this.systemConfigurationService.findByLabelKey(
+        'SYSTEMCONFIG_CONTACT_EMAIL',
+      )
     ).value as string;
 
     if (emailContact) {
