@@ -47,5 +47,6 @@
   "sendProposal": "Send Proposal",
   "contentUpdatedSuccess": "Content updated successfully!",
   "contentUpdatedError": "Error updating content",
-  "nameRequired": "Name is required"
+  "nameRequired": "Name is required",
+  "name": "Name"
 }
