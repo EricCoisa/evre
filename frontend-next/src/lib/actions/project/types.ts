@@ -2,7 +2,6 @@
 export interface Project {
   id: string;
   companyId: string;
-  proposalId: string | null;
   name: string;
   description: string | null;
   status: ProjectStatus;
@@ -14,14 +13,12 @@ export type ProjectStatus = 'PROPOSAL' | 'REQUIREMENTS' | 'DEVELOPMENT' | 'DONE'
 
 export interface CreateProjectDto {
   companyId: string;
-  proposalId?: string;
   name: string;
   description?: string;
   status?: ProjectStatus;
 }
 
 export interface UpdateProjectDto {
-  proposalId?: string;
   name?: string;
   description?: string;
   status?: ProjectStatus;
@@ -91,9 +88,13 @@ export const ActivityStatusColors = {
 };
 
 // Comment Types
+export type CommentEntityType = 'PROJECT' | 'STAGE' | 'ACTIVITY';
+
 export interface Comment {
   id: string;
   projectId: string;
+  entityType: CommentEntityType;
+  entityId: string;
   userId: string;
   content: string;
   createdAt: string;
@@ -101,13 +102,19 @@ export interface Comment {
 
 export interface CreateCommentDto {
   projectId: string;
+  entityType: CommentEntityType;
+  entityId: string;
   content: string;
 }
 
 // Approval Types
+export type ApprovalEntityType = 'STAGE';
+
 export interface Approval {
   id: string;
-  stageId: string;
+  projectId: string;
+  entityType: ApprovalEntityType;
+  entityId: string;
   userId: string;
   status: ApprovalStatus;
   comment: string | null;
@@ -117,7 +124,9 @@ export interface Approval {
 export type ApprovalStatus = 'APPROVED' | 'REJECTED';
 
 export interface CreateApprovalDto {
-  stageId: string;
+  projectId: string;
+  entityType: ApprovalEntityType;
+  entityId: string;
   status: ApprovalStatus;
   comment?: string;
 }

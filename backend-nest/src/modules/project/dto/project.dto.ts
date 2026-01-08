@@ -6,7 +6,6 @@ export class ProjectDto {
     if (!project) return;
     this.id = project.id;
     this.companyId = project.companyId;
-    this.proposalId = project.proposalId;
     this.name = project.name;
     this.description = project.description;
     this.status = project.status;
@@ -25,13 +24,6 @@ export class ProjectDto {
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   companyId: string;
-
-  @ApiProperty({
-    description: 'Proposal identifier (optional)',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-    required: false,
-  })
-  proposalId: string | null;
 
   @ApiProperty({
     description: 'Project name',

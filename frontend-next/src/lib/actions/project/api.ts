@@ -117,10 +117,11 @@ export async function deleteActivity(
 }
 
 // Comment API
-export async function getCommentsByProject(
-  projectId: string,
+export async function getCommentsByEntity(
+  entityType: string,
+  entityId: string,
 ): Promise<ApiResponse<Comment[]>> {
-  return await GET<Comment[]>(`/comment/project/${projectId}`);
+  return await GET<Comment[]>(`/comment/${entityType}/${entityId}`);
 }
 
 export async function createComment(
@@ -136,10 +137,11 @@ export async function deleteComment(
 }
 
 // Approval API
-export async function getApprovalsByStage(
-  stageId: string,
+export async function getApprovalsByEntity(
+  entityType: string,
+  entityId: string,
 ): Promise<ApiResponse<Approval[]>> {
-  return await GET<Approval[]>(`/approval/stage/${stageId}`);
+  return await GET<Approval[]>(`/approval/${entityType}/${entityId}`);
 }
 
 export async function createApproval(

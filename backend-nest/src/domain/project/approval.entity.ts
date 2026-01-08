@@ -9,10 +9,22 @@ export class Approval {
   id: string;
 
   @ApiProperty({
-    description: 'Stage identifier',
+    description: 'Project identifier (context root)',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  stageId: string;
+  projectId: string;
+
+  @ApiProperty({
+    description: 'Entity type (STAGE)',
+    example: 'STAGE',
+  })
+  entityType: string;
+
+  @ApiProperty({
+    description: 'Entity identifier',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  entityId: string;
 
   @ApiProperty({
     description: 'User identifier',

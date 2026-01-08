@@ -52,6 +52,8 @@ export function ProjectDetail({ project, isAdmin = false }: ProjectDetailProps) 
     try {
       await createComment.mutateAsync({
         projectId: project.id,
+        entityType: 'PROJECT',
+        entityId: project.id,
         content: newComment,
       });
 
@@ -71,7 +73,9 @@ export function ProjectDetail({ project, isAdmin = false }: ProjectDetailProps) 
 
     try {
       await createApproval.mutateAsync({
-        stageId: selectedStageForApproval,
+        projectId: project.id,
+        entityType: 'STAGE',
+        entityId: selectedStageForApproval,
         status: approvalStatus,
         comment: approvalComment || undefined,
       });

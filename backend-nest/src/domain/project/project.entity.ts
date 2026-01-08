@@ -15,13 +15,6 @@ export class Project {
   companyId: string;
 
   @ApiProperty({
-    description: 'Proposal identifier (optional)',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-    required: false,
-  })
-  proposalId: string | null;
-
-  @ApiProperty({
     description: 'Project name',
     example: 'E-commerce Platform Development',
   })

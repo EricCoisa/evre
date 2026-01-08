@@ -5,6 +5,7 @@ import { CreateApprovalDto } from './dto/create-approval.dto';
 import { ApprovalDto } from './dto/approval.dto';
 import { LoggingService } from '../logging/logging.service';
 import { LogActions } from 'src/common/types/logging.types';
+import { ApprovalEntityType } from '@prisma/client';
 
 @Injectable()
 export class ApprovalService {
@@ -18,18 +19,39 @@ export class ApprovalService {
     createApprovalDto: CreateApprovalDto,
     userId: string,
   ): Promise<ApprovalDto> {
-    const stage = await this.prisma.stage.findUnique({
-      where: { id: createApprovalDto.stageId },
-      include: { project: true },
+    // Valida se o projeto existe
+    const project = await this.prisma.project.findUnique({
+      where: { id: createApprovalDto.projectId },
     });
-    if (!stage)
+    if (!project)
       throw new NotFoundException(
-        this.i18n.t('approval.errors.stage_not_found') || 'Stage not found',
+        this.i18n.t('approval.errors.project_not_found') || 'Project not found',
       );
+
+    // Valida se a entidade existe baseado no tipo
+    let stageName: string | undefined;
+    if (createApprovalDto.entityType === 'STAGE') {
+      const stage = await this.prisma.stage.findUnique({
+        where: { id: createApprovalDto.entityId },
+      });
+      if (!stage)
+        throw new NotFoundException(
+          this.i18n.t('approval.errors.stage_not_found') || 'Stage not found',
+        );
+      // Valida que a stage pertence ao projeto informado
+      if (stage.projectId !== createApprovalDto.projectId) {
+        throw new NotFoundException(
+          this.i18n.t('approval.errors.project_mismatch') || 'Project mismatch',
+        );
+      }
+      stageName = stage.name;
+    }
 
     const approval = await this.prisma.approval.create({
       data: {
-        stageId: createApprovalDto.stageId,
+        projectId: createApprovalDto.projectId,
+        entityType: createApprovalDto.entityType,
+        entityId: createApprovalDto.entityId,
         userId,
         status: createApprovalDto.status,
         comment: createApprovalDto.comment || null,
@@ -39,12 +61,13 @@ export class ApprovalService {
     // Registra histórico no projeto
     await this.prisma.projectHistory.create({
       data: {
-        projectId: stage.projectId,
+        projectId: createApprovalDto.projectId,
         type: 'APPROVAL',
         payload: JSON.stringify({
           approvalId: approval.id,
-          stageId: stage.id,
-          stageName: stage.name,
+          entityType: approval.entityType,
+          entityId: approval.entityId,
+          stageName,
           userId,
           status: approval.status,
           comment: approval.comment,
@@ -56,8 +79,13 @@ export class ApprovalService {
       {
         module: 'APPROVAL',
         action: LogActions.CREATE,
-        message: `Stage ${stage.name} ${approval.status.toLowerCase()}`,
-        metadata: { approvalId: approval.id },
+        message: `${createApprovalDto.entityType} ${approval.status.toLowerCase()}`,
+        metadata: {
+          approvalId: approval.id,
+          projectId: createApprovalDto.projectId,
+          entityType: createApprovalDto.entityType,
+          entityId: createApprovalDto.entityId,
+        },
       },
       userId,
     );
@@ -65,9 +93,15 @@ export class ApprovalService {
     return new ApprovalDto(approval);
   }
 
-  async findByStage(stageId: string): Promise<ApprovalDto[]> {
+  async findByEntity(
+    entityType: string,
+    entityId: string,
+  ): Promise<ApprovalDto[]> {
     const approvals = await this.prisma.approval.findMany({
-      where: { stageId },
+      where: {
+        entityType: entityType as ApprovalEntityType,
+        entityId,
+      },
       orderBy: { createdAt: 'desc' },
     });
     return approvals.map((a) => new ApprovalDto(a));

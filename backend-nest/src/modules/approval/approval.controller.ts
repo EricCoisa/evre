@@ -35,8 +35,8 @@ export class ApprovalController {
   }
 
   @GetApi({
-    path: 'stage/:stageId',
-    summary: 'Get approvals by stage',
+    path: ':entityType/:entityId',
+    summary: 'Get approvals by entity',
     response: {
       success: [
         {
@@ -48,7 +48,10 @@ export class ApprovalController {
     },
     authenticated: true,
   })
-  async findByStage(@Param('stageId') stageId: string): Promise<ApprovalDto[]> {
-    return this.approvalService.findByStage(stageId);
+  async findByEntity(
+    @Param('entityType') entityType: string,
+    @Param('entityId') entityId: string,
+  ): Promise<ApprovalDto[]> {
+    return this.approvalService.findByEntity(entityType, entityId);
   }
 }

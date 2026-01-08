@@ -8,10 +8,22 @@ export class Comment {
   id: string;
 
   @ApiProperty({
-    description: 'Project identifier',
+    description: 'Project identifier (context root)',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   projectId: string;
+
+  @ApiProperty({
+    description: 'Entity type (PROJECT, STAGE, or ACTIVITY)',
+    example: 'PROJECT',
+  })
+  entityType: string;
+
+  @ApiProperty({
+    description: 'Entity identifier',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  entityId: string;
 
   @ApiProperty({
     description: 'User identifier',

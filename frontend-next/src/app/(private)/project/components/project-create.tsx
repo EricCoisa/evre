@@ -6,7 +6,6 @@ import { z } from 'zod';
 
 import { useCreateProject } from '@/lib/actions/project/queries';
 import { useCompanies } from '@/lib/actions/company/queries';
-import { useProposals } from '@/lib/actions/proposal/queries';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -42,21 +41,14 @@ export function ProjectCreate({ onSuccess }: ProjectCreateProps) {
   const createProject = useCreateProject();
 
   const { data: companiesData } = useCompanies({ pagination: false });
-  const { data: proposalsData } = useProposals({ pagination: false });
 
   const companies = useMemo(() => {
     if (!companiesData) return [];
     return Array.isArray(companiesData) ? companiesData : companiesData.data;
   }, [companiesData]);
 
-  const proposals = useMemo(() => {
-    if (!proposalsData) return [];
-    return Array.isArray(proposalsData) ? proposalsData : proposalsData.data;
-  }, [proposalsData]);
-
   const formSchema = z.object({
     companyId: z.string().min(1, t('companyRequired')),
-    proposalId: z.string().optional(),
     name: z.string().min(1, t('nameRequired')),
     description: z.string().optional(),
     status: z.enum(projectStatuses).optional(),
@@ -66,7 +58,6 @@ export function ProjectCreate({ onSuccess }: ProjectCreateProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       companyId: '',
-      proposalId: '',
       name: '',
       description: '',
       status: 'PROPOSAL',
@@ -78,7 +69,6 @@ export function ProjectCreate({ onSuccess }: ProjectCreateProps) {
       const data = {
         companyId: values.companyId,
         name: values.name,
-        ...(values.proposalId && { proposalId: values.proposalId }),
         ...(values.description && { description: values.description }),
         ...(values.status && { status: values.status }),
       };
@@ -118,32 +108,6 @@ export function ProjectCreate({ onSuccess }: ProjectCreateProps) {
                   {companies.map((company) => (
                     <SelectItem key={company.id} value={company.id}>
                       {company.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="proposalId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('proposal')} (opcional)</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('selectProposal')} />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value=" ">-</SelectItem>
-                  {proposals.map((proposal) => (
-                    <SelectItem key={proposal.id} value={proposal.id}>
-                      {proposal.id}
                     </SelectItem>
                   ))}
                 </SelectContent>

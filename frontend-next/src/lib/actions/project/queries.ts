@@ -13,10 +13,10 @@ import {
   createActivity,
   updateActivity,
   deleteActivity,
-  getCommentsByProject,
+  getCommentsByEntity,
   createComment,
   deleteComment,
-  getApprovalsByStage,
+  getApprovalsByEntity,
   createApproval,
   getHistoryByProject,
 } from './api';
@@ -208,13 +208,18 @@ export function useDeleteActivity() {
 }
 
 // Comment Queries
-export function useCommentsByProject(projectId: string) {
+export function useCommentsByEntity(entityType: string, entityId: string) {
   return useQuery({
-    queryKey: ['comments', projectId],
-    queryFn: Collector(() => getCommentsByProject(projectId)),
-    enabled: !!projectId,
+    queryKey: ['comments', entityType, entityId],
+    queryFn: Collector(() => getCommentsByEntity(entityType, entityId)),
+    enabled: !!entityType && !!entityId,
     ...getQueryConfig('COMMENTS'),
   });
+}
+
+// Compatibilidade: comentários de um projeto
+export function useCommentsByProject(projectId: string) {
+  return useCommentsByEntity('PROJECT', projectId);
 }
 
 export function useCreateComment() {
@@ -227,7 +232,12 @@ export function useCreateComment() {
       return Alive(() => createComment(data))();
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['comments', variables.projectId] });
+      // Invalida cache para a entidade específica
+      queryClient.invalidateQueries({ queryKey: ['comments', variables.entityType, variables.entityId] });
+      // Invalida também cache do projeto (para comentários em PROJECT)
+      if (variables.entityType === 'PROJECT') {
+        queryClient.invalidateQueries({ queryKey: ['comments', 'PROJECT', variables.projectId] });
+      }
     },
   });
 }
@@ -248,13 +258,18 @@ export function useDeleteComment() {
 }
 
 // Approval Queries
-export function useApprovalsByStage(stageId: string) {
+export function useApprovalsByEntity(entityType: string, entityId: string) {
   return useQuery({
-    queryKey: ['approvals', stageId],
-    queryFn: Collector(() => getApprovalsByStage(stageId)),
-    enabled: !!stageId,
+    queryKey: ['approvals', entityType, entityId],
+    queryFn: Collector(() => getApprovalsByEntity(entityType, entityId)),
+    enabled: !!entityType && !!entityId,
     ...getQueryConfig('APPROVALS'),
   });
+}
+
+// Compatibilidade: aprovações de uma stage
+export function useApprovalsByStage(stageId: string) {
+  return useApprovalsByEntity('STAGE', stageId);
 }
 
 export function useCreateApproval() {
@@ -267,7 +282,8 @@ export function useCreateApproval() {
       return Alive(() => createApproval(data))();
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['approvals', variables.stageId] });
+      // Invalida cache para a entidade específica
+      queryClient.invalidateQueries({ queryKey: ['approvals', variables.entityType, variables.entityId] });
     },
   });
 }

@@ -39,8 +39,8 @@ export class CommentController {
   }
 
   @GetApi({
-    path: 'project/:projectId',
-    summary: 'Get comments by project',
+    path: ':entityType/:entityId',
+    summary: 'Get comments by entity',
     response: {
       success: [
         {
@@ -52,10 +52,11 @@ export class CommentController {
     },
     authenticated: true,
   })
-  async findByProject(
-    @Param('projectId') projectId: string,
+  async findByEntity(
+    @Param('entityType') entityType: string,
+    @Param('entityId') entityId: string,
   ): Promise<CommentDto[]> {
-    return this.commentService.findByProject(projectId);
+    return this.commentService.findByEntity(entityType, entityId);
   }
 
   @DeleteApi({

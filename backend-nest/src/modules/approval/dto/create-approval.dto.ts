@@ -4,7 +4,9 @@ import { z } from 'zod';
 
 const CreateApprovalSchema = z
   .object({
-    stageId: z.string().uuid(),
+    projectId: z.string().uuid(),
+    entityType: z.enum(['STAGE']),
+    entityId: z.string().uuid(),
     status: z.enum([
       ApprovalStatusConst.APPROVED,
       ApprovalStatusConst.REJECTED,

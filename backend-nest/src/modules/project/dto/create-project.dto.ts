@@ -5,7 +5,6 @@ import { z } from 'zod';
 const CreateProjectSchema = z
   .object({
     companyId: z.string().uuid(),
-    proposalId: z.string().uuid().optional(),
     name: z.string().min(3).max(255),
     description: z.string().optional(),
     status: z

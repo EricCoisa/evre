@@ -5,7 +5,9 @@ export class ApprovalDto {
   constructor(approval?: Approval) {
     if (!approval) return;
     this.id = approval.id;
-    this.stageId = approval.stageId;
+    this.projectId = approval.projectId;
+    this.entityType = approval.entityType;
+    this.entityId = approval.entityId;
     this.userId = approval.userId;
     this.status = approval.status;
     this.comment = approval.comment;
@@ -19,10 +21,22 @@ export class ApprovalDto {
   id: string;
 
   @ApiProperty({
-    description: 'Stage identifier',
+    description: 'Project identifier (context root)',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  stageId: string;
+  projectId: string;
+
+  @ApiProperty({
+    description: 'Entity type (STAGE)',
+    example: 'STAGE',
+  })
+  entityType: string;
+
+  @ApiProperty({
+    description: 'Entity identifier',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  entityId: string;
 
   @ApiProperty({
     description: 'User identifier',

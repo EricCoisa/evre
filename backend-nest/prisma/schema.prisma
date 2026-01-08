@@ -58,6 +58,16 @@ enum ProjectHistoryType {
   APPROVAL
 }
 
+enum CommentEntityType {
+  PROJECT
+  STAGE
+  ACTIVITY
+}
+
+enum ApprovalEntityType {
+  STAGE
+}
+
 enum LogModule {
   USER
   AUTH
@@ -281,7 +291,6 @@ model Proposal {
 model Project {
   id          String        @id @default(uuid())
   companyId   String
-  proposalId  String?       // Vínculo opcional com Proposal
   name        String
   description String?       @db.Text
   status      ProjectStatus @default(PROPOSAL)
@@ -290,12 +299,12 @@ model Project {
 
   company     Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
   stages      Stage[]
-  comments    Comment[]
   histories   ProjectHistory[]
-  proposals   Proposal[]
+  proposals   Proposal[]       // Um projeto pode ter várias propostas
+  comments    Comment[]
+  approvals   Approval[]
 
   @@index([companyId])
-  @@index([proposalId])
   @@index([status])
   @@map("projects")
 }
@@ -305,13 +314,12 @@ model Stage {
   projectId String
   name      String
   order     Int
-  status    String   // Status informativo (não tem enum específico)
+  status    String   // Texto informativo apenas - NÃO usado para lógica de negócio
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project    Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
   activities Activity[]
-  approvals  Approval[]
 
   @@index([projectId])
   @@index([order])
@@ -335,32 +343,38 @@ model Activity {
 }
 
 model Comment {
-  id        String   @id @default(uuid())
-  projectId String
-  userId    String
-  content   String   @db.Text
-  createdAt DateTime @default(now())
+  id         String            @id @default(uuid())
+  projectId  String            // Contexto raiz obrigatório
+  entityType CommentEntityType // PROJECT, STAGE, ou ACTIVITY
+  entityId   String            // ID da entidade comentada
+  userId     String
+  content    String            @db.Text
+  createdAt  DateTime          @default(now())
 
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project    Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
+  @@index([entityType, entityId])
   @@index([userId])
   @@map("comments")
 }
 
 model Approval {
-  id        String         @id @default(uuid())
-  stageId   String
-  userId    String
-  status    ApprovalStatus
-  comment   String?        @db.Text
-  createdAt DateTime       @default(now())
+  id         String              @id @default(uuid())
+  projectId  String              // Contexto raiz obrigatório
+  entityType ApprovalEntityType  // STAGE (por enquanto)
+  entityId   String              // ID da entidade aprovada
+  userId     String
+  status     ApprovalStatus
+  comment    String?             @db.Text
+  createdAt  DateTime            @default(now())
 
-  stage     Stage          @relation(fields: [stageId], references: [id], onDelete: Cascade)
-  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project    Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([stageId])
+  @@index([projectId])
+  @@index([entityType, entityId])
   @@index([userId])
   @@map("approvals")
 }

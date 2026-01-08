@@ -41,24 +41,9 @@ export class ProjectService implements IBaseService<
       );
     }
 
-    // Se proposalId foi fornecido, verifica se existe
-    if (createProjectDto.proposalId) {
-      const proposal = await this.prisma.proposal.findUnique({
-        where: { id: createProjectDto.proposalId },
-      });
-
-      if (!proposal) {
-        throw new NotFoundException(
-          this.i18n.t('project.errors.proposal_not_found') ||
-            'Proposal not found',
-        );
-      }
-    }
-
     const project = await this.prisma.project.create({
       data: {
         companyId: createProjectDto.companyId,
-        proposalId: createProjectDto.proposalId || null,
         name: createProjectDto.name,
         description: createProjectDto.description || null,
         status: createProjectDto.status || 'PROPOSAL',
@@ -157,7 +142,6 @@ export class ProjectService implements IBaseService<
     const select = {
       id: true,
       companyId: true,
-      proposalId: true,
       name: true,
       description: true,
       status: true,
@@ -260,20 +244,6 @@ export class ProjectService implements IBaseService<
       throw new NotFoundException(
         this.i18n.t('project.errors.not_found') || 'Project not found',
       );
-    }
-
-    // Se proposalId foi fornecido, verifica se existe
-    if (updateProjectDto.proposalId) {
-      const proposal = await this.prisma.proposal.findUnique({
-        where: { id: updateProjectDto.proposalId },
-      });
-
-      if (!proposal) {
-        throw new NotFoundException(
-          this.i18n.t('project.errors.proposal_not_found') ||
-            'Proposal not found',
-        );
-      }
     }
 
     const project = await this.prisma.project.update({

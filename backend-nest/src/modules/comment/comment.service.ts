@@ -5,6 +5,7 @@ import { CreateCommentDto } from './dto/create-comment.dto';
 import { CommentDto } from './dto/comment.dto';
 import { LoggingService } from '../logging/logging.service';
 import { LogActions } from 'src/common/types/logging.types';
+import { CommentEntityType } from '@prisma/client';
 
 @Injectable()
 export class CommentService {
@@ -18,6 +19,7 @@ export class CommentService {
     createCommentDto: CreateCommentDto,
     userId: string,
   ): Promise<CommentDto> {
+    // Valida se o projeto existe
     const project = await this.prisma.project.findUnique({
       where: { id: createCommentDto.projectId },
     });
@@ -26,33 +28,68 @@ export class CommentService {
         this.i18n.t('comment.errors.project_not_found') || 'Project not found',
       );
 
+    // Valida se a entidade existe baseado no tipo
+    if (createCommentDto.entityType === 'PROJECT') {
+      if (createCommentDto.entityId !== createCommentDto.projectId) {
+        throw new NotFoundException(
+          this.i18n.t('comment.errors.project_mismatch') || 'Project mismatch',
+        );
+      }
+    } else if (createCommentDto.entityType === 'STAGE') {
+      const stage = await this.prisma.stage.findUnique({
+        where: { id: createCommentDto.entityId },
+      });
+      if (!stage)
+        throw new NotFoundException(
+          this.i18n.t('comment.errors.stage_not_found') || 'Stage not found',
+        );
+    } else if (createCommentDto.entityType === 'ACTIVITY') {
+      const activity = await this.prisma.activity.findUnique({
+        where: { id: createCommentDto.entityId },
+      });
+      if (!activity)
+        throw new NotFoundException(
+          this.i18n.t('comment.errors.activity_not_found') ||
+            'Activity not found',
+        );
+    }
+
     const comment = await this.prisma.comment.create({
       data: {
         projectId: createCommentDto.projectId,
+        entityType: createCommentDto.entityType,
+        entityId: createCommentDto.entityId,
         userId,
         content: createCommentDto.content,
       },
     });
 
-    // Registra histórico
-    await this.prisma.projectHistory.create({
-      data: {
-        projectId: comment.projectId,
-        type: 'COMMENT',
-        payload: JSON.stringify({
-          commentId: comment.id,
-          userId,
-          content: comment.content,
-        }),
-      },
-    });
+    // Registra histórico apenas se for comentário em projeto
+    if (createCommentDto.entityType === 'PROJECT') {
+      await this.prisma.projectHistory.create({
+        data: {
+          projectId: createCommentDto.projectId,
+          type: 'COMMENT',
+          payload: JSON.stringify({
+            commentId: comment.id,
+            userId,
+            content: comment.content,
+          }),
+        },
+      });
+    }
 
     await this.loggingService.create(
       {
         module: 'COMMENT',
         action: LogActions.CREATE,
-        message: 'Comment created',
-        metadata: { commentId: comment.id },
+        message: `Comment created on ${createCommentDto.entityType}`,
+        metadata: {
+          commentId: comment.id,
+          projectId: createCommentDto.projectId,
+          entityType: createCommentDto.entityType,
+          entityId: createCommentDto.entityId,
+        },
       },
       userId,
     );
@@ -60,9 +97,15 @@ export class CommentService {
     return new CommentDto(comment);
   }
 
-  async findByProject(projectId: string): Promise<CommentDto[]> {
+  async findByEntity(
+    entityType: string,
+    entityId: string,
+  ): Promise<CommentDto[]> {
     const comments = await this.prisma.comment.findMany({
-      where: { projectId },
+      where: {
+        entityType: entityType as CommentEntityType,
+        entityId,
+      },
       orderBy: { createdAt: 'desc' },
     });
     return comments.map((c) => new CommentDto(c));
