@@ -31,6 +31,7 @@ export async function updateProposalContent(
   id: string,
   data: UpdateProposalContentDto
 ): Promise<ApiResponse<Proposal>> {
+  // Permite atualizar name e content
   return await PUT<Proposal>(`/proposals/${id}/content`, data);
 }
 

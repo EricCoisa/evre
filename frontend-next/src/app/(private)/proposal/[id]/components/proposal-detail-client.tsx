@@ -25,9 +25,11 @@ export function ProposalDetailClient({ proposal }: ProposalDetailClientProps) {
 
   const [editMode, setEditMode] = useState(false);
   const [content, setContent] = useState('');
+  const [name, setName] = useState('');
 
   const handleEdit = () => {
     setContent(proposal.content);
+    setName(proposal.name);
     setEditMode(true);
   };
 
@@ -35,7 +37,7 @@ export function ProposalDetailClient({ proposal }: ProposalDetailClientProps) {
     try {
       // Valida se é um JSON válido antes de salvar
       JSON.parse(content);
-      await updateContentMutation.mutateAsync({ id: proposal.id, data: { content } });
+      await updateContentMutation.mutateAsync({ id: proposal.id, data: { name, content } });
       toast.success('Conteúdo atualizado com sucesso!');
       setEditMode(false);
       router.refresh();
@@ -91,7 +93,16 @@ export function ProposalDetailClient({ proposal }: ProposalDetailClientProps) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Nome</p>
-                <p className="text-sm">{proposal.name}</p>
+                {editMode ? (
+                  <input
+                    type="text"
+                    className="text-sm border rounded px-2 py-1 w-full"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                  />
+                ) : (
+                  <p className="text-sm">{proposal.name}</p>
+                )}
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Empresa</p>
@@ -148,6 +159,18 @@ export function ProposalDetailClient({ proposal }: ProposalDetailClientProps) {
           <CardContent>
             {editMode ? (
               <div className="space-y-4">
+                {/* Editor de Nome */}
+                <div>
+                  <label className="text-sm font-medium mb-2 block">
+                    Nome da Proposta
+                  </label>
+                  <input
+                    type="text"
+                    className="text-sm border rounded px-2 py-1 w-full"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                  />
+                </div>
                 {/* Editor de JSON */}
                 <div>
                   <label className="text-sm font-medium mb-2 block">
@@ -161,32 +184,10 @@ export function ProposalDetailClient({ proposal }: ProposalDetailClientProps) {
                     placeholder='{"version": "v1", "components": [{"object": "Title", "value": "Minha Proposta"}]}'
                   />
                 </div>
-
                 {/* Preview da Renderização */}
                 <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    Prévia da Renderização
-                  </label>
-                  <div className="border rounded-lg p-6 bg-muted/30 min-h-[200px]">
-                    {(() => {
-                      try {
-                        JSON.parse(content);
-                        return <ProposalRenderer content={content} />;
-                      } catch (error) {
-                        return (
-                          <div className="text-center py-8 text-destructive">
-                            <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                            <p className="font-medium">Erro no JSON</p>
-                            <p className="text-sm mt-2 text-muted-foreground">
-                              {error instanceof Error ? error.message : 'JSON inválido'}
-                            </p>
-                          </div>
-                        );
-                      }
-                    })()}
-                  </div>
+                  {/* Aqui pode-se adicionar preview do conteúdo se necessário */}
                 </div>
-                
                 {/* Botões de Ação */}
                 <div className="flex gap-2 pt-4 border-t">
                   <Button onClick={handleSave} disabled={updateContentMutation.isPending}>

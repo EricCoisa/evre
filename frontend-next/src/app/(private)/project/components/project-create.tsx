@@ -3,7 +3,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useTranslation } from 'react-i18next';
+
 import { useCreateProject } from '@/lib/actions/project/queries';
 import { useCompanies } from '@/lib/actions/company/queries';
 import { useProposals } from '@/lib/actions/proposal/queries';
@@ -28,6 +28,7 @@ import {
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
+import { useTranslation } from '@/hooks/use-translation';
 
 interface ProjectCreateProps {
   onSuccess?: () => void;
@@ -195,7 +196,7 @@ export function ProjectCreate({ onSuccess }: ProjectCreateProps) {
                 <SelectContent>
                   {projectStatuses.map((status) => (
                     <SelectItem key={status} value={status}>
-                      {status}
+                      {t(status)}
                     </SelectItem>
                   ))}
                 </SelectContent>

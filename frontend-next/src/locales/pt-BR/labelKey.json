@@ -67,5 +67,11 @@
 
     "APPROVED": "Aprovado",
     "DRAFT": "Rascunho",
-    "SENT": "Enviado"
+    "INVITED": "Convidado",
+    "SENT": "Enviado",
+
+    "PROPOSAL": "PROPOSTA",
+    "REQUIREMENTS": "REQUISITOS",
+    "DEVELOPMENT": "DESENVOLVIMENTO",
+    "DONE": "CONCLUÍDO"
 }

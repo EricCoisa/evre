@@ -8,7 +8,6 @@ import { useCompanies } from '@/lib/actions/company/queries';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { getProjectColumns } from './project-columns';
-import LangLabel from '@/components/ui/langLabel';
 import { DataTable } from '@/components/data-table';
 import { Container } from '@/components/container';
 import Modal from '@/components/modal';
@@ -56,6 +55,8 @@ export function ProjectList({
     return Array.isArray(companiesData) ? companiesData : companiesData.data;
   }, [companiesData]);
 
+  console.log('data', data);
+  console.log('pagination', pagination);  
   return (
     <>
       <Container variant="dataTable" border={false}>
@@ -84,7 +85,7 @@ export function ProjectList({
           {showCompanyFilter && (
             <DataTable.Select
               title={t('company')}
-              accessorKey="companyId"
+              accessorKey="companyName"
               placeholder={t('selectCompany')}
             />
           )}
@@ -94,10 +95,10 @@ export function ProjectList({
             placeholder={t('filterByStatus')}
           />
           {showCreateButton && (
-            <DataTable.Actions>
+            <DataTable.Actions className="sm:justify-end sm:w-full">
               <Button onClick={() => setIsCreateDialogOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
-                <LangLabel text="createProject" langJson="projects" />
+                {t('createProject')}
               </Button>
             </DataTable.Actions>
           )}

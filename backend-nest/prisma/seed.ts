@@ -200,7 +200,7 @@ async function main() {
     create: {
       path: '/proposal',
       labelKey: 'ROUTE_PROPOSAL',
-      icon: 'Building2',
+      icon: 'Newspaper',
       ordem: 8,
       isHome: false,
       isActive: true,
@@ -213,7 +213,7 @@ async function main() {
     create: {
       path: '/project',
       labelKey: 'ROUTE_PROJECT',
-      icon: 'Building2',
+      icon: 'Box',
       ordem: 8,
       isHome: false,
       isActive: true,

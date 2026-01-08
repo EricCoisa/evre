@@ -67,5 +67,11 @@
 
     "APPROVED": "Approved",
     "DRAFT": "Draft",
-    "SENT": "Sent"
+    "INVITED": "Invited",
+    "SENT": "Sent",
+    
+    "PROPOSAL": "PROPOSAL",
+    "REQUIREMENTS": "REQUIREMENTS",
+    "DEVELOPMENT": "DEVELOPMENT",
+    "DONE": "DONE"
 }

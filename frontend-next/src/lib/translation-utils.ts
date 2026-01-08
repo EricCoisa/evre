@@ -13,6 +13,7 @@ import ptBRresetPassword from '../locales/pt-BR/resetPassword.json';
 import ptBRLogin from '../locales/pt-BR/login.json';
 import ptBRCompany from '../locales/pt-BR/company.json';
 import ptBRProposal from '../locales/pt-BR/proposal.json';
+import ptProjects from '../locales/pt-BR/projects.json';
 
 import enCommon from '../locales/en/common.json';
 import enAccess from '../locales/en/access.json';
@@ -29,6 +30,7 @@ import enresetPassword from '../locales/en/resetPassword.json';
 import enLogin from '../locales/en/login.json';
 import enCompany from '../locales/en/company.json';
 import enProposal from '../locales/en/proposal.json';
+import enProjects from '../locales/en/projects.json';
 
 
 
@@ -50,6 +52,7 @@ export const resources = {
     login: ptBRLogin,
     company: ptBRCompany,
     proposal: ptBRProposal,
+    projects: ptProjects,
 	},
 	en: {
 		common: enCommon,
@@ -67,6 +70,7 @@ export const resources = {
     login: enLogin,
     company: enCompany,
     proposal: enProposal,
+    projects: enProjects,
 	},
 };
 

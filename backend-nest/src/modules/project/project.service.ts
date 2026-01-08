@@ -111,7 +111,7 @@ export class ProjectService implements IBaseService<
         name?: { contains: string; mode: 'insensitive' };
         description?: { contains: string; mode: 'insensitive' };
       }>;
-      companyId?: string;
+      companyId?: string | { in: string[] };
       status?: import('@prisma/client').ProjectStatus;
     } = {};
 
@@ -123,9 +123,29 @@ export class ProjectService implements IBaseService<
       ];
     }
 
-    // Filtro por companyId
-    if (filter?.companyId) {
-      where.companyId = filter.companyId;
+    // Filtro por companyName
+    if (filter?.companyName) {
+      // Busca empresas que contenham o nome informado
+      const companies = await this.prisma.company.findMany({
+        where: {
+          name: { contains: filter.companyName, mode: 'insensitive' },
+        },
+        select: { id: true },
+      });
+      const companyIds = companies.map((c) => c.id);
+      if (companyIds.length > 0) {
+        where.companyId = { in: companyIds };
+      } else {
+        // Se não encontrou nenhuma empresa, retorna vazio
+        if (pagination) {
+          return {
+            data: [],
+            meta: { total: 0, page, limit, totalPages: 0 },
+            filter: { status: [], companyName: [] },
+          };
+        }
+        return [];
+      }
     }
 
     // Filtro por status
@@ -143,6 +163,11 @@ export class ProjectService implements IBaseService<
       status: true,
       createdAt: true,
       updatedAt: true,
+      company: {
+        select: {
+          name: true,
+        },
+      },
     };
 
     if (!pagination) {
@@ -151,7 +176,13 @@ export class ProjectService implements IBaseService<
         select,
         orderBy: { createdAt: 'desc' },
       });
-      return projects.map((project) => this.mapToDto(project));
+      return projects.map((project) => {
+        const { company, ...projectData } = project;
+        return {
+          ...this.mapToDto(projectData as Project),
+          companyName: company?.name || null,
+        };
+      });
     }
 
     const skip = (page - 1) * limit;
@@ -170,12 +201,25 @@ export class ProjectService implements IBaseService<
 
     // Extrai valores únicos para filtros
     const statusSet = Array.from(new Set(statusValues.map((p) => p.status)));
-    const companySet = Array.from(
+    const companyIds = Array.from(
       new Set(companyValues.map((p) => p.companyId)),
     );
 
+    // Buscar nomes das empresas únicas
+    const companies = await this.prisma.company.findMany({
+      where: { id: { in: companyIds } },
+      select: { name: true },
+    });
+    const companyNameSet = companies.map((c) => c.name);
+
     return {
-      data: projects.map((project) => this.mapToDto(project)),
+      data: projects.map((project) => {
+        const { company, ...projectData } = project;
+        return {
+          ...this.mapToDto(projectData as Project),
+          companyName: company?.name || null,
+        };
+      }),
       meta: {
         total,
         page,
@@ -184,7 +228,7 @@ export class ProjectService implements IBaseService<
       },
       filter: {
         status: statusSet,
-        companyId: companySet,
+        companyName: companyNameSet,
       },
     };
   }
