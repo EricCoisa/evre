@@ -3,6 +3,7 @@ export type ProposalStatus = 'DRAFT' | 'SENT' | 'APPROVED';
 export interface Proposal {
   id: string;
   companyId: string;
+  name: string;
   status: ProposalStatus;
   contentSchemaVersion: string;
   content: string;
@@ -12,11 +13,13 @@ export interface Proposal {
 
 export interface CreateProposalDto {
   companyId: string;
+  name: string;
   content: string;
   contentSchemaVersion?: string;
 }
 
 export interface UpdateProposalContentDto {
+  name?: string;
   content: string;
 }
 

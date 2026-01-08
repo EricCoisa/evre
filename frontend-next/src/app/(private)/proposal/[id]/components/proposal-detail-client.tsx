@@ -70,7 +70,7 @@ export function ProposalDetailClient({ proposal }: ProposalDetailClientProps) {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold">Proposta</h1>
+              <h1 className="text-2xl font-bold">{proposal.name}</h1>
               <p className="text-sm text-muted-foreground">ID: {proposal.id}</p>
             </div>
           </div>
@@ -90,12 +90,22 @@ export function ProposalDetailClient({ proposal }: ProposalDetailClientProps) {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
+                <p className="text-sm font-medium text-muted-foreground">Nome</p>
+                <p className="text-sm">{proposal.name}</p>
+              </div>
+              <div>
                 <p className="text-sm font-medium text-muted-foreground">Empresa</p>
                 <p className="text-sm">{proposal.companyId}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Versão</p>
                 <p className="text-sm">{proposal.contentSchemaVersion}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Status</p>
+                <Badge className={ProposalStatusColors[proposal.status]}>
+                  {proposal.status}
+                </Badge>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Criado em</p>

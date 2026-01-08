@@ -8,6 +8,7 @@ export class ProposalDto {
     Object.assign(this, {
       id: proposal.id,
       companyId: proposal.companyId,
+      name: proposal.name,
       status: proposal.status,
       contentSchemaVersion: proposal.contentSchemaVersion,
       content: proposal.content,
@@ -21,6 +22,9 @@ export class ProposalDto {
 
   @ApiProperty()
   companyId: string;
+
+  @ApiProperty()
+  name: string;
 
   @ApiProperty({ enum: ProposalStatusConst })
   status: string;

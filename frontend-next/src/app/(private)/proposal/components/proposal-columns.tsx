@@ -36,6 +36,19 @@ export function getProposalColumns({
       },
     },
     {
+      accessorKey: 'name',
+      header: () => <TableHead>{t('name') || 'Nome'}</TableHead>,
+      cell: ({ row }) => (
+        <DataCell>
+          {row.getValue<string>('name')}
+        </DataCell>
+      ),
+      meta: {
+        mobileOrder: 2,
+        mobileWidth: 'full',
+      },
+    },
+    {
       accessorKey: 'companyId',
       header: () => <TableHead>{t('company') || 'Empresa'}</TableHead>,
       cell: ({ row }) => (
@@ -44,7 +57,7 @@ export function getProposalColumns({
         </DataCell>
       ),
       meta: {
-        mobileOrder: 2,
+        mobileOrder: 3,
         mobileWidth: 'half',
       },
     },
@@ -62,7 +75,7 @@ export function getProposalColumns({
         );
       },
       meta: {
-        mobileOrder: 3,
+        mobileOrder: 4,
         mobileWidth: 'half',
       },
     },
@@ -71,7 +84,7 @@ export function getProposalColumns({
       header: () => <TableHead>{t('version') || 'Versão'}</TableHead>,
       cell: ({ row }) => <DataCell>{row.getValue('contentSchemaVersion')}</DataCell>,
       meta: {
-        mobileOrder: 4,
+        mobileOrder: 5,
         mobileWidth: 'half',
       },
     },
@@ -108,7 +121,7 @@ export function getProposalColumns({
       enableSorting: true,
       sortingFn: 'datetime',
       meta: {
-        mobileOrder: 5,
+        mobileOrder: 6,
         mobileWidth: 'half',
         mobileLabel: t('createdAt'),
       },
@@ -154,7 +167,7 @@ export function getProposalColumns({
         );
       },
       meta: {
-        mobileOrder: 6,
+        mobileOrder: 7,
         mobileWidth: 'full',
       },
     },

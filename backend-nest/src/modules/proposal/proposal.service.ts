@@ -134,6 +134,7 @@ export class ProposalService implements Omit<IBaseService<Proposal>, 'remove'> {
     const proposal = await this.prisma.proposal.create({
       data: {
         companyId: dto.companyId,
+        name: dto.name,
         content: dto.content,
         contentSchemaVersion: dto.contentSchemaVersion || 'v1',
         status: ProposalStatusConst.DRAFT,
@@ -192,7 +193,10 @@ export class ProposalService implements Omit<IBaseService<Proposal>, 'remove'> {
     // Atualiza a proposta
     const updatedProposal = await this.prisma.proposal.update({
       where: { id },
-      data: { content: dto.content },
+      data: {
+        ...(dto.name && { name: dto.name }),
+        content: dto.content,
+      },
     });
 
     // Log da ação

@@ -262,6 +262,7 @@ model Proposal {
   id                    String         @id @default(uuid())
   companyId             String
   projectId             String?        // Vínculo opcional com Project
+  name                  String         @default("")
   status                ProposalStatus @default(DRAFT)
   contentSchemaVersion  String         @default("v1")
   content               String         // JSON armazenado como string

@@ -83,6 +83,7 @@ export default function ProposalsPage() {
   const createProposalSchema = useMemo(() =>
     z.object({
       companyId: z.string().uuid(t('companyIdRequired') || 'ID da empresa inválido'),
+      name: z.string().min(1, t('nameRequired') || 'Nome obrigatório'),
       content: z.string().min(1, t('contentRequired') || 'Conteúdo obrigatório'),
       contentSchemaVersion: z.string().optional().default('v1'),
     }),
@@ -95,6 +96,11 @@ export default function ProposalsPage() {
       description: t('companyIdDescription') || 'Empresa para a proposta',
       type: 'select' as const,
       options: companyOptions,
+    },
+    name: {
+      label: t('name') || 'Nome',
+      placeholder: t('namePlaceholder') || 'Digite o nome da proposta',
+      description: t('nameDescription') || 'Nome da proposta',
     },
     content: {
       label: t('content') || 'Conteúdo',
