@@ -4,6 +4,9 @@ echo "▶️ Environment RUN values:"
 echo "  RUN_MIGRATIONS=${RUN_MIGRATIONS:-}"
 echo "  RUN_SEED=${RUN_SEED:-}"
 
+echo "▶️ Running deploy (migrations, generate, seed)"
+npm run deploy
+
 echo "▶️ Running database migrations"
 if [ "$RUN_MIGRATIONS" = "true" ]; then
   npx prisma migrate deploy
