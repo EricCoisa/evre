@@ -1,3 +1,63 @@
 {
-    
+  "title": "Documentos Contratuais",
+  "description": "Gerencie documentos contratuais do projeto",
+  "createNew": "Novo Contrato",
+  "createTitle": "Criar Documento Contratual",
+  "createDescription": "Preencha os dados para criar um novo contrato",
+  "editTitle": "Editar Documento Contratual",
+  "editDescription": "Atualize as informações do contrato",
+  "viewDetails": "Ver Detalhes",
+  "send": "Enviar",
+  "accept": "Aceitar",
+  "archive": "Arquivar",
+  "copyTemplate": "Copiar Template JSON",
+  "templateCopied": "Template copiado para área de transferência!",
+  
+  "projectId": "Projeto",
+  "projectIdRequired": "Projeto é obrigatório",
+  "projectIdPlaceholder": "Selecione um projeto",
+  "projectIdDescription": "Projeto vinculado ao contrato",
+  
+  "proposalId": "Proposta",
+  "proposalIdInvalid": "ID da proposta inválido",
+  "proposalIdPlaceholder": "Selecione uma proposta (opcional)",
+  "proposalIdDescription": "Proposta vinculada ao contrato (opcional)",
+  
+  "name": "Nome",
+  "nameRequired": "Nome é obrigatório",
+  "namePlaceholder": "Digite o nome do contrato",
+  "nameDescription": "Nome identificador do contrato",
+  
+  "content": "Conteúdo",
+  "contentRequired": "Conteúdo é obrigatório",
+  "contentPlaceholder": "Digite o conteúdo JSON do contrato",
+  "contentDescription": "Conteúdo do contrato em formato JSON",
+  
+  "version": "Versão do Schema",
+  "versionPlaceholder": "v1",
+  "versionDescription": "Versão do schema de conteúdo",
+  
+  "status": "Status",
+  "statuses": {
+    "DRAFT": "Rascunho",
+    "SENT": "Enviado",
+    "ACCEPTED": "Aceito",
+    "ARCHIVED": "Arquivado"
+  },
+  
+  "createdAt": "Criado em",
+  "updatedAt": "Atualizado em",
+  
+  "successCreate": "Contrato criado com sucesso!",
+  "successUpdate": "Contrato atualizado com sucesso!",
+  "successSend": "Contrato enviado com sucesso!",
+  "successAccept": "Contrato aceito com sucesso!",
+  "successArchive": "Contrato arquivado com sucesso!",
+  
+  "errorCreate": "Erro ao criar contrato",
+  "errorUpdate": "Erro ao atualizar contrato",
+  "errorSend": "Erro ao enviar contrato",
+  "errorAccept": "Erro ao aceitar contrato",
+  "errorArchive": "Erro ao arquivar contrato",
+  "errorInvalidJson": "JSON inválido! Verifique a sintaxe."
 }

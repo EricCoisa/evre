@@ -16,6 +16,7 @@ import ptBRProposal from '../locales/pt-BR/proposal.json';
 import ptProjects from '../locales/pt-BR/projects.json';
 import ptContact from '../locales/pt-BR/contact.json';
 import ptClientLog from '../locales/pt-BR/clientLog.json';
+import ptContractDocument from '../locales/en/contract-document.json';
 
 import enCommon from '../locales/en/common.json';
 import enAccess from '../locales/en/access.json';
@@ -35,6 +36,7 @@ import enProposal from '../locales/en/proposal.json';
 import enProjects from '../locales/en/projects.json';
 import enContact from '../locales/en/contact.json';
 import enClientLog from '../locales/en/clientLog.json';
+import enContractDocument from '../locales/en/contract-document.json';
 
 
 
@@ -59,6 +61,7 @@ export const resources = {
     projects: ptProjects,
     contact: ptContact,
     clientLog: ptClientLog,
+    contractDocument: ptContractDocument,
 	},
 	en: {
 		common: enCommon,
@@ -79,6 +82,7 @@ export const resources = {
     projects: enProjects,
     contact: enContact,
     clientLog: enClientLog,
+    contractDocument: enContractDocument,
 	},
 };
 

@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { toast } from 'sonner';
+import { Copy } from 'lucide-react';
 
 import { getContractDocumentColumns } from './components/contract-document-columns';
 import {
@@ -21,16 +22,20 @@ import type { ContractDocument } from '@/lib/actions/contract-document/types';
 import { FieldConfig } from '@/lib/form/field-config';
 import { Container } from '@/components/container';
 import { DataTable } from '@/components/data-table';
+import { Button } from '@/components/ui/button';
+import { GenericCreateFormModal } from '@/components/generic-create-form';
 
 export default function ContractDocumentsPage() {
-    const { t } = useTranslation('contract-document');
+    const { t } = useTranslation('contractDocument');
     const queryClient = useQueryClient();
     const router = useRouter();
 
     const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
     const [globalFilter, setGlobalFilter] = useState('');
     const [filters, setFilters] = useState<Record<string, string>>({});
+    const [copied, setCopied] = useState(false);
 
+    const createContractMutation = useCreateContractDocument();
     const sendContractMutation = useSendContractDocument();
     const acceptContractMutation = useAcceptContractDocument();
     const archiveContractMutation = useArchiveContractDocument();
@@ -63,6 +68,33 @@ export default function ContractDocumentsPage() {
         return [];
     }, [proposalsData]);
 
+    const handleCopyTemplate = useCallback(() => {
+        const template = {
+            clauses: [
+                {
+                    title: 'Objeto do Contrato',
+                    content: 'Descreva o objeto do contrato aqui',
+                },
+                {
+                    title: 'Valor e Forma de Pagamento',
+                    content: 'Especifique valores e condições de pagamento',
+                },
+                {
+                    title: 'Prazo de Vigência',
+                    content: 'Defina o prazo de vigência do contrato',
+                },
+            ],
+            terms: [
+                'Termo ou condição geral 1',
+                'Termo ou condição geral 2',
+            ],
+        };
+        navigator.clipboard.writeText(JSON.stringify(template, null, 2));
+        setCopied(true);
+        toast.success(t('templateCopied'));
+        setTimeout(() => setCopied(false), 2000);
+    }, [t]);
+
     const handleView = useCallback(
         (contract: ContractDocument) => {
             router.push(`/contract-document/${contract.id}`);
@@ -74,9 +106,9 @@ export default function ContractDocumentsPage() {
         async (contract: ContractDocument) => {
             try {
                 await sendContractMutation.mutateAsync(contract.id);
-                toast.success(t('sendSuccess') || 'Contrato enviado com sucesso!');
+                toast.success(t('successSend'));
             } catch (error) {
-                toast.error(t('sendError') || 'Erro ao enviar contrato');
+                toast.error(t('errorSend'));
             }
         },
         [sendContractMutation, t],
@@ -86,9 +118,9 @@ export default function ContractDocumentsPage() {
         async (contract: ContractDocument) => {
             try {
                 await acceptContractMutation.mutateAsync(contract.id);
-                toast.success(t('acceptSuccess') || 'Contrato aceito com sucesso!');
+                toast.success(t('successAccept'));
             } catch (error) {
-                toast.error(t('acceptError') || 'Erro ao aceitar contrato');
+                toast.error(t('errorAccept'));
             }
         },
         [acceptContractMutation, t],
@@ -98,9 +130,9 @@ export default function ContractDocumentsPage() {
         async (contract: ContractDocument) => {
             try {
                 await archiveContractMutation.mutateAsync(contract.id);
-                toast.success(t('archiveSuccess') || 'Contrato arquivado com sucesso!');
+                toast.success(t('successArchive'));
             } catch (error) {
-                toast.error(t('archiveError') || 'Erro ao arquivar contrato');
+                toast.error(t('errorArchive'));
             }
         },
         [archiveContractMutation, t],
@@ -125,7 +157,8 @@ export default function ContractDocumentsPage() {
                 proposalId: z
                     .string()
                     .uuid(t('proposalIdInvalid') || 'ID da proposta inválido')
-                    .optional(),
+                    .optional()
+                    .or(z.literal('')),
                 name: z.string().min(1, t('nameRequired') || 'Nome obrigatório'),
                 content: z.string().min(1, t('contentRequired') || 'Conteúdo obrigatório'),
                 contentSchemaVersion: z.string().optional().default('v1'),
@@ -139,28 +172,27 @@ export default function ContractDocumentsPage() {
                 projectId: {
                     label: t('projectId') || 'Projeto',
                     placeholder: t('projectIdPlaceholder') || 'Selecione um projeto',
-                    description: t('projectIdDescription') || 'Projeto do contrato',
+                    description: t('projectIdDescription') || 'Projeto vinculado ao contrato',
                     type: 'select' as const,
                     options: projectOptions,
                 },
                 proposalId: {
-                    label: t('proposalId') || 'Proposta (opcional)',
-                    placeholder: t('proposalIdPlaceholder') || 'Selecione uma proposta',
+                    label: t('proposalId') || 'Proposta',
+                    placeholder: t('proposalIdPlaceholder') || 'Selecione uma proposta (opcional)',
                     description:
-                        t('proposalIdDescription') || 'Proposta relacionada ao contrato',
+                        t('proposalIdDescription') || 'Proposta vinculada ao contrato (opcional)',
                     type: 'select' as const,
                     options: proposalOptions,
                 },
                 name: {
                     label: t('name') || 'Nome',
                     placeholder: t('namePlaceholder') || 'Digite o nome do contrato',
-                    description: t('nameDescription') || 'Nome do contrato',
+                    description: t('nameDescription') || 'Nome identificador do contrato',
                 },
                 content: {
                     label: t('content') || 'Conteúdo',
                     placeholder: t('contentPlaceholder') || 'Digite o conteúdo JSON',
-                    description:
-                        t('contentDescription') || 'Conteúdo do contrato em formato JSON',
+                    description: t('contentDescription') || 'Conteúdo do contrato em formato JSON',
                     type: 'textarea' as const,
                 },
                 contentSchemaVersion: {
@@ -226,6 +258,41 @@ export default function ContractDocumentsPage() {
                         />
                     </div>
 
+                    {/* Botões à direita */}
+                    <div className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleCopyTemplate}
+                            disabled={copied}
+                        >
+                            <Copy className="mr-2 h-4 w-4" />
+                            {t('copyTemplate')}
+                        </Button>
+                        <GenericCreateFormModal
+                            schema={createContractSchema}
+                            fieldConfig={contractFieldConfig}
+                            onSubmit={async (data) => {
+                                await createContractMutation.mutateAsync(data);
+                                queryClient.invalidateQueries({ queryKey: ['contract-documents'] });
+                            }}
+                            onSuccess={() => {
+                                toast.success(t('successCreate'));
+                            }}
+                            onError={() => {
+                                toast.error(t('errorCreate'));
+                            }}
+                            title={t('createTitle')}
+                            description={t('createDescription')}
+                            trigger={
+                                <Button variant="default" size="sm">
+                                    {t('createNew')}
+                                </Button>
+                            }
+                            submitLabel={t('createNew')}
+                            closeOnsuccess
+                        />
+                    </div>
                 </div>
             </DataTable>
         </Container>

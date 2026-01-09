@@ -1,3 +1,63 @@
 {
-    
+  "title": "Contract Documents",
+  "description": "Manage project contract documents",
+  "createNew": "New Contract",
+  "createTitle": "Create Contract Document",
+  "createDescription": "Fill in the data to create a new contract",
+  "editTitle": "Edit Contract Document",
+  "editDescription": "Update contract information",
+  "viewDetails": "View Details",
+  "send": "Send",
+  "accept": "Accept",
+  "archive": "Archive",
+  "copyTemplate": "Copy JSON Template",
+  "templateCopied": "Template copied to clipboard!",
+  
+  "projectId": "Project",
+  "projectIdRequired": "Project is required",
+  "projectIdPlaceholder": "Select a project",
+  "projectIdDescription": "Project linked to the contract",
+  
+  "proposalId": "Proposal",
+  "proposalIdInvalid": "Invalid proposal ID",
+  "proposalIdPlaceholder": "Select a proposal (optional)",
+  "proposalIdDescription": "Proposal linked to the contract (optional)",
+  
+  "name": "Name",
+  "nameRequired": "Name is required",
+  "namePlaceholder": "Enter contract name",
+  "nameDescription": "Contract identifier name",
+  
+  "content": "Content",
+  "contentRequired": "Content is required",
+  "contentPlaceholder": "Enter contract JSON content",
+  "contentDescription": "Contract content in JSON format",
+  
+  "version": "Schema Version",
+  "versionPlaceholder": "v1",
+  "versionDescription": "Content schema version",
+  
+  "status": "Status",
+  "statuses": {
+    "DRAFT": "Draft",
+    "SENT": "Sent",
+    "ACCEPTED": "Accepted",
+    "ARCHIVED": "Archived"
+  },
+  
+  "createdAt": "Created at",
+  "updatedAt": "Updated at",
+  
+  "successCreate": "Contract created successfully!",
+  "successUpdate": "Contract updated successfully!",
+  "successSend": "Contract sent successfully!",
+  "successAccept": "Contract accepted successfully!",
+  "successArchive": "Contract archived successfully!",
+  
+  "errorCreate": "Error creating contract",
+  "errorUpdate": "Error updating contract",
+  "errorSend": "Error sending contract",
+  "errorAccept": "Error accepting contract",
+  "errorArchive": "Error archiving contract",
+  "errorInvalidJson": "Invalid JSON! Check the syntax."
 }
