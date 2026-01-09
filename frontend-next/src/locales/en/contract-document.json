@@ -10,8 +10,11 @@
   "send": "Send",
   "accept": "Accept",
   "archive": "Archive",
-  "copyTemplate": "Copy JSON Template",
+  "copyTemplate": "JSON Template",
   "templateCopied": "Template copied to clipboard!",
+  "copied": "Copied!",
+  "templateModalTitle": "JSON Template - Create Contract",
+  "templateModalDescription": "Use this template to create the contract JSON",
   
   "projectId": "Project",
   "projectIdRequired": "Project is required",
@@ -47,6 +50,13 @@
   
   "createdAt": "Created at",
   "updatedAt": "Updated at",
+  "searchText": "Search",
+  "searchPlaceholder": "Search contracts...",
+  "loading": "Loading...",
+  "noLogs": "No contracts found",
+  "entity": "contract",
+  "entityPlural": "contracts",
+  "loadError": "Error loading contracts",
   
   "successCreate": "Contract created successfully!",
   "successUpdate": "Contract updated successfully!",

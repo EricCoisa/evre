@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Copy } from 'lucide-react';
+import { Copy, Check, Sparkles } from 'lucide-react';
 
 import { getContractDocumentColumns } from './components/contract-document-columns';
 import {
@@ -24,6 +24,8 @@ import { Container } from '@/components/container';
 import { DataTable } from '@/components/data-table';
 import { Button } from '@/components/ui/button';
 import { GenericCreateFormModal } from '@/components/generic-create-form';
+import Modal from '@/components/modal';
+import { Textarea } from '@/components/ui/textarea';
 
 export default function ContractDocumentsPage() {
     const { t } = useTranslation('contractDocument');
@@ -34,6 +36,7 @@ export default function ContractDocumentsPage() {
     const [globalFilter, setGlobalFilter] = useState('');
     const [filters, setFilters] = useState<Record<string, string>>({});
     const [copied, setCopied] = useState(false);
+    const [templateModalOpen, setTemplateModalOpen] = useState(false);
 
     const createContractMutation = useCreateContractDocument();
     const sendContractMutation = useSendContractDocument();
@@ -70,23 +73,83 @@ export default function ContractDocumentsPage() {
 
     const handleCopyTemplate = useCallback(() => {
         const template = {
-            clauses: [
+            version: '1.0',
+            components: [
                 {
-                    title: 'Objeto do Contrato',
-                    content: 'Descreva o objeto do contrato aqui',
+                    object: 'Title',
+                    value: 'CONTRATO DE PRESTAÇÃO DE SERVIÇOS',
+                    level: 1,
                 },
                 {
-                    title: 'Valor e Forma de Pagamento',
-                    content: 'Especifique valores e condições de pagamento',
+                    object: 'Container',
+                    value: [
+                        {
+                            object: 'Title',
+                            value: 'Partes Contratantes',
+                            level: 3,
+                        },
+                        {
+                            object: 'Party',
+                            value: {
+                                role: 'contractor',
+                                name: 'Nome da Empresa Contratante',
+                                document: 'CNPJ XX.XXX.XXX/XXXX-XX',
+                                address: 'Endereço completo',
+                            },
+                        },
+                        {
+                            object: 'Party',
+                            value: {
+                                role: 'contracted',
+                                name: 'Nome do Contratado',
+                                document: 'CPF XXX.XXX.XXX-XX',
+                                address: 'Endereço completo',
+                            },
+                        },
+                    ],
                 },
                 {
-                    title: 'Prazo de Vigência',
-                    content: 'Defina o prazo de vigência do contrato',
+                    object: 'Clause',
+                    value: {
+                        number: 1,
+                        title: 'Objeto do Contrato',
+                        content: 'Descreva aqui o objeto do contrato...',
+                    },
                 },
-            ],
-            terms: [
-                'Termo ou condição geral 1',
-                'Termo ou condição geral 2',
+                {
+                    object: 'Clause',
+                    value: {
+                        number: 2,
+                        title: 'Valor e Forma de Pagamento',
+                        content: 'Especifique valores e condições de pagamento...',
+                        subclauses: [
+                            'Pagamento em X parcelas',
+                            'Vencimento no dia Y',
+                        ],
+                    },
+                },
+                {
+                    object: 'Container',
+                    value: [
+                        {
+                            object: 'Title',
+                            value: 'Termos e Condições',
+                            level: 3,
+                        },
+                        {
+                            object: 'Term',
+                            value: [
+                                'Termo ou condição 1',
+                                'Termo ou condição 2',
+                            ],
+                        },
+                    ],
+                },
+                {
+                    object: 'Date',
+                    value: '2024-01-01',
+                    label: 'Data de Assinatura',
+                },
             ],
         };
         navigator.clipboard.writeText(JSON.stringify(template, null, 2));
@@ -107,7 +170,8 @@ export default function ContractDocumentsPage() {
             try {
                 await sendContractMutation.mutateAsync(contract.id);
                 toast.success(t('successSend'));
-            } catch (error) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            } catch (_error) {
                 toast.error(t('errorSend'));
             }
         },
@@ -119,7 +183,8 @@ export default function ContractDocumentsPage() {
             try {
                 await acceptContractMutation.mutateAsync(contract.id);
                 toast.success(t('successAccept'));
-            } catch (error) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            } catch (_error) {
                 toast.error(t('errorAccept'));
             }
         },
@@ -131,7 +196,8 @@ export default function ContractDocumentsPage() {
             try {
                 await archiveContractMutation.mutateAsync(contract.id);
                 toast.success(t('successArchive'));
-            } catch (error) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            } catch (_error) {
                 toast.error(t('errorArchive'));
             }
         },
@@ -263,10 +329,9 @@ export default function ContractDocumentsPage() {
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={handleCopyTemplate}
-                            disabled={copied}
+                            onClick={() => setTemplateModalOpen(true)}
                         >
-                            <Copy className="mr-2 h-4 w-4" />
+                            <Sparkles className="mr-2 h-4 w-4" />
                             {t('copyTemplate')}
                         </Button>
                         <GenericCreateFormModal
@@ -295,6 +360,114 @@ export default function ContractDocumentsPage() {
                     </div>
                 </div>
             </DataTable>
+
+            <Modal
+                title={t('templateModalTitle') || 'Template JSON - Criar Contrato'}
+                description={t('templateModalDescription') || 'Use este template para criar o JSON do contrato'}
+                open={templateModalOpen}
+                onOpenChange={(open) => {
+                    setTemplateModalOpen(open);
+                }}
+            >
+                <Textarea
+                    value={JSON.stringify({
+                        version: '1.0',
+                        components: [
+                            {
+                                object: 'Title',
+                                value: 'CONTRATO DE PRESTAÇÃO DE SERVIÇOS',
+                                level: 1,
+                            },
+                            {
+                                object: 'Container',
+                                value: [
+                                    {
+                                        object: 'Title',
+                                        value: 'Partes Contratantes',
+                                        level: 3,
+                                    },
+                                    {
+                                        object: 'Party',
+                                        value: {
+                                            role: 'contractor',
+                                            name: 'Nome da Empresa Contratante',
+                                            document: 'CNPJ XX.XXX.XXX/XXXX-XX',
+                                            address: 'Endereço completo',
+                                        },
+                                    },
+                                    {
+                                        object: 'Party',
+                                        value: {
+                                            role: 'contracted',
+                                            name: 'Nome do Contratado',
+                                            document: 'CPF XXX.XXX.XXX-XX',
+                                            address: 'Endereço completo',
+                                        },
+                                    },
+                                ],
+                            },
+                            {
+                                object: 'Clause',
+                                value: {
+                                    number: 1,
+                                    title: 'Objeto do Contrato',
+                                    content: 'Descreva aqui o objeto do contrato...',
+                                },
+                            },
+                            {
+                                object: 'Clause',
+                                value: {
+                                    number: 2,
+                                    title: 'Valor e Forma de Pagamento',
+                                    content: 'Especifique valores e condições de pagamento...',
+                                    subclauses: [
+                                        'Pagamento em X parcelas',
+                                        'Vencimento no dia Y',
+                                    ],
+                                },
+                            },
+                            {
+                                object: 'Container',
+                                value: [
+                                    {
+                                        object: 'Title',
+                                        value: 'Termos e Condições',
+                                        level: 3,
+                                    },
+                                    {
+                                        object: 'Term',
+                                        value: [
+                                            'Termo ou condição 1',
+                                            'Termo ou condição 2',
+                                        ],
+                                    },
+                                ],
+                            },
+                            {
+                                object: 'Date',
+                                value: '2024-01-01',
+                                label: 'Data de Assinatura',
+                            },
+                        ],
+                    }, null, 2)}
+                    readOnly
+                    rows={20}
+                    className="font-mono text-xs resize-none"
+                />
+                <Button onClick={handleCopyTemplate} className="w-full">
+                    {copied ? (
+                        <>
+                            <Check className="mr-2 h-4 w-4" />
+                            {t('copied') || 'Copiado!'}
+                        </>
+                    ) : (
+                        <>
+                            <Copy className="mr-2 h-4 w-4" />
+                            {t('copyTemplate')}
+                        </>
+                    )}
+                </Button>
+            </Modal>
         </Container>
     );
 }

@@ -3,7 +3,16 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { ArrowLeft, Edit, Save, X, Send, CheckCircle, Archive } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Save, 
+  Send, 
+  CheckCircle, 
+  Archive, 
+  Eye, 
+  Code, 
+  FileText 
+} from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { ContractDocument } from '@/lib/actions/contract-document/types';
 import { ContractStatusColors } from '@/lib/actions/contract-document/types';
 import {
@@ -20,6 +30,7 @@ import {
   useArchiveContractDocument,
 } from '@/lib/actions/contract-document/queries';
 import { Container } from '@/components/container';
+import { ContractRenderer } from '@/app/contract-public/components';
 
 interface ContractDocumentDetailClientProps {
   contract: ContractDocument;
@@ -69,7 +80,8 @@ export function ContractDocumentDetailClient({
       await sendContractMutation.mutateAsync(contract.id);
       toast.success('Contrato enviado com sucesso!');
       router.refresh();
-    } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_error) {
       toast.error('Erro ao enviar contrato');
     }
   };
@@ -79,7 +91,8 @@ export function ContractDocumentDetailClient({
       await acceptContractMutation.mutateAsync(contract.id);
       toast.success('Contrato aceito com sucesso!');
       router.refresh();
-    } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_error) {
       toast.error('Erro ao aceitar contrato');
     }
   };
@@ -89,7 +102,8 @@ export function ContractDocumentDetailClient({
       await archiveContractMutation.mutateAsync(contract.id);
       toast.success('Contrato arquivado com sucesso!');
       router.refresh();
-    } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_error) {
       toast.error('Erro ao arquivar contrato');
     }
   };
@@ -163,15 +177,19 @@ export function ContractDocumentDetailClient({
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Conteúdo</CardTitle>
+                <CardTitle>Conteúdo do Contrato</CardTitle>
                 <CardDescription>
-                  Conteúdo do contrato em formato JSON
+                  {editMode ? 'Edite o JSON abaixo e visualize as mudanças em tempo real' : 'Visualize ou edite o conteúdo'}
                 </CardDescription>
               </div>
-              {isDraft && !editMode && (
-                <Button onClick={handleEdit} size="sm">
-                  <Edit className="h-4 w-4 mr-2" />
-                  Editar
+              {isDraft && (
+                <Button 
+                  variant={editMode ? "default" : "outline"} 
+                  size="sm" 
+                  onClick={() => editMode ? setEditMode(false) : handleEdit()}
+                >
+                  <Code className="mr-2 h-4 w-4" />
+                  {editMode ? 'Modo Visualização' : 'Editar JSON'}
                 </Button>
               )}
             </div>
@@ -179,44 +197,72 @@ export function ContractDocumentDetailClient({
           <CardContent>
             {editMode ? (
               <div className="space-y-4">
+                {/* Editor de Nome */}
                 <div>
-                  <Label htmlFor="name">Nome</Label>
+                  <Label htmlFor="name">Nome do Contrato</Label>
                   <Input
                     id="name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Nome do contrato"
+                    className="text-sm"
                   />
                 </div>
+                {/* Editor de JSON */}
                 <div>
-                  <Label htmlFor="content">Conteúdo JSON</Label>
+                  <Label htmlFor="content">Editor JSON</Label>
                   <Textarea
                     id="content"
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
-                    placeholder="Digite o conteúdo JSON"
-                    className="font-mono min-h-[400px]"
+                    rows={20}
+                    className="font-mono text-sm resize-y"
+                    placeholder='{"version": "1.0", "components": [{"object": "Title", "value": "Contrato de Serviços"}]}'
                   />
                 </div>
-                <div className="flex gap-2">
-                  <Button onClick={handleSave}>
-                    <Save className="h-4 w-4 mr-2" />
-                    Salvar
+                {/* Botões de Ação */}
+                <div className="flex gap-2 pt-4 border-t">
+                  <Button onClick={handleSave} disabled={updateContentMutation.isPending}>
+                    <Save className="mr-2 h-4 w-4" />
+                    {updateContentMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
                   </Button>
-                  <Button variant="outline" onClick={() => setEditMode(false)}>
-                    <X className="h-4 w-4 mr-2" />
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setEditMode(false);
+                      setContent('');
+                    }}
+                    disabled={updateContentMutation.isPending}
+                  >
                     Cancelar
                   </Button>
                 </div>
               </div>
             ) : (
-              <div>
-                <pre className="bg-muted p-4 rounded-lg overflow-auto">
-                  <code className="text-sm">
-                    {JSON.stringify(JSON.parse(contract.content), null, 2)}
-                  </code>
-                </pre>
-              </div>
+              <Tabs defaultValue="preview" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="preview">
+                    <Eye className="w-4 h-4 mr-2" />
+                    Visualização
+                  </TabsTrigger>
+                  <TabsTrigger value="raw">
+                    <FileText className="w-4 h-4 mr-2" />
+                    JSON
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="preview" className="mt-6">
+                  <ContractRenderer content={contract.content} />
+                </TabsContent>
+                
+                <TabsContent value="raw" className="mt-6">
+                  <pre className="bg-muted p-4 rounded-lg overflow-auto max-h-96">
+                    <code className="text-sm">
+                      {JSON.stringify(JSON.parse(contract.content), null, 2)}
+                    </code>
+                  </pre>
+                </TabsContent>
+              </Tabs>
             )}
           </CardContent>
         </Card>

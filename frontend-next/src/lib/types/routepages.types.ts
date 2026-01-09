@@ -1,5 +1,6 @@
 
 import { getCompany } from "../actions/company/api";
+import { getContractDocument } from "../actions/contract-document/api";
 import { getProject } from "../actions/project/api";
 import { getProposal } from "../actions/proposal/api";
 import { getUser } from "../actions/user/api";
@@ -34,12 +35,20 @@ export const RoutePagesList: RoutePage<unknown>[] = [
             queryFn: (id?: string) => getProposal(id as string),
         }),
     },
-        {
+    {
         path: 'project',
         key: 'data.name',
         getBreadName: (id?: string) => ({
             queryKey: () => ["project", id],
             queryFn: (id?: string) => getProject(id as string),
+        }),
+    },
+    {
+        path: 'contract-document',
+        key: 'data.name',
+        getBreadName: (id?: string) => ({
+            queryKey: () => ["contract-document", id],
+            queryFn: (id?: string) => getContractDocument(id as string),
         }),
     }
 ]
@@ -50,6 +59,6 @@ export interface RoutePage<T> {
     getBreadName: (id?: string) => RoutePageQuery<T>;
 }
 
-export async function nullFunction<T>() : Promise<T> {
+export async function nullFunction<T>(): Promise<T> {
     return null as unknown as T;
 }

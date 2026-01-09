@@ -10,8 +10,11 @@
   "send": "Enviar",
   "accept": "Aceitar",
   "archive": "Arquivar",
-  "copyTemplate": "Copiar Template JSON",
+  "copyTemplate": "Template JSON",
   "templateCopied": "Template copiado para área de transferência!",
+  "copied": "Copiado!",
+  "templateModalTitle": "Template JSON - Criar Contrato",
+  "templateModalDescription": "Use este template para criar o JSON do contrato",
   
   "projectId": "Projeto",
   "projectIdRequired": "Projeto é obrigatório",
@@ -47,6 +50,13 @@
   
   "createdAt": "Criado em",
   "updatedAt": "Atualizado em",
+  "searchText": "Buscar",
+  "searchPlaceholder": "Buscar contratos...",
+  "loading": "Carregando...",
+  "noLogs": "Nenhum contrato encontrado",
+  "entity": "contrato",
+  "entityPlural": "contratos",
+  "loadError": "Erro ao carregar contratos",
   
   "successCreate": "Contrato criado com sucesso!",
   "successUpdate": "Contrato atualizado com sucesso!",
