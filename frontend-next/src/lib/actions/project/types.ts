@@ -5,6 +5,7 @@ export interface Project {
   name: string;
   description: string | null;
   status: string;
+  token: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -36,6 +36,12 @@ export class Project {
   status: string;
 
   @ApiProperty({
+    description: 'Project token for authentication',
+    example: 's3cr3t-t0k3n-123456',
+  })
+  token: string | null;
+
+  @ApiProperty({
     description: 'Creation timestamp',
     example: '2024-01-07T10:00:00.000Z',
   })

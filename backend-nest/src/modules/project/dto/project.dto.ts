@@ -9,6 +9,7 @@ export class ProjectDto {
     this.name = project.name;
     this.description = project.description;
     this.status = project.status;
+    this.token = project.token;
     this.createdAt = project.createdAt;
     this.updatedAt = project.updatedAt;
   }
@@ -44,6 +45,13 @@ export class ProjectDto {
     example: 'PROPOSAL',
   })
   status: string;
+
+  @ApiProperty({
+    description: 'Project token for authentication',
+    example: 's3cr3t-t0k3n-123456',
+    required: false,
+  })
+  token: string | null;
 
   @ApiProperty({
     description: 'Creation timestamp',

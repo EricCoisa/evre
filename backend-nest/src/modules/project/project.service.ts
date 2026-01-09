@@ -42,12 +42,16 @@ export class ProjectService implements IBaseService<
       );
     }
 
+    // Gera um token único para o projeto (webhook)
+    const token = this.generateToken();
+
     const project = await this.prisma.project.create({
       data: {
         companyId: createProjectDto.companyId,
         name: createProjectDto.name,
         description: createProjectDto.description || null,
         status: createProjectDto.status || 'PROPOSAL',
+        token,
       },
     });
 
@@ -342,5 +346,12 @@ export class ProjectService implements IBaseService<
 
   private mapToDto(project: Project): ProjectDto {
     return new ProjectDto(project);
+  }
+
+  private generateToken(length = 32): string {
+    // Usa crypto para gerar um token seguro
+    return Array.from({ length }, () =>
+      Math.floor(Math.random() * 36).toString(36),
+    ).join('');
   }
 }

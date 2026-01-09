@@ -5,14 +5,10 @@ import { PaginationQuery } from 'src/common/schemas/pagination.schema';
 import { PaginatedResponse } from 'src/common/types/pagination.types';
 import { CreateClientLogDto } from './dto/create-clientLog-dto';
 import { ClientLog } from 'src/domain/clientLog/clientLog.entity';
-import { IBaseService } from 'src/domain/interface/base-service.interface';
 import { ClientLogDto } from './dto/clientLog-dto';
 
 @Injectable()
-export class ClientLogService implements Omit<
-  IBaseService<ClientLog>,
-  'update' | 'remove'
-> {
+export class ClientLogService {
   constructor(private readonly prisma: PrismaService) {}
 
   //TODO: OK
@@ -135,13 +131,17 @@ export class ClientLogService implements Omit<
   }
 
   //TODO: OK
-  async create(data: CreateClientLogDto): Promise<ClientLog> {
+  async create(
+    data: CreateClientLogDto,
+    projectId: string,
+    companyId: string,
+  ): Promise<ClientLog> {
     return await this.prisma.clientLog.create({
       data: {
-        companyId: data.companyId,
-        projectId: data.projectId,
+        companyId,
+        projectId,
         environment: data.environment,
-        metadata: data.metadata ? JSON.stringify(data.metadata) : null,
+        metadata: data.metadata || null,
       },
     });
   }
