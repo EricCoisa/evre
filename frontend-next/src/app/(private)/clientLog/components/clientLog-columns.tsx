@@ -5,6 +5,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { DataCell, DataCellModal, TableHead } from '@/components/table-utils';
 import { Tree } from '@/components/tree';
 import { formatDate } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 export function getClientLogColumns(t: (key: string) => string): ColumnDef<ClientLog>[] {
   return [
@@ -32,13 +33,25 @@ export function getClientLogColumns(t: (key: string) => string): ColumnDef<Clien
        cell: ({ row }) => {
         const metadata = row.getValue("metadata");
         const parsedMetadata = metadata ? JSON.parse(String(metadata)) : {};
+        console.log('parsedMetadata', parsedMetadata);
+        let data =  {};
+        try {
+          data = JSON.parse(String(parsedMetadata.metadata))
+        } catch (e) {}
+        // Remove a propriedade 'metadata' de parsedMetadata
+        const { metadata: _omit, ...parsedMetadataWithoutMetadata } = parsedMetadata || {};
         return (
           <DataCellModal
             title={t('metadata')}
-            cellChildren={<Tree data={parsedMetadata} maxLines={2}/>}
+            cellChildren={<Tree data={parsedMetadataWithoutMetadata} maxLines={2} />}
             maxWidth={200}
           >
-            <Tree data={parsedMetadata}/>
+            <div>
+              <Tree data={parsedMetadataWithoutMetadata} />
+              <Separator />
+              <br />
+              <Tree data={data} />
+            </div>
           </DataCellModal>
         );
        },
