@@ -91,5 +91,6 @@
   "deleteActivityConfirmation": "Tem certeza que deseja excluir esta atividade?",
   "deleteActivityWarning": "Esta ação não pode ser desfeita. A atividade será permanentemente removida.",
   "detailsAndComments": "Detalhes & Comentários",
-  "stagesAndApprovals": "Etapas & Aprovações"
+  "stagesAndApprovals": "Etapas & Aprovações",
+  "proposals": "Propostas"
 }

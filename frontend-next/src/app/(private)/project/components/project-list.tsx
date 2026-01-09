@@ -42,8 +42,7 @@ export function ProjectList({
   };
 
   const { data, error } = useProjects(queryParams);
-  const { data: companiesData } = useCompanies({ pagination: false });
-
+  
   const columns = useMemo(() => getProjectColumns({ t }), [t]);
 
   const handleCreateSuccess = useCallback(() => {

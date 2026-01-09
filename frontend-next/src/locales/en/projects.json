@@ -91,5 +91,6 @@
   "deleteActivityConfirmation": "Are you sure you want to delete this activity?",
   "deleteActivityWarning": "This action cannot be undone. The activity will be permanently removed.",
   "detailsAndComments": "Details & Comments",
-  "stagesAndApprovals": "Stages & Approvals"
+  "stagesAndApprovals": "Stages & Approvals",
+  "proposals": "Proposals"
 }
