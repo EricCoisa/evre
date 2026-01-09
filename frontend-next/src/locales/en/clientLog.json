@@ -1,0 +1,13 @@
+{
+  "company": "Company",
+  "project": "Project",
+  "environment": "Environment",
+  "metadata": "Metadata",
+  "createdAt": "Created at",
+  "searchPlaceholder": "Search logs...",
+  "loading": "Loading...",
+  "noLogs": "No logs found",
+  "entity": "log",
+  "entityPlural": "logs",
+  "searchText": "Search"
+}

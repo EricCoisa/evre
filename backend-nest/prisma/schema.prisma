@@ -272,6 +272,7 @@ model Company {
   users     User[]
   proposals Proposal[]
   projects  Project[]
+    clientLogs          ClientLog[] // Adicionando relação inversa com ClientLog
 
   @@map("companies")
 }
@@ -311,6 +312,7 @@ model Project {
   proposals   Proposal[]       // Um projeto pode ter várias propostas
   comments    Comment[]
   approvals   Approval[]
+  clientLogs          ClientLog[] // Adicionando relação inversa com ClientLog
 
   @@index([companyId])
   @@index([status])
@@ -414,4 +416,21 @@ model Contact {
   updatedAt DateTime @updatedAt
 
   @@map("contacts")
+}
+
+model ClientLog {
+  id           String   @id @default(uuid())
+  companyId    String
+  projectId    String
+  environment  String
+  metadata     String?
+  createdAt    DateTime @default(now())
+
+  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([projectId])
+  @@index([environment])
+  @@map("client_logs")
 }

@@ -24,6 +24,7 @@ export const QUERY_CONFIG = {
     APPROVALS: 5 * 60 * 1000,          // 5 minutos - lista de aprovações
     HISTORY: 1 * 60 * 1000,            // 1 minuto - histórico de ações
     CONTACTS: 5 * 60 * 1000,           // 5 minutos - lista de contatos
+    CLIENT_LOG: 2 * 60 * 1000,         // 2 minutos - lista de client logs
   },
   
   // Garbage Collection Times (tempo que dados ficam no cache após stale)
@@ -45,6 +46,7 @@ export const QUERY_CONFIG = {
     APPROVALS: 10 * 60 * 1000,          // 10 minutos - lista de aprovações
     HISTORY: 2 * 60 * 1000,            // 2 minutos - histórico de ações
     CONTACTS: 10 * 60 * 1000,          // 10 minutos - lista de contatos
+    CLIENT_LOG: 5 * 60 * 1000,         // 5 minutos - lista de client logs
   },
   
   // Configurações de retry

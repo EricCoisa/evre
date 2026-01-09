@@ -237,6 +237,24 @@ async function main() {
     });
   }
 
+  let clientLogRoute = await prisma.route.findUnique({
+    where: { path: '/clientLog' },
+  });
+  if (!clientLogRoute) {
+    clientLogRoute = await prisma.route.upsert({
+      where: { path: '/clientLog' },
+      update: {},
+      create: {
+        path: '/clientLog',
+        labelKey: 'ROUTE_CLIENT_LOG',
+        icon: 'Newspaper',
+        ordem: 9,
+        isHome: false,
+        isActive: true,
+      },
+    });
+  }
+
   console.log('✅ Routes created');
 
   // Criar acessos padrão por role

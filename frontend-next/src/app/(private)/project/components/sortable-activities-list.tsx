@@ -269,7 +269,7 @@ export function SortableActivitiesList({ activities: initialActivities, stageId,
     try {
       await updateActivity.mutateAsync({
         id: activityId,
-        data: { status: status as 'TODO' | 'DOING' | 'DONE' },
+        data: { status },
       });
       queryClient.invalidateQueries({ 
         queryKey: ['activities', { 
