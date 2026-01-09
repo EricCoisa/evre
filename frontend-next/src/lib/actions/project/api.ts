@@ -10,6 +10,7 @@ import type {
   Stage,
   CreateStageDto,
   UpdateStageDto,
+  UpdateStageStatusDto,
   ReorderStagesDto,
   Activity,
   CreateActivityDto,
@@ -79,6 +80,13 @@ export async function updateStage(
   data: UpdateStageDto,
 ): Promise<ApiResponse<Stage>> {
   return await PATCH<Stage>(`/stage/${id}`, data);
+}
+
+export async function updateStageStatus(
+  id: string,
+  data: UpdateStageStatusDto,
+): Promise<ApiResponse<Stage>> {
+  return await PATCH<Stage>(`/stage/${id}/status`, data);
 }
 
 export async function deleteStage(
@@ -190,4 +198,9 @@ export async function getProjectStatusList(): Promise<ApiResponse<string[]>> {
 // GetActivityStatus
 export async function getActivityStatusList(): Promise<ApiResponse<string[]>> {
   return await GET<string[]>('/activity/status');
+}
+
+// GetStageStatus
+export async function getStageStatusList(): Promise<ApiResponse<string[]>> {
+  return await GET<string[]>('/stage/status');
 }

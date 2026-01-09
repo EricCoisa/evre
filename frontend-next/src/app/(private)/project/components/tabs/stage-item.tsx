@@ -1,10 +1,11 @@
 'use client';
 
 import { Stage, ApprovalStatusColors, Approval } from '@/lib/actions/project/types';
-import { useActivities, useApprovalsByStage, useActivityStatus, useUpdateStage, useCreateActivity } from '@/lib/actions/project/queries';
+import { useActivities, useApprovalsByStage, useActivityStatus, useUpdateStage, useCreateActivity, useStageStatus, useUpdateStageStatus } from '@/lib/actions/project/queries';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatDate } from '@/lib/utils';
 import { useState, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
@@ -43,8 +44,10 @@ export function StageItem({
   });
   const { data: approvalsData } = useApprovalsByStage(stage.id);
   const { data: activityStatusList } = useActivityStatus();
+  const { data: stageStatuses } = useStageStatus();
   const createActivity = useCreateActivity();
   const updateStage = useUpdateStage();
+  const updateStageStatus = useUpdateStageStatus();
 
   const activities = Array.isArray(activitiesData) ? activitiesData : activitiesData?.data || [];
   const approvals = approvalsData || [];
@@ -134,6 +137,16 @@ export function StageItem({
     }
   }, [stageIndex, totalStages, stages, updateStage, queryClient, t]);
 
+  const handleStageStatusChange = useCallback(async (status: string) => {
+    try {
+      await updateStageStatus.mutateAsync({ id: stage.id, status });
+      queryClient.invalidateQueries({ queryKey: ['stages'] });
+      toast.success(t('statusUpdated'));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Error updating status');
+    }
+  }, [stage.id, updateStageStatus, queryClient, t]);
+
   return (
     <>
       <Card>
@@ -142,6 +155,24 @@ export function StageItem({
             <div className="flex items-center gap-2">
               <CardTitle className="text-lg">{stage.name}</CardTitle>
               <Badge variant="outline">Order: {stage.order}</Badge>
+              {isAdmin ? (
+                <Select value={stage.status} onValueChange={handleStageStatusChange}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue>
+                      <Badge variant="outline">{stage.status}</Badge>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(stageStatuses || []).map((status) => (
+                      <SelectItem key={status} value={status}>
+                        <Badge variant="outline">{status}</Badge>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Badge variant="outline">{stage.status}</Badge>
+              )}
             </div>
             {isAdmin && (
               <div className="flex items-center gap-1">

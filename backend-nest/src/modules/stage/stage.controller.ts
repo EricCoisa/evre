@@ -3,6 +3,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { StageService } from './stage.service';
 import { CreateStageDto } from './dto/create-stage.dto';
 import { UpdateStageDto } from './dto/update-stage.dto';
+import { UpdateStageStatusDto } from './dto/update-stage-status.dto';
 import { StageDto } from './dto/stage.dto';
 import { ReorderStagesDto } from './dto/reorder-stages.dto';
 import { StatusResponseDto } from '../../common/schemas/status-response.dto';
@@ -28,6 +29,24 @@ import { plainToInstance } from 'class-transformer';
 @Controller('stage')
 export class StageController {
   constructor(private readonly stageService: StageService) {}
+
+  @GetApi({
+    path: 'status',
+    summary: 'Get list of stage statuses',
+    description: 'Returns a list of all possible stage statuses',
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Stage statuses retrieved successfully',
+        },
+      ],
+    },
+    authenticated: true,
+  })
+  getStatusList(): string[] {
+    return this.stageService.getStatusList();
+  }
 
   @PostApi({
     path: '',
@@ -151,6 +170,32 @@ export class StageController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<void> {
     await this.stageService.remove(user.id, id);
+  }
+
+  @PatchApi({
+    path: ':id/status',
+    summary: 'Update stage status',
+    description:
+      'Updates the status of a stage - MANUAL operation only. Stage.status is NEVER automatically derived from activities.',
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Stage status updated successfully',
+          schema: { dto: StageDto },
+        },
+      ],
+    },
+    authenticated: true,
+    roles: ['ADMIN'],
+  })
+  @Roles('ADMIN')
+  async updateStatus(
+    @Param('id') id: string,
+    @Body() updateStatusDto: UpdateStageStatusDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<StageDto> {
+    return this.stageService.updateStatus(id, updateStatusDto.status, user.id);
   }
 
   @PatchApi({

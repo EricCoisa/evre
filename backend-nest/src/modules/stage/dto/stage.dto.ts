@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Stage } from 'src/domain/project/stage.entity';
+import { StageStatusConst } from 'src/domain/project/stageStatus.const';
 
 export class StageDto {
   constructor(stage?: Stage) {
@@ -38,10 +39,12 @@ export class StageDto {
   order: number;
 
   @ApiProperty({
-    description: 'Stage status (informativo)',
-    example: 'IN_PROGRESS',
+    description:
+      'Stage status - Manual field, only changed by explicit user action',
+    enum: StageStatusConst,
+    example: StageStatusConst.TODO,
   })
-  status: string;
+  status: (typeof StageStatusConst)[keyof typeof StageStatusConst];
 
   @ApiProperty({
     description: 'Creation timestamp',

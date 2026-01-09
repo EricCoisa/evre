@@ -4,7 +4,7 @@ import { I18nService } from 'nestjs-i18n';
 import { CreateStageDto } from './dto/create-stage.dto';
 import { UpdateStageDto } from './dto/update-stage.dto';
 import { StageDto } from './dto/stage.dto';
-import type { Stage } from '@prisma/client';
+import type { Stage, StageStatus } from '@prisma/client';
 import { IBaseService } from 'src/domain/interface/base-service.interface';
 import {
   PaginatedResponse,
@@ -12,6 +12,7 @@ import {
 } from 'src/common/types/pagination.types';
 import { LoggingService } from '../logging/logging.service';
 import { LogActions } from 'src/common/types/logging.types';
+import { StageStatusConst } from 'src/domain/project/stageStatus.const';
 
 @Injectable()
 export class StageService implements IBaseService<
@@ -53,7 +54,7 @@ export class StageService implements IBaseService<
         projectId: createStageDto.projectId,
         name: createStageDto.name,
         order: nextOrder,
-        status: createStageDto.status || '',
+        status: createStageDto.status || 'TODO',
       },
     });
 
@@ -277,6 +278,65 @@ export class StageService implements IBaseService<
     return new StageDto(stage);
   }
 
+  /**
+   * Updates only the status of a stage - MANUAL operation only
+   * Stage.status is NEVER automatically derived from activities
+   */
+  async updateStatus(
+    id: string,
+    status: StageStatus,
+    performedById: string,
+  ): Promise<StageDto> {
+    const existing = await this.prisma.stage.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      throw new NotFoundException(
+        this.i18n.t('stage.errors.not_found') || 'Stage not found',
+      );
+    }
+
+    const oldStatus = existing.status;
+
+    const stage = await this.prisma.stage.update({
+      where: { id },
+      data: { status },
+    });
+
+    // Log da ação
+    await this.loggingService.create(
+      {
+        module: 'STAGE',
+        action: LogActions.UPDATE,
+        message: `Stage ${stage.name} status changed from ${oldStatus} to ${status}`,
+        metadata: {
+          stageId: stage.id,
+          from: oldStatus,
+          to: status,
+        },
+      },
+      performedById,
+    );
+
+    // Registra no histórico do projeto
+    await this.prisma.projectHistory.create({
+      data: {
+        projectId: stage.projectId,
+        type: 'STAGE_UPDATED',
+        payload: JSON.stringify({
+          stageId: stage.id,
+          name: stage.name,
+          from: oldStatus,
+          to: status,
+          performedById,
+        }),
+      },
+    });
+
+    return this.mapToDto(stage);
+  }
+
   async reorder(
     stages: Array<{ stageId: string; order: number }>,
     performedById: string,
@@ -338,5 +398,9 @@ export class StageService implements IBaseService<
       status: true,
       message: 'Stages reordered successfully',
     };
+  }
+
+  getStatusList(): string[] {
+    return Object.values(StageStatusConst);
   }
 }

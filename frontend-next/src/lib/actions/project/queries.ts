@@ -8,6 +8,7 @@ import {
   getStages,
   createStage,
   updateStage,
+  updateStageStatus,
   deleteStage,
   reorderStages,
   getActivities,
@@ -23,6 +24,7 @@ import {
   getHistoryByProject,
   getProjectStatusList,
   getActivityStatusList,
+  getStageStatusList,
 } from './api';
 import type { PaginationParams } from '@/lib/types/pagination.types';
 import type {
@@ -37,6 +39,7 @@ import type {
   ReorderActivitiesDto,
   CreateCommentDto,
   CreateApprovalDto,
+  StageStatus,
 } from './types';
 import { Collector, Alive, EmulateMutationError } from '@/lib/api/collector';
 import { getQueryConfig } from '@/lib/utils';
@@ -138,6 +141,21 @@ export function useUpdateStage() {
     mutationFn: ({ id, data }: { id: string; data: UpdateStageDto }) => {
       EmulateMutationError(emulateError, 'Emulated error from useUpdateStage');
       return Alive(() => updateStage(id, data))();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['stages'] });
+    },
+  });
+}
+
+export function useUpdateStageStatus() {
+  const queryClient = useQueryClient();
+  const { emulateError } = useApp();
+
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: StageStatus }) => {
+      EmulateMutationError(emulateError, 'Emulated error from useUpdateStageStatus');
+      return Alive(() => updateStageStatus(id, { status: status }))();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stages'] });
@@ -370,5 +388,14 @@ export function useActivityStatus() {
     queryFn: Collector(() => getActivityStatusList()),
     enabled: true,
     ...getQueryConfig('ACTIVITIES', 'ACTIVITIES'),
+  });
+}
+
+export function useStageStatus() {
+  return useQuery({
+    queryKey: ['stage', 'status'],
+    queryFn: Collector(() => getStageStatusList()),
+    enabled: true,
+    ...getQueryConfig('STAGES', 'STAGES'),
   });
 }

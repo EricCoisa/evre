@@ -1,10 +1,10 @@
 'use client';
 
-import { Project, Stage } from '@/lib/actions/project/types';
+import { Project, Stage, StageStatus } from '@/lib/actions/project/types';
 import { useStages, useCreateStage, useCreateApproval } from '@/lib/actions/project/queries';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Plus } from 'lucide-react';
 import { z } from 'zod';
 import { useQueryClient } from '@tanstack/react-query';
@@ -27,7 +27,7 @@ export function StagesTab({ project, isAdmin = false }: StagesTabProps) {
   const { data: stagesData } = useStages({ filter: { projectId: project.id }, pagination: false });
   const createStage = useCreateStage();
   const createApproval = useCreateApproval();
-
+  
   const stages = useMemo(() => 
     Array.isArray(stagesData) ? stagesData : stagesData?.data || [],
   [stagesData]);

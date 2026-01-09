@@ -41,6 +41,12 @@ enum ProjectStatus {
   DONE
 }
 
+enum StageStatus {
+  TODO
+  DOING
+  DONE
+}
+
 enum ActivityStatus {
   TODO
   DOING
@@ -321,19 +327,20 @@ model Project {
 }
 
 model Stage {
-  id        String   @id @default(uuid())
+  id        String      @id @default(uuid())
   projectId String
   name      String
   order     Int
-  status    String   // Texto informativo apenas - NÃO usado para lógica de negócio
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  status    StageStatus @default(TODO)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 
   project    Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
   activities Activity[]
 
   @@index([projectId])
   @@index([order])
+  @@index([status])
   @@map("stages")
 }
 

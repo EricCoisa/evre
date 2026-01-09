@@ -31,12 +31,14 @@ export const ProjectStatusColors = {
 };
 
 // Stage Types
+export type StageStatus = 'TODO' | 'DOING' | 'DONE';
+
 export interface Stage {
   id: string;
   projectId: string;
   name: string;
   order: number;
-  status: string;
+  status: StageStatus;
   createdAt: string;
   updatedAt: string;
 }
@@ -45,13 +47,17 @@ export interface CreateStageDto {
   projectId: string;
   name: string;
   order: number;
-  status?: string;
+  status?: StageStatus;
 }
 
 export interface UpdateStageDto {
   name?: string;
   order?: number;
-  status?: string;
+  status?: StageStatus;
+}
+
+export interface UpdateStageStatusDto {
+  status: StageStatus;
 }
 
 export interface ReorderStagesDto {
