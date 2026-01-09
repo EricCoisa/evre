@@ -340,6 +340,7 @@ model Activity {
   title       String
   description String?        @db.Text
   status      ActivityStatus @default(TODO)
+  order       Int            @default(0)
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
@@ -347,6 +348,7 @@ model Activity {
 
   @@index([stageId])
   @@index([status])
+  @@index([order])
   @@map("activities")
 }
 

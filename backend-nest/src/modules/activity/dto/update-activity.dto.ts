@@ -13,6 +13,7 @@ const UpdateActivitySchema = z
         ActivityStatusConst.DONE,
       ])
       .optional(),
+    order: z.number().int().min(0).optional(),
   })
   .strict();
 

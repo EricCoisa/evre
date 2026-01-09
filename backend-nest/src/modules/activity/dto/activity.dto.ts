@@ -9,6 +9,7 @@ export class ActivityDto {
     this.title = activity.title;
     this.description = activity.description;
     this.status = activity.status;
+    this.order = activity.order;
     this.createdAt = activity.createdAt;
     this.updatedAt = activity.updatedAt;
   }
@@ -43,6 +44,12 @@ export class ActivityDto {
     example: 'TODO',
   })
   status: string;
+
+  @ApiProperty({
+    description: 'Activity order',
+    example: 1,
+  })
+  order: number;
 
   @ApiProperty({
     description: 'Creation timestamp',

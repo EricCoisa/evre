@@ -5,6 +5,7 @@ import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
 import { ActivityDto } from './dto/activity.dto';
 import { MoveActivityDto } from './dto/move-activity.dto';
+import { ReorderActivitiesDto } from './dto/reorder-activities.dto';
 import { StatusResponseDto } from '../../common/schemas/status-response.dto';
 import {
   GetApi,
@@ -143,6 +144,7 @@ export class ActivityController {
     summary: 'Move activity to another stage',
     description:
       'Moves an activity to a different stage within the same project',
+    body: MoveActivityDto,
     response: {
       success: [
         {
@@ -165,5 +167,21 @@ export class ActivityController {
       moveDto.targetStageId,
       user.id,
     );
+  }
+
+  @PatchApi({
+    path: 'reorder',
+    summary: 'Reorder activities',
+    description: 'Updates the order of multiple activities',
+    body: ReorderActivitiesDto,
+    authenticated: true,
+    roles: ['ADMIN'],
+  })
+  @Roles('ADMIN')
+  async reorder(
+    @Body() reorderDto: ReorderActivitiesDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ status: boolean; message: string }> {
+    return this.activityService.reorder(reorderDto.activities, user.id);
   }
 }

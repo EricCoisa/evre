@@ -116,7 +116,7 @@ export class ActivityService implements IBaseService<
     if (!pagination) {
       const activities = await this.prisma.activity.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
       });
       return activities.map((activity) => this.mapToDto(activity));
     }
@@ -127,7 +127,7 @@ export class ActivityService implements IBaseService<
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
       }),
       this.prisma.activity.count({ where }),
     ]);
@@ -196,18 +196,39 @@ export class ActivityService implements IBaseService<
     });
 
     if (stage) {
-      await this.prisma.projectHistory.create({
-        data: {
-          projectId: stage.projectId,
-          type: 'ACTIVITY_UPDATED',
-          payload: JSON.stringify({
-            activityId: activity.id,
-            title: activity.title,
-            changes: updateActivityDto,
-            performedById,
-          }),
-        },
-      });
+      // Se order foi alterado, registra como reorder
+      if (
+        updateActivityDto.order !== undefined &&
+        updateActivityDto.order !== existing.order
+      ) {
+        await this.prisma.projectHistory.create({
+          data: {
+            projectId: stage.projectId,
+            type: 'ACTIVITY_UPDATED',
+            payload: JSON.stringify({
+              activityId: activity.id,
+              title: activity.title,
+              oldOrder: existing.order,
+              newOrder: activity.order,
+              performedById,
+            }),
+          },
+        });
+      } else {
+        // Registro normal de atualização
+        await this.prisma.projectHistory.create({
+          data: {
+            projectId: stage.projectId,
+            type: 'ACTIVITY_UPDATED',
+            payload: JSON.stringify({
+              activityId: activity.id,
+              title: activity.title,
+              changes: updateActivityDto,
+              performedById,
+            }),
+          },
+        });
+      }
     }
 
     return this.mapToDto(activity);
@@ -355,6 +376,78 @@ export class ActivityService implements IBaseService<
     return {
       status: true,
       message: `Activity moved from "${oldStageName}" to "${targetStage.name}"`,
+    };
+  }
+
+  async reorder(
+    activities: Array<{ activityId: string; order: number }>,
+    performedById: string,
+  ): Promise<{ status: boolean; message: string }> {
+    // Valida que todas as activities existem
+    const activityIds = activities.map((a) => a.activityId);
+    const existingActivities = await this.prisma.activity.findMany({
+      where: { id: { in: activityIds } },
+      include: { stage: true },
+    });
+
+    if (existingActivities.length !== activityIds.length) {
+      throw new NotFoundException(
+        this.i18n.t('activity.errors.activity_not_found') ||
+          'One or more activities not found',
+      );
+    }
+
+    // Valida que todas as activities pertencem ao mesmo stage
+    const stageIds = new Set(existingActivities.map((a) => a.stageId));
+    if (stageIds.size > 1) {
+      throw new NotFoundException(
+        'All activities must belong to the same stage for reordering',
+      );
+    }
+
+    // Atualiza a ordem de cada activity
+    await this.prisma.$transaction(
+      activities.map((item) =>
+        this.prisma.activity.update({
+          where: { id: item.activityId },
+          data: { order: item.order },
+        }),
+      ),
+    );
+
+    const projectId = existingActivities[0].stage.projectId;
+
+    // Log da ação
+    await this.loggingService.create(
+      {
+        module: 'ACTIVITY',
+        action: LogActions.UPDATE,
+        message: `Activities reordered`,
+        metadata: {
+          activityCount: activities.length,
+          stageId: existingActivities[0].stageId,
+        },
+      },
+      performedById,
+    );
+
+    // Registra no histórico do projeto
+    await this.prisma.projectHistory.create({
+      data: {
+        projectId,
+        type: 'ACTIVITY_UPDATED',
+        payload: JSON.stringify({
+          action: 'reordered',
+          activityCount: activities.length,
+          stageId: existingActivities[0].stageId,
+          performedById,
+        }),
+      },
+    });
+
+    return {
+      status: true,
+      message: `${activities.length} activities reordered successfully`,
     };
   }
 }

@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { ProjectStatusConst } from '../../domain/project/projectStatus.const';
 import { PrismaService } from '../../prisma/prisma.service';
 import { I18nService } from 'nestjs-i18n';
 import { CreateProjectDto } from './dto/create-project.dto';
@@ -324,6 +325,10 @@ export class ProjectService implements IBaseService<
         this.i18n.t('project.success.deleted') ||
         'Project deleted successfully',
     };
+  }
+
+  getStatusList(): string[] {
+    return Object.values(ProjectStatusConst);
   }
 
   private mapToDto(project: Project): ProjectDto {

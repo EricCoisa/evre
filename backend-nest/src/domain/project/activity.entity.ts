@@ -35,6 +35,12 @@ export class Activity {
   status: string;
 
   @ApiProperty({
+    description: 'Activity order',
+    example: 1,
+  })
+  order: number;
+
+  @ApiProperty({
     description: 'Creation timestamp',
     example: '2024-01-07T10:00:00.000Z',
   })

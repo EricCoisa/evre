@@ -15,12 +15,14 @@ import {
   updateActivity,
   deleteActivity,
   moveActivity,
+  reorderActivities,
   getCommentsByEntity,
   createComment,
   deleteComment,
   getApprovalsByEntity,
   createApproval,
   getHistoryByProject,
+  getStatusList,
 } from './api';
 import type { PaginationParams } from '@/lib/types/pagination.types';
 import type {
@@ -32,6 +34,7 @@ import type {
   CreateActivityDto,
   UpdateActivityDto,
   MoveActivityDto,
+  ReorderActivitiesDto,
   CreateCommentDto,
   CreateApprovalDto,
 } from './types';
@@ -207,7 +210,7 @@ export function useUpdateActivity() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['activities'] });
-    },
+    }
   });
 }
 
@@ -238,6 +241,24 @@ export function useMoveActivity() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['activities'] });
       queryClient.invalidateQueries({ queryKey: ['stages'] });
+    },
+  });
+}
+
+export function useReorderActivities() {
+  const queryClient = useQueryClient();
+  const { emulateError } = useApp();
+
+  return useMutation({
+    mutationFn: async (updates: Array<{ id: string; order: number }>) => {
+      EmulateMutationError(emulateError, 'Emulated error from useReorderActivities');
+      // Fazer chamadas individuais como Route faz
+      await Promise.all(
+        updates.map(({ id, order }) => Alive(() => updateActivity(id, { order }))())
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['activities'] });
     },
   });
 }
@@ -324,11 +345,20 @@ export function useCreateApproval() {
 }
 
 // ProjectHistory Queries
-export function useHistoryByProject(projectId: string) {
+export function useHistoryByProject(projectId: string, params?: PaginationParams) {
   return useQuery({
-    queryKey: ['history', projectId],
-    queryFn: Collector(() => getHistoryByProject(projectId)),
+    queryKey: ['history', projectId, params],
+    queryFn: Collector(() => getHistoryByProject(projectId, params)),
     enabled: !!projectId,
     ...getQueryConfig('HISTORY'),
+  });
+}
+
+export function useStatus() {
+  return useQuery({
+    queryKey: ['project', 'status'],
+    queryFn: Collector(() => getStatusList()),
+    enabled: true,
+    ...getQueryConfig('PROJECT', 'PROJECT'),
   });
 }

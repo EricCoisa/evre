@@ -27,6 +27,25 @@ import { plainToInstance } from 'class-transformer';
 export class ProjectController {
   constructor(private readonly projectService: ProjectService) {}
 
+  // Mover para o topo para evitar conflito com /:id
+  @GetApi({
+    path: 'status',
+    summary: 'Get list of project statuses',
+    description: 'Returns a list of all possible project statuses',
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Project statuses retrieved successfully',
+        },
+      ],
+    },
+    authenticated: true,
+  })
+  async getStatusList(): Promise<string[]> {
+    return this.projectService.getStatusList();
+  }
+
   @PostApi({
     path: '',
     summary: 'Create a new project',

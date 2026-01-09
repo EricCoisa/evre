@@ -15,6 +15,7 @@ import type {
   CreateActivityDto,
   UpdateActivityDto,
   MoveActivityDto,
+  ReorderActivitiesDto,
   Comment,
   CreateCommentDto,
   Approval,
@@ -130,6 +131,12 @@ export async function moveActivity(
   return await PATCH<{ status: boolean; message: string }>('/activity/move', data);
 }
 
+export async function reorderActivities(
+  data: ReorderActivitiesDto,
+): Promise<ApiResponse<{ status: boolean; message: string }>> {
+  return await PATCH<{ status: boolean; message: string }>('/activity/reorder', data);
+}
+
 // Comment API
 export async function getCommentsByEntity(
   entityType: string,
@@ -167,6 +174,15 @@ export async function createApproval(
 // ProjectHistory API
 export async function getHistoryByProject(
   projectId: string,
-): Promise<ApiResponse<ProjectHistory[]>> {
-  return await GET<ProjectHistory[]>(`/project-history/project/${projectId}`);
+  params?: PaginationParams,
+): Promise<ApiResponse<PaginatedResponse<ProjectHistory> | ProjectHistory[]>> {
+  return await GET<PaginatedResponse<ProjectHistory> | ProjectHistory[]>(
+    `/project-history/project/${projectId}`,
+    { params: params || {} },
+  );
+}
+
+// GetStatus
+export async function getStatusList(): Promise<ApiResponse<string[]>> {
+  return await GET<string[]>('/project/status');
 }

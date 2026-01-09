@@ -4,24 +4,22 @@ export interface Project {
   companyId: string;
   name: string;
   description: string | null;
-  status: ProjectStatus;
+  status: string;
   createdAt: string;
   updatedAt: string;
 }
-
-export type ProjectStatus = 'PROPOSAL' | 'REQUIREMENTS' | 'DEVELOPMENT' | 'DONE';
 
 export interface CreateProjectDto {
   companyId: string;
   name: string;
   description?: string;
-  status?: ProjectStatus;
+  status?: string;
 }
 
 export interface UpdateProjectDto {
   name?: string;
   description?: string;
-  status?: ProjectStatus;
+  status?: string;
 }
 
 export const ProjectStatusColors = {
@@ -69,6 +67,7 @@ export interface Activity {
   title: string;
   description: string | null;
   status: ActivityStatus;
+  order: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -86,11 +85,19 @@ export interface UpdateActivityDto {
   title?: string;
   description?: string;
   status?: ActivityStatus;
+  order?: number;
 }
 
 export interface MoveActivityDto {
   activityId: string;
   targetStageId: string;
+}
+
+export interface ReorderActivitiesDto {
+  activities: Array<{
+    activityId: string;
+    order: number;
+  }>;
 }
 
 export const ActivityStatusColors = {

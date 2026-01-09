@@ -1,8 +1,15 @@
-import { Controller, Param } from '@nestjs/common';
+import { Controller, Param, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ProjectHistoryService } from './project-history.service';
 import { ProjectHistoryDto } from './dto/project-history.dto';
 import { GetApi } from '../../common/decorators/api-method.decorator';
+import { ZodValidationPipe } from 'nestjs-zod';
+import {
+  PaginationQuerySchema,
+  type PaginationQuery,
+} from '../../common/schemas/pagination.schema';
+import { commonPaginationQueries } from '../../common/swagger/pagination-queries';
+import type { PaginatedResponse } from '../../common/types/pagination.types';
 
 @ApiTags('project-history')
 @Controller('project-history')
@@ -17,15 +24,17 @@ export class ProjectHistoryController {
         {
           status: 'OK',
           description: 'History retrieved successfully',
-          schema: { dto: ProjectHistoryDto, isArray: true },
+          schema: { dto: ProjectHistoryDto, isArray: true, isPagination: true },
         },
       ],
     },
     authenticated: true,
+    queries: commonPaginationQueries,
   })
   async findByProject(
     @Param('projectId') projectId: string,
-  ): Promise<ProjectHistoryDto[]> {
-    return this.projectHistoryService.findByProject(projectId);
+    @Query(new ZodValidationPipe(PaginationQuerySchema)) query: PaginationQuery,
+  ): Promise<PaginatedResponse<ProjectHistoryDto> | ProjectHistoryDto[]> {
+    return this.projectHistoryService.findByProject(projectId, query);
   }
 }
