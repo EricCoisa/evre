@@ -17,6 +17,7 @@ export const LogModuleConst = {
   COMMENT: 'COMMENT',
   APPROVAL: 'APPROVAL',
   PROJECT_HISTORY: 'PROJECT_HISTORY',
+  CONTRACT_DOCUMENT: 'CONTRACT_DOCUMENT',
 };
 
 export type LogModule = keyof typeof LogModuleConst;

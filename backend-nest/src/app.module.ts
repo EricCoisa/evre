@@ -23,6 +23,7 @@ import { UserConfigurationModule } from './modules/user-configuration/user-confi
 import { UserConfigurationDefinitionModule } from './modules/user-configuration-definition/user-configuration-definition.module';
 import { CompanyModule } from './modules/company/company.module';
 import { ProposalModule } from './modules/proposal/proposal.module';
+import { ContractDocumentModule } from './modules/contract-document/contract-document.module';
 import { ProjectModule } from './modules/project/project.module';
 import { StageModule } from './modules/stage/stage.module';
 import { ActivityModule } from './modules/activity/activity.module';
@@ -72,6 +73,7 @@ import { ClientLogModule } from './modules/clientLog/clientLog.module';
     TasksModule,
     CompanyModule,
     ProposalModule,
+    ContractDocumentModule,
     ProjectModule,
     StageModule,
     ActivityModule,

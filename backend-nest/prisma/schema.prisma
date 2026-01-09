@@ -34,6 +34,13 @@ enum ProposalStatus {
   APPROVED
 }
 
+enum ContractStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  ARCHIVED
+}
+
 enum ProjectStatus {
   PROPOSAL
   REQUIREMENTS
@@ -95,6 +102,7 @@ enum LogModule {
   USER_CONFIGURATION_DEFINITION
   COMPANY
   PROPOSAL
+  CONTRACT_DOCUMENT
   PROJECT
   STAGE
   ACTIVITY
@@ -296,6 +304,7 @@ model Proposal {
 
   company               Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
   project               Project?       @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  contracts             ContractDocument[] // Uma proposta pode ser referenciada por vários contratos
 
   @@index([companyId])
   @@index([projectId])
@@ -317,6 +326,7 @@ model Project {
   stages      Stage[]
   histories   ProjectHistory[]
   proposals   Proposal[]       // Um projeto pode ter várias propostas
+  contracts   ContractDocument[] // Um projeto pode ter vários contratos
   comments    Comment[]
   approvals   Approval[]
   clientLogs  ClientLog[]      // Adicionando relação inversa com ClientLog
@@ -441,4 +451,25 @@ model ClientLog {
   @@index([projectId])
   @@index([environment])
   @@map("client_logs")
+}
+
+model ContractDocument {
+  id                    String         @id @default(uuid())
+  projectId             String
+  proposalId            String?        // Referência opcional a uma proposta
+  name                  String
+  version               Int            @default(1) // Versionamento explícito
+  status                ContractStatus @default(DRAFT)
+  contentSchemaVersion  String         @default("v1")
+  content               String         @db.Text // JSON semântico armazenado como string
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  project               Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  proposal              Proposal?      @relation(fields: [proposalId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([proposalId])
+  @@index([status])
+  @@map("contract_documents")
 }

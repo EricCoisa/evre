@@ -25,6 +25,7 @@ export const QUERY_CONFIG = {
     HISTORY: 1 * 60 * 1000,            // 1 minuto - histórico de ações
     CONTACTS: 5 * 60 * 1000,           // 5 minutos - lista de contatos
     CLIENT_LOG: 2 * 60 * 1000,         // 2 minutos - lista de client logs
+    CONTRACT_DOCUMENTS: 5 * 60 * 1000,   // 5 minutos - lista de documentos contratuais
   },
   
   // Garbage Collection Times (tempo que dados ficam no cache após stale)
@@ -47,6 +48,7 @@ export const QUERY_CONFIG = {
     HISTORY: 2 * 60 * 1000,            // 2 minutos - histórico de ações
     CONTACTS: 10 * 60 * 1000,          // 10 minutos - lista de contatos
     CLIENT_LOG: 5 * 60 * 1000,         // 5 minutos - lista de client logs
+    CONTRACT_DOCUMENTS: 10 * 60 * 1000,   // 10 minutos - lista de documentos contratuais
   },
   
   // Configurações de retry
