@@ -50,13 +50,6 @@ export function ProjectList({
     setIsCreateDialogOpen(false);
   }, []);
 
-  const companies = useMemo(() => {
-    if (!companiesData) return [];
-    return Array.isArray(companiesData) ? companiesData : companiesData.data;
-  }, [companiesData]);
-
-  console.log('data', data);
-  console.log('pagination', pagination);  
   return (
     <>
       <Container variant="dataTable" border={false}>

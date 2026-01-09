@@ -27,7 +27,6 @@ import { plainToInstance } from 'class-transformer';
 export class ProjectController {
   constructor(private readonly projectService: ProjectService) {}
 
-  // Mover para o topo para evitar conflito com /:id
   @GetApi({
     path: 'status',
     summary: 'Get list of project statuses',
@@ -42,7 +41,7 @@ export class ProjectController {
     },
     authenticated: true,
   })
-  async getStatusList(): Promise<string[]> {
+  getStatusList(): string[] {
     return this.projectService.getStatusList();
   }
 

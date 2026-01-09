@@ -24,8 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { GripVertical, Pencil, Trash2 } from 'lucide-react';
 import type { Activity } from '@/lib/actions/project/types';
-import { ActivityStatusColors } from '@/lib/actions/project/types';
-import { useUpdateActivity, useDeleteActivity, useReorderActivities } from '@/lib/actions/project/queries';
+import { useUpdateActivity, useDeleteActivity, useActivityStatus } from '@/lib/actions/project/queries';
 import { useQueryClient } from '@tanstack/react-query';
 import Modal from '@/components/modal';
 import { GenericCreateForm } from '@/components/generic-create-form';
@@ -46,12 +45,14 @@ function SortableActivityRow({
   onDelete,
   onStatusChange,
   isAdmin,
+  activityStatusList,
 }: { 
   activity: Activity;
   onEdit: (activity: Activity) => void;
   onDelete: (activityId: string) => void;
   onStatusChange: (activityId: string, status: string) => void;
   isAdmin?: boolean;
+  activityStatusList?: string[];
 }) {
   const {
     attributes,
@@ -97,27 +98,19 @@ function SortableActivityRow({
           >
             <SelectTrigger className="w-[110px] h-8">
               <SelectValue>
-                <Badge className={ActivityStatusColors[activity.status as keyof typeof ActivityStatusColors]}>
-                  {activity.status}
-                </Badge>
+                <Badge>{activity.status}</Badge>
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="TODO">
-                <Badge className={ActivityStatusColors.TODO}>TODO</Badge>
-              </SelectItem>
-              <SelectItem value="DOING">
-                <Badge className={ActivityStatusColors.DOING}>DOING</Badge>
-              </SelectItem>
-              <SelectItem value="DONE">
-                <Badge className={ActivityStatusColors.DONE}>DONE</Badge>
-              </SelectItem>
+              {activityStatusList?.map((status) => (
+                <SelectItem key={status} value={status}>
+                  <Badge>{status}</Badge>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         ) : (
-          <Badge className={ActivityStatusColors[activity.status as keyof typeof ActivityStatusColors]}>
-            {activity.status}
-          </Badge>
+          <Badge>{activity.status}</Badge>
         )}
         {isAdmin && (
           <>
@@ -153,6 +146,7 @@ export function SortableActivitiesList({ activities: initialActivities, stageId,
   const [deletingActivityId, setDeletingActivityId] = useState<string | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   
+  const { data: activityStatusList } = useActivityStatus();
   const updateActivity = useUpdateActivity();
   const deleteActivity = useDeleteActivity();
 
@@ -161,7 +155,7 @@ export function SortableActivitiesList({ activities: initialActivities, stageId,
     z.object({
       title: z.string().min(1, t('activityTitleRequired')),
       description: z.string().optional(),
-      status: z.enum(['TODO', 'DOING', 'DONE']).optional(),
+      status: z.string().optional(),
     }),
   [t]);
 
@@ -178,13 +172,12 @@ export function SortableActivitiesList({ activities: initialActivities, stageId,
     status: {
       label: t('status'),
       type: 'select' as const,
-      options: [
-        { value: 'TODO', label: 'TODO' },
-        { value: 'DOING', label: 'DOING' },
-        { value: 'DONE', label: 'DONE' },
-      ],
+      options: activityStatusList?.map(status => ({
+        value: status,
+        label: status,
+      })) || [],
     },
-  } satisfies FieldConfig<typeof updateActivitySchema>), [t]);
+  } satisfies FieldConfig<typeof updateActivitySchema>), [t, activityStatusList]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -336,6 +329,7 @@ export function SortableActivitiesList({ activities: initialActivities, stageId,
                   onDelete={handleDelete}
                   onStatusChange={handleStatusChange}
                   isAdmin={isAdmin}
+                  activityStatusList={activityStatusList}
                 />
               ))}
             </div>

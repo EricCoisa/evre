@@ -1,9 +1,8 @@
 'use client';
 
-import { useTranslation } from 'react-i18next';
 import { Project, ApprovalStatusColors, Stage, Approval, ProjectHistory } from '@/lib/actions/project/types';
-import { useStages, useActivities, useCommentsByProject, useApprovalsByStage, useHistoryByProject, useUpdateProject, useStatus } from '@/lib/actions/project/queries';
-import { useCreateComment, useCreateApproval, useCreateStage, useCreateActivity } from '@/lib/actions/project/queries';
+import { useStages, useActivities, useCommentsByProject, useApprovalsByStage, useHistoryByProject, useUpdateProject, useProjectStatus, useActivityStatus } from '@/lib/actions/project/queries';
+import { useCreateComment, useCreateApproval, useCreateStage, useCreateActivity, useUpdateStage } from '@/lib/actions/project/queries';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,18 +10,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { formatDate } from '@/lib/utils';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Plus } from 'lucide-react';
+import { Plus, Pencil, ChevronUp, ChevronDown } from 'lucide-react';
 import { z } from 'zod';
 import { useQueryClient } from '@tanstack/react-query';
 import type { FieldConfig } from '@/lib/form/field-config';
-import { GenericCreateFormModal } from '@/components/generic-create-form';
+import { GenericCreateFormModal, GenericCreateForm } from '@/components/generic-create-form';
 import LangLabel from '@/components/ui/langLabel';
 import { SortableActivitiesList } from './sortable-activities-list';
 import { DataTable } from '@/components/data-table';
 import type { ColumnDef, PaginationState } from '@tanstack/react-table';
 import { getHistoryColumns } from './history-columns';
+import Modal from '@/components/modal';
+import { useTranslation } from '@/hooks/use-translation';
 
 interface ProjectDetailProps {
   project: Project;
@@ -48,7 +49,7 @@ export function ProjectDetail({ project, isAdmin = false }: ProjectDetailProps) 
 
   const historyColumns: ColumnDef<ProjectHistory>[] = useMemo(() => getHistoryColumns(t), [t]);
 
-  const { data: statusList } = useStatus();
+  const { data: statusList } = useProjectStatus();
   const availableStatuses = useMemo(() => statusList || [], [statusList]);
 
   const createComment = useCreateComment();
@@ -188,7 +189,7 @@ export function ProjectDetail({ project, isAdmin = false }: ProjectDetailProps) 
                   <SelectContent>
                     {availableStatuses.map((status) => (
                       <SelectItem key={status} value={status}>
-                        <Badge variant="outline">{status}</Badge>
+                        <Badge variant="outline">{t(status)}</Badge>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -290,8 +291,15 @@ export function ProjectDetail({ project, isAdmin = false }: ProjectDetailProps) 
               <p className="text-muted-foreground">{t('noStages')}</p>
             ) : (
               <div className="space-y-4">
-                {stages.map((stage) => (
-                  <StageItem key={stage.id} stage={stage} isAdmin={isAdmin} />
+                {stages.map((stage, index) => (
+                  <StageItem 
+                    key={stage.id} 
+                    stage={stage} 
+                    isAdmin={isAdmin} 
+                    stages={stages}
+                    stageIndex={index}
+                    totalStages={stages.length}
+                  />
                 ))}
               </div>
             )}
@@ -363,25 +371,55 @@ export function ProjectDetail({ project, isAdmin = false }: ProjectDetailProps) 
   );
 }
 
-function StageItem({ stage, isAdmin }: { stage: Stage; isAdmin: boolean }) {
+function StageItem({ 
+  stage, 
+  isAdmin, 
+  stages, 
+  stageIndex, 
+  totalStages 
+}: { 
+  stage: Stage; 
+  isAdmin: boolean;
+  stages: Stage[];
+  stageIndex: number;
+  totalStages: number;
+}) {
   const { t } = useTranslation('projects');
   const queryClient = useQueryClient();
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  
   const { data: activitiesData } = useActivities({ 
     filter: JSON.stringify({ stageId: stage.id }), 
     pagination: false 
   });
   const { data: approvalsData } = useApprovalsByStage(stage.id);
+  const { data: activityStatusList } = useActivityStatus();
   const createActivity = useCreateActivity();
+  const updateStage = useUpdateStage();
 
   const activities = Array.isArray(activitiesData) ? activitiesData : activitiesData?.data || [];
   const approvals = approvalsData || [];
+
+  // Schema e config para editar Stage
+  const updateStageSchema = useMemo(() =>
+    z.object({
+      name: z.string().min(1, t('stageNameRequired')),
+    }),
+  [t]);
+
+  const stageFieldConfig = useMemo(() => ({
+    name: {
+      label: t('stageName'),
+      placeholder: t('stageNamePlaceholder'),
+    },
+  } satisfies FieldConfig<typeof updateStageSchema>), [t]);
 
   // Schema e config para criar Activity
   const createActivitySchema = useMemo(() =>
     z.object({
       title: z.string().min(1, t('activityTitleRequired')),
       description: z.string().optional(),
-      status: z.enum(['TODO', 'DOING', 'DONE']).optional(),
+      status: z.string().optional(),
     }),
   [t]);
 
@@ -398,22 +436,96 @@ function StageItem({ stage, isAdmin }: { stage: Stage; isAdmin: boolean }) {
     status: {
       label: t('status'),
       type: 'select' as const,
-      options: [
-        { value: 'TODO', label: 'TODO' },
-        { value: 'DOING', label: 'DOING' },
-        { value: 'DONE', label: 'DONE' },
-      ],
+      options: activityStatusList?.map(status => ({
+        value: status,
+        label: status,
+      })) || [],
     },
-  } satisfies FieldConfig<typeof createActivitySchema>), [t]);
+  } satisfies FieldConfig<typeof createActivitySchema>), [t, activityStatusList]);
+
+  const handleUpdateStageSubmit = useCallback(async (data: z.infer<typeof updateStageSchema>) => {
+    await updateStage.mutateAsync({
+      id: stage.id,
+      data,
+    });
+  }, [stage.id, updateStage]);
+
+  const handleUpdateStageSuccess = useCallback(() => {
+    setIsEditModalOpen(false);
+    queryClient.invalidateQueries({ queryKey: ['stages'] });
+    toast.success(t('stageUpdated'));
+  }, [queryClient, t]);
+
+  const handleMoveStage = useCallback(async (direction: 'up' | 'down') => {
+    try {
+      const currentIndex = stageIndex;
+      const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      
+      if (targetIndex < 0 || targetIndex >= totalStages) return;
+
+      const currentStage = stages[currentIndex];
+      const targetStage = stages[targetIndex];
+
+      // Trocar as ordens
+      await Promise.all([
+        updateStage.mutateAsync({
+          id: currentStage.id,
+          data: { order: targetStage.order },
+        }),
+        updateStage.mutateAsync({
+          id: targetStage.id,
+          data: { order: currentStage.order },
+        }),
+      ]);
+
+      queryClient.invalidateQueries({ queryKey: ['stages'] });
+      toast.success(t('stageOrderUpdated'));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Error updating stage order');
+    }
+  }, [stageIndex, totalStages, stages, updateStage, queryClient, t]);
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">{stage.name}</CardTitle>
-          <Badge variant="outline">Order: {stage.order}</Badge>
-        </div>
-      </CardHeader>
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-lg">{stage.name}</CardTitle>
+              <Badge variant="outline">Order: {stage.order}</Badge>
+            </div>
+            {isAdmin && (
+              <div className="flex items-center gap-1">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => handleMoveStage('up')}
+                  disabled={stageIndex === 0}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronUp className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => handleMoveStage('down')}
+                  disabled={stageIndex === totalStages - 1}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="h-8 w-8 p-0"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardHeader>
       <CardContent className="space-y-4">
         <div>
           <div className="flex items-center justify-between mb-2">
@@ -483,5 +595,26 @@ function StageItem({ stage, isAdmin }: { stage: Stage; isAdmin: boolean }) {
         </div>
       </CardContent>
     </Card>
+
+    <Modal
+      open={isEditModalOpen}
+      onOpenChange={setIsEditModalOpen}
+      title={t('editStage')}
+      description={t('editStageDescription')}
+    >
+      <GenericCreateForm
+        schema={updateStageSchema}
+        fieldConfig={stageFieldConfig}
+        onSubmit={handleUpdateStageSubmit}
+        onSuccess={handleUpdateStageSuccess}
+        submitLabel={t('save')}
+        cancelLabel={t('cancel')}
+        onCancel={() => setIsEditModalOpen(false)}
+        defaultValues={{
+          name: stage.name,
+        }}
+      />
+    </Modal>
+  </>
   );
 }

@@ -182,7 +182,12 @@ export async function getHistoryByProject(
   );
 }
 
-// GetStatus
-export async function getStatusList(): Promise<ApiResponse<string[]>> {
+// GetProjectStatus
+export async function getProjectStatusList(): Promise<ApiResponse<string[]>> {
   return await GET<string[]>('/project/status');
+}
+
+// GetActivityStatus
+export async function getActivityStatusList(): Promise<ApiResponse<string[]>> {
+  return await GET<string[]>('/activity/status');
 }

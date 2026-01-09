@@ -12,6 +12,7 @@ import {
 } from 'src/common/types/pagination.types';
 import { LoggingService } from '../logging/logging.service';
 import { LogActions } from 'src/common/types/logging.types';
+import { ActivityStatusConst } from 'src/domain/project/activityStatus.const';
 
 @Injectable()
 export class ActivityService implements IBaseService<
@@ -449,5 +450,9 @@ export class ActivityService implements IBaseService<
       status: true,
       message: `${activities.length} activities reordered successfully`,
     };
+  }
+
+  getStatusList(): string[] {
+    return Object.values(ActivityStatusConst);
   }
 }

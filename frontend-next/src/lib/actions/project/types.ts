@@ -66,25 +66,23 @@ export interface Activity {
   stageId: string;
   title: string;
   description: string | null;
-  status: ActivityStatus;
+  status: string;
   order: number;
   createdAt: string;
   updatedAt: string;
 }
 
-export type ActivityStatus = 'TODO' | 'DOING' | 'DONE';
-
 export interface CreateActivityDto {
   stageId: string;
   title: string;
   description?: string;
-  status?: ActivityStatus;
+  status?: string;
 }
 
 export interface UpdateActivityDto {
   title?: string;
   description?: string;
-  status?: ActivityStatus;
+  status?: string;
   order?: number;
 }
 
@@ -99,12 +97,6 @@ export interface ReorderActivitiesDto {
     order: number;
   }>;
 }
-
-export const ActivityStatusColors = {
-  TODO: 'bg-gray-100 text-gray-800',
-  DOING: 'bg-blue-100 text-blue-800',
-  DONE: 'bg-green-100 text-green-800',
-};
 
 // Comment Types
 export type CommentEntityType = 'PROJECT' | 'STAGE' | 'ACTIVITY';

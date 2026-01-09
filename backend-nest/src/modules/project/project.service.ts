@@ -109,7 +109,16 @@ export class ProjectService implements IBaseService<
       ];
     }
 
-    // Filtro por companyName
+    // Filtro por companyId (direto)
+    if (filter?.companyId) {
+      if (Array.isArray(filter.companyId)) {
+        where.companyId = { in: filter.companyId };
+      } else {
+        where.companyId = filter.companyId;
+      }
+    }
+
+    // Filtro por companyName (busca por nome)
     if (filter?.companyName) {
       // Busca empresas que contenham o nome informado
       const companies = await this.prisma.company.findMany({

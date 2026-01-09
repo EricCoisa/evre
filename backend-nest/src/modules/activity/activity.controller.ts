@@ -30,6 +30,24 @@ import { plainToInstance } from 'class-transformer';
 export class ActivityController {
   constructor(private readonly activityService: ActivityService) {}
 
+  @GetApi({
+    path: 'status',
+    summary: 'Get list of activity statuses',
+    description: 'Returns a list of all possible activity statuses',
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Activity statuses retrieved successfully',
+        },
+      ],
+    },
+    authenticated: true,
+  })
+  getStatusList(): string[] {
+    return this.activityService.getStatusList();
+  }
+
   @PostApi({
     path: '',
     summary: 'Create a new activity',

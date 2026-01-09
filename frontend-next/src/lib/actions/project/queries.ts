@@ -15,14 +15,14 @@ import {
   updateActivity,
   deleteActivity,
   moveActivity,
-  reorderActivities,
   getCommentsByEntity,
   createComment,
   deleteComment,
   getApprovalsByEntity,
   createApproval,
   getHistoryByProject,
-  getStatusList,
+  getProjectStatusList,
+  getActivityStatusList,
 } from './api';
 import type { PaginationParams } from '@/lib/types/pagination.types';
 import type {
@@ -354,11 +354,21 @@ export function useHistoryByProject(projectId: string, params?: PaginationParams
   });
 }
 
-export function useStatus() {
+export function useProjectStatus() {
   return useQuery({
     queryKey: ['project', 'status'],
-    queryFn: Collector(() => getStatusList()),
+    queryFn: Collector(() => getProjectStatusList()),
     enabled: true,
     ...getQueryConfig('PROJECT', 'PROJECT'),
+  });
+}
+
+
+export function useActivityStatus() {
+  return useQuery({
+    queryKey: ['activity', 'status'],
+    queryFn: Collector(() => getActivityStatusList()),
+    enabled: true,
+    ...getQueryConfig('ACTIVITIES', 'ACTIVITIES'),
   });
 }
