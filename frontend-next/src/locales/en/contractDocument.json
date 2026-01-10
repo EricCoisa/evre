@@ -39,6 +39,8 @@
   "version": "Schema Version",
   "versionPlaceholder": "v1",
   "versionDescription": "Content schema version",
+  "totalContracts": "Active contracts",
+  "viewAll": "View all",
   
   "status": "Status",
   "statuses": {

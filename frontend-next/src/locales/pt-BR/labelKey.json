@@ -13,6 +13,7 @@
     "ROUTE_CONTACT": "Contatos",
     "ROUTE_CLIENT_LOG": "Log do cliente",
     "ROUTE_CONTRACT_DOCUMENT": "Documento de Contrato",
+    "ROUTE_COMPANY_DASHBOARD": "Dashboard da Empresa",
     "SYSTEMCONFIG_THEME": "Tema",
     "SYSTEMCONFIG_SUPORTURL": "URL de Suporte",
     "SYSTEMCONFIG_LOG_LIMITE": "Limite de retenção de logs",

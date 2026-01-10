@@ -48,5 +48,7 @@
   "contentUpdatedSuccess": "Conteúdo atualizado com sucesso!",
   "contentUpdatedError": "Erro ao atualizar conteúdo",
   "nameRequired": "Nome é obrigatório",
+  "totalProposals": "Propostas criadas",
+  "viewAll": "Ver todos",
   "name": "Nome"
 }
