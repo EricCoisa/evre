@@ -92,5 +92,6 @@
   "deleteActivityWarning": "Esta ação não pode ser desfeita. A atividade será permanentemente removida.",
   "detailsAndComments": "Detalhes & Comentários",
   "stagesAndApprovals": "Etapas & Aprovações",
-  "proposals": "Propostas"
+  "proposals": "Propostas",
+  "contracts": "Contratos"
 }

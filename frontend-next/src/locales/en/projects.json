@@ -92,5 +92,6 @@
   "deleteActivityWarning": "This action cannot be undone. The activity will be permanently removed.",
   "detailsAndComments": "Details & Comments",
   "stagesAndApprovals": "Stages & Approvals",
-  "proposals": "Proposals"
+  "proposals": "Proposals",
+  "contracts": "Contracts"
 }

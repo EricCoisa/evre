@@ -7,7 +7,7 @@ import { DetailsTab } from './tabs/details-tab';
 import { StagesTab } from './tabs/stages-tab';
 import { ProposalsTab } from './tabs/proposals-tab';
 import { HistoryTab } from './tabs/history-tab';
-
+import { ContractsTab } from './contracts-tab';
 
 interface ProjectDetailProps {
   project: Project;
@@ -30,6 +30,9 @@ export function ProjectDetail({ project, isAdmin = false }: ProjectDetailProps) 
         <TabsTrigger value="history">
           <LangLabel text="history" langJson="projects" />
         </TabsTrigger>
+        <TabsTrigger value="contracts">
+          <LangLabel text="contracts" langJson="projects" />
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="details">
@@ -46,6 +49,10 @@ export function ProjectDetail({ project, isAdmin = false }: ProjectDetailProps) 
 
       <TabsContent value="history">
         <HistoryTab project={project} />
+      </TabsContent>
+
+      <TabsContent value="contracts">
+        <ContractsTab project={project} />
       </TabsContent>
     </Tabs>
   );
