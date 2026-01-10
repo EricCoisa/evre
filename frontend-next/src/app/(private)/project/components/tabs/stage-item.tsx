@@ -1,6 +1,6 @@
 'use client';
 
-import { Stage, ApprovalStatusColors, Approval } from '@/lib/actions/project/types';
+import { Stage, ApprovalStatusColors, Approval, StageStatus } from '@/lib/actions/project/types';
 import { useActivities, useApprovalsByStage, useActivityStatus, useUpdateStage, useCreateActivity, useStageStatus, useUpdateStageStatus } from '@/lib/actions/project/queries';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -137,7 +137,7 @@ export function StageItem({
     }
   }, [stageIndex, totalStages, stages, updateStage, queryClient, t]);
 
-  const handleStageStatusChange = useCallback(async (status: string) => {
+  const handleStageStatusChange = useCallback(async (status: StageStatus) => {
     try {
       await updateStageStatus.mutateAsync({ id: stage.id, status });
       queryClient.invalidateQueries({ queryKey: ['stages'] });

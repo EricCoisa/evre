@@ -4,11 +4,11 @@ import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
-import { z } from 'zod';
 import { toast } from 'sonner';
 import { Copy, Check, Sparkles } from 'lucide-react';
 
 import { getContractDocumentColumns } from './components/contract-document-columns';
+import { ContractDocumentForm } from './components/contract-document-form';
 import {
     useContractDocuments,
     useCreateContractDocument,
@@ -16,14 +16,10 @@ import {
     useAcceptContractDocument,
     useArchiveContractDocument,
 } from '@/lib/actions/contract-document/queries';
-import { useProjects } from '@/lib/actions/project/queries';
-import { useProposals } from '@/lib/actions/proposal/queries';
 import type { ContractDocument } from '@/lib/actions/contract-document/types';
-import { FieldConfig } from '@/lib/form/field-config';
 import { Container } from '@/components/container';
 import { DataTable } from '@/components/data-table';
 import { Button } from '@/components/ui/button';
-import { GenericCreateFormModal } from '@/components/generic-create-form';
 import Modal from '@/components/modal';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -37,39 +33,14 @@ export default function ContractDocumentsPage() {
     const [filters, setFilters] = useState<Record<string, string>>({});
     const [copied, setCopied] = useState(false);
     const [templateModalOpen, setTemplateModalOpen] = useState(false);
+    const [createModalOpen, setCreateModalOpen] = useState(false);
 
     const createContractMutation = useCreateContractDocument();
     const sendContractMutation = useSendContractDocument();
     const acceptContractMutation = useAcceptContractDocument();
     const archiveContractMutation = useArchiveContractDocument();
 
-    // Busca todos os projetos para o select
-    const { data: projectsData } = useProjects({ pagination: false });
-
-    // Busca todas as propostas para o select
-    const { data: proposalsData } = useProposals({ pagination: false });
-
-    const projectOptions = useMemo(() => {
-        if (!projectsData || Array.isArray(projectsData)) {
-            const projects = Array.isArray(projectsData) ? projectsData : [];
-            return projects.map((project) => ({
-                value: project.id,
-                label: project.name,
-            }));
-        }
-        return [];
-    }, [projectsData]);
-
-    const proposalOptions = useMemo(() => {
-        if (!proposalsData || Array.isArray(proposalsData)) {
-            const proposals = Array.isArray(proposalsData) ? proposalsData : [];
-            return proposals.map((proposal) => ({
-                value: proposal.id,
-                label: proposal.name,
-            }));
-        }
-        return [];
-    }, [proposalsData]);
+    // Removido: queries de projects e proposals são gerenciadas pelo ContractDocumentForm
 
     const handleCopyTemplate = useCallback(() => {
         const template = {
@@ -214,61 +185,7 @@ export default function ContractDocumentsPage() {
 
     const { data, error } = useContractDocuments(queryParams);
 
-    const createContractSchema = useMemo(
-        () =>
-            z.object({
-                projectId: z
-                    .string()
-                    .uuid(t('projectIdRequired') || 'ID do projeto inválido'),
-                proposalId: z
-                    .string()
-                    .uuid(t('proposalIdInvalid') || 'ID da proposta inválido')
-                    .optional()
-                    .or(z.literal('')),
-                name: z.string().min(1, t('nameRequired') || 'Nome obrigatório'),
-                content: z.string().min(1, t('contentRequired') || 'Conteúdo obrigatório'),
-                contentSchemaVersion: z.string().optional().default('v1'),
-            }),
-        [t],
-    );
-
-    const contractFieldConfig = useMemo(
-        () =>
-            ({
-                projectId: {
-                    label: t('projectId') || 'Projeto',
-                    placeholder: t('projectIdPlaceholder') || 'Selecione um projeto',
-                    description: t('projectIdDescription') || 'Projeto vinculado ao contrato',
-                    type: 'select' as const,
-                    options: projectOptions,
-                },
-                proposalId: {
-                    label: t('proposalId') || 'Proposta',
-                    placeholder: t('proposalIdPlaceholder') || 'Selecione uma proposta (opcional)',
-                    description:
-                        t('proposalIdDescription') || 'Proposta vinculada ao contrato (opcional)',
-                    type: 'select' as const,
-                    options: proposalOptions,
-                },
-                name: {
-                    label: t('name') || 'Nome',
-                    placeholder: t('namePlaceholder') || 'Digite o nome do contrato',
-                    description: t('nameDescription') || 'Nome identificador do contrato',
-                },
-                content: {
-                    label: t('content') || 'Conteúdo',
-                    placeholder: t('contentPlaceholder') || 'Digite o conteúdo JSON',
-                    description: t('contentDescription') || 'Conteúdo do contrato em formato JSON',
-                    type: 'textarea' as const,
-                },
-                contentSchemaVersion: {
-                    label: t('version') || 'Versão',
-                    placeholder: t('versionPlaceholder') || 'v1',
-                    description: t('versionDescription') || 'Versão do schema de conteúdo',
-                },
-            }) satisfies FieldConfig<typeof createContractSchema>,
-        [t, projectOptions, proposalOptions],
-    );
+    // Removido: schema e fieldConfig são gerenciados pelo ContractDocumentForm
 
     const columns = useMemo(
         () =>
@@ -334,29 +251,13 @@ export default function ContractDocumentsPage() {
                             <Sparkles className="mr-2 h-4 w-4" />
                             {t('copyTemplate')}
                         </Button>
-                        <GenericCreateFormModal
-                            schema={createContractSchema}
-                            fieldConfig={contractFieldConfig}
-                            onSubmit={async (data) => {
-                                await createContractMutation.mutateAsync(data);
-                                queryClient.invalidateQueries({ queryKey: ['contract-documents'] });
-                            }}
-                            onSuccess={() => {
-                                toast.success(t('successCreate'));
-                            }}
-                            onError={() => {
-                                toast.error(t('errorCreate'));
-                            }}
-                            title={t('createTitle')}
-                            description={t('createDescription')}
-                            trigger={
-                                <Button variant="default" size="sm">
-                                    {t('createNew')}
-                                </Button>
-                            }
-                            submitLabel={t('createNew')}
-                            closeOnsuccess
-                        />
+                        <Button 
+                            variant="default" 
+                            size="sm"
+                            onClick={() => setCreateModalOpen(true)}
+                        >
+                            {t('createNew')}
+                        </Button>
                     </div>
                 </div>
             </DataTable>
@@ -467,6 +368,26 @@ export default function ContractDocumentsPage() {
                         </>
                     )}
                 </Button>
+            </Modal>
+
+            <Modal
+                title={t('createTitle') || 'Criar Contrato'}
+                description={t('createDescription') || 'Preencha os campos para criar um novo contrato'}
+                open={createModalOpen}
+                onOpenChange={(open) => {
+                    setCreateModalOpen(open);
+                }}
+            >
+                <ContractDocumentForm
+                    onSubmit={async (data) => {
+                        await createContractMutation.mutateAsync(data);
+                        queryClient.invalidateQueries({ queryKey: ['contract-documents'] });
+                        toast.success(t('successCreate') || 'Contrato criado com sucesso');
+                        setCreateModalOpen(false);
+                    }}
+                    onCancel={() => setCreateModalOpen(false)}
+                    isSubmitting={createContractMutation.isPending}
+                />
             </Modal>
         </Container>
     );

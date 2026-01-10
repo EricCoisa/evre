@@ -7,7 +7,7 @@ import { DetailsTab } from './tabs/details-tab';
 import { StagesTab } from './tabs/stages-tab';
 import { ProposalsTab } from './tabs/proposals-tab';
 import { HistoryTab } from './tabs/history-tab';
-import { ContractsTab } from './contracts-tab';
+import { ContractsTab } from './tabs/contracts-tab';
 
 interface ProjectDetailProps {
   project: Project;
