@@ -69,5 +69,15 @@
   "errorSend": "Erro ao enviar contrato",
   "errorAccept": "Erro ao aceitar contrato",
   "errorArchive": "Erro ao arquivar contrato",
-  "errorInvalidJson": "JSON inválido! Verifique a sintaxe."
+  "errorInvalidJson": "JSON inválido! Verifique a sintaxe.",
+  "company": "Empresa",
+  "filterByCompany": "Filtrar por empresa",
+  "id": "ID",
+  "project": "Projeto",
+  "actions": "Ações",
+  "view": "Visualizar",
+  "draft": "Rascunho",
+  "sent": "Enviado",
+  "accepted": "Aceito",
+  "archived": "Arquivado"
 }

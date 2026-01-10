@@ -35,7 +35,7 @@ export class ProposalService implements Omit<IBaseService<Proposal>, 'remove'> {
     // Constrói a cláusula where separando search e filter
     const where: {
       OR?: Array<{
-        companyId?: { contains: string };
+        company?: { name?: { contains: string } };
       }>;
       status?: ProposalStatus;
       companyId?: string;
@@ -43,7 +43,7 @@ export class ProposalService implements Omit<IBaseService<Proposal>, 'remove'> {
 
     // Aplica filtro de busca global (search)
     if (search) {
-      where.OR = [{ companyId: { contains: search } }];
+      where.OR = [{ company: { name: { contains: search } } }];
     }
 
     // Aplica filtros específicos (filter)
@@ -53,6 +53,10 @@ export class ProposalService implements Omit<IBaseService<Proposal>, 'remove'> {
 
     if (filter?.companyId) {
       where.companyId = filter.companyId;
+    }
+
+    if (filter?.companies) {
+      where.OR = [{ company: { name: { contains: filter.companies } } }];
     }
 
     if (!pagination) {
@@ -90,6 +94,9 @@ export class ProposalService implements Omit<IBaseService<Proposal>, 'remove'> {
       },
       filter: {
         status: Array.from(statusSet),
+        companies: (await this.prisma.company.findMany()).map(
+          (company) => company.name,
+        ),
       },
     };
   }

@@ -69,5 +69,15 @@
   "errorSend": "Error sending contract",
   "errorAccept": "Error accepting contract",
   "errorArchive": "Error archiving contract",
-  "errorInvalidJson": "Invalid JSON! Check the syntax."
+  "errorInvalidJson": "Invalid JSON! Check the syntax.",
+  "company": "Company",
+  "filterByCompany": "Filter by company",
+  "id": "ID",
+  "project": "Project",
+  "actions": "Actions",
+  "view": "View",
+  "draft": "Draft",
+  "sent": "Sent",
+  "accepted": "Accepted",
+  "archived": "Archived"
 }

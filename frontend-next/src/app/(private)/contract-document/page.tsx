@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Copy, Check, Sparkles } from 'lucide-react';
@@ -22,6 +21,7 @@ import { DataTable } from '@/components/data-table';
 import { Button } from '@/components/ui/button';
 import Modal from '@/components/modal';
 import { Textarea } from '@/components/ui/textarea';
+import { useTranslation } from '@/hooks/use-translation';
 
 export default function ContractDocumentsPage() {
     const { t } = useTranslation('contractDocument');
@@ -141,7 +141,7 @@ export default function ContractDocumentsPage() {
             try {
                 await sendContractMutation.mutateAsync(contract.id);
                 toast.success(t('successSend'));
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
             } catch (_error) {
                 toast.error(t('errorSend'));
             }
@@ -154,7 +154,7 @@ export default function ContractDocumentsPage() {
             try {
                 await acceptContractMutation.mutateAsync(contract.id);
                 toast.success(t('successAccept'));
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
             } catch (_error) {
                 toast.error(t('errorAccept'));
             }
@@ -167,7 +167,7 @@ export default function ContractDocumentsPage() {
             try {
                 await archiveContractMutation.mutateAsync(contract.id);
                 toast.success(t('successArchive'));
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
             } catch (_error) {
                 toast.error(t('errorArchive'));
             }
@@ -187,17 +187,17 @@ export default function ContractDocumentsPage() {
 
     // Removido: schema e fieldConfig são gerenciados pelo ContractDocumentForm
 
-    const columns = useMemo(
-        () =>
-            getContractDocumentColumns({
-                t,
-                onView: handleView,
-                onSend: handleSend,
-                onAccept: handleAccept,
-                onArchive: handleArchive,
-            }),
-        [t, handleView, handleSend, handleAccept, handleArchive],
+    const columns = useMemo(() =>
+        getContractDocumentColumns({
+            t,
+            onView: handleView,
+            onSend: handleSend,
+            onAccept: handleAccept,
+            onArchive: handleArchive,
+        }),
+        [t, handleView, handleSend, handleAccept, handleArchive]
     );
+
 
     if (error) {
         return (
@@ -231,35 +231,37 @@ export default function ContractDocumentsPage() {
                 entityName={t('entity') ?? 'contrato'}
                 entityNamePlural={t('entityPlural') ?? 'contratos'}
             >
-                {/* Área de Filtros e Configurações */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full gap-4">
-                    {/* Filtros à esquerda */}
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-1">
-                        <DataTable.Input
-                            title={t('searchText')}
-                            placeholder={t('searchPlaceholder')}
-                        />
-                    </div>
+                <DataTable.Input
+                    title={t('searchText')}
+                    placeholder={t('searchPlaceholder')}
+                />
+                <DataTable.Select
+                    title={t('company') || 'Empresa'}
+                    accessorKey="companies"
+                    placeholder={t('filterByCompany')}
+                />
 
-                    {/* Botões à direita */}
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setTemplateModalOpen(true)}
-                        >
-                            <Sparkles className="mr-2 h-4 w-4" />
-                            {t('copyTemplate')}
-                        </Button>
-                        <Button 
-                            variant="default" 
-                            size="sm"
-                            onClick={() => setCreateModalOpen(true)}
-                        >
-                            {t('createNew')}
-                        </Button>
-                    </div>
-                </div>
+
+                <DataTable.Actions className="sm:justify-end sm:w-full">
+
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setTemplateModalOpen(true)}
+                    >
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        {t('copyTemplate')}
+                    </Button>
+                    <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => setCreateModalOpen(true)}
+                    >
+                        {t('createNew')}
+                    </Button>
+
+                </DataTable.Actions>
+
             </DataTable>
 
             <Modal

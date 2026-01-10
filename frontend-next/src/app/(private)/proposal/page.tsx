@@ -25,7 +25,7 @@ export default function ProposalsPage() {
   const { t } = useTranslation('proposal');
   const queryClient = useQueryClient();
   const router = useRouter();
-  
+
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
   const [globalFilter, setGlobalFilter] = useState('');
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -36,7 +36,7 @@ export default function ProposalsPage() {
 
   // Busca todas as empresas para o select
   const { data: companiesData } = useCompanies({ pagination: false });
-  
+
   const companyOptions = useMemo(() => {
     if (!companiesData || Array.isArray(companiesData)) {
       const companies = companiesData || [];
@@ -87,7 +87,7 @@ export default function ProposalsPage() {
       content: z.string().min(1, t('contentRequired') || 'Conteúdo obrigatório'),
       contentSchemaVersion: z.string().optional().default('v1'),
     }),
-  [t]);
+    [t]);
 
   const proposalFieldConfig = useMemo(() => ({
     companyId: {
@@ -116,8 +116,8 @@ export default function ProposalsPage() {
   } satisfies FieldConfig<typeof createProposalSchema>), [t, companyOptions]);
 
   const columns = useMemo(() =>
-    getProposalColumns({ 
-      t, 
+    getProposalColumns({
+      t,
       onView: handleView,
       onSend: handleSend,
       onApprove: handleApprove,
@@ -263,13 +263,18 @@ Crie uma proposta comercial completa seguindo este formato. Seja criativo e prof
           accessorKey="status"
           placeholder={t('filterByStatus') || 'Filtrar por status'}
         />
+        <DataTable.Select
+          title={t('company') || 'Empresa'}
+          accessorKey="companies"
+          placeholder={t('filterByCompany') || 'Filtrar por empresa'}
+        />
         <DataTable.Actions className="sm:justify-end sm:w-full">
 
-               <Button variant="outline" onClick={()=>setLlmOpen(true)}>
-                <Sparkles className="mr-2 h-4 w-4" />
-                Prompt LLM
-              </Button>
-          
+          <Button variant="outline" onClick={() => setLlmOpen(true)}>
+            <Sparkles className="mr-2 h-4 w-4" />
+            Prompt LLM
+          </Button>
+
           <GenericCreateFormModal
             trigger={
               <Button>
@@ -297,35 +302,35 @@ Crie uma proposta comercial completa seguindo este formato. Seja criativo e prof
         </DataTable.Actions>
       </DataTable>
 
-       <Modal
-            title='Prompt para LLM - Criar Proposta'
-          description={`Copie este prompt e envie para uma IA (ChatGPT, Claude, etc) para gerar o JSON da proposta`}
-          open={llmOpen}
-          onOpenChange={(open) => {
-            setLlmOpen(open);
-          }}
->
-            
-                <Textarea
-                  value={promptTemplate}
-                  readOnly
-                  rows={20}
-                  className="font-mono text-xs resize-none"
-                />
-                <Button onClick={handleCopyPrompt} className="w-full">
-                  {copied ? (
-                    <>
-                      <Check className="mr-2 h-4 w-4" />
-                      Copiado!
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="mr-2 h-4 w-4" />
-                      Copiar Prompt
-                    </>
-                  )}
-                </Button>
-          </Modal>
+      <Modal
+        title='Prompt para LLM - Criar Proposta'
+        description={`Copie este prompt e envie para uma IA (ChatGPT, Claude, etc) para gerar o JSON da proposta`}
+        open={llmOpen}
+        onOpenChange={(open) => {
+          setLlmOpen(open);
+        }}
+      >
+
+        <Textarea
+          value={promptTemplate}
+          readOnly
+          rows={20}
+          className="font-mono text-xs resize-none"
+        />
+        <Button onClick={handleCopyPrompt} className="w-full">
+          {copied ? (
+            <>
+              <Check className="mr-2 h-4 w-4" />
+              Copiado!
+            </>
+          ) : (
+            <>
+              <Copy className="mr-2 h-4 w-4" />
+              Copiar Prompt
+            </>
+          )}
+        </Button>
+      </Modal>
 
     </Container>
   );

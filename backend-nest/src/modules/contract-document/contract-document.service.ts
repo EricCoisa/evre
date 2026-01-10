@@ -36,9 +36,11 @@ export class ContractDocumentService implements Omit<
       OR?: Array<{
         name?: { contains: string };
         projectId?: { contains: string };
+        project?: { company?: { name?: { contains: string } } };
       }>;
       status?: ContractStatus;
       projectId?: string;
+      project?: { companyId?: string; company?: { name?: string } };
     } = {};
 
     // Aplica filtro de busca global (search)
@@ -46,6 +48,7 @@ export class ContractDocumentService implements Omit<
       where.OR = [
         { name: { contains: search } },
         { projectId: { contains: search } },
+        { project: { company: { name: { contains: search } } } },
       ];
     }
 
@@ -56,6 +59,11 @@ export class ContractDocumentService implements Omit<
 
     if (filter?.projectId) {
       where.projectId = filter.projectId;
+    }
+
+    if (filter?.companies) {
+      // Busca contratos cujos projetos pertencem à empresa exata
+      where.project = { company: { name: filter.companies } };
     }
 
     if (!pagination) {
@@ -93,6 +101,9 @@ export class ContractDocumentService implements Omit<
       },
       filter: {
         status: Array.from(statusSet),
+        companies: (await this.prisma.company.findMany()).map(
+          (company) => company.name,
+        ),
       },
     };
   }

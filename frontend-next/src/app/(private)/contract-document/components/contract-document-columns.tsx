@@ -84,7 +84,7 @@ export function getContractDocumentColumns({
         return (
           <DataCell>
             <Badge className={ContractStatusColors[status as keyof typeof ContractStatusColors]}>
-              {t(`status.${status.toLowerCase()}`) || status}
+              {t(`${status.toLowerCase()}`) || status}
             </Badge>
           </DataCell>
         );

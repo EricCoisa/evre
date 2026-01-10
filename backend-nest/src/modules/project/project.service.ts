@@ -5,7 +5,7 @@ import { I18nService } from 'nestjs-i18n';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { ProjectDto } from './dto/project.dto';
-import type { Project, ProjectStatus } from '@prisma/client';
+import { Project, ProjectStatus } from '@prisma/client';
 import { IBaseService } from 'src/domain/interface/base-service.interface';
 import {
   PaginatedResponse,
@@ -184,7 +184,7 @@ export class ProjectService implements IBaseService<
     }
 
     const skip = (page - 1) * limit;
-    const [projects, total, statusValues, companyValues] = await Promise.all([
+    const [projects, total, , companyValues] = await Promise.all([
       this.prisma.project.findMany({
         where,
         select,
@@ -198,7 +198,7 @@ export class ProjectService implements IBaseService<
     ]);
 
     // Extrai valores únicos para filtros
-    const statusSet = Array.from(new Set(statusValues.map((p) => p.status)));
+    const statusSet = Object.values(ProjectStatusConst);
     const companyIds = Array.from(
       new Set(companyValues.map((p) => p.companyId)),
     );
