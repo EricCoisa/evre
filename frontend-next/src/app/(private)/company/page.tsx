@@ -6,7 +6,7 @@ import { DataTable } from '@/components/data-table';
 import { GenericCreateFormModal } from '@/components/generic-create-form';
 import { createCompany } from '@/lib/actions/company/api';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Copy, Plus } from 'lucide-react';
 import { Container } from '@/components/container';
 import type { Company } from '@/lib/actions/company/types';
 import { useState, useMemo, useCallback } from 'react';
@@ -17,11 +17,14 @@ import { Alive } from '@/lib/api/collector';
 import Modal from '@/components/modal';
 import { CompanyEditPage } from './components/company-edit';
 import { getCompanyColumns } from './components/company-columns';
+import { createCompanyInvite } from '@/lib/actions/user/api';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 
 export default function CompaniesPage() {
   const { t } = useTranslation('company');
   const queryClient = useQueryClient();
-  
+
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
   const [globalFilter, setGlobalFilter] = useState('');
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -40,7 +43,7 @@ export default function CompaniesPage() {
     z.object({
       name: z.string().min(1, t('nameRequired')).max(255, t('nameMaxLength')),
     }),
-  [t]);
+    [t]);
 
   const companyFieldConfig = useMemo(() => ({
     name: {
@@ -54,6 +57,9 @@ export default function CompaniesPage() {
     getCompanyColumns(t),
     [t]
   );
+
+
+
 
   return (
     <Container variant="dataTable" border={false}>
@@ -109,6 +115,8 @@ export default function CompaniesPage() {
             }}
             submitLabel={t('create')}
           />
+
+         
         </DataTable.Actions>
       </DataTable>
     </Container>

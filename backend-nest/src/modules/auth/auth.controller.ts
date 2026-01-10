@@ -25,9 +25,11 @@ import type {
 } from '../../common/types/auth.types';
 import { UserService } from '../user/user.service';
 import {
+  GenerateCompanyInviteTokenDto,
   GenerateInviteTokenDto,
   ValidateInviteTokenDto,
 } from './dto/generate-invite-token.dto';
+import { ROLES } from 'src/types/userRole';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -80,6 +82,37 @@ export class AuthController {
     return await this.authService.generateInviteToken({
       email: dto.email,
       role: dto.role,
+      createdById: admin.id,
+    });
+  }
+
+  @PostApi({
+    path: 'invite-company-token',
+    summary: 'Gera token de convite para novo usuário de uma empresa',
+    description:
+      'Permite que um administrador gere um token para cadastro de novo usuário',
+    status: 'CREATED',
+    roles: ['ADMIN'],
+    authenticated: true,
+    body: GenerateInviteTokenDto,
+    response: {
+      success: [
+        {
+          status: 'CREATED',
+          description: 'Token de convite gerado com sucesso',
+        },
+      ],
+    },
+  })
+  async generateCompanyInviteToken(
+    @Body() dto: GenerateCompanyInviteTokenDto,
+    @CurrentUser() admin: AuthenticatedUser,
+  ) {
+    return await this.authService.generateCompanyInviteToken({
+      email: dto.email,
+      name: dto.name || null,
+      companyId: dto.companyId,
+      role: String(ROLES[1]),
       createdById: admin.id,
     });
   }

@@ -127,7 +127,7 @@ export class AuthService {
     };
   }
 
-  async register(dto: RegisterDto) {
+  async register(dto: RegisterDto & { companyId?: string }) {
     const existingUser = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
@@ -157,6 +157,7 @@ export class AuthService {
           password: hashedPassword,
           name: dto.name,
           role,
+          companyId: dto.companyId || null, // Associa à empresa se fornecido
         },
       });
 
@@ -448,6 +449,93 @@ export class AuthService {
       to: dto.email,
       html,
     });
+
+    return { actionUrl };
+  }
+
+  /**
+   * Gera um token de convite JWT para novo usuário
+   */
+  async generateCompanyInviteToken(dto: {
+    companyId: string;
+    name: string | null;
+    email: string;
+    role: string;
+    createdById: string;
+  }) {
+    // Não permite gerar token se o email já existir
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+    if (existingUser) {
+      throw new ConflictException(
+        this.i18n.t('auth.invite.email_already_exists'),
+      );
+    }
+
+    const payload = {
+      companyId: dto.companyId,
+      email: dto.email,
+      role: dto.role,
+      createdById: dto.createdById,
+      createdAt: new Date().toISOString(),
+    };
+    // Expira em 2 dias
+    const expiresIn = '2d';
+    const token = await this.jwtService.signAsync(payload, {
+      secret: this.configService.get<string>('JWT_SECRET'),
+      expiresIn,
+    });
+
+    // Log da ação
+    await this.loggingService.create(
+      {
+        module: 'AUTH',
+        action: LogActions.GENERATE_INVITE_TOKEN,
+        message: `Token de convite gerado para ${dto.email || 'novo usuário'} (role: ${dto.role}) (empresa: ${dto.companyId})`,
+        metadata: {
+          email: dto.email,
+          role: dto.role,
+          createdById: dto.createdById,
+        },
+      },
+      dto.createdById,
+    );
+
+    const appUrl = process.env.FRONTEND_URL;
+    const appName = (
+      await this.systemConfigurationService.findByLabelKey('SYSTEM_APP_NAME')
+    ).value;
+    const actionUrl = `${appUrl}/signup?inviteToken=${encodeURIComponent(token)}`;
+
+    const templateData = {
+      name: dto.name || dto.email,
+      email: dto.email,
+      organization: appName,
+      message: `Você recebeu um convite para se juntar ao ${appName as string}. Clique no botão abaixo para aceitar. O link expira em 48 horas.`,
+      action_url: actionUrl,
+    };
+
+    const templatePath = path.join(
+      __dirname,
+      '..',
+      'email',
+      'template',
+      'companyInvitation.html',
+    );
+    const html = await renderTemplateFromFile(templatePath, templateData, {
+      escapeHtml: false,
+    });
+
+    const result = await this.emailService.send({
+      subject: 'Você foi convidado para se juntar ao sistema',
+      to: dto.email,
+      html,
+    });
+
+    if (!result.status) {
+      throw new BadRequestException('Falha ao enviar email de convite');
+    }
 
     return { actionUrl };
   }

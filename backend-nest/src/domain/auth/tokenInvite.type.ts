@@ -3,4 +3,5 @@ export type InviteTokenPayload = {
   role: string;
   createdById: string;
   createdAt: string;
+  companyId?: string; // Presente apenas em convites de empresa
 };

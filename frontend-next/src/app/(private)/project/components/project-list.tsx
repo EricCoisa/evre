@@ -6,23 +6,30 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useProjects } from '@/lib/actions/project/queries';
 import { useCompanies } from '@/lib/actions/company/queries';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Copy, Plus } from 'lucide-react';
 import { getProjectColumns } from './project-columns';
 import { DataTable } from '@/components/data-table';
 import { Container } from '@/components/container';
 import Modal from '@/components/modal';
 import { ProjectCreate } from './project-create';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
+import { GenericCreateFormModal } from '@/components/generic-create-form';
+import type { FieldConfig } from '@/lib/form/field-config';
+import z from 'zod';
+import { Alive } from '@/lib/api/collector';
+import { createCompanyInvite } from '@/lib/actions/user/api';
 
 interface ProjectListProps {
   companyId?: string;
-  showCreateButton?: boolean;
+  showCreateInviteButton?: boolean;
   showCompanyFilter?: boolean;
 }
 
-export function ProjectList({ 
-  companyId, 
-  showCreateButton = true,
-  showCompanyFilter = true 
+export function ProjectList({
+  companyId,
+  showCreateInviteButton = false,
+  showCompanyFilter = true
 }: ProjectListProps) {
   const { t } = useTranslation('projects');
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
@@ -42,12 +49,43 @@ export function ProjectList({
   };
 
   const { data, error } = useProjects(queryParams);
-  
+
   const columns = useMemo(() => getProjectColumns({ t }), [t]);
 
   const handleCreateSuccess = useCallback(() => {
     setIsCreateDialogOpen(false);
   }, []);
+
+
+  const createInviteSchema = useMemo(() => z.object({
+    companyId: z.string().min(1, t('companyRequired')),
+    email: z.string().min(1, t('emailRequired')).email(t('emailInvalid')),
+    name: z.string().optional()
+  }), [t]);
+
+  const userInviteFieldConfig = useMemo(() => ({
+    companyId: {
+      disabled: true
+    },
+    email: {
+      label: t('email'),
+      type: 'email' as const,
+      placeholder: t('emailPlaceholder'),
+      description: t('emailDescription'),
+    },
+    name: {
+      label: t('name'),
+      placeholder: t('namePlaceholder'),
+      description: t('nameDescription'),
+    },
+    // companyId propositalmente omitido do config para não aparecer no formulário
+  } satisfies FieldConfig<typeof createInviteSchema>), [t]);
+
+
+  const [invitationToken, setInvitationToken] = useState<string | null>(null);
+  const handleCloseInvitationModal = () => {
+    setInvitationToken(null);
+  }
 
   return (
     <>
@@ -86,32 +124,90 @@ export function ProjectList({
             accessorKey="status"
             placeholder={t('filterByStatus')}
           />
-          {showCreateButton && (
-            <DataTable.Actions className="sm:justify-end sm:w-full">
-              <Button onClick={() => setIsCreateDialogOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                {t('createProject')}
-              </Button>
-            </DataTable.Actions>
-          )}
+
+          <DataTable.Actions className="sm:justify-end sm:w-full">
+            <Button onClick={() => setIsCreateDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              {t('createProject')}
+            </Button>
+
+            {showCreateInviteButton && (
+              <GenericCreateFormModal
+                trigger={
+                  <Button>
+                    <Plus /> {t('newInvite')}
+                  </Button>
+                }
+                closeOnsuccess={true}
+                title={t('createNewInvite')}
+                description={t('createInviteDescription')}
+                schema={createInviteSchema}
+                fieldConfig={userInviteFieldConfig}
+                onSubmit={async (data) => {
+                  const result = await Alive(() => createCompanyInvite(data))();
+                  return result;
+                }}
+                onSuccess={(success) => {
+                  setInvitationToken((success as { actionUrl: string }).actionUrl);
+                }}
+                onError={(error) => {
+                  console.error('Erro ao criar usuário:', error);
+                }}
+                submitLabel={t('createInviteButton')}
+                defaultValues={{
+                  companyId: companyId,
+                }}
+              />
+            )}
+          </DataTable.Actions>
+
         </DataTable>
       </Container>
 
-      {showCreateButton && (
+
+      <Modal
+        open={isCreateDialogOpen}
+        onOpenChange={(open) => {
+          setIsCreateDialogOpen(open);
+          if (!open) {
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+          }
+        }}
+        title={t('createProject')}
+        description={t('createProjectDescription')}
+      >
+        <ProjectCreate companyId={companyId} onSuccess={handleCreateSuccess} />
+      </Modal>
+
+
+      {invitationToken && (
         <Modal
-          open={isCreateDialogOpen}
+          title="Token de Convite Criado"
+          description="Token gerado"
+          open={invitationToken !== null}
           onOpenChange={(open) => {
-            setIsCreateDialogOpen(open);
-            if (!open) {
-              queryClient.invalidateQueries({ queryKey: ['projects'] });
-            }
+            if (!open) handleCloseInvitationModal();
           }}
-          title={t('createProject')}
-          description={t('createProjectDescription')}
         >
-          <ProjectCreate onSuccess={handleCreateSuccess} />
-        </Modal>
-      )}
+          <Container>
+            <div className="flex items-center gap-2">
+              <Input readOnly value={invitationToken ?? ''} />
+              <Button
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(invitationToken ?? '');
+                    toast.success('Token copiado');
+                  } catch (e) {
+                    toast.error('Falha ao copiar');
+                  }
+                }}
+              >
+                <Copy className="size-4 mr-2" /> Copiar
+              </Button>
+            </div>
+          </Container>
+        </Modal>)}
+
     </>
   );
 }

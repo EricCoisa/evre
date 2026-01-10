@@ -31,11 +31,12 @@ import { useTranslation } from '@/hooks/use-translation';
 
 interface ProjectCreateProps {
   onSuccess?: () => void;
+  companyId?: string;
 }
 
 const projectStatuses = ['PROPOSAL', 'REQUIREMENTS', 'DEVELOPMENT', 'DONE'] as const;
 
-export function ProjectCreate({ onSuccess }: ProjectCreateProps) {
+export function ProjectCreate({ onSuccess, companyId }: ProjectCreateProps) {
   const { t } = useTranslation('projects');
   const router = useRouter();
   const createProject = useCreateProject();
@@ -57,7 +58,7 @@ export function ProjectCreate({ onSuccess }: ProjectCreateProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      companyId: '',
+      companyId: companyId || '',
       name: '',
       description: '',
       status: 'PROPOSAL',
@@ -98,7 +99,11 @@ export function ProjectCreate({ onSuccess }: ProjectCreateProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>{t('company')}</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select 
+                onValueChange={field.onChange} 
+                value={field.value}
+                disabled={!!companyId}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder={t('selectCompany')} />

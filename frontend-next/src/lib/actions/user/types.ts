@@ -16,6 +16,12 @@ export interface CreateInviteDto {
   role?: Role;
 }
 
+export interface CreateCompanyInviteDto {
+  companyId: string;
+  email: string;
+  name?: string;
+}
+
 export interface ValidateInviteResponse {
  valid: boolean ; token: string; email: string
 }

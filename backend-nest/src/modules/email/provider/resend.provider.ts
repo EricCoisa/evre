@@ -45,7 +45,9 @@ export class ResendProvider implements IEmailProvider {
       } as CreateEmailOptions;
 
       const res = await this.resend!.emails.send(payload);
-
+      if (res.error) {
+        return { status: false, data: JSON.stringify(res.error) };
+      }
       return { status: true, data: JSON.stringify(res) };
     } catch (error) {
       return { status: false, data: JSON.stringify(error) };

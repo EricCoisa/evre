@@ -94,4 +94,16 @@
   "stagesAndApprovals": "Stages & Approvals",
   "proposals": "Proposals",
   "contracts": "Contracts"
+  ,
+  "newInvite": "New Invite",
+  "createNewInvite": "Create New Invite",
+  "createInviteDescription": "Fill in the fields to invite a user to the company.",
+  "email": "Email",
+  "emailPlaceholder": "Enter the user's email",
+  "emailDescription": "The invite will be sent to this email.",
+  "emailRequired": "Email is required",
+  "emailInvalid": "Invalid email",
+  "namePlaceholder": "Enter the user's name (optional)",
+  "nameDescription": "Name of the user to be invited.",
+  "createInviteButton": "Create Invite"
 }

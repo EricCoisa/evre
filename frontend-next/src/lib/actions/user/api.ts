@@ -12,7 +12,8 @@ import type {
   UpdatePasswordDto,
   SignUpDto,
   CreateInviteDto,
-  ValidateInviteResponse
+  ValidateInviteResponse,
+  CreateCompanyInviteDto
 } from './types';
 import type { PaginatedResponse, PaginationParams } from '@/lib/types/pagination.types';
 
@@ -43,6 +44,10 @@ export async function createUser(data: CreateUserDto): Promise<ApiResponse<{ use
 
 export async function createInvite(data: CreateInviteDto): Promise<ApiResponse<{actionUrl: string}>> {
   return await POST<{ actionUrl: string }>('/auth/invite-token', data);
+}
+
+export async function createCompanyInvite(data: CreateCompanyInviteDto): Promise<ApiResponse<{actionUrl: string}>> {
+  return await POST<{ actionUrl: string }>('/auth/invite-company-token', data);
 }
 
 export async function validateInvite(token: string): Promise<ApiResponse<ValidateInviteResponse>> {

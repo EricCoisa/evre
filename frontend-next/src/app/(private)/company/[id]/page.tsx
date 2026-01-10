@@ -17,7 +17,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
       </TabsList>
       <TabsContent value="company"><CompanyEditPage company={data} /></TabsContent>
       <TabsContent value="projects">
-        <ProjectList companyId={id} showCreateButton={false} showCompanyFilter={false} />
+        <ProjectList companyId={id} showCreateInviteButton={true} showCompanyFilter={false} />
       </TabsContent>
     </Tabs>
   );

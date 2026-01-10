@@ -92,11 +92,17 @@ export class UserController {
       }
     }
 
+    // Se o convite for de empresa (tem companyId), força role USER
+    const role = invitePayload?.companyId
+      ? (UserRoleConst.USER as 'USER')
+      : ((invitePayload?.role as UserRole) ?? (UserRoleConst.USER as 'USER'));
+
     const user = await this.authService.register({
       email: invitePayload?.email ?? dto.email,
       password: dto.password,
       name: dto.name,
-      role: (invitePayload?.role as UserRole) ?? (UserRoleConst.USER as 'USER'),
+      role,
+      companyId: invitePayload?.companyId, // Associa o usuário à empresa
     });
     return { user };
   }
