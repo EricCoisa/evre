@@ -119,8 +119,11 @@ export class StageController {
     },
     authenticated: true,
   })
-  async findOne(@Param('id') id: string): Promise<StageDto> {
-    return this.stageService.findOne(id);
+  async findOne(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<StageDto> {
+    return this.stageService.findOne(id, user);
   }
 
   @PatchApi({

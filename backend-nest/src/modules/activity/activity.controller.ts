@@ -109,8 +109,11 @@ export class ActivityController {
     },
     authenticated: true,
   })
-  async findOne(@Param('id') id: string): Promise<ActivityDto> {
-    return this.activityService.findOne(id);
+  async findOne(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<ActivityDto> {
+    return this.activityService.findOne(id, user);
   }
 
   @PatchApi({

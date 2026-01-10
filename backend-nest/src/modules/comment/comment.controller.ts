@@ -35,7 +35,7 @@ export class CommentController {
     @Body() createCommentDto: CreateCommentDto,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<CommentDto> {
-    return this.commentService.create(createCommentDto, user.id);
+    return this.commentService.create(createCommentDto, user.id, user);
   }
 
   @GetApi({
@@ -55,8 +55,9 @@ export class CommentController {
   async findByEntity(
     @Param('entityType') entityType: string,
     @Param('entityId') entityId: string,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<CommentDto[]> {
-    return this.commentService.findByEntity(entityType, entityId);
+    return this.commentService.findByEntity(entityType, entityId, user);
   }
 
   @DeleteApi({

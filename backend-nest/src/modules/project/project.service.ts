@@ -90,6 +90,7 @@ export class ProjectService implements IBaseService<
 
   async findAll(
     params?: PaginationParams,
+    user?: { role: string; companyId?: string | null },
   ): Promise<PaginatedResponse<ProjectDto> | ProjectDto[]> {
     const { page, limit, pagination, search, filter } = params || {
       page: 1,
@@ -105,6 +106,11 @@ export class ProjectService implements IBaseService<
       companyId?: string | { in: string[] };
       status?: import('@prisma/client').ProjectStatus;
     } = {};
+
+    // 🔒 SECURITY: USER só pode ver projetos da própria empresa
+    if (user && user.role === 'USER' && user.companyId) {
+      where.companyId = user.companyId;
+    }
 
     // Busca por texto (name ou description)
     if (search) {
@@ -232,7 +238,7 @@ export class ProjectService implements IBaseService<
     };
   }
 
-  async findOne(id: string): Promise<ProjectDto> {
+  async findOne(id: string, user?: { role: string; companyId?: string | null }): Promise<ProjectDto> {
     const project = await this.prisma.project.findUnique({
       where: { id },
     });
@@ -241,6 +247,15 @@ export class ProjectService implements IBaseService<
       throw new NotFoundException(
         this.i18n.t('project.errors.not_found') || 'Project not found',
       );
+    }
+
+    // 🔒 SECURITY: USER só pode acessar projetos da própria empresa
+    if (user && user.role === 'USER' && user.companyId) {
+      if (project.companyId !== user.companyId) {
+        throw new NotFoundException(
+          this.i18n.t('project.errors.not_found') || 'Project not found',
+        );
+      }
     }
 
     return this.mapToDto(project);

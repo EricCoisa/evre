@@ -18,6 +18,7 @@ export class CommentService {
   async create(
     createCommentDto: CreateCommentDto,
     userId: string,
+    user?: { role: string; companyId?: string | null },
   ): Promise<CommentDto> {
     // Valida se o projeto existe
     const project = await this.prisma.project.findUnique({
@@ -27,6 +28,15 @@ export class CommentService {
       throw new NotFoundException(
         this.i18n.t('comment.errors.project_not_found') || 'Project not found',
       );
+
+    // 🔒 SECURITY: USER só pode criar comentários em projetos da própria empresa
+    if (user && user.role === 'USER' && user.companyId) {
+      if (project.companyId !== user.companyId) {
+        throw new NotFoundException(
+          this.i18n.t('comment.errors.project_not_found') || 'Project not found',
+        );
+      }
+    }
 
     // Valida se a entidade existe baseado no tipo
     if (createCommentDto.entityType === 'PROJECT') {
@@ -100,7 +110,38 @@ export class CommentService {
   async findByEntity(
     entityType: string,
     entityId: string,
+    user?: { role: string; companyId?: string | null },
   ): Promise<CommentDto[]> {
+    // 🔒 SECURITY: USER só pode acessar comentários de projetos da própria empresa
+    // Busca o projectId através da entidade comentada
+    let projectId: string | null = null;
+    
+    if (entityType === 'PROJECT') {
+      projectId = entityId;
+    } else if (entityType === 'STAGE') {
+      const stage = await this.prisma.stage.findUnique({
+        where: { id: entityId },
+        select: { projectId: true },
+      });
+      projectId = stage?.projectId || null;
+    } else if (entityType === 'ACTIVITY') {
+      const activity = await this.prisma.activity.findUnique({
+        where: { id: entityId },
+        include: { stage: { select: { projectId: true } } },
+      });
+      projectId = activity?.stage?.projectId || null;
+    }
+
+    // Valida acesso do USER à empresa do projeto
+    if (user && user.role === 'USER' && user.companyId && projectId) {
+      const project = await this.prisma.project.findUnique({
+        where: { id: projectId },
+        select: { companyId: true },
+      });
+      if (!project || project.companyId !== user.companyId) {
+        throw new NotFoundException('Entity not found');
+      }
+    }
     const comments = await this.prisma.comment.findMany({
       where: {
         entityType: entityType as CommentEntityType,

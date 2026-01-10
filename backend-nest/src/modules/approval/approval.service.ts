@@ -18,6 +18,7 @@ export class ApprovalService {
   async create(
     createApprovalDto: CreateApprovalDto,
     userId: string,
+    user?: { role: string; companyId?: string | null },
   ): Promise<ApprovalDto> {
     // Valida se o projeto existe
     const project = await this.prisma.project.findUnique({
@@ -27,6 +28,15 @@ export class ApprovalService {
       throw new NotFoundException(
         this.i18n.t('approval.errors.project_not_found') || 'Project not found',
       );
+
+    // 🔒 SECURITY: USER só pode criar aprovações em projetos da própria empresa
+    if (user && user.role === 'USER' && user.companyId) {
+      if (project.companyId !== user.companyId) {
+        throw new NotFoundException(
+          this.i18n.t('approval.errors.project_not_found') || 'Project not found',
+        );
+      }
+    }
 
     // Valida se a entidade existe baseado no tipo
     let stageName: string | undefined;
@@ -96,7 +106,31 @@ export class ApprovalService {
   async findByEntity(
     entityType: string,
     entityId: string,
+    user?: { role: string; companyId?: string | null },
   ): Promise<ApprovalDto[]> {
+    // 🔒 SECURITY: USER só pode acessar aprovações de projetos da própria empresa
+    // Busca o projectId através da entidade aprovada
+    let projectId: string | null = null;
+    
+    if (entityType === 'STAGE') {
+      const stage = await this.prisma.stage.findUnique({
+        where: { id: entityId },
+        select: { projectId: true },
+      });
+      projectId = stage?.projectId || null;
+    }
+
+    // Valida acesso do USER à empresa do projeto
+    if (user && user.role === 'USER' && user.companyId && projectId) {
+      const project = await this.prisma.project.findUnique({
+        where: { id: projectId },
+        select: { companyId: true },
+      });
+      if (!project || project.companyId !== user.companyId) {
+        throw new NotFoundException('Entity not found');
+      }
+    }
+
     const approvals = await this.prisma.approval.findMany({
       where: {
         entityType: entityType as ApprovalEntityType,

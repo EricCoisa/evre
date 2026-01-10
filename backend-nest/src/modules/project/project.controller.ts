@@ -89,8 +89,9 @@ export class ProjectController {
   })
   async findAll(
     @Query(new ZodValidationPipe(PaginationQuerySchema)) query: PaginationQuery,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<PaginatedResponse<ProjectDto> | ProjectDto[]> {
-    const result = await this.projectService.findAll(query);
+    const result = await this.projectService.findAll(query, user);
 
     if (Array.isArray(result)) {
       return plainToInstance(ProjectDto, result);
@@ -117,8 +118,11 @@ export class ProjectController {
     },
     authenticated: true,
   })
-  async findOne(@Param('id') id: string): Promise<ProjectDto> {
-    return this.projectService.findOne(id);
+  async findOne(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<ProjectDto> {
+    return this.projectService.findOne(id, user);
   }
 
   @PatchApi({

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ProjectHistoryDto } from './dto/project-history.dto';
 import type { PaginationQuery } from '../../common/schemas/pagination.schema';
@@ -11,7 +11,18 @@ export class ProjectHistoryService {
   async findByProject(
     projectId: string,
     query: PaginationQuery,
+    user?: { role: string; companyId?: string | null },
   ): Promise<PaginatedResponse<ProjectHistoryDto> | ProjectHistoryDto[]> {
+    // 🔒 SECURITY: USER só pode acessar histórico de projetos da própria empresa
+    if (user && user.role === 'USER' && user.companyId) {
+      const project = await this.prisma.project.findUnique({
+        where: { id: projectId },
+        select: { companyId: true },
+      });
+      if (!project || project.companyId !== user.companyId) {
+        throw new NotFoundException('Project not found');
+      }
+    }
     const { page, limit, pagination } = query;
 
     if (!pagination) {

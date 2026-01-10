@@ -144,9 +144,18 @@ export class ActivityService implements IBaseService<
     };
   }
 
-  async findOne(id: string): Promise<ActivityDto> {
+  async findOne(id: string, user?: { role: string; companyId?: string | null }): Promise<ActivityDto> {
     const activity = await this.prisma.activity.findUnique({
       where: { id },
+      include: {
+        stage: {
+          include: {
+            project: {
+              select: { companyId: true },
+            },
+          },
+        },
+      },
     });
 
     if (!activity) {
@@ -155,7 +164,17 @@ export class ActivityService implements IBaseService<
       );
     }
 
-    return this.mapToDto(activity);
+    // 🔒 SECURITY: USER só pode acessar activities de projetos da própria empresa
+    if (user && user.role === 'USER' && user.companyId) {
+      if (activity.stage.project.companyId !== user.companyId) {
+        throw new NotFoundException(
+          this.i18n.t('activity.errors.not_found') || 'Activity not found',
+        );
+      }
+    }
+
+    const { stage, ...activityData } = activity;
+    return this.mapToDto(activityData as Activity);
   }
 
   async update(

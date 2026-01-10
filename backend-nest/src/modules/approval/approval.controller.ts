@@ -31,7 +31,7 @@ export class ApprovalController {
     @Body() createApprovalDto: CreateApprovalDto,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<ApprovalDto> {
-    return this.approvalService.create(createApprovalDto, user.id);
+    return this.approvalService.create(createApprovalDto, user.id, user);
   }
 
   @GetApi({
@@ -51,7 +51,8 @@ export class ApprovalController {
   async findByEntity(
     @Param('entityType') entityType: string,
     @Param('entityId') entityId: string,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<ApprovalDto[]> {
-    return this.approvalService.findByEntity(entityType, entityId);
+    return this.approvalService.findByEntity(entityType, entityId, user);
   }
 }

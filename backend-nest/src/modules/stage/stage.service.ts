@@ -144,9 +144,10 @@ export class StageService implements IBaseService<
     };
   }
 
-  async findOne(id: string): Promise<StageDto> {
+  async findOne(id: string, user?: { role: string; companyId?: string | null }): Promise<StageDto> {
     const stage = await this.prisma.stage.findUnique({
       where: { id },
+      include: { project: { select: { companyId: true } } },
     });
 
     if (!stage) {
@@ -155,7 +156,17 @@ export class StageService implements IBaseService<
       );
     }
 
-    return this.mapToDto(stage);
+    // 🔒 SECURITY: USER só pode acessar stages de projetos da própria empresa
+    if (user && user.role === 'USER' && user.companyId) {
+      if (stage.project.companyId !== user.companyId) {
+        throw new NotFoundException(
+          this.i18n.t('stage.errors.not_found') || 'Stage not found',
+        );
+      }
+    }
+
+    const { project, ...stageData } = stage;
+    return this.mapToDto(stageData as Stage);
   }
 
   async update(
