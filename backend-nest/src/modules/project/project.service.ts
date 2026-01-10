@@ -64,6 +64,7 @@ export class ProjectService implements IBaseService<
           oldStatus: null,
           newStatus: project.status,
           action: 'CREATE',
+          performedById,
         }),
       },
     });
@@ -277,7 +278,7 @@ export class ProjectService implements IBaseService<
           payload: JSON.stringify({
             oldStatus: existing.status,
             newStatus: project.status,
-            changedBy: performedById,
+            performedById,
           }),
         },
       });

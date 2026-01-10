@@ -327,8 +327,7 @@ export class StageService implements IBaseService<
         payload: JSON.stringify({
           stageId: stage.id,
           name: stage.name,
-          from: oldStatus,
-          to: status,
+          changes: { status: { from: oldStatus, to: status } },
           performedById,
         }),
       },
