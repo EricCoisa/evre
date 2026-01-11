@@ -68,6 +68,39 @@ export class UserRouteAccessController {
   }
 
   @GetApi({
+    path: 'checkAccess/:path',
+    summary: 'Verifica o acesso do usuário à rota',
+    description:
+      'Valida se o usuário autenticado tem permissão para acessar uma rota específica. Considera tanto permissões individuais quanto permissões da role.',
+    status: 'OK',
+    authenticated: true,
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description:
+            'Retorna true se o usuário tem acesso, false caso contrário',
+        },
+      ],
+    },
+  })
+  async checkAccess(
+    @Param('path') path: string | undefined,
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ): Promise<boolean> {
+    if (!path || typeof path !== 'string' || path.trim() === '') {
+      console.warn('checkAccess chamado com path inválido:', path);
+      return false;
+    }
+    const decodedPath = decodeURIComponent(path);
+    console.log('Decoded Path:', decodedPath);
+    return await this.userRouteAccessService.checkAccess(
+      currentUser.id,
+      decodedPath,
+    );
+  }
+
+  @GetApi({
     path: 'user/:userId',
     summary: 'user_route_access.find_by_user.title',
     description: 'user_route_access.find_by_user.description',

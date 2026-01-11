@@ -510,4 +510,59 @@ export class UserRouteAccessService implements Omit<
       },
     };
   }
+
+  /**
+   * Verifica se o usuário tem acesso a uma rota específica
+   * Considera tanto os acessos individuais do usuário quanto os acessos da role
+   * @param userId - ID do usuário
+   * @param path - Caminho da rota
+   * @returns true se o usuário tem acesso, false caso contrário
+   */
+  async checkAccess(userId: string, path: string): Promise<boolean> {
+    // Guard against empty or undefined path to prevent Prisma errors
+    if (!path || path.trim() === '') {
+      return false;
+    }
+
+    // Decode path se estiver encoded
+    const decodedPath = decodeURIComponent(path);
+
+    // Busca o usuário com sua role
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
+
+    if (!user) {
+      return false;
+    }
+
+    // Busca a rota com os acessos do usuário e da role
+    const route = await this.prisma.route.findUnique({
+      where: { path: decodedPath },
+      include: {
+        userRouteAccesses: {
+          where: { userId },
+          select: { id: true },
+        },
+        roleRouteAccesses: {
+          where: { roleId: user.role },
+          select: { roleId: true },
+        },
+      },
+    });
+
+    // Se a rota não existe ou está inativa, nega acesso
+    if (!route || !route.isActive) {
+      return false;
+    }
+
+    // Usuário tem acesso se:
+    // 1. Tem acesso individual (UserRouteAccess)
+    // 2. Ou sua role tem acesso (RoleRouteAccess)
+    const hasUserAccess = route.userRouteAccesses.length > 0;
+    const hasRoleAccess = route.roleRouteAccesses.length > 0;
+
+    return hasUserAccess || hasRoleAccess;
+  }
 }

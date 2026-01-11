@@ -8,3 +8,14 @@ export async function getUserRouteAccess(
 ): Promise<ApiResponse<PaginatedResponse<UserRouteAccess> | UserRouteAccess[]>> {
   return await GET<PaginatedResponse<UserRouteAccess> | UserRouteAccess[]>('/user-route-access', { params });
 }
+
+export async function getUserRouteAccessByPath(
+  path: string,
+): Promise<ApiResponse<boolean>> {
+  // Remove query params e normaliza o path
+  const cleanPath = path.split('?')[0].split('#')[0];
+  // Encode path para evitar problemas com caracteres especiais
+  const encodedPath = encodeURIComponent(cleanPath);
+  console.log('Verificando acesso para a rota:', cleanPath);
+  return await GET<boolean>(`/user-route-access/checkAccess/${encodedPath}`);
+}

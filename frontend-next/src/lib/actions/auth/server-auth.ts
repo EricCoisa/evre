@@ -2,6 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { getUserRouteAccessByPath } from '../access/userRoute/api';
 
 
 const ACCESS_TOKEN_COOKIE = process.env.ACCESS_TOKEN_COOKIE_NAME || 'access_token';
@@ -79,19 +80,76 @@ export async function getServerLang(): Promise<string | undefined> {
   return cookieStore.get("i18nextLng")?.value;
 }
 
+// Rotas públicas que não precisam de validação de acesso
+const PUBLIC_ROUTES = ['/login', '/register', '/forgot-password'];
+
+// Rotas que não verificam permissão específica (apenas autenticação)
+const AUTH_ONLY_ROUTES = ['/', '/redirect', '/acesso-negado'];
+
+// Cache simples para evitar múltiplas validações da mesma rota na mesma request
+const routeAccessCache = new Map<string, { hasAccess: boolean; timestamp: number }>();
+const CACHE_TTL = 1000; // 1 segundo de cache
 
 /**
- * Valida se usuário está autenticado no servidor
- * Se não estiver, redireciona para /login
+ * Valida se usuário está autenticado e tem acesso à rota
+ * Se não estiver logado, redireciona para /login
+ * Se não tiver acesso, redireciona para /acesso-negado
  */
-export async function validateServerAuth(): Promise<void> {
+export async function validateServerAuth(pathname: string): Promise<void> {
+  // 1. Ignora rotas públicas
+  if (PUBLIC_ROUTES.includes(pathname)) {
+    return;
+  }
+
+  // 2. Verifica se está logado
   const accessToken = await getServerAccessToken();
   if (!accessToken) {
     redirect('/login');
   }
 
-  // Aqui você pode adicionar validação extra do token se necessário
-  // Por exemplo, decodificar o JWT e verificar expiração
+  // 3. Rotas que só precisam de autenticação (não verificam permissão específica)
+  if (AUTH_ONLY_ROUTES.includes(pathname)) {
+    return;
+  }
+
+  // 4. Verifica cache
+  const cacheKey = `${accessToken}:${pathname}`;
+  const cached = routeAccessCache.get(cacheKey);
+  const now = Date.now();
+  
+  if (cached && (now - cached.timestamp) < CACHE_TTL) {
+    if (!cached.hasAccess) {
+      redirect('/redirect');
+    }
+    return;
+  }
+
+  // 5. Verifica se tem acesso à rota na API
+  let hasAccess = false;
+  try {
+    const response = await getUserRouteAccessByPath(pathname);
+    hasAccess = response.data === true;
+    
+    // Atualiza cache
+    routeAccessCache.set(cacheKey, { hasAccess, timestamp: now });
+    
+    // Limpa cache antigo (mantém apenas últimas 100 entradas)
+    if (routeAccessCache.size > 100) {
+      const entries = Array.from(routeAccessCache.entries());
+      entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+      entries.slice(0, 50).forEach(([key]) => routeAccessCache.delete(key));
+    }
+  } catch (error) {
+    console.error('Error validating route access:', error);
+    // Em caso de erro na API, permite acesso para não quebrar a aplicação
+    // mas você pode mudar esse comportamento conforme necessário
+    return;
+  }
+  
+  // 6. Redireciona se não tiver acesso (FORA do try/catch para não capturar NEXT_REDIRECT)
+  if (!hasAccess) {
+    redirect('/redirect');
+  }
 }
 
 /**

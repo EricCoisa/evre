@@ -9,14 +9,21 @@ import { BreadProvider } from '@/contexts/bread-context';
 import { AuthProvider } from '@/contexts/auth-context';
 import { AppProvider } from '@/contexts/appProvider';
 import { FilterSidebarProvider } from '@/contexts/filter-sidebar-context';
+import { headers } from 'next/headers';
 
 export default async function PrivateLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Valida autenticação em todas as páginas privadas
-  await validateServerAuth();
+  // Pega a rota atual do middleware
+  const headersList = await headers();
+  const pathname = headersList.get('x-pathname') || '/';
+  
+  // Valida autenticação e acesso à rota
+  await validateServerAuth(pathname);
+
+  console.log('PrivateLayout pathname recebido:', pathname);
 
   return (
     <AppProvider>

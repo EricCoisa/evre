@@ -1,13 +1,12 @@
-'use client';
+'use server';
 import { redirect } from 'next/navigation';
-import { useMe } from '@/lib/actions/auth/queries';
+import { getProfile } from '@/lib/actions/auth/api';
 
-export default function RedirectPage() {
-  const user = useMe();
+export default async function RedirectPage() {
+  const user = await getProfile();
   const home = user.data?.routes.find(route => route.isHome);
+  console.log('Redirecionando para a rota home do usuário:', home?.path);
   redirect(home?.path || '/home');
 
-  return (
-    <div>...</div>
-  );
+  return <div>Redirecionando...</div>;
 }
