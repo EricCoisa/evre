@@ -1,7 +1,7 @@
-'use client';
+'use server';
 
 import { ProjectList } from './components/project-list';
 
-export default function ProjectsPage() {
+export default async function ProjectsPage() {
   return <ProjectList />;
 }

@@ -4,7 +4,6 @@ import { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { useProjects } from '@/lib/actions/project/queries';
-import { useCompanies } from '@/lib/actions/company/queries';
 import { Button } from '@/components/ui/button';
 import { Copy, Plus } from 'lucide-react';
 import { getProjectColumns } from './project-columns';
