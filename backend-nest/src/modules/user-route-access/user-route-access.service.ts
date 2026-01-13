@@ -524,8 +524,18 @@ export class UserRouteAccessService implements Omit<
       return false;
     }
 
+    // Normaliza o path para considerar apenas o primeiro segmento após a barra inicial
+    // Exemplo: '/rota/123' => '/rota'
+    let normalizedPath = path;
+    if (path.startsWith('/')) {
+      const segments = path.split('/').filter(Boolean); // remove vazios
+      if (segments.length > 0) {
+        normalizedPath = '/' + segments[0];
+      }
+    }
+
     // Decode path se estiver encoded
-    const decodedPath = decodeURIComponent(path);
+    const decodedPath = decodeURIComponent(normalizedPath);
 
     // Busca o usuário com sua role
     const user = await this.prisma.user.findUnique({

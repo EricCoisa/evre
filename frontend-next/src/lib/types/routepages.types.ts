@@ -50,6 +50,14 @@ export const RoutePagesList: RoutePage<unknown>[] = [
             queryKey: () => ["contract-document", id],
             queryFn: (id?: string) => getContractDocument(id as string),
         }),
+    },
+    {
+        path: 'home',
+        key: 'data.name',
+        getBreadName: (id?: string) => ({
+            queryKey: () => ["project", id],
+            queryFn: (id?: string) => getProject(id as string),
+        }),
     }
 ]
 
