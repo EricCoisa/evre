@@ -3,7 +3,10 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getUserRouteAccessByPath } from '../access/userRoute/api';
+import { getCurrentUser } from './api';
+import type { AuthUser } from './types';
 
+type RouteContext = 'admin' | 'client';
 
 const ACCESS_TOKEN_COOKIE = process.env.ACCESS_TOKEN_COOKIE_NAME || 'access_token';
 const REFRESH_TOKEN_COOKIE = process.env.REFRESH_TOKEN_COOKIE_NAME || 'refresh_token';
@@ -84,7 +87,7 @@ export async function getServerLang(): Promise<string | undefined> {
 const PUBLIC_ROUTES = ['/login', '/register', '/forgot-password'];
 
 // Rotas que não verificam permissão específica (apenas autenticação)
-const AUTH_ONLY_ROUTES = ['/', '/redirect', '/acesso-negado'];
+const AUTH_ONLY_ROUTES = ['/', '/redirect', '/acesso-negado', '/profile', '/settings'];
 
 // Cache simples para evitar múltiplas validações da mesma rota na mesma request
 const routeAccessCache = new Map<string, { hasAccess: boolean; timestamp: number }>();
@@ -158,4 +161,66 @@ export async function validateServerAuth(pathname: string): Promise<void> {
 export async function isServerAuthenticated(): Promise<boolean> {
   const accessToken = await getServerAccessToken();
   return !!accessToken;
+}
+
+/**
+ * Valida se usuário tem acesso à rota no contexto especificado
+ * @param pathname - Caminho da rota a ser validada
+ * @param context - Contexto da rota ('admin' | 'client')
+ * @returns Promise<{ user: AuthUser; hasAccess: boolean }>
+ */
+export async function validateRouteAccess(
+  pathname: string,
+  context: RouteContext
+): Promise<{ user: AuthUser; hasAccess: boolean }> {
+  // 1. Verifica se está autenticado
+  const accessToken = await getServerAccessToken();
+  if (!accessToken) {
+    redirect('/login');
+  }
+
+  // 2. Obtém dados do usuário
+  let user: AuthUser;
+  try {
+    const userResponse = await getCurrentUser();
+    if (!userResponse.data) {
+      redirect('/login');
+    }
+    user = userResponse.data;
+  } catch (error) {
+    console.error('Error getting current user:', error);
+    redirect('/login');
+  }
+
+  // 3. Valida contexto específico
+  if (context === 'client') {
+    // Cliente precisa ter companyId
+    if (!user.companyId) {
+      return { user, hasAccess: false };
+    }
+  }
+
+  // 4. Verifica se o path pertence ao contexto correto
+  const isAdminPath = pathname.startsWith('/admin') || pathname.includes('/(admin)');
+  const isClientPath = pathname.startsWith('/client') || pathname.includes('/(client)');
+
+  // Bloqueia acesso cruzado entre contextos
+  if (context === 'admin' && isClientPath) {
+    return { user, hasAccess: false };
+  }
+  if (context === 'client' && isAdminPath) {
+    return { user, hasAccess: false };
+  }
+
+  // 5. Verifica permissão de acesso na API
+  let hasAccess = false;
+  try {
+    const response = await getUserRouteAccessByPath(pathname);
+    hasAccess = response.data === true;
+  } catch (error) {
+    console.error('Error validating route access:', error);
+    hasAccess = false;
+  }
+
+  return { user, hasAccess };
 }

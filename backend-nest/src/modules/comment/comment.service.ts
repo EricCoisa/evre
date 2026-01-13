@@ -33,7 +33,8 @@ export class CommentService {
     if (user && user.role === 'USER' && user.companyId) {
       if (project.companyId !== user.companyId) {
         throw new NotFoundException(
-          this.i18n.t('comment.errors.project_not_found') || 'Project not found',
+          this.i18n.t('comment.errors.project_not_found') ||
+            'Project not found',
         );
       }
     }
@@ -115,7 +116,7 @@ export class CommentService {
     // 🔒 SECURITY: USER só pode acessar comentários de projetos da própria empresa
     // Busca o projectId através da entidade comentada
     let projectId: string | null = null;
-    
+
     if (entityType === 'PROJECT') {
       projectId = entityId;
     } else if (entityType === 'STAGE') {

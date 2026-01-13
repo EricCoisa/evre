@@ -1,8 +1,9 @@
+"use client";
 import { Button } from "@/components/ui/button";
 import LangLabel from "@/components/ui/langLabel";
 import Link from 'next/link';
 
-export default async function NotFound() {
+export default function NotFound() {
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-primary">

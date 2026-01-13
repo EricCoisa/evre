@@ -90,6 +90,87 @@ export class StageService implements IBaseService<
     return this.mapToDto(stage);
   }
 
+  /**
+   * 🔒 SECURITY: Lista stages por project com validação completa de hierarquia
+   * Valida: project existe → user tem acesso à company
+   */
+  async findAllByProject(
+    projectId: string,
+    params?: PaginationParams,
+    user?: { role: string; companyId?: string | null },
+  ): Promise<PaginatedResponse<StageDto> | StageDto[]> {
+    // 1. Busca o project e valida hierarquia project → company
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      select: { id: true, companyId: true },
+    });
+
+    if (!project) {
+      throw new NotFoundException(
+        this.i18n.t('stage.errors.project_not_found') || 'Project not found',
+      );
+    }
+
+    // 2. 🔒 SECURITY: USER só pode acessar projects da própria empresa
+    if (user && user.role === 'USER' && user.companyId) {
+      if (project.companyId !== user.companyId) {
+        throw new NotFoundException(
+          this.i18n.t('stage.errors.project_not_found') || 'Project not found',
+        );
+      }
+    }
+
+    // 3. Busca stages do project
+    const { page, limit, pagination, search } = params || {
+      page: 1,
+      limit: 10,
+      pagination: true,
+    };
+
+    const where: {
+      projectId: string;
+      name?: { contains: string; mode: 'insensitive' };
+    } = {
+      projectId, // SEMPRE filtra por projectId
+    };
+
+    if (search) {
+      where.name = { contains: search, mode: 'insensitive' };
+    }
+
+    if (!pagination) {
+      const stages = await this.prisma.stage.findMany({
+        where,
+        orderBy: { order: 'asc' },
+      });
+      return stages.map((stage) => this.mapToDto(stage));
+    }
+
+    const skip = (page - 1) * limit;
+    const [stages, total] = await Promise.all([
+      this.prisma.stage.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { order: 'asc' },
+      }),
+      this.prisma.stage.count({ where }),
+    ]);
+
+    return {
+      data: stages.map((stage) => this.mapToDto(stage)),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * @deprecated Use findAllByProject instead
+   */
   async findAll(
     params?: PaginationParams,
   ): Promise<PaginatedResponse<StageDto> | StageDto[]> {
@@ -144,7 +225,10 @@ export class StageService implements IBaseService<
     };
   }
 
-  async findOne(id: string, user?: { role: string; companyId?: string | null }): Promise<StageDto> {
+  async findOne(
+    id: string,
+    user?: { role: string; companyId?: string | null },
+  ): Promise<StageDto> {
     const stage = await this.prisma.stage.findUnique({
       where: { id },
       include: { project: { select: { companyId: true } } },
@@ -165,8 +249,7 @@ export class StageService implements IBaseService<
       }
     }
 
-    const { project, ...stageData } = stage;
-    return this.mapToDto(stageData as Stage);
+    return this.mapToDto(stage as Stage);
   }
 
   async update(

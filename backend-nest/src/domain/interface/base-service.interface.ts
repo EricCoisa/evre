@@ -1,3 +1,4 @@
+import { AuthenticatedUser } from 'src/common/types/auth.types';
 import {
   PaginatedResponse,
   PaginationParams,
@@ -9,7 +10,11 @@ export interface IBaseService<
   UpdateDto = unknown,
   PK = string,
 > {
-  findAll(params?: PaginationParams): Promise<PaginatedResponse<T> | T[]>;
+  findAll(
+    params?: PaginationParams,
+    user?: AuthenticatedUser,
+    // subId?: string,...
+  ): Promise<PaginatedResponse<T> | T[]>;
   findOne(...pk: unknown[]): Promise<T | null>;
   create(data: CreateDto, performedById: string): Promise<T>;
   update(pk: PK, data: UpdateDto, performedById: string): Promise<T>;

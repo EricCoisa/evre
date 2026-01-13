@@ -273,24 +273,6 @@ async function main() {
     });
   }
 
-  let dashboardCompanyRoute = await prisma.route.findUnique({
-    where: { path: '/company/dashboard' },
-  });
-  if (!dashboardCompanyRoute) {
-    dashboardCompanyRoute = await prisma.route.upsert({
-      where: { path: '/company/dashboard' },
-      update: {},
-      create: {
-        path: '/company/dashboard',
-        labelKey: 'ROUTE_COMPANY_DASHBOARD',
-        icon: 'LayoutDashboard',
-        ordem: 11,
-        isHome: false,
-        isActive: true,
-      },
-    });
-  }
-
   console.log('✅ Routes created');
 
   // Criar acessos padrão por role
@@ -309,7 +291,6 @@ async function main() {
     { roleId: 'ADMIN' as const, routeId: contactRoute.id },
     { roleId: 'ADMIN' as const, routeId: clientLogRoute.id },
     { roleId: 'ADMIN' as const, routeId: contractRoute.id },
-    { roleId: 'ADMIN' as const, routeId: dashboardCompanyRoute.id },
     // { roleId: 'ADMIN' as const, routeId: systemConfigurationRoute.id },
   ];
 
@@ -355,28 +336,6 @@ async function main() {
     });
   }
 
-  const userDashboardRoute = await prisma.roleRouteAccess.findUnique({
-    where: {
-      roleId_routeId: { roleId: 'USER', routeId: dashboardCompanyRoute.id },
-    },
-  });
-
-  if (!userDashboardRoute) {
-    await prisma.roleRouteAccess.upsert({
-      where: {
-        roleId_routeId: {
-          roleId: 'USER',
-          routeId: dashboardCompanyRoute.id,
-        },
-      },
-      update: {},
-      create: {
-        roleId: 'USER',
-        routeId: dashboardCompanyRoute.id,
-      },
-    });
-  }
-
   console.log('✅ Role route accesses created');
 
   // Dar acesso específico ao usuário admin para todas as rotas
@@ -394,7 +353,6 @@ async function main() {
     { userId: adminUser.id, routeId: contactRoute.id },
     { userId: adminUser.id, routeId: clientLogRoute.id },
     { userId: adminUser.id, routeId: contractRoute.id },
-    { userId: adminUser.id, routeId: dashboardCompanyRoute.id },
     // { userId: adminUser.id, routeId: systemConfigurationRoute.id },
   ];
 

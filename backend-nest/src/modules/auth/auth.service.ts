@@ -82,7 +82,18 @@ export class AuthService {
   }
 
   async login(user: { id: string; email: string; role: UserRole }) {
-    const payload = { sub: user.id, email: user.email, role: user.role };
+    // Busca companyId do usuário
+    const userData = await this.prisma.user.findUnique({
+      where: { id: user.id },
+      select: { companyId: true },
+    });
+
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      companyId: userData?.companyId || null,
+    };
 
     const accessToken = await this.jwtService.signAsync(payload, {
       secret: this.configService.get<string>('JWT_SECRET'),

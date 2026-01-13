@@ -21,6 +21,7 @@ export interface AuthUser {
   role: Role;
   name?: string | null;
   image?: string | null; //Não implementado no backend ainda
+  companyId?: string | null;
   routes: UserRoute[];
 }
 

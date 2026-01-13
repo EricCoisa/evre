@@ -307,8 +307,30 @@ export class ProposalService implements Omit<IBaseService<Proposal>, 'remove'> {
     return updatedProposal;
   }
 
-  //TODO: OK
-  async findByCompany(companyId: string): Promise<Proposal[]> {
+  /**
+   * 🔒 SECURITY: Lista proposals por company
+   * USER role só pode acessar proposals da própria empresa
+   */
+  async findByCompany(
+    companyId: string,
+    user?: { role: string; companyId?: string | null },
+  ): Promise<Proposal[]> {
+    // 🔒 SECURITY: USER só pode acessar proposals da própria empresa
+    if (user && user.role === 'USER' && user.companyId) {
+      if (user.companyId !== companyId) {
+        throw new NotFoundException(this.i18n.t('company.not_found'));
+      }
+    }
+
+    // Valida que a company existe
+    const company = await this.prisma.company.findUnique({
+      where: { id: companyId },
+    });
+
+    if (!company) {
+      throw new NotFoundException(this.i18n.t('company.not_found'));
+    }
+
     return await this.prisma.proposal.findMany({
       where: { companyId },
       orderBy: { createdAt: 'desc' },

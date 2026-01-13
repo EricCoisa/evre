@@ -13,6 +13,7 @@ import {
 } from 'src/common/types/pagination.types';
 import { LoggingService } from '../logging/logging.service';
 import { LogActions } from 'src/common/types/logging.types';
+import { AuthenticatedUser } from 'src/common/types/auth.types';
 
 @Injectable()
 export class ProjectService implements IBaseService<
@@ -90,7 +91,7 @@ export class ProjectService implements IBaseService<
 
   async findAll(
     params?: PaginationParams,
-    user?: { role: string; companyId?: string | null },
+    user?: AuthenticatedUser,
   ): Promise<PaginatedResponse<ProjectDto> | ProjectDto[]> {
     const { page, limit, pagination, search, filter } = params || {
       page: 1,
@@ -104,7 +105,7 @@ export class ProjectService implements IBaseService<
         description?: { contains: string; mode: 'insensitive' };
       }>;
       companyId?: string | { in: string[] };
-      status?: import('@prisma/client').ProjectStatus;
+      status?: ProjectStatus;
     } = {};
 
     // 🔒 SECURITY: USER só pode ver projetos da própria empresa
@@ -238,7 +239,10 @@ export class ProjectService implements IBaseService<
     };
   }
 
-  async findOne(id: string, user?: { role: string; companyId?: string | null }): Promise<ProjectDto> {
+  async findOne(
+    id: string,
+    user?: { role: string; companyId?: string | null },
+  ): Promise<ProjectDto> {
     const project = await this.prisma.project.findUnique({
       where: { id },
     });

@@ -11,7 +11,7 @@ import {
   updateStageStatus,
   deleteStage,
   reorderStages,
-  getActivities,
+  getActivitiesByStage,
   createActivity,
   updateActivity,
   deleteActivity,
@@ -25,6 +25,8 @@ import {
   getProjectStatusList,
   getActivityStatusList,
   getStageStatusList,
+  getActivities,
+  getStagesByProject,
 } from './api';
 import type { PaginationParams } from '@/lib/types/pagination.types';
 import type {
@@ -110,10 +112,22 @@ export function useDeleteProject() {
 }
 
 // Stage Queries
+/**
+ * @deprecated Use getActivitiesByStage instead
+ */
 export function useStages(params?: PaginationParams) {
   return useQuery({
     queryKey: ['stages', params],
     queryFn: Collector(() => getStages(params)),
+    ...getQueryConfig('STAGES'),
+  });
+}
+
+export function useStagesByProject(projectId: string, params?: PaginationParams) {
+  return useQuery({
+    queryKey: ['stages', 'project', projectId, params],
+    queryFn: Collector(() => getStagesByProject(projectId, params)),
+    enabled: !!projectId,
     ...getQueryConfig('STAGES'),
   });
 }
@@ -193,6 +207,19 @@ export function useReorderStages() {
   });
 }
 
+// Activity Queries
+export function useActivitiesByStage(stageId: string, params?: PaginationParams) {
+  return useQuery({
+    queryKey: ['activities', 'stage', stageId, params],
+    queryFn: Collector(() => getActivitiesByStage(stageId, params)),
+    enabled: !!stageId,
+    ...getQueryConfig('ACTIVITIES'),
+  });
+}
+
+/**
+ * @deprecated Use useActivitiesByStage instead
+ */
 // Activity Queries
 export function useActivities(params?: PaginationParams) {
   return useQuery({

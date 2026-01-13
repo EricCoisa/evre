@@ -1,3 +1,4 @@
+"use client";
 import type { ColumnDef } from '@tanstack/react-table';
 import type { RoleUserAccess } from '@/lib/actions/access/roleRouteAccess/types';
 import { Badge } from '@/components/ui/badge';

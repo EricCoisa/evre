@@ -81,6 +81,8 @@ export class ContractDocumentController {
   @GetApi({
     path: 'project/:projectId',
     summary: 'Busca documentos por projeto',
+    description:
+      'Retorna documentos contratuais de um projeto específico. Valida acesso do usuário ao projeto.',
     status: 'OK',
     authenticated: true,
     response: {
@@ -93,8 +95,14 @@ export class ContractDocumentController {
       ],
     },
   })
-  async findByProject(@Param('projectId') projectId: string) {
-    return await this.contractDocumentService.findByProject(projectId);
+  async findByProject(
+    @Param('projectId') projectId: string,
+    @Request() req: { user: { sub: string; role: string; companyId?: string } },
+  ) {
+    return await this.contractDocumentService.findByProject(
+      projectId,
+      req.user,
+    );
   }
 
   @PostApi({

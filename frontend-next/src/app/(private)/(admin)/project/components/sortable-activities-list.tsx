@@ -221,10 +221,7 @@ export function SortableActivitiesList({ activities: initialActivities, stageId,
           updates.forEach(({ id, order }) => {
             updateActivity.mutateAsync({ id, data: { order } }).then(() => {
               queryClient.invalidateQueries({ 
-                queryKey: ['activities', { 
-                  filter: JSON.stringify({ stageId }), 
-                  pagination: false 
-                }] 
+                queryKey: ['activities', 'stage', stageId] 
               });
             });
           });
@@ -252,10 +249,7 @@ export function SortableActivitiesList({ activities: initialActivities, stageId,
     try {
       await deleteActivity.mutateAsync(deletingActivityId);
       queryClient.invalidateQueries({ 
-        queryKey: ['activities', { 
-          filter: JSON.stringify({ stageId }), 
-          pagination: false 
-        }] 
+        queryKey: ['activities', 'stage', stageId] 
       });
       toast.success(t('activityDeleted'));
       setIsDeleteModalOpen(false);
@@ -272,10 +266,7 @@ export function SortableActivitiesList({ activities: initialActivities, stageId,
         data: { status },
       });
       queryClient.invalidateQueries({ 
-        queryKey: ['activities', { 
-          filter: JSON.stringify({ stageId }), 
-          pagination: false 
-        }] 
+        queryKey: ['activities', 'stage', stageId] 
       });
       toast.success(t('activityUpdated'));
     } catch (error) {
@@ -296,10 +287,7 @@ export function SortableActivitiesList({ activities: initialActivities, stageId,
     setIsEditModalOpen(false);
     setEditingActivity(null);
     queryClient.invalidateQueries({ 
-      queryKey: ['activities', { 
-        filter: JSON.stringify({ stageId }), 
-        pagination: false 
-      }] 
+      queryKey: ['activities', 'stage', stageId] 
     });
     toast.success(t('activityUpdated'));
   }, [stageId, queryClient, t]);

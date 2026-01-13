@@ -74,6 +74,47 @@ export class StageController {
   }
 
   @GetApi({
+    path: 'project/:projectId',
+    summary: 'List stages by project',
+    description:
+      'Returns stages for a specific project. Validates project ownership and company hierarchy.',
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Stages retrieved successfully',
+          schema: { dto: StageDto, isArray: true, isPagination: true },
+        },
+      ],
+    },
+    authenticated: true,
+    queries: commonPaginationQueries,
+  })
+  async findAllByProject(
+    @Param('projectId') projectId: string,
+    @Query(new ZodValidationPipe(PaginationQuerySchema)) query: PaginationQuery,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<PaginatedResponse<StageDto> | StageDto[]> {
+    const result = await this.stageService.findAllByProject(
+      projectId,
+      query,
+      user,
+    );
+
+    if (Array.isArray(result)) {
+      return plainToInstance(StageDto, result);
+    }
+
+    return {
+      ...result,
+      data: plainToInstance(StageDto, result.data),
+    };
+  }
+
+  /**
+   * @deprecated Use findAllByProject instead - kept for backwards compatibility
+   */
+  @GetApi({
     path: '',
     summary: 'List all stages',
     description: 'Returns a list of all stages',

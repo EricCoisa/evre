@@ -324,7 +324,31 @@ export class ContractDocumentService implements Omit<
     return updated;
   }
 
-  async findByProject(projectId: string): Promise<ContractDocument[]> {
+  /**
+   * 🔒 SECURITY: Lista contract documents por project
+   * Valida: project existe → user tem acesso à company do project
+   */
+  async findByProject(
+    projectId: string,
+    user?: { role: string; companyId?: string | null },
+  ): Promise<ContractDocument[]> {
+    // Valida que o project existe e verifica hierarquia
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      select: { id: true, companyId: true },
+    });
+
+    if (!project) {
+      throw new NotFoundException(this.i18n.t('project.errors.not_found'));
+    }
+
+    // 🔒 SECURITY: USER só pode acessar projects da própria empresa
+    if (user && user.role === 'USER' && user.companyId) {
+      if (project.companyId !== user.companyId) {
+        throw new NotFoundException(this.i18n.t('project.errors.not_found'));
+      }
+    }
+
     return await this.prisma.contractDocument.findMany({
       where: { projectId },
       orderBy: { createdAt: 'desc' },

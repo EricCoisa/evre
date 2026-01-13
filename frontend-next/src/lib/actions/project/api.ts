@@ -57,10 +57,22 @@ export async function deleteProject(
 }
 
 // Stage API
+/**
+ * @deprecated Use getActivitiesByStage instead
+ */
 export async function getStages(
   params?: PaginationParams,
 ): Promise<ApiResponse<PaginatedResponse<Stage> | Stage[]>> {
   return await GET<PaginatedResponse<Stage> | Stage[]>('/stage', {
+    params: params || {},
+  });
+}
+
+export async function getStagesByProject(
+  projectId: string,
+  params?: PaginationParams,
+): Promise<ApiResponse<PaginatedResponse<Stage> | Stage[]>> {
+  return await GET<PaginatedResponse<Stage> | Stage[]>(`/stage/project/${projectId}`, {
     params: params || {},
   });
 }
@@ -101,11 +113,23 @@ export async function reorderStages(
   return await PATCH<{ status: boolean; message: string }>('/stage/reorder', data);
 }
 
-// Activity API
+/**
+ * @deprecated Use getActivitiesByStage instead
+ */
 export async function getActivities(
   params?: PaginationParams,
 ): Promise<ApiResponse<PaginatedResponse<Activity> | Activity[]>> {
   return await GET<PaginatedResponse<Activity> | Activity[]>('/activity', {
+    params: params || {},
+  });
+}
+
+// Activity API
+export async function getActivitiesByStage(
+  stageId: string,
+  params?: PaginationParams,
+): Promise<ApiResponse<PaginatedResponse<Activity> | Activity[]>> {
+  return await GET<PaginatedResponse<Activity> | Activity[]>(`/activity/stage/${stageId}`, {
     params: params || {},
   });
 }

@@ -18,6 +18,8 @@ import {
 } from '../../common/schemas/pagination.schema';
 import { commonPaginationQueries } from '../../common/swagger/pagination-queries';
 import type { PaginatedResponse } from '../../common/types/pagination.types';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { AuthenticatedUser } from '../../common/types/auth.types';
 
 @ApiTags('proposal')
 @Controller('proposals')
@@ -30,7 +32,6 @@ export class ProposalController {
     status: 'OK',
     authenticated: true,
     queries: commonPaginationQueries,
-    roles: ['ADMIN'],
     response: {
       success: [
         {
@@ -150,7 +151,8 @@ export class ProposalController {
   @GetApi({
     path: 'company/:companyId',
     summary: 'Listar propostas da empresa',
-    description: 'Retorna todas as propostas de uma empresa específica',
+    description:
+      'Retorna todas as propostas de uma empresa específica. Valida acesso do usuário à empresa.',
     status: 'OK',
     authenticated: true,
     roles: ['ADMIN'],
@@ -166,8 +168,9 @@ export class ProposalController {
   })
   async findByCompany(
     @Param('companyId') companyId: string,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<ProposalDto[]> {
-    const proposals = await this.proposalService.findByCompany(companyId);
+    const proposals = await this.proposalService.findByCompany(companyId, user);
     return plainToInstance(ProposalDto, proposals);
   }
 

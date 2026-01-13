@@ -1,3 +1,4 @@
+"use server";
 import { ApiResponse, GET } from '@/lib/api/api';
 import type { UserRouteAccess } from './types';
 import type { PaginatedResponse, PaginationParams } from '@/lib/types/pagination.types';

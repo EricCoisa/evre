@@ -1,7 +1,7 @@
 'use client';
 
 import { Stage, ApprovalStatusColors, Approval, StageStatus } from '@/lib/actions/project/types';
-import { useActivities, useApprovalsByStage, useActivityStatus, useUpdateStage, useCreateActivity, useStageStatus, useUpdateStageStatus } from '@/lib/actions/project/queries';
+import { useActivitiesByStage, useApprovalsByStage, useActivityStatus, useUpdateStage, useCreateActivity, useStageStatus, useUpdateStageStatus } from '@/lib/actions/project/queries';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -38,8 +38,7 @@ export function StageItem({
   const queryClient = useQueryClient();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   
-  const { data: activitiesData } = useActivities({ 
-    filter: JSON.stringify({ stageId: stage.id }), 
+  const { data: activitiesData } = useActivitiesByStage(stage.id, { 
     pagination: false 
   });
   const { data: approvalsData } = useApprovalsByStage(stage.id);
@@ -231,10 +230,7 @@ export function StageItem({
                   }}
                   onSuccess={() => {
                     queryClient.invalidateQueries({ 
-                      queryKey: ['activities', { 
-                        filter: JSON.stringify({ stageId: stage.id }), 
-                        pagination: false 
-                      }] 
+                      queryKey: ['activities', 'stage', stage.id]
                     });
                   }}
                   submitLabel={t('create')}

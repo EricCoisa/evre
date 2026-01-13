@@ -33,7 +33,8 @@ export class ApprovalService {
     if (user && user.role === 'USER' && user.companyId) {
       if (project.companyId !== user.companyId) {
         throw new NotFoundException(
-          this.i18n.t('approval.errors.project_not_found') || 'Project not found',
+          this.i18n.t('approval.errors.project_not_found') ||
+            'Project not found',
         );
       }
     }
@@ -111,7 +112,7 @@ export class ApprovalService {
     // 🔒 SECURITY: USER só pode acessar aprovações de projetos da própria empresa
     // Busca o projectId através da entidade aprovada
     let projectId: string | null = null;
-    
+
     if (entityType === 'STAGE') {
       const stage = await this.prisma.stage.findUnique({
         where: { id: entityId },

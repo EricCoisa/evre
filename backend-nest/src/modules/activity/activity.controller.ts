@@ -84,6 +84,7 @@ export class ActivityController {
         },
       ],
     },
+    roles: ['ADMIN'],
     authenticated: true,
     queries: commonPaginationQueries,
   })
@@ -91,6 +92,37 @@ export class ActivityController {
     @Query(new ZodValidationPipe(PaginationQuerySchema)) query: PaginationQuery,
   ): Promise<PaginatedResponse<ActivityDto> | ActivityDto[]> {
     const result = await this.activityService.findAll(query);
+    if (Array.isArray(result)) return plainToInstance(ActivityDto, result);
+    return { ...result, data: plainToInstance(ActivityDto, result.data) };
+  }
+
+  @GetApi({
+    path: 'stage/:stageId',
+    summary: 'List activities by stage',
+    description:
+      'Returns activities for a specific stage. Validates stage ownership and project hierarchy.',
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Activities retrieved successfully',
+          schema: { dto: ActivityDto, isArray: true, isPagination: true },
+        },
+      ],
+    },
+    authenticated: true,
+    queries: commonPaginationQueries,
+  })
+  async findAllByStage(
+    @Param('stageId') stageId: string,
+    @Query(new ZodValidationPipe(PaginationQuerySchema)) query: PaginationQuery,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<PaginatedResponse<ActivityDto> | ActivityDto[]> {
+    const result = await this.activityService.findAllByStage(
+      stageId,
+      query,
+      user,
+    );
     if (Array.isArray(result)) return plainToInstance(ActivityDto, result);
     return { ...result, data: plainToInstance(ActivityDto, result.data) };
   }

@@ -2,7 +2,7 @@
 
 import { useProposalsByCompany } from '@/lib/actions/proposal/queries';
 import { DataTable } from '@/components/data-table';
-import { getProposalColumns } from '@/app/(private)/proposal/components/proposal-columns';
+import { getProposalColumns } from '@/app/(private)/(admin)/proposal/components/proposal-columns';
 import { useTranslation } from 'react-i18next';
 import { useCallback, useMemo, useState } from 'react';
 import { Project } from '@/lib/actions/project/types';

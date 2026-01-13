@@ -2,7 +2,7 @@
 import { useTranslation } from "react-i18next";
 import { useMemo, useCallback, useState } from "react";
 import { useContractDocumentsByProject, useSendContractDocument, useAcceptContractDocument, useArchiveContractDocument } from "@/lib/actions/contract-document/queries";
-import { getContractDocumentColumns } from "@/app/(private)/contract-document/components/contract-document-columns";
+import { getContractDocumentColumns } from "@/app/(private)/(admin)/contract-document/components/contract-document-columns";
 import { DataTable } from "@/components/data-table";
 import { Container } from "@/components/container";
 import type { Project } from "@/lib/actions/project/types";

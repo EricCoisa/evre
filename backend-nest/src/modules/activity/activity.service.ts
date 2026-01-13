@@ -13,6 +13,7 @@ import {
 import { LoggingService } from '../logging/logging.service';
 import { LogActions } from 'src/common/types/logging.types';
 import { ActivityStatusConst } from 'src/domain/project/activityStatus.const';
+import { AuthenticatedUser } from 'src/common/types/auth.types';
 
 @Injectable()
 export class ActivityService implements IBaseService<
@@ -81,6 +82,99 @@ export class ActivityService implements IBaseService<
     return this.mapToDto(activity);
   }
 
+  /**
+   * 🔒 SECURITY: Lista activities por stage com validação completa de hierarquia
+   * Valida: stage existe → project existe → user tem acesso à company
+   */
+  async findAllByStage(
+    stageId: string,
+    params?: PaginationParams,
+    user?: AuthenticatedUser,
+  ): Promise<PaginatedResponse<ActivityDto> | ActivityDto[]> {
+    // 1. Busca o stage e valida hierarquia stage → project → company
+    const stage = await this.prisma.stage.findUnique({
+      where: { id: stageId },
+      include: {
+        project: {
+          select: { id: true, companyId: true },
+        },
+      },
+    });
+
+    if (!stage) {
+      throw new NotFoundException(
+        this.i18n.t('activity.errors.stage_not_found') || 'Stage not found',
+      );
+    }
+
+    // 2. 🔒 SECURITY: USER só pode acessar stages de projetos da própria empresa
+    if (user && user.role === 'USER' && user.companyId) {
+      if (stage.project.companyId !== user.companyId) {
+        throw new NotFoundException(
+          this.i18n.t('activity.errors.stage_not_found') || 'Stage not found',
+        );
+      }
+    }
+
+    // 3. Busca activities do stage com filtros adicionais
+    const { page, limit, pagination, search, filter } = params || {
+      page: 1,
+      limit: 10,
+      pagination: true,
+    };
+
+    const where: {
+      stageId: string;
+      OR?: Array<{
+        title?: { contains: string; mode: 'insensitive' };
+        description?: { contains: string; mode: 'insensitive' };
+      }>;
+      status?: any;
+    } = {
+      stageId, // SEMPRE filtra por stageId
+    };
+
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    if (filter?.status) {
+      where.status = filter.status;
+    }
+
+    if (!pagination) {
+      const activities = await this.prisma.activity.findMany({
+        where,
+        orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
+      });
+      return activities.map((activity) => this.mapToDto(activity));
+    }
+
+    const skip = (page - 1) * limit;
+    const [activities, total] = await Promise.all([
+      this.prisma.activity.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
+      }),
+      this.prisma.activity.count({ where }),
+    ]);
+
+    return {
+      data: activities.map((activity) => this.mapToDto(activity)),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
   async findAll(
     params?: PaginationParams,
   ): Promise<PaginatedResponse<ActivityDto> | ActivityDto[]> {
@@ -96,6 +190,7 @@ export class ActivityService implements IBaseService<
         description?: { contains: string; mode: 'insensitive' };
       }>;
       stageId?: string;
+      projectId?: string;
       status?: any;
     } = {};
 
@@ -144,7 +239,10 @@ export class ActivityService implements IBaseService<
     };
   }
 
-  async findOne(id: string, user?: { role: string; companyId?: string | null }): Promise<ActivityDto> {
+  async findOne(
+    id: string,
+    user?: { role: string; companyId?: string | null },
+  ): Promise<ActivityDto> {
     const activity = await this.prisma.activity.findUnique({
       where: { id },
       include: {
@@ -173,8 +271,7 @@ export class ActivityService implements IBaseService<
       }
     }
 
-    const { stage, ...activityData } = activity;
-    return this.mapToDto(activityData as Activity);
+    return this.mapToDto(activity as Activity);
   }
 
   async update(

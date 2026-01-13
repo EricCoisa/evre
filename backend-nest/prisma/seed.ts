@@ -259,19 +259,6 @@ async function main() {
     },
   });
 
-  const dashboardCompanyRoute = await prisma.route.upsert({
-    where: { path: '/company/dashboard' },
-    update: {},
-    create: {
-      path: '/company/dashboard',
-      labelKey: 'ROUTE_COMPANY_DASHBOARD',
-      icon: 'LayoutDashboard',
-      ordem: 8,
-      isHome: false,
-      isActive: true,
-    },
-  });
-
   // const systemConfigurationRoute = await prisma.route.upsert({
   //   where: { path: '/systemConfiguration' },
   //   update: {},
@@ -303,7 +290,6 @@ async function main() {
     { roleId: 'ADMIN' as const, routeId: contactRoute.id },
     { roleId: 'ADMIN' as const, routeId: clientLogRoute.id },
     { roleId: 'ADMIN' as const, routeId: contractRoute.id },
-    { roleId: 'ADMIN' as const, routeId: dashboardCompanyRoute.id },
     // { roleId: 'ADMIN' as const, routeId: systemConfigurationRoute.id },
   ];
 
@@ -332,7 +318,6 @@ async function main() {
     { roleId: 'MODERATOR' as const, routeId: contactRoute.id },
     { roleId: 'MODERATOR' as const, routeId: clientLogRoute.id },
     { roleId: 'MODERATOR' as const, routeId: contractRoute.id },
-    { roleId: 'MODERATOR' as const, routeId: dashboardCompanyRoute.id },
   ];
 
   for (const access of moderatorRoleAccesses) {
@@ -363,20 +348,6 @@ async function main() {
     },
   });
 
-  await prisma.roleRouteAccess.upsert({
-    where: {
-      roleId_routeId: {
-        roleId: 'USER',
-        routeId: dashboardCompanyRoute.id,
-      },
-    },
-    update: {},
-    create: {
-      roleId: 'USER',
-      routeId: dashboardCompanyRoute.id,
-    },
-  });
-
   console.log('✅ Role route accesses created');
 
   // Dar acesso específico ao usuário admin para todas as rotas
@@ -394,7 +365,6 @@ async function main() {
     { userId: adminUser.id, routeId: contactRoute.id },
     { userId: adminUser.id, routeId: clientLogRoute.id },
     { userId: adminUser.id, routeId: contractRoute.id },
-    { userId: adminUser.id, routeId: dashboardCompanyRoute.id },
     // { userId: adminUser.id, routeId: systemConfigurationRoute.id },
   ];
 

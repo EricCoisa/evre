@@ -13,6 +13,7 @@ interface JwtPayload {
   sub: string;
   email: string;
   role: UserRole;
+  companyId?: string | null;
 }
 
 @Injectable()
@@ -40,7 +41,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     // Busca usuário no banco para verificar status atual
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
-      select: { id: true, email: true, role: true, status: true },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        status: true,
+        companyId: true,
+      },
     });
 
     // Usuário não encontrado
@@ -55,6 +62,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       );
     }
 
-    return { id: user.id, email: user.email, role: user.role };
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      companyId: user.companyId,
+    };
   }
 }
