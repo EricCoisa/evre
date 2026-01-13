@@ -4,16 +4,21 @@ import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MessageCircle, Loader2 } from 'lucide-react';
+import { MessageCircle, Loader2, LayoutGrid, Rows3 } from 'lucide-react';
 import { useProject, useStagesByProject } from '@/lib/actions/project/queries';
 import { useTranslation } from '@/hooks/use-translation';
-import { ClientStageColumn } from './client-stage-column';
+import { ClientStageColumn } from './stageView/client-stage-column';
 import { CommentModal } from './comment-modal';
 import { cn } from '@/lib/utils';
+import { StageView } from './stageView/stageView';
+import { StatusView } from './statusView/statusView';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface ClientProjectBoardProps {
   projectId: string;
 }
+
+const viewModes = ["STAGE", "STATUS"];
 
 export function ClientProjectBoard({ projectId }: ClientProjectBoardProps) {
   const { t } = useTranslation('projects');
@@ -24,13 +29,19 @@ export function ClientProjectBoard({ projectId }: ClientProjectBoardProps) {
     pagination: false,
   });
 
-  const [ progress, setProgress ] = useState<{stageId: string, value: number}[]>([]);
+  const [progress, setProgress] = useState<{ stageId: string, value: number }[]>([]);
 
 
   const stageList = useMemo(
     () => (Array.isArray(stages) ? stages : stages?.data || []),
     [stages]
   );
+
+  const [mode, setMode] = useState<string>(viewModes[0]);
+
+  const handleChangeViewMode = (value: string) => {
+    setMode(value);
+  }
 
 
   if (projectLoading) {
@@ -51,7 +62,7 @@ export function ClientProjectBoard({ projectId }: ClientProjectBoardProps) {
 
   return (
     <>
-      <div className="space-y-6">
+      <div className="space-y-6 overflow-hidden">
         {/* Header */}
         <Card>
           <CardHeader>
@@ -82,6 +93,15 @@ export function ClientProjectBoard({ projectId }: ClientProjectBoardProps) {
                   <MessageCircle className="h-4 w-4 mr-2" />
                   {t('comments')}
                 </Button>
+                <div>
+                  {mode === "STAGE" ? (
+                    <LayoutGrid className='cursor-pointer' onClick={() => handleChangeViewMode("STATUS")} />
+                  ) : (
+                    <Rows3 className='cursor-pointer' onClick={() => handleChangeViewMode("STAGE")} />
+                  )}
+                </div>
+                <div>
+                </div>
               </div>
             </div>
           </CardHeader>
@@ -102,42 +122,31 @@ export function ClientProjectBoard({ projectId }: ClientProjectBoardProps) {
         </Card>
 
         {/* Board */}
-        <div className="relative">
-          {stagesLoading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : stageList.length > 0 ? (
-            <div className="overflow-x-auto pb-4">
-              <div className="flex gap-4 min-w-max">
-                {stageList.map((stage) => (
-                  <ClientStageColumn
-                    key={stage.id}
-                    stage={stage}
-                    projectId={projectId}
-                    setProgress={setProgress}
-                  />
-                ))}
-              </div>
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <p className="text-muted-foreground">{t('noStages')}</p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+        {mode === "STAGE" ? (
+          <StageView
+            projectId={projectId}
+            project={project}
+            stages={stageList}
+            setProgress={setProgress}
+          />
+        ) : (
+          <StatusView
+            projectId={projectId}
+            stages={stageList}
+            setProgress={setProgress}
+          />
+        )}
+
+        <CommentModal
+          isOpen={showComments}
+          onClose={() => setShowComments(false)}
+          entityType="PROJECT"
+          entityId={projectId}
+          projectId={projectId}
+          entityName={project.name}
+        />
       </div>
 
-      <CommentModal
-        isOpen={showComments}
-        onClose={() => setShowComments(false)}
-        entityType="PROJECT"
-        entityId={projectId}
-        projectId={projectId}
-        entityName={project.name}
-      />
     </>
   );
 }

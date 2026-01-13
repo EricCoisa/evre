@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { MessageCircle, Loader2 } from 'lucide-react';
 import { useActivitiesByStage } from '@/lib/actions/project/queries';
 import { ClientActivityCard } from './client-activity-card';
-import { CommentModal } from './comment-modal';
+import { CommentModal } from '../comment-modal';
 import { StageApprovalButton } from './stage-approval-button';
 import type { Stage } from '@/lib/actions/project/types';
 

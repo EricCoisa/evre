@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MessageCircle } from 'lucide-react';
-import { CommentModal } from './comment-modal';
+import { CommentModal } from '../comment-modal';
 import { cn } from '@/lib/utils';
 import type { Activity } from '@/lib/actions/project/types';
 

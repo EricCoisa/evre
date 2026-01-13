@@ -31,7 +31,7 @@ export default async function PrivateLayout({
             <FilterSidebarProvider>
               <SidebarProvider>
                 <AppSidebar />
-                <SidebarInset className="flex flex-col min-h-screen bg-background">
+                <SidebarInset className="flex flex-col min-h-screen  w-full max-w-full overflow-x-auto bg-background">
                   <BreadProvider>
                     <Header />
                     <main className="flex-1 flex flex-col gap-6 p-3 lg:p-6">
