@@ -200,19 +200,7 @@ export async function validateRouteAccess(
     }
   }
 
-  // 4. Verifica se o path pertence ao contexto correto
-  const isAdminPath = pathname.startsWith('/admin') || pathname.includes('/(admin)');
-  const isClientPath = pathname.startsWith('/client') || pathname.includes('/(client)');
-
-  // Bloqueia acesso cruzado entre contextos
-  if (context === 'admin' && isClientPath) {
-    return { user, hasAccess: false };
-  }
-  if (context === 'client' && isAdminPath) {
-    return { user, hasAccess: false };
-  }
-
-  // 5. Verifica permissão de acesso na API
+  // 4. Verifica permissão de acesso na API (a API já valida o contexto correto)
   let hasAccess = false;
   try {
     const response = await getUserRouteAccessByPath(pathname);
