@@ -122,7 +122,7 @@ export async function validateServerAuth(pathname: string): Promise<void> {
   } catch (error) {
     console.error('Error validating route access:', error);
     // Em caso de erro na API, redireciona para /redirect
-    redirect('/redirect');
+    redirect('/profile');
   }
   
   // 5. Redireciona se não tiver acesso (FORA do try/catch para não capturar NEXT_REDIRECT)
