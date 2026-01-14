@@ -122,7 +122,7 @@ export async function validateServerAuth(pathname: string): Promise<void> {
   } catch (error) {
     console.error('Error validating route access:', error);
     // Em caso de erro na API, redireciona para /redirect
-    redirect('/profile');
+    redirect('/redirect');
   }
   
   // 5. Redireciona se não tiver acesso (FORA do try/catch para não capturar NEXT_REDIRECT)
@@ -180,11 +180,15 @@ export async function validateRouteAccess(
   let hasAccess = false;
   try {
     const response = await getUserRouteAccessByPath(pathname);
-    hasAccess = response.data === true;
+    
+    // Verifica se a requisição foi bem-sucedida E se o usuário tem acesso
+    if (!response.success) {
+      hasAccess = false;
+    } else {
+      hasAccess = response.data === true;
+    }
   } catch (error) {
-    console.error('Error validating route access:', error);
     hasAccess = false;
   }
-
   return { user, hasAccess };
 }
