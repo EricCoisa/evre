@@ -129,19 +129,16 @@ export class RouteService implements IBaseService<Route> {
     const hasUserAccess = route.userRouteAccesses.length > 0;
     const hasRoleAccess = route.roleRouteAccesses.length > 0;
 
-    if (!hasUserAccess || !hasRoleAccess) {
-      console.log('3 HOME - ROUTE', 'Acess Denied - No Home Route');
+    // Usuário tem acesso se TEM acesso individual OU se sua role tem acesso
+    if (!hasUserAccess && !hasRoleAccess) {
+      console.log('3 HOME - ROUTE', 'Acess Denied - No User or Role Access');
       return acessDeniedRoute;
     }
 
-    if (!route || !route.isActive) {
-      console.log('4 HOME - ROUTE', 'Acess Denied - No Home Route');
+    // Verifica se a rota está ativa
+    if (!route.isActive) {
+      console.log('4 HOME - ROUTE', 'Acess Denied - Route Inactive');
       return acessDeniedRoute;
-    }
-
-    if (!route) {
-      console.log('5 HOME - ROUTE', 'not found exception');
-      throw new NotFoundException(this.i18n.t('route.not_found'));
     }
 
     console.log('6 HOME - ROUTE', route);
