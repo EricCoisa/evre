@@ -474,15 +474,16 @@ async function main() {
     });
   }
 
-  const SYSTEM_CONTACT_EMAIL = await prisma.systemConfiguration.findUnique({
-    where: { labelKey: 'SYSTEM_CONTACT_EMAIL' },
-  });
-  if (!SYSTEM_CONTACT_EMAIL) {
+  const SYSTEMCONFIG_CONTACT_EMAIL =
+    await prisma.systemConfiguration.findUnique({
+      where: { labelKey: 'SYSTEMCONFIG_CONTACT_EMAIL' },
+    });
+  if (!SYSTEMCONFIG_CONTACT_EMAIL) {
     await prisma.systemConfiguration.upsert({
-      where: { labelKey: 'SYSTEM_CONTACT_EMAIL' },
+      where: { labelKey: 'SYSTEMCONFIG_CONTACT_EMAIL' },
       update: {},
       create: {
-        labelKey: 'SYSTEM_CONTACT_EMAIL',
+        labelKey: 'SYSTEMCONFIG_CONTACT_EMAIL',
         valueType: 'string',
         value: 'contact@evre.com.br',
       },

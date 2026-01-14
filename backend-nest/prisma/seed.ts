@@ -466,10 +466,10 @@ async function main() {
   });
 
   await prisma.systemConfiguration.upsert({
-    where: { labelKey: 'SYSTEM_CONTACT_EMAIL' },
+    where: { labelKey: 'SYSTEMCONFIG_CONTACT_EMAIL' },
     update: {},
     create: {
-      labelKey: 'SYSTEM_CONTACT_EMAIL',
+      labelKey: 'SYSTEMCONFIG_CONTACT_EMAIL',
       valueType: 'string',
       value: 'contact@evre.com.br',
     },

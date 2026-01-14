@@ -17,6 +17,49 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   logger.log('Nest app created');
 
+  // =============================
+  // TEMPORARY HTTP ACCESS LOG MIDDLEWARE (for diagnostics)
+  // Remove after diagnosis is complete!
+  // =============================
+
+  app.use(
+    (
+      req: import('express').Request,
+      res: import('express').Response,
+      next: import('express').NextFunction,
+    ) => {
+      const start = Date.now();
+      res.on('finish', () => {
+        // Only log after response is sent
+        const durationMs = Date.now() - start;
+        const log: Record<string, unknown> = {
+          type: 'http_access',
+          timestamp: new Date().toISOString(),
+          ip:
+            req.ip ||
+            req.headers['x-forwarded-for'] ||
+            (req.connection && typeof req.connection.remoteAddress === 'string'
+              ? req.connection.remoteAddress
+              : ''),
+          method: req.method,
+          path: req.originalUrl,
+          status: res.statusCode,
+          durationMs,
+          userAgent:
+            typeof req.headers['user-agent'] === 'string'
+              ? req.headers['user-agent']
+              : '',
+        };
+        // Optionally, filter out infra/health-check/bots here if needed
+        // Example: if (/kube-probe|health|bot/i.test(log.userAgent as string)) { ... }
+        // TEMPORARY LOG ONLY
+
+        console.log(JSON.stringify(log));
+      });
+      next();
+    },
+  );
+
   // Security
   logger.log('Configuring security middlewares...');
   app.use(helmet());
