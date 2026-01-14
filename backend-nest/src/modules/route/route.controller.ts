@@ -63,6 +63,16 @@ export class RouteController {
   }
 
   @GetApi({
+    path: 'home-route',
+    summary: 'Rota home do usuário',
+    description: 'Retorna a rota home do usuário autenticado',
+    authenticated: true,
+  })
+  async getHomeRoute(@CurrentUser() user: AuthenticatedUser) {
+    return await this.routeService.findHome(user);
+  }
+
+  @GetApi({
     path: ':id',
     summary: 'route.find.title',
     status: 'OK',

@@ -17,6 +17,5 @@ export async function getUserRouteAccessByPath(
   const cleanPath = path.split('?')[0].split('#')[0];
   // Encode path para evitar problemas com caracteres especiais
   const encodedPath = encodeURIComponent(cleanPath);
-  console.log('Verificando acesso para a rota:', cleanPath);
   return await GET<boolean>(`/user-route-access/checkAccess/${encodedPath}`);
 }

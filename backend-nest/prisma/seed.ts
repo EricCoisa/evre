@@ -98,7 +98,7 @@ async function main() {
       labelKey: 'ROUTE_HOME',
       icon: 'Home',
       ordem: 1,
-      isHome: true,
+      isHome: false,
       isActive: true,
     },
   });
@@ -189,7 +189,7 @@ async function main() {
       labelKey: 'ROUTE_COMPANY',
       icon: 'Building2',
       ordem: 8,
-      isHome: false,
+      isHome: true,
       isActive: true,
     },
   });
@@ -466,10 +466,10 @@ async function main() {
   });
 
   await prisma.systemConfiguration.upsert({
-    where: { labelKey: 'SYSTEMCONFIG_CONTACT_EMAIL' },
+    where: { labelKey: 'SYSTEM_CONTACT_EMAIL' },
     update: {},
     create: {
-      labelKey: 'SYSTEMCONFIG_CONTACT_EMAIL',
+      labelKey: 'SYSTEM_CONTACT_EMAIL',
       valueType: 'string',
       value: 'contact@evre.com.br',
     },

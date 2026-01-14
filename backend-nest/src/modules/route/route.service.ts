@@ -13,6 +13,7 @@ import { LoggingService } from '../logging/logging.service';
 import { LogActions } from 'src/common/types/logging.types';
 import { Route } from 'src/domain/route/route.entity';
 import { IBaseService } from 'src/domain/interface/base-service.interface';
+import { AuthenticatedUser } from 'src/common/types/auth.types';
 
 @Injectable()
 export class RouteService implements IBaseService<Route> {
@@ -94,6 +95,44 @@ export class RouteService implements IBaseService<Route> {
     const route = await this.prisma.route.findUnique({
       where: { id },
     });
+
+    if (!route) {
+      throw new NotFoundException(this.i18n.t('route.not_found'));
+    }
+
+    return route;
+  }
+
+  async findHome(user: AuthenticatedUser): Promise<Route> {
+    const acessDeniedRoute = { path: '/access-denied' } as Route;
+    const route = await this.prisma.route.findFirst({
+      where: { isHome: true },
+      include: {
+        userRouteAccesses: {
+          where: { userId: user.id },
+          select: { id: true },
+        },
+        roleRouteAccesses: {
+          where: { roleId: user.role },
+          select: { roleId: true },
+        },
+      },
+    });
+
+    if (!route) {
+      return acessDeniedRoute;
+    }
+
+    const hasUserAccess = route.userRouteAccesses.length > 0;
+    const hasRoleAccess = route.roleRouteAccesses.length > 0;
+
+    if (hasUserAccess || hasRoleAccess) {
+      return acessDeniedRoute;
+    }
+
+    if (!route || !route.isActive) {
+      return acessDeniedRoute;
+    }
 
     if (!route) {
       throw new NotFoundException(this.i18n.t('route.not_found'));

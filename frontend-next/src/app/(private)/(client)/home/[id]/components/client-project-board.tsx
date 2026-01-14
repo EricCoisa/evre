@@ -7,12 +7,10 @@ import { Badge } from '@/components/ui/badge';
 import { MessageCircle, Loader2, LayoutGrid, Rows3 } from 'lucide-react';
 import { useProject, useStagesByProject } from '@/lib/actions/project/queries';
 import { useTranslation } from '@/hooks/use-translation';
-import { ClientStageColumn } from './stageView/client-stage-column';
 import { CommentModal } from './comment-modal';
 import { cn } from '@/lib/utils';
 import { StageView } from './stageView/stageView';
 import { StatusView } from './statusView/statusView';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface ClientProjectBoardProps {
   projectId: string;

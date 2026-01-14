@@ -21,7 +21,7 @@ export default async function ClientLayout({
 
   // Se não tem acesso à rota específica, redireciona
   if (!hasAccess) {
-    redirect('/acesso-negado');
+    redirect('/access-denied');
   }
 
   // Usuário tem acesso, renderiza conteúdo

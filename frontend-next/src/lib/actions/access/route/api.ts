@@ -15,6 +15,9 @@ export async function createRoute(data: CreateRouteDto): Promise<ApiResponse<Rou
   return await POST<Routes>('/route', data);
 }
 
+export async function getHomeRoute(): Promise<ApiResponse<Routes>> {
+  return await GET<Routes>(`/route/home-route`);
+}
 
 export async function updateRoute(id: string, data: UpdateRouteDto): Promise<ApiResponse<Routes>> {
   return await PATCH<Routes>(`/route/${id}`, data);

@@ -4,12 +4,11 @@ import { useState, useMemo, useEffect } from 'react';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronRight, MessageCircle } from 'lucide-react';
-import { useActivitiesByStage } from '@/lib/actions/project/queries';
+import { useActivitiesByStage, useActivityStatus } from '@/lib/actions/project/queries';
 import { ClientActivityCard } from '../stageView/client-activity-card';
 import { CommentModal } from '../comment-modal';
 import { StageApprovalButton } from '../stageView/stage-approval-button';
-import type { Stage } from '@/lib/actions/project/types';
-import { cn } from '@/lib/utils';
+import type { Activity, Stage } from '@/lib/actions/project/types';
 
 interface ClientStageStatusCardProps {
   stage: Stage;
@@ -25,7 +24,7 @@ export function ClientStageStatusCard({
   const [isExpanded, setIsExpanded] = useState(false);
   const [showComments, setShowComments] = useState(false);
 
-  const { data: activities, isLoading } = useActivitiesByStage(stage.id, {
+  const { data: activities } = useActivitiesByStage(stage.id, {
     pagination: false,
   });
 
@@ -34,14 +33,18 @@ export function ClientStageStatusCard({
     [activities]
   );
 
+    const { data: activitiStatus } = useActivityStatus();
+
+
+  // Agrupa atividades dinamicamente por status
+  const statusList = Array.isArray(activitiStatus) ? activitiStatus : activitiStatus || ['TODO', 'DOING', 'DONE'];
   const groupedActivities = useMemo(() => {
-    const groups = {
-      TODO: activityList.filter((a) => a.status === 'TODO'),
-      DOING: activityList.filter((a) => a.status === 'DOING'),
-      DONE: activityList.filter((a) => a.status === 'DONE'),
-    };
+    const groups: Record<string, Activity[]> = {};
+    statusList.forEach((status: string) => {
+      groups[status] = activityList.filter((a) => a.status === status);
+    });
     return groups;
-  }, [activityList]);
+  }, [activityList, statusList]);
 
  
   const totalActivities = activityList.length;
@@ -120,81 +123,32 @@ export function ClientStageStatusCard({
 
         {isExpanded && (
           <CardContent className="pt-0">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Coluna TODO */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md">
-                  <span className="text-sm font-medium">TODO</span>
-                  <span className="text-xs text-muted-foreground">
-                    {groupedActivities.TODO.length}
-                  </span>
+            <div className={`grid grid-cols-1 md:grid-cols-${statusList.length} gap-4`}>
+              {statusList.map((status) => (
+                <div className="space-y-2" key={status}>
+                  <div className="flex items-center justify-between px-2 py-1 bg-muted rounded-md">
+                    <span className="text-sm font-medium">{status}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {groupedActivities[status]?.length || 0}
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {groupedActivities[status]?.length > 0 ? (
+                      groupedActivities[status].map((activity) => (
+                        <ClientActivityCard
+                          key={activity.id}
+                          activity={activity}
+                          projectId={projectId}
+                        />
+                      ))
+                    ) : (
+                      <div className="text-center py-4 text-xs text-muted-foreground">
+                        Nenhuma atividade
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  {groupedActivities.TODO.length > 0 ? (
-                    groupedActivities.TODO.map((activity) => (
-                      <ClientActivityCard
-                        key={activity.id}
-                        activity={activity}
-                        projectId={projectId}
-                      />
-                    ))
-                  ) : (
-                    <div className="text-center py-4 text-xs text-muted-foreground">
-                      Nenhuma atividade
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Coluna DOING */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between px-2 py-1 bg-blue-100 dark:bg-blue-900 rounded-md">
-                  <span className="text-sm font-medium">DOING</span>
-                  <span className="text-xs text-muted-foreground">
-                    {groupedActivities.DOING.length}
-                  </span>
-                </div>
-                <div className="space-y-2">
-                  {groupedActivities.DOING.length > 0 ? (
-                    groupedActivities.DOING.map((activity) => (
-                      <ClientActivityCard
-                        key={activity.id}
-                        activity={activity}
-                        projectId={projectId}
-                      />
-                    ))
-                  ) : (
-                    <div className="text-center py-4 text-xs text-muted-foreground">
-                      Nenhuma atividade
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Coluna DONE */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between px-2 py-1 bg-green-100 dark:bg-green-900 rounded-md">
-                  <span className="text-sm font-medium">DONE</span>
-                  <span className="text-xs text-muted-foreground">
-                    {groupedActivities.DONE.length}
-                  </span>
-                </div>
-                <div className="space-y-2">
-                  {groupedActivities.DONE.length > 0 ? (
-                    groupedActivities.DONE.map((activity) => (
-                      <ClientActivityCard
-                        key={activity.id}
-                        activity={activity}
-                        projectId={projectId}
-                      />
-                    ))
-                  ) : (
-                    <div className="text-center py-4 text-xs text-muted-foreground">
-                      Nenhuma atividade
-                    </div>
-                  )}
-                </div>
-              </div>
+              ))}
             </div>
           </CardContent>
         )}

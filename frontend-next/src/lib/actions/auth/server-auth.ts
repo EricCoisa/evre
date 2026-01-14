@@ -87,7 +87,7 @@ export async function getServerLang(): Promise<string | undefined> {
 const PUBLIC_ROUTES = ['/login', '/register', '/forgot-password'];
 
 // Rotas que não verificam permissão específica (apenas autenticação)
-const AUTH_ONLY_ROUTES = ['/', '/redirect', '/acesso-negado', '/profile', '/settings'];
+const AUTH_ONLY_ROUTES = ['/', '/redirect', '/access-denied'];
 
 // Cache simples para evitar múltiplas validações da mesma rota na mesma request
 const routeAccessCache = new Map<string, { hasAccess: boolean; timestamp: number }>();
@@ -96,7 +96,7 @@ const CACHE_TTL = 1000; // 1 segundo de cache
 /**
  * Valida se usuário está autenticado e tem acesso à rota
  * Se não estiver logado, redireciona para /login
- * Se não tiver acesso, redireciona para /acesso-negado
+ * Se não tiver acesso, redireciona para /access-denied
  */
 export async function validateServerAuth(pathname: string): Promise<void> {
   // 1. Ignora rotas públicas

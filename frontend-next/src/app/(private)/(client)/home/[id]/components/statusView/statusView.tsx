@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useTranslation } from '@/hooks/use-translation';
 import { Stage } from '@/lib/actions/project/types';

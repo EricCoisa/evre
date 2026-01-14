@@ -43,7 +43,7 @@ async function main() {
         labelKey: 'ROUTE_HOME',
         icon: 'Home',
         ordem: 1,
-        isHome: true,
+        isHome: false,
         isActive: true,
       },
     });
@@ -176,7 +176,7 @@ async function main() {
         labelKey: 'ROUTE_COMPANY',
         icon: 'Building2',
         ordem: 8,
-        isHome: false,
+        isHome: true,
         isActive: true,
       },
     });
