@@ -9,6 +9,7 @@ import { BreadProvider } from '@/contexts/bread-context';
 import { AuthProvider } from '@/contexts/auth-context';
 import { AppProvider } from '@/contexts/appProvider';
 import { FilterSidebarProvider } from '@/contexts/filter-sidebar-context';
+import { ClientLogger } from '@/components/ClientLogger';
 import { redirect } from 'next/navigation';
 
 export default async function PrivateLayout({
@@ -26,6 +27,7 @@ export default async function PrivateLayout({
   return (
     <AppProvider>
       <AuthProvider>
+        <ClientLogger />
         <PrefetchWrapper>
           <ReactTour>
             <FilterSidebarProvider>
