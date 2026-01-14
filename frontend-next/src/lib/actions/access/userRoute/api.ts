@@ -20,8 +20,12 @@ export async function getUserRouteAccessByPath(
     const cleanPath = path.split('?')[0].split('#')[0];
     await testLog(`[getUserRouteAccessByPath] Clean path: ${cleanPath}`);
     
+    // Remove a barra inicial se existir, para evitar problemas com %2F no Linux
+    const pathWithoutLeadingSlash = cleanPath.startsWith('/') ? cleanPath.substring(1) : cleanPath;
+    await testLog(`[getUserRouteAccessByPath] Path without leading slash: ${pathWithoutLeadingSlash}`);
+    
     // Encode path para evitar problemas com caracteres especiais
-    const encodedPath = encodeURIComponent(cleanPath);
+    const encodedPath = encodeURIComponent(pathWithoutLeadingSlash);
     await testLog(`[getUserRouteAccessByPath] Encoded path: ${encodedPath}`);
     
     const finalUrl = `/user-route-access/checkAccess/${encodedPath}`;

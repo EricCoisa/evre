@@ -93,10 +93,12 @@ export class UserRouteAccessController {
       return false;
     }
     const decodedPath = decodeURIComponent(path);
-    console.log('Decoded Path:', decodedPath);
+    // Adiciona barra inicial se não existir (frontend remove para evitar %2F no Linux)
+    const normalizedPath = decodedPath.startsWith('/') ? decodedPath : `/${decodedPath}`;
+    console.log('Normalized Path:', normalizedPath);
     return await this.userRouteAccessService.checkAccess(
       currentUser.id,
-      decodedPath,
+      normalizedPath,
     );
   }
 
