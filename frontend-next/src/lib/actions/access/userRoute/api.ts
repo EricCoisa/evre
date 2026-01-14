@@ -22,3 +22,8 @@ export async function getUserRouteAccessByPath(
   
   return result;
 }
+
+export async function testLog(msg:string): Promise<ApiResponse<void>> {
+  console.log('Calling testLog with msg:', msg);
+  return await GET<void>(`/route/test-log/${encodeURIComponent(msg)}`);
+}

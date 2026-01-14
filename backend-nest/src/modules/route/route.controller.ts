@@ -25,6 +25,16 @@ import type { AuthenticatedUser } from '../../common/types/auth.types';
 export class RouteController {
   constructor(private readonly routeService: RouteService) {}
 
+  @GetApi({
+    path: 'test-log/:msg',
+    summary: 'Rota home do usuário',
+    description: 'Retorna a rota home do usuário autenticado',
+  })
+  testLog(@Param('msg') msg: string) {
+    console.warn('TEST LOG', msg);
+    return { success: true, msg };
+  }
+
   @PostApi({
     summary: 'route.create.title',
     description: 'route.create.description',
