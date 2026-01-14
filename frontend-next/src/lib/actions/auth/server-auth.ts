@@ -194,20 +194,27 @@ export async function validateRouteAccess(
   }
 
   // 4. Verifica permissão de acesso na API (a API já valida o contexto correto)
-  await testLog(`[validateRouteAccess] Calling getUserRouteAccessByPath for: ${pathname}`);
+  await testLog(`[validateRouteAccess] BEFORE getUserRouteAccessByPath - pathname: ${pathname}`);
   let hasAccess = false;
   
-  const response = await getUserRouteAccessByPath(pathname);
-  
-  await testLog(`[validateRouteAccess] API Response - success: ${response.success}, data: ${response.data}, status: ${response.status}, message: ${response.message || 'none'}`);
-  
-  // Verifica se a requisição foi bem-sucedida E se o usuário tem acesso
-  if (!response.success) {
-    await testLog(`[validateRouteAccess] API call FAILED - setting hasAccess=false`);
+  try {
+    await testLog(`[validateRouteAccess] INSIDE try - about to call getUserRouteAccessByPath`);
+    const response = await getUserRouteAccessByPath(pathname);
+    await testLog(`[validateRouteAccess] AFTER getUserRouteAccessByPath - response received`);
+    
+    await testLog(`[validateRouteAccess] API Response - success: ${response.success}, data: ${response.data}, status: ${response.status}, message: ${response.message || 'none'}`);
+    
+    // Verifica se a requisição foi bem-sucedida E se o usuário tem acesso
+    if (!response.success) {
+      await testLog(`[validateRouteAccess] API call FAILED - setting hasAccess=false`);
+      hasAccess = false;
+    } else {
+      hasAccess = response.data === true;
+      await testLog(`[validateRouteAccess] API call SUCCESS - hasAccess: ${hasAccess}`);
+    }
+  } catch (error) {
+    await testLog(`[validateRouteAccess] EXCEPTION in getUserRouteAccessByPath: ${error}`);
     hasAccess = false;
-  } else {
-    hasAccess = response.data === true;
-    await testLog(`[validateRouteAccess] API call SUCCESS - hasAccess: ${hasAccess}`);
   }
 
   await testLog(`[validateRouteAccess] END - Returning hasAccess: ${hasAccess}`);

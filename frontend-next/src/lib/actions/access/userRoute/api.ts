@@ -13,14 +13,30 @@ export async function getUserRouteAccess(
 export async function getUserRouteAccessByPath(
   path: string,
 ): Promise<ApiResponse<boolean>> {
-  // Remove query params e normaliza o path
-  const cleanPath = path.split('?')[0].split('#')[0];
-  // Encode path para evitar problemas com caracteres especiais
-  const encodedPath = encodeURIComponent(cleanPath);
+  await testLog(`[getUserRouteAccessByPath] START - path: ${path}`);
   
-  const result = await GET<boolean>(`/user-route-access/checkAccess/${encodedPath}`);
-  
-  return result;
+  try {
+    // Remove query params e normaliza o path
+    const cleanPath = path.split('?')[0].split('#')[0];
+    await testLog(`[getUserRouteAccessByPath] Clean path: ${cleanPath}`);
+    
+    // Encode path para evitar problemas com caracteres especiais
+    const encodedPath = encodeURIComponent(cleanPath);
+    await testLog(`[getUserRouteAccessByPath] Encoded path: ${encodedPath}`);
+    
+    const finalUrl = `/user-route-access/checkAccess/${encodedPath}`;
+    await testLog(`[getUserRouteAccessByPath] Final URL: ${finalUrl}`);
+    
+    await testLog(`[getUserRouteAccessByPath] Calling GET...`);
+    const result = await GET<boolean>(finalUrl);
+    
+    await testLog(`[getUserRouteAccessByPath] GET returned - success: ${result.success}, data: ${result.data}, status: ${result.status}`);
+    
+    return result;
+  } catch (error) {
+    await testLog(`[getUserRouteAccessByPath] EXCEPTION: ${error}`);
+    throw error;
+  }
 }
 
 export async function testLog(msg:string): Promise<ApiResponse<void>> {
