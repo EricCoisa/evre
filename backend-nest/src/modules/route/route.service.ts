@@ -119,7 +119,10 @@ export class RouteService implements IBaseService<Route> {
       },
     });
 
+    console.log('1 HOME - ROUTE', route);
+
     if (!route) {
+      console.log('2 HOME - ROUTE', 'Acess Denied - No Home Route');
       return acessDeniedRoute;
     }
 
@@ -127,17 +130,21 @@ export class RouteService implements IBaseService<Route> {
     const hasRoleAccess = route.roleRouteAccesses.length > 0;
 
     if (hasUserAccess || hasRoleAccess) {
+      console.log('3 HOME - ROUTE', 'Acess Denied - No Home Route');
       return acessDeniedRoute;
     }
 
     if (!route || !route.isActive) {
+      console.log('4 HOME - ROUTE', 'Acess Denied - No Home Route');
       return acessDeniedRoute;
     }
 
     if (!route) {
+      console.log('5 HOME - ROUTE', 'not found exception');
       throw new NotFoundException(this.i18n.t('route.not_found'));
     }
 
+    console.log('6 HOME - ROUTE', route);
     return route;
   }
 
