@@ -178,7 +178,7 @@ export async function validateRouteAccess(
 
   // 4. Verifica permissão de acesso na API (a API já valida o contexto correto)
   let hasAccess = false;
-  try {
+
     const response = await getUserRouteAccessByPath(pathname);
     
     // Verifica se a requisição foi bem-sucedida E se o usuário tem acesso
@@ -187,8 +187,6 @@ export async function validateRouteAccess(
     } else {
       hasAccess = response.data === true;
     }
-  } catch (error) {
-    hasAccess = false;
-  }
+
   return { user, hasAccess };
 }
