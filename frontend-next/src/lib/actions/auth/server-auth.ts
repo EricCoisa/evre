@@ -2,10 +2,9 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { getUserRouteAccessByPath, testLog } from '../access/userRoute/api';
+import { getUserRouteAccessByPath } from '../access/userRoute/api';
 import { getCurrentUser } from './api';
 import type { AuthUser } from './types';
-import test from 'node:test';
 
 type RouteContext = 'admin' | 'client';
 
@@ -101,7 +100,6 @@ const AUTH_ONLY_ROUTES = ['/', '/redirect', '/access-denied'];
 export async function validateServerAuth(pathname: string): Promise<void> {
   // 1. Ignora rotas públicas
   if (PUBLIC_ROUTES.includes(pathname)) {
-     await testLog('0 - ' + pathname);
     return;
   }
 
@@ -111,10 +109,8 @@ export async function validateServerAuth(pathname: string): Promise<void> {
     redirect('/login');
   }
 
-   await testLog('1 - Authenticated access to: ' + pathname);
   // 3. Rotas que só precisam de autenticação (não verificam permissão específica)
   if (AUTH_ONLY_ROUTES.includes(pathname)) {
-    await testLog('2 - Auth only route accessed: ' + pathname);
     return;
   }
 
@@ -123,9 +119,7 @@ export async function validateServerAuth(pathname: string): Promise<void> {
   try {
     const response = await getUserRouteAccessByPath(pathname);
     hasAccess = response.data === true;
-    await testLog('3 - Route access check for ' + pathname + ': ' + hasAccess);
   } catch (error) {
-    await testLog('4 -Error validating route access for ' + pathname);
     console.error('Error validating route access:', error);
     // Em caso de erro na API, redireciona para /redirect
     redirect('/redirect');
@@ -133,7 +127,6 @@ export async function validateServerAuth(pathname: string): Promise<void> {
   
   // 5. Redireciona se não tiver acesso (FORA do try/catch para não capturar NEXT_REDIRECT)
   if (!hasAccess) {
-    await testLog('5 - Access denied to: ' + pathname);
     redirect('/redirect');
   }
 }
@@ -156,29 +149,20 @@ export async function validateRouteAccess(
   pathname: string,
   context: RouteContext
 ): Promise<{ user: AuthUser; hasAccess: boolean }> {
-  await testLog(`[validateRouteAccess] START - pathname: ${pathname}, context: ${context}`);
-  
   // 1. Verifica se está autenticado
   const accessToken = await getServerAccessToken();
   if (!accessToken) {
-    await testLog(`[validateRouteAccess] ERROR - No access token`);
     redirect('/login');
   }
-
-  await testLog(`[validateRouteAccess] Has token - Getting user data`);
-  
   // 2. Obtém dados do usuário
   let user: AuthUser;
   try {
     const userResponse = await getCurrentUser();
     if (!userResponse.data) {
-      await testLog(`[validateRouteAccess] ERROR - No user data in response`);
       redirect('/login');
     }
     user = userResponse.data;
-    await testLog(`[validateRouteAccess] User found - id: ${user.id}, companyId: ${user.companyId || 'null'}`);
   } catch (error) {
-    await testLog(`[validateRouteAccess] ERROR - Exception getting user: ${error}`);
     console.error('Error getting current user:', error);
     redirect('/login');
   }
@@ -187,36 +171,22 @@ export async function validateRouteAccess(
   if (context === 'client') {
     // Cliente precisa ter companyId
     if (!user.companyId) {
-      await testLog(`[validateRouteAccess] Client without companyId - returning hasAccess=false`);
       return { user, hasAccess: false };
     }
-    await testLog(`[validateRouteAccess] Client with companyId - OK`);
   }
 
-  // 4. Verifica permissão de acesso na API (a API já valida o contexto correto)
-  await testLog(`[validateRouteAccess] BEFORE getUserRouteAccessByPath - pathname: ${pathname}`);
   let hasAccess = false;
   
   try {
-    await testLog(`[validateRouteAccess] INSIDE try - about to call getUserRouteAccessByPath`);
     const response = await getUserRouteAccessByPath(pathname);
-    await testLog(`[validateRouteAccess] AFTER getUserRouteAccessByPath - response received`);
-    
-    await testLog(`[validateRouteAccess] API Response - success: ${response.success}, data: ${response.data}, status: ${response.status}, message: ${response.message || 'none'}`);
-    
     // Verifica se a requisição foi bem-sucedida E se o usuário tem acesso
     if (!response.success) {
-      await testLog(`[validateRouteAccess] API call FAILED - setting hasAccess=false`);
       hasAccess = false;
     } else {
       hasAccess = response.data === true;
-      await testLog(`[validateRouteAccess] API call SUCCESS - hasAccess: ${hasAccess}`);
     }
   } catch (error) {
-    await testLog(`[validateRouteAccess] EXCEPTION in getUserRouteAccessByPath: ${error}`);
     hasAccess = false;
   }
-
-  await testLog(`[validateRouteAccess] END - Returning hasAccess: ${hasAccess}`);
   return { user, hasAccess };
 }

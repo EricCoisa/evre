@@ -13,37 +13,26 @@ export async function getUserRouteAccess(
 export async function getUserRouteAccessByPath(
   path: string,
 ): Promise<ApiResponse<boolean>> {
-  await testLog(`[getUserRouteAccessByPath] START - path: ${path}`);
-  
   try {
     // Remove query params e normaliza o path
     const cleanPath = path.split('?')[0].split('#')[0];
-    await testLog(`[getUserRouteAccessByPath] Clean path: ${cleanPath}`);
+    
+    // Extrai apenas o segmento base da rota (remove parâmetros dinâmicos)
+    // Ex: /home/uuid -> /home, /projects/123/edit -> /projects
+    const segments = cleanPath.split('/').filter(Boolean);
+    const basePath = segments.length > 0 ? `/${segments[0]}` : '/';
     
     // Remove a barra inicial se existir, para evitar problemas com %2F no Linux
-    const pathWithoutLeadingSlash = cleanPath.startsWith('/') ? cleanPath.substring(1) : cleanPath;
-    await testLog(`[getUserRouteAccessByPath] Path without leading slash: ${pathWithoutLeadingSlash}`);
-    
+    const pathWithoutLeadingSlash = basePath.startsWith('/') ? basePath.substring(1) : basePath;
+
     // Encode path para evitar problemas com caracteres especiais
     const encodedPath = encodeURIComponent(pathWithoutLeadingSlash);
-    await testLog(`[getUserRouteAccessByPath] Encoded path: ${encodedPath}`);
-    
+
     const finalUrl = `/user-route-access/checkAccess/${encodedPath}`;
-    await testLog(`[getUserRouteAccessByPath] Final URL: ${finalUrl}`);
-    
-    await testLog(`[getUserRouteAccessByPath] Calling GET...`);
     const result = await GET<boolean>(finalUrl);
-    
-    await testLog(`[getUserRouteAccessByPath] GET returned - success: ${result.success}, data: ${result.data}, status: ${result.status}`);
-    
+  
     return result;
   } catch (error) {
-    await testLog(`[getUserRouteAccessByPath] EXCEPTION: ${error}`);
     throw error;
   }
-}
-
-export async function testLog(msg:string): Promise<ApiResponse<void>> {
-  console.log('Calling testLog with msg:', msg);
-  return await GET<void>(`/route/test-log/${encodeURIComponent(msg)}`);
 }
