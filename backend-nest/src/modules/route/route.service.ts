@@ -129,7 +129,7 @@ export class RouteService implements IBaseService<Route> {
     const hasUserAccess = route.userRouteAccesses.length > 0;
     const hasRoleAccess = route.roleRouteAccesses.length > 0;
 
-    if (hasUserAccess || hasRoleAccess) {
+    if (!hasUserAccess || !hasRoleAccess) {
       console.log('3 HOME - ROUTE', 'Acess Denied - No Home Route');
       return acessDeniedRoute;
     }
