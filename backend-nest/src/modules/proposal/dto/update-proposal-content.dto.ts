@@ -11,3 +11,13 @@ const UpdateProposalContentSchema = z
 export class UpdateProposalContentDto extends createZodDto(
   UpdateProposalContentSchema,
 ) {}
+
+const UpdateProposalProjectSchema = z
+  .object({
+    projectId: z.string().uuid('validation.projectId.invalid'),
+  })
+  .strict();
+
+export class UpdateProposalProjectDto extends createZodDto(
+  UpdateProposalProjectSchema,
+) {}

@@ -7,6 +7,7 @@ export interface Routes {
   ordem: number;
   isHome: boolean;
   isActive: boolean;
+  showSideBar: boolean;
   createdAt: string;
   updatedAt: string;
   parent?: Routes;
@@ -21,6 +22,7 @@ export interface CreateRouteDto {
   ordem?: number;
   isHome?: boolean;
   isActive?: boolean;
+  showSideBar?: boolean;
 }
 
 export interface UpdateRouteDto {
@@ -31,4 +33,5 @@ export interface UpdateRouteDto {
   ordem?: number;
   isHome?: boolean;
   isActive?: boolean;
+  showSideBar?: boolean;
 }

@@ -191,6 +191,7 @@ model Route {
   ordem             Int               @default(0)
   isHome            Boolean           @default(false)
   isActive          Boolean           @default(true)
+  showSideBar       Boolean           @default(true)
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
   

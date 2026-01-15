@@ -9,7 +9,10 @@ import { LoggingService } from '../logging/logging.service';
 import { LogActions } from '../../common/types/logging.types';
 import { Proposal } from 'src/domain/proposal/proposal.entity';
 import { CreateProposalDto } from './dto/create-proposal.dto';
-import { UpdateProposalContentDto } from './dto/update-proposal-content.dto';
+import {
+  UpdateProposalContentDto,
+  UpdateProposalProjectDto,
+} from './dto/update-proposal-content.dto';
 import {
   ProposalStatus,
   ProposalStatusConst,
@@ -105,6 +108,18 @@ export class ProposalService implements Omit<IBaseService<Proposal>, 'remove'> {
   async findOne(id: string): Promise<Proposal> {
     const proposal = await this.prisma.proposal.findUnique({
       where: { id },
+    });
+
+    if (!proposal) {
+      throw new NotFoundException(this.i18n.t('proposal.not_found'));
+    }
+
+    return proposal;
+  }
+
+  async findByProject(projectId: string): Promise<Proposal> {
+    const proposal = await this.prisma.proposal.findFirst({
+      where: { project: { id: projectId } },
     });
 
     if (!proposal) {
@@ -212,6 +227,60 @@ export class ProposalService implements Omit<IBaseService<Proposal>, 'remove'> {
         module: 'PROPOSAL',
         action: LogActions.UPDATE,
         message: `Proposta ${id} atualizada`,
+        metadata: {
+          proposalId: updatedProposal.id,
+          companyId: updatedProposal.companyId,
+        },
+      },
+      performedById ?? null,
+    );
+
+    return updatedProposal;
+  }
+
+  //TODO: OK
+  async updateProject(
+    id: string,
+    dto: UpdateProposalProjectDto,
+    performedById?: string,
+  ): Promise<Proposal> {
+    // Verifica se a proposta existe
+    const proposal = await this.prisma.proposal.findUnique({
+      where: { id },
+    });
+
+    if (!proposal) {
+      throw new NotFoundException(this.i18n.t('proposal.not_found'));
+    }
+
+    // Valida se pode editar (apenas APPROVED)
+    if (proposal.status !== ProposalStatusConst.APPROVED) {
+      throw new BadRequestException(
+        this.i18n.t('proposal.cannot_edit_non_draft'),
+      );
+    }
+
+    if (dto.projectId) {
+      await this.prisma.proposal.updateMany({
+        where: { projectId: dto.projectId, NOT: { id } },
+        data: { projectId: null },
+      });
+    }
+
+    // Atualiza a proposta
+    const updatedProposal = await this.prisma.proposal.update({
+      where: { id },
+      data: {
+        projectId: dto.projectId,
+      },
+    });
+
+    // Log da ação
+    await this.loggingService.create(
+      {
+        module: 'PROPOSAL',
+        action: LogActions.UPDATE,
+        message: `Proposta ${id} vinculada ao projeto ${dto.projectId}`,
         metadata: {
           proposalId: updatedProposal.id,
           companyId: updatedProposal.companyId,

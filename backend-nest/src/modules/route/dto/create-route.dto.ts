@@ -19,6 +19,11 @@ export const CreateRouteSchema = z.object({
     .default(false)
     .describe('Define se é a página inicial'),
   isActive: z.boolean().optional().default(true).describe('Rota ativa'),
+  showSideBar: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe('Exibir na sidebar'),
 });
 
 export class CreateRouteDto extends createZodDto(CreateRouteSchema) {}

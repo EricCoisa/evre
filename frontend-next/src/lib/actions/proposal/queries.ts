@@ -7,13 +7,15 @@ import {
   createProposal, 
   updateProposalContent,
   sendProposal,
-  approveProposal
+  approveProposal,
+  updateProposalProject,
+  getProposalByProject
 } from './api';
 import { getQueryConfig } from '@/lib/utils';
 import { Alive, Collector, EmulateMutationError } from '@/lib/api/collector';
 import { useApp } from '@/contexts/appProvider';
 import type { PaginationParams } from '@/lib/types/pagination.types';
-import type { CreateProposalDto, UpdateProposalContentDto } from './types';
+import type { CreateProposalDto, UpdateProposalContentDto, UpdateProposalProjectDto } from './types';
 
 export function useProposals(params?: PaginationParams) {
   return useQuery({
@@ -28,6 +30,15 @@ export function useProposal(id: string) {
     queryKey: ['proposal', id],
     queryFn: Collector(() => getProposal(id)),
     enabled: !!id,
+    ...getQueryConfig('PROPOSALS', 'PROPOSALS'),
+  });
+}
+
+export function useProposalProject(projectId: string) {
+  return useQuery({
+    queryKey: ['proposal', projectId],
+    queryFn: Collector(() => getProposalByProject(projectId)),
+    enabled: !!projectId,
     ...getQueryConfig('PROPOSALS', 'PROPOSALS'),
   });
 }
@@ -78,6 +89,25 @@ export function useUpdateProposalContent() {
     },
   });
 }
+
+export function useUpdateProposalProject() {
+  const queryClient = useQueryClient();
+  const { emulateError } = useApp();
+  
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateProposalProjectDto }) => {
+      EmulateMutationError(emulateError, 'Emulated error from useUpdateProposalProject');
+      return Alive(() => updateProposalProject(id, data))();
+    },
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ['proposal', id] });
+      queryClient.invalidateQueries({ queryKey: ['proposals'] });
+    },
+  });
+}
+
+
+
 
 export function useSendProposal() {
   const queryClient = useQueryClient();

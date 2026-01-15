@@ -23,5 +23,6 @@
   "noUserRoles": "No user types found",
   "error": "Error loading data",
   "userTab": "User Role",
-  "routesTab": "Routes"
+  "routesTab": "Routes",
+  "showSideBar": "Show in Side Bar"
 }

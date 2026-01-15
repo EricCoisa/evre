@@ -23,5 +23,6 @@
   "noUserRoles": "Nenhum tipo de usuário encontrado",
   "error": "Erro ao carregar dados",
   "userTab": "Tipo de Usuário",
-  "routesTab": "Rotas"
+  "routesTab": "Rotas",
+  "showSideBar": "Mostrar na Barra Lateral"
 }

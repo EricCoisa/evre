@@ -130,5 +130,7 @@
   "confirmRevertDescription": "Are you sure you want to revert the approval of stage \"{{stageName}}\"?",
   "approve": "Approve",
   "revert": "Revert",
-  "processing": "Processing..."
+  "processing": "Processing...",
+  "noProposalAssigned": "No proposal assigned",
+  "seeProposal": "See Proposal"
 }

@@ -26,6 +26,9 @@ export class Route {
   isActive: boolean;
 
   @ApiProperty()
+  showSideBar: boolean | null;
+
+  @ApiProperty()
   createdAt: Date;
 
   @ApiProperty()

@@ -130,5 +130,7 @@
   "confirmRevertDescription": "Tem certeza que deseja reverter a aprovação da etapa \"{{stageName}}\"?",
   "approve": "Aprovar",
   "revert": "Reverter",
-  "processing": "Processando..."
+  "processing": "Processando...",
+  "noProposalAssigned": "Nenhuma proposta atribuída",
+  "seeProposal": "Ver Proposta"
 }

@@ -10,6 +10,7 @@ export const RouteSchema = z.object({
   ordem: z.number().int(),
   isHome: z.boolean(),
   isActive: z.boolean(),
+  showSideBar: z.boolean().nullable(),
 });
 
 export class RouteDto extends createZodDto(RouteSchema) {}

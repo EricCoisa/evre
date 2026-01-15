@@ -31,7 +31,7 @@ interface SortableRoutesTableProps {
   t: (key: string) => string;
 }
 
-function SortableRow({ route, t, onToggleHome }: { route: Routes; t: (key: string) => string; onToggleHome: (id: string, isHome: boolean) => void }) {
+function SortableRow({ route, t, onToggleHome, onToggleShowSideBar }: { route: Routes; t: (key: string) => string; onToggleHome: (id: string, isHome: boolean) => void; onToggleShowSideBar: (id: string, showSideBar: boolean) => void }) {
   const {
     attributes,
     listeners,
@@ -62,6 +62,15 @@ function SortableRow({ route, t, onToggleHome }: { route: Routes; t: (key: strin
         <Switch
           checked={route.isHome}
           onCheckedChange={(checked) => onToggleHome(route.id, checked)}
+          aria-label="Definir como página inicial"
+          disabled={route.isHome === true}
+          className="data-[state=checked]:opacity-100 data-[state=unchecked]:opacity-50"
+        />
+      </TableCell>
+      <TableCell className="w-20">
+        <Switch
+          checked={route.showSideBar}
+          onCheckedChange={(checked) => onToggleShowSideBar(route.id, checked)}
           aria-label="Definir como página inicial"
           disabled={route.isHome === true}
           className="data-[state=checked]:opacity-100 data-[state=unchecked]:opacity-50"
@@ -152,6 +161,11 @@ export function SortableRoutesTable({ routes: initialRoutes, t }: SortableRoutes
     updateRoute.mutate({ id, data: { isHome } });
   }, [updateRoute]);
 
+  const handleToggleShowSideBar = useCallback((id: string, showSideBar: boolean) => {
+    updateRoute.mutate({ id, data: { showSideBar } });
+  }, [updateRoute]);
+
+
   // Atualizar rotas quando initialRoutes mudar
   useEffect(() => {
     setRoutes(initialRoutes);
@@ -169,6 +183,7 @@ export function SortableRoutesTable({ routes: initialRoutes, t }: SortableRoutes
             <TableRow>
               <TableHead className="w-10"></TableHead>
               <TableHead className="w-20">{'Home'}</TableHead>
+              <TableHead className="w-20">{t('showSideBar') ?? 'Mostrar na Barra Lateral'}</TableHead>
               <TableHead className="w-16">{t('order') ?? 'Ordem'}</TableHead>
               <TableHead>{t('path') ?? 'Path'}</TableHead>
               <TableHead>{t('label') ?? 'Label'}</TableHead>
@@ -190,6 +205,7 @@ export function SortableRoutesTable({ routes: initialRoutes, t }: SortableRoutes
                     route={route}
                     t={t}
                     onToggleHome={handleToggleHome}
+                    onToggleShowSideBar={handleToggleShowSideBar}
                   />
                 ))
               )}

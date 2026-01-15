@@ -6,6 +6,7 @@ export interface Proposal {
   name: string;
   status: ProposalStatus;
   contentSchemaVersion: string;
+  projectId?: string | null;
   content: string;
   createdAt: string;
   updatedAt: string;
@@ -22,6 +23,11 @@ export interface UpdateProposalContentDto {
   name?: string;
   content: string;
 }
+
+export interface UpdateProposalProjectDto {
+  projectId: string;
+}
+
 
 export const ProposalStatusColors = {
   DRAFT: 'bg-gray-100 text-gray-800',

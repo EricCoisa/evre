@@ -24,7 +24,7 @@ export async function AppSidebar() {
   if (accessToken) {
     try {
       const user = (await getCurrentUser()).data;
-      routes = user.routes || [];
+      routes = user.routes.filter((r) => r.showSideBar) || [];
     } catch {
       routes = [];
     }

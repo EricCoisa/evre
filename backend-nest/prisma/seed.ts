@@ -103,6 +103,20 @@ async function main() {
     },
   });
 
+  const projectProposal = await prisma.route.upsert({
+    where: { path: '/project-proposal' },
+    update: {},
+    create: {
+      path: '/project-proposal',
+      labelKey: 'ROUTE_PROJECT_PROPOSAL',
+      icon: 'Newspaper',
+      ordem: 1,
+      isHome: false,
+      isActive: true,
+      showSideBar: false,
+    },
+  });
+
   const dashboardRoute = await prisma.route.upsert({
     where: { path: '/dashboard' },
     update: {},
@@ -277,7 +291,6 @@ async function main() {
   // Criar acessos padrão por role
   // ADMIN tem acesso a todas as rotas
   const adminRoleAccesses = [
-    { roleId: 'ADMIN' as const, routeId: homeRoute.id },
     { roleId: 'ADMIN' as const, routeId: dashboardRoute.id },
     { roleId: 'ADMIN' as const, routeId: usersRoute.id },
     { roleId: 'ADMIN' as const, routeId: routesRoute.id },
@@ -308,7 +321,6 @@ async function main() {
 
   // MODERATOR tem acesso limitado
   const moderatorRoleAccesses = [
-    { roleId: 'MODERATOR' as const, routeId: homeRoute.id },
     { roleId: 'MODERATOR' as const, routeId: dashboardRoute.id },
     { roleId: 'MODERATOR' as const, routeId: usersRoute.id },
     { roleId: 'MODERATOR' as const, routeId: logsRoute.id },
@@ -348,11 +360,24 @@ async function main() {
     },
   });
 
+  await prisma.roleRouteAccess.upsert({
+    where: {
+      roleId_routeId: {
+        roleId: 'USER',
+        routeId: projectProposal.id,
+      },
+    },
+    update: {},
+    create: {
+      roleId: 'USER',
+      routeId: projectProposal.id,
+    },
+  });
+
   console.log('✅ Role route accesses created');
 
   // Dar acesso específico ao usuário admin para todas as rotas
   const adminUserAccesses = [
-    { userId: adminUser.id, routeId: homeRoute.id },
     { userId: adminUser.id, routeId: dashboardRoute.id },
     { userId: adminUser.id, routeId: usersRoute.id },
     { userId: adminUser.id, routeId: routesRoute.id },

@@ -14,6 +14,7 @@ export const UpdateRouteSchema = z.object({
     .describe('Ordem de exibição na sidebar'),
   isHome: z.boolean().optional().describe('Define se é a página inicial'),
   isActive: z.boolean().optional().describe('Rota ativa'),
+  showSideBar: z.boolean().optional().describe('Exibir na sidebar'),
 });
 
 export class UpdateRouteDto extends createZodDto(UpdateRouteSchema) {}

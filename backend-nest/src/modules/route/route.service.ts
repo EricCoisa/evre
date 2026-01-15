@@ -52,6 +52,7 @@ export class RouteService implements IBaseService<Route> {
               ...route.parent,
             }
           : null,
+        showSidebar: route.showSideBar,
       }));
     }
 
@@ -80,6 +81,7 @@ export class RouteService implements IBaseService<Route> {
               ...route.parent,
             }
           : null,
+        showSidebar: route.showSideBar,
       })),
       meta: {
         total,

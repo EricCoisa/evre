@@ -322,6 +322,7 @@ export class AuthService {
       ordem: number;
       isHome: boolean;
       isActive: boolean;
+      showSideBar: boolean;
     }>
   > {
     // // Busca rotas pelo role
@@ -352,6 +353,7 @@ export class AuthService {
         ordem: number;
         isHome: boolean;
         isActive: boolean;
+        showSideBar: boolean;
       }
     >();
 
@@ -378,6 +380,7 @@ export class AuthService {
           ordem: ur.route.ordem,
           isHome: ur.route.isHome,
           isActive: ur.route.isActive,
+          showSideBar: ur.route.showSideBar || false,
         });
       }
     });

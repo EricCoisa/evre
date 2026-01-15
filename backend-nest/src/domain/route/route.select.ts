@@ -9,4 +9,5 @@ export const RouteSelect = {
   isActive: true,
   createdAt: true,
   updatedAt: true,
+  showSideBar: true,
 };

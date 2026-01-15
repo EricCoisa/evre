@@ -13,6 +13,7 @@ export interface UserRoute {
   ordem: number;
   isHome: boolean;
   isActive: boolean;
+  showSideBar: boolean;
 }
 
 export interface AuthUser {

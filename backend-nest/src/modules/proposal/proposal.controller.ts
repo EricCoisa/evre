@@ -9,7 +9,10 @@ import {
 import { ProposalDto } from './dto/proposal.dto';
 import { plainToInstance } from 'class-transformer';
 import { CreateProposalDto } from './dto/create-proposal.dto';
-import { UpdateProposalContentDto } from './dto/update-proposal-content.dto';
+import {
+  UpdateProposalContentDto,
+  UpdateProposalProjectDto,
+} from './dto/update-proposal-content.dto';
 import { ProposalService } from './proposal.service';
 import { ZodValidationPipe } from 'nestjs-zod';
 import {
@@ -101,6 +104,27 @@ export class ProposalController {
     return plainToInstance(ProposalDto, proposal);
   }
 
+  @GetApi({
+    path: 'project/:id',
+    summary: 'Obter proposta do projeto por ID',
+    description: 'Retorna os dados de uma proposta específica (autenticado)',
+    status: 'OK',
+    authenticated: true,
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Dados da proposta',
+          schema: { dto: ProposalDto },
+        },
+      ],
+    },
+  })
+  async findByProject(@Param('id') id: string): Promise<ProposalDto> {
+    const proposal = await this.proposalService.findByProject(id);
+    return plainToInstance(ProposalDto, proposal);
+  }
+
   @PutApi({
     path: ':id/content',
     summary: 'Atualizar conteúdo da proposta',
@@ -123,6 +147,31 @@ export class ProposalController {
     @Body() dto: UpdateProposalContentDto,
   ): Promise<ProposalDto> {
     const proposal = await this.proposalService.update(id, dto);
+    return plainToInstance(ProposalDto, proposal);
+  }
+
+  @PutApi({
+    path: ':id/project',
+    summary: 'Atualizar projeto da proposta',
+    description: 'Atualiza o projeto de uma proposta em status DRAFT',
+    status: 'OK',
+    authenticated: true,
+    roles: ['ADMIN'],
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Projeto atualizado com sucesso',
+          schema: { dto: ProposalDto },
+        },
+      ],
+    },
+  })
+  async updateProject(
+    @Param('id') id: string,
+    @Body() dto: UpdateProposalProjectDto,
+  ): Promise<ProposalDto> {
+    const proposal = await this.proposalService.updateProject(id, dto);
     return plainToInstance(ProposalDto, proposal);
   }
 

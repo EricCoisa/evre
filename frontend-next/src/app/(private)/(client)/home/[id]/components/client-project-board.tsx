@@ -11,6 +11,7 @@ import { CommentModal } from './comment-modal';
 import { cn } from '@/lib/utils';
 import { StageView } from './stageView/stageView';
 import { StatusView } from './statusView/statusView';
+import { redirect } from 'next/navigation';
 
 interface ClientProjectBoardProps {
   projectId: string;
@@ -83,6 +84,14 @@ export function ClientProjectBoard({ projectId }: ClientProjectBoardProps) {
                 >
                   {project.status}
                 </Badge>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => redirect(`/project-proposal/${projectId}`)}
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  {t('seeProposal')}
+                </Button>
                 <Button
                   size="sm"
                   variant="outline"

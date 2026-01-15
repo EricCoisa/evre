@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import LangLabel from '@/components/ui/langLabel';
 import { useTranslation } from '@/hooks/use-translation';
+import { useProposalProject, useProposals, useProposalsByCompany, useUpdateProposalProject } from '@/lib/actions/proposal/queries';
 
 interface DetailsTabProps {
   project: Project;
@@ -27,10 +28,20 @@ export function DetailsTab({ project, isAdmin = false }: DetailsTabProps) {
 
   const { data: commentsData } = useCommentsByProject(project.id);
   const { data: statusList } = useProjectStatus();
+  const { data: proposals } = useProposalsByCompany(project.companyId);
+  const { data: proposalProject } = useProposalProject(project.id);
+
   const availableStatuses = useMemo(() => statusList || [], [statusList]);
+  
+  // Encontra a proposal vinculada ao projeto atual
+  const activeProposal = useMemo(() => {
+    if (!proposals || !Array.isArray(proposals)) return null;
+    return proposals.find(p => p.projectId === project.id) || null;
+  }, [proposals, project.id]);
 
   const createComment = useCreateComment();
   const updateProject = useUpdateProject();
+  const updateProposalProject = useUpdateProposalProject();
 
   const comments = commentsData || [];
 
@@ -68,6 +79,21 @@ export function DetailsTab({ project, isAdmin = false }: DetailsTabProps) {
     }
   };
 
+  const handleProposalChange = async (proposalId: string) => {
+    try {
+      await updateProposalProject.mutateAsync({
+        id: proposalId, // ID da proposal selecionada
+        data: { projectId: project.id }, // Vincular ao projeto atual
+      });
+      queryClient.invalidateQueries({ queryKey: ['proposals', 'company', project.companyId] });
+      queryClient.invalidateQueries({ queryKey: ['proposal', project.id] });
+      toast.success(t('proposalLinked'));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Error linking proposal');
+    }
+  };
+console.log("proposals", proposals);
+
   return (
     <div className="space-y-6">
       <Card>
@@ -87,7 +113,6 @@ export function DetailsTab({ project, isAdmin = false }: DetailsTabProps) {
           )}
           <div>
             <p className="text-sm font-medium text-muted-foreground">{t('status')}</p>
-            {isAdmin ? (
               <Select value={project.status} onValueChange={handleStatusChange}>
                 <SelectTrigger className="w-[200px]">
                   <SelectValue>
@@ -104,10 +129,28 @@ export function DetailsTab({ project, isAdmin = false }: DetailsTabProps) {
                   ))}
                 </SelectContent>
               </Select>
+          </div>
+           <div>
+            <p className="text-sm font-medium text-muted-foreground">{t('proposal')}</p>
+            {Array.isArray(proposals) && proposals.length > 0 ? (
+              <Select value={activeProposal?.id || ''} onValueChange={handleProposalChange}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue>
+                    <Badge variant="outline">
+                      {activeProposal ? (activeProposal.name || `Proposal ${activeProposal.id.slice(0, 8)}`) : t('noProposalAssigned')}
+                    </Badge>
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {proposals.map((proposal) => (
+                    <SelectItem key={proposal.id} value={proposal.id}>
+                      <Badge variant="outline">{proposal.name || `Proposal ${proposal.id.slice(0, 8)}`}</Badge>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             ) : (
-              <Badge variant="outline">
-                {project.status}
-              </Badge>
+              <span className="text-muted-foreground text-sm">{t('noProposalsAvailable')}</span>
             )}
           </div>
           {/* Token do projeto (webhook) */}
