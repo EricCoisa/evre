@@ -11,6 +11,7 @@ export const RouteSchema = z.object({
   isHome: z.boolean(),
   isActive: z.boolean(),
   showSideBar: z.boolean().nullable(),
+  isClientHome: z.boolean().nullable(),
 });
 
 export class RouteDto extends createZodDto(RouteSchema) {}

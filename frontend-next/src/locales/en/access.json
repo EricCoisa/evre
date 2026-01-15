@@ -24,5 +24,6 @@
   "error": "Error loading data",
   "userTab": "User Role",
   "routesTab": "Routes",
-  "showSideBar": "Show in Side Bar"
+  "showSideBar": "Show in Side Bar",
+  "IsClientHome": "Client Home"
 }

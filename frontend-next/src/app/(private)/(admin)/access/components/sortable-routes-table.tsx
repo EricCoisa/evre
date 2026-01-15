@@ -31,7 +31,7 @@ interface SortableRoutesTableProps {
   t: (key: string) => string;
 }
 
-function SortableRow({ route, t, onToggleHome, onToggleShowSideBar }: { route: Routes; t: (key: string) => string; onToggleHome: (id: string, isHome: boolean) => void; onToggleShowSideBar: (id: string, showSideBar: boolean) => void }) {
+function SortableRow({ route, t, onToggleHome, onToggleShowSideBar, onToggleClientHome }: { route: Routes; t: (key: string) => string; onToggleHome: (id: string, isHome: boolean) => void; onToggleShowSideBar: (id: string, showSideBar: boolean) => void; onToggleClientHome: (id: string, isClientHome: boolean) => void }) {
   const {
     attributes,
     listeners,
@@ -64,6 +64,15 @@ function SortableRow({ route, t, onToggleHome, onToggleShowSideBar }: { route: R
           onCheckedChange={(checked) => onToggleHome(route.id, checked)}
           aria-label="Definir como página inicial"
           disabled={route.isHome === true}
+          className="data-[state=checked]:opacity-100 data-[state=unchecked]:opacity-50"
+        />
+      </TableCell>
+        <TableCell className="w-20">
+        <Switch
+          checked={route.isClientHome}
+          onCheckedChange={(checked) => onToggleClientHome(route.id, checked)}
+          aria-label="Definir como página inicial do cliente"
+          disabled={route.isClientHome === true}
           className="data-[state=checked]:opacity-100 data-[state=unchecked]:opacity-50"
         />
       </TableCell>
@@ -165,6 +174,9 @@ export function SortableRoutesTable({ routes: initialRoutes, t }: SortableRoutes
     updateRoute.mutate({ id, data: { showSideBar } });
   }, [updateRoute]);
 
+  const handleToggleClientHome = useCallback((id: string, isClientHome: boolean) => {
+    updateRoute.mutate({ id, data: { isClientHome } });
+  }, [updateRoute]);
 
   // Atualizar rotas quando initialRoutes mudar
   useEffect(() => {
@@ -183,6 +195,7 @@ export function SortableRoutesTable({ routes: initialRoutes, t }: SortableRoutes
             <TableRow>
               <TableHead className="w-10"></TableHead>
               <TableHead className="w-20">{'Home'}</TableHead>
+              <TableHead className="w-20">{t('IsClientHome')}</TableHead>
               <TableHead className="w-20">{t('showSideBar') ?? 'Mostrar na Barra Lateral'}</TableHead>
               <TableHead className="w-16">{t('order') ?? 'Ordem'}</TableHead>
               <TableHead>{t('path') ?? 'Path'}</TableHead>
@@ -206,6 +219,7 @@ export function SortableRoutesTable({ routes: initialRoutes, t }: SortableRoutes
                     t={t}
                     onToggleHome={handleToggleHome}
                     onToggleShowSideBar={handleToggleShowSideBar}
+                    onToggleClientHome={handleToggleClientHome} 
                   />
                 ))
               )}

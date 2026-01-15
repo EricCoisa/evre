@@ -19,10 +19,10 @@ import { nullFunction, RoutePageQuery, RoutePagesList } from '@/lib/types/routep
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { useMe } from '@/lib/actions/auth/queries';
+import { useHome, useRoute } from '@/lib/actions/access/route/queries';
 
 // Helper function to get nested property value from object using dot notation
 function getNestedProperty<T, K extends string>(obj: T, path: K): unknown {
-  console.log("getNestedProperty: ", obj, path);
   return path.split('.').reduce<unknown>((current, key) => {
     if (current && typeof current === 'object' && key in current) {
       return (current as Record<string, unknown>)[key];
@@ -33,101 +33,187 @@ function getNestedProperty<T, K extends string>(obj: T, path: K): unknown {
 
 export function BreadcrumbNav() {
   const { data: user } = useMe();
-
-  const routes = user?.routes || [];
   const pathname = usePathname();
-  let segments = pathname
+
+  const segments = pathname
     .split('/')
-    .filter((seg) => seg && seg !== 'private');
-  const home = routes.find(route => route.isHome);
-  const isHome = home ? (`/${segments[0]}` === home.path) : false;
+    .filter((seg) => seg);
 
-  const idUser = segments[segments.length - 1];
-  const penultimate = segments.length > 1 ? segments[segments.length - 2] : null;
+  console.log('BreadcrumbNav pathname segments:', segments);
 
-  const route = RoutePagesList.find(r => r.path === penultimate);
+  // Identificar se tem ID na URL (última posição é UUID)
+  const hasId = segments.length > 0 && isUUID(segments[segments.length - 1]);
+  const id = hasId ? segments[segments.length - 1] : undefined;
+
+  // routePath é o nome da rota (penúltimo se tiver ID, último se não tiver)
+  const routePath = hasId && segments.length > 1
+    ? segments[segments.length - 2]
+    : segments[0] || '';
+
+  const { data: home, refetch: refetchHome } = useHome();
+  const { data: currentRoute, refetch } = useRoute(routePath);
+
+  useEffect(() => {
+    refetch();
+    refetchHome()
+  }, [pathname, refetch]);
+
+  // Buscar configuração de query para o nome do item
+  const route = RoutePagesList.find(r => r.path === currentRoute?.path);
+  console.log('currentRoute', currentRoute);
+  console.log('routrouteePath', route);
+  console.log('routePath', routePath);
+  console.log('home', home);
+
   const nullcast: RoutePageQuery<string> = ({
     queryKey: () => ["null", "null"],
     queryFn: () => nullFunction(),
-  })
-
-  const queryConfig = route?.getBreadName() ?? nullcast
-
-  // Agora sim: chamamos a query aqui, de forma segura
-  const query = useQuery<string>({
-    queryKey: queryConfig ? (queryConfig.queryKey(idUser) as readonly unknown[]) : [],
-    queryFn: queryConfig
-    ? (async () => await queryConfig.queryFn(idUser) as string)
-      : undefined,
-    enabled: !!queryConfig, // só executa se a rota existir
   });
+
+  const queryConfig = route?.getBreadName() ?? nullcast;
+
+  // Query para buscar o nome do item quando há ID
+  const query = useQuery<string>({
+    queryKey: queryConfig ? (queryConfig.queryKey(id) as readonly unknown[]) : [],
+    queryFn: queryConfig
+      ? (async () => await queryConfig.queryFn(id) as string)
+      : undefined,
+    enabled: !!queryConfig && !!id, // só executa se a rota existir e tiver ID
+  });
+  console.log('queryConfig', queryConfig);
+  console.log('query', query.data);
 
   const { state } = useSidebar();
   const { t } = useTranslation('common');
   const { setItem, items } = useBread();
 
-  // Não atualiza contexto durante o render
-  segments = segments.map((segment) => segment);
-
-  // Atualiza o contexto de breadcrumb fora do render
+  console.log('BreadcrumbNav items', items);
   useEffect(() => {
-    if (isUUID(idUser) && penultimate != null && !isUUID(penultimate)) {
-      const name = route && query.data && route.key 
-        ? getNestedProperty(query.data, route.key) 
+    if (hasId && id && route) {
+      const name = query.data && route.key
+        ? getNestedProperty(query.data, route.key)
         : null;
-        console.log("BreadcrumbNav: ", query.data, name);
+      console.log('Fetched name for breadcrumb:', query.data, name);
       if (name && name !== items) {
         setItem(String(name));
       }
     } else {
       if (items !== null) setItem(null);
     }
-  }, [idUser, penultimate, route, query.data, items, setItem]);
+  }, [hasId, id, route, query.data, items, setItem]);
 
   if (pathname === '/(private)/redirect' || pathname === '/redirect') {
     return null;
   }
 
+  // Se a rota atual é Home, mas tem ID na URL, renderizar Home > NomeDoItem (ou id)
+  if (currentRoute?.isHome) {
+    return (
+      <Breadcrumb className={`transition-all duration-200 ${state === 'collapsed' ? 'ml-0' : 'ml-0'}`}>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href={home?.path || "/home"} prefetch={true}>
+                {t(currentRoute.labelKey || 'home')}
+              </Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          {hasId && (
+            <>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>
+                  {items || id}
+                </BreadcrumbPage>
+              </BreadcrumbItem>
+            </>
+          )}
+        </BreadcrumbList>
+      </Breadcrumb>
+    );
+  }
+
+  // Se a rota atual tem parent, renderizar Home > parent > rota atual (ou nome do item), mas evitar duplicidade se parent for o próprio home
+  if (currentRoute?.parent) {
+    const isParentHome = home && (currentRoute.parent.id === home.id || currentRoute.parent.path === home.path);
+    return (
+      <Breadcrumb className={`transition-all duration-200 ${state === 'collapsed' ? 'ml-0' : 'ml-0'}`}>
+        <BreadcrumbList>
+          {/* Home */}
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href={home?.path || "/home"} prefetch={true}>
+                {t(home?.labelKey || 'home')}
+              </Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          {/* Só renderiza o parent se não for o próprio home */}
+          {!isParentHome && <>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href={currentRoute.parent.path || "#"} prefetch={true}>
+                  {t(currentRoute.parent.labelKey || currentRoute.parent.path)}
+                </Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+          </>}
+          <BreadcrumbSeparator />
+          {/* Rota atual ou nome do item */}
+          <BreadcrumbItem>
+            {hasId ? (
+              <BreadcrumbPage>{items || id}</BreadcrumbPage>
+            ) : (
+              <BreadcrumbPage>{t(currentRoute.labelKey || routePath)}</BreadcrumbPage>
+            )}
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+    );
+  }
+
+  // Para rotas que não são home
+  const currentRouteLabel = currentRoute?.labelKey ? t(currentRoute.labelKey) : routePath;
+
   return (
     <Breadcrumb className={`transition-all duration-200 ${state === 'collapsed' ? 'ml-0' : 'ml-0'}`}>
       <BreadcrumbList>
-      {!isHome && (
+        {/* Sempre renderizar Home primeiro (quando não estamos na home) */}
         <BreadcrumbItem>
           <BreadcrumbLink asChild>
             <Link href={home?.path || "/home"} prefetch={true}>
               {t(home?.labelKey || 'home')}
             </Link>
           </BreadcrumbLink>
-        </BreadcrumbItem>)}
+        </BreadcrumbItem>
 
-        {segments.map((segment, index) => {
-          const isLast = index === segments.length - 1;
-          const href = '/' + segments.slice(0, index + 1).join('/');
+        {/* Renderizar a rota atual */}
+        <BreadcrumbSeparator />
+        <BreadcrumbItem>
+          {hasId ? (
+            // Se tem ID, a rota atual é um link
+            <BreadcrumbLink asChild>
+              <Link href={`/${routePath}`} prefetch={true}>
+                {currentRouteLabel}
+              </Link>
+            </BreadcrumbLink>
+          ) : (
+            // Se não tem ID, a rota atual é a página final
+            <BreadcrumbPage>{currentRouteLabel}</BreadcrumbPage>
+          )}
+        </BreadcrumbItem>
 
-          // Busca da rota o labelKey igual ao page-title
-          const labelKey = routes.find(route => route.path === href)?.labelKey;
-          const label = t(labelKey || segment);
-          if(isHome) return null; // já renderizamos o home lá em cima
-       
-          return (
-            <React.Fragment key={segment}>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                {isLast ?
-                (
-                  <BreadcrumbPage>{items ? items : label}</BreadcrumbPage>
-                ) :
-                (
-                  <BreadcrumbLink asChild>
-                    <Link href={href} prefetch={true}>
-                      {label}
-                    </Link>
-                  </BreadcrumbLink>
-                )}
-              </BreadcrumbItem>
-            </React.Fragment>
-          );
-        })}
+        {/* Se tem ID, renderizar o nome do item */}
+        {hasId && (
+          <>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>
+                {items || id}
+              </BreadcrumbPage>
+            </BreadcrumbItem>
+          </>
+        )}
       </BreadcrumbList>
     </Breadcrumb>
   );

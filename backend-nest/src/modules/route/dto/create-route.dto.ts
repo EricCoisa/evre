@@ -24,6 +24,11 @@ export const CreateRouteSchema = z.object({
     .optional()
     .default(true)
     .describe('Exibir na sidebar'),
+  isClientHome: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('Define se é a página inicial do cliente'),
 });
 
 export class CreateRouteDto extends createZodDto(CreateRouteSchema) {}

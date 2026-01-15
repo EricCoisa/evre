@@ -19,9 +19,14 @@ export async function getHomeRoute(): Promise<ApiResponse<Routes>> {
   return await GET<Routes>(`/route/home-route`);
 }
 
+export async function getRouteByPath(path: string): Promise<ApiResponse<Routes>> {
+  return await GET<Routes>(`/route/path/${path}`);
+}
+
 export async function updateRoute(id: string, data: UpdateRouteDto): Promise<ApiResponse<Routes>> {
   return await PATCH<Routes>(`/route/${id}`, data);
 }
+
 
 
 // export async function updateRoutesOrder(updates: Array<{ id: string; ordem: number }>): Promise<void> {

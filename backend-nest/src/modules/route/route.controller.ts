@@ -79,7 +79,19 @@ export class RouteController {
     authenticated: true,
   })
   async getHomeRoute(@CurrentUser() user: AuthenticatedUser) {
-    return await this.routeService.findHome(user);
+    const result = await this.routeService.findHome(user);
+    return this.removeSensitiveInfo(result);
+  }
+
+  @GetApi({
+    path: 'path/:path',
+    summary: 'Rota pelo caminho',
+    description: 'Retorna a rota pelo caminho especificado',
+    authenticated: true,
+  })
+  async getRouteByPath(@Param('path') path: string) {
+    const result = await this.routeService.findByPath(path);
+    return this.removeSensitiveInfo(result);
   }
 
   @GetApi({
@@ -121,5 +133,21 @@ export class RouteController {
     @CurrentUser() currentUser: AuthenticatedUser,
   ) {
     return await this.routeService.remove(id, currentUser.id);
+  }
+
+  private removeSensitiveInfo(route: RouteDto): RouteDto {
+    if (
+      'isClientHome' in route &&
+      typeof route.isClientHome !== 'undefined' &&
+      route.isClientHome !== null
+    ) {
+      const { isClientHome, ...rest } = route;
+      return {
+        ...rest,
+        isHome: isClientHome,
+        // isClientHome não é retornado
+      } as RouteDto;
+    }
+    return route;
   }
 }
