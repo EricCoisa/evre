@@ -253,7 +253,7 @@ async function main() {
     create: {
       path: '/clientLog',
       labelKey: 'ROUTE_CLIENT_LOG',
-      icon: 'Newspaper',
+      icon: 'Logs',
       ordem: 8,
       isHome: false,
       isActive: true,
