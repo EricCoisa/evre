@@ -8,7 +8,6 @@ export default async function PublicProposalPage({ params }: { params: Promise<{
 
   const propostal = await getPublicProposal(id);
 
-  console.log('Propostal data:', propostal);
   if (!propostal?.data) {
     return (
       <div className="max-w-4xl mx-auto py-8">

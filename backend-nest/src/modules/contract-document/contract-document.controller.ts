@@ -105,6 +105,35 @@ export class ContractDocumentController {
     );
   }
 
+  @GetApi({
+    path: 'approved-project/:projectId',
+    summary: 'Busca documento aprovado por projeto',
+    description:
+      'Retorna documentos contratuais de um projeto específico. Valida acesso do usuário ao projeto.',
+    status: 'OK',
+    authenticated: true,
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Documentos do projeto',
+          schema: { dto: ContractDocumentDto, isArray: false },
+        },
+      ],
+    },
+  })
+  async findApprovedByProject(
+    @Param('projectId') projectId: string,
+    @Request() req: { user: { sub: string; role: string; companyId?: string } },
+  ) {
+    const x = await this.contractDocumentService.findApprovedByProject(
+      projectId,
+      req.user,
+    );
+
+    return x;
+  }
+
   @PostApi({
     summary: 'Cria documento contratual',
     status: 'CREATED',

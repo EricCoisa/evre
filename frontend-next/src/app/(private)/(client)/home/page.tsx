@@ -11,7 +11,7 @@ import { ProjectStatusColors } from '@/lib/actions/project/types';
 import { StateMaster } from '@/components/state-master';
 
 export default function ProjectsOverviewPage() {
-    const { t } = useTranslation('home');
+    const { t } = useTranslation('projectProposal');
     const router = useRouter();
     const { data, isLoading, error } = useProjects({ pagination: false });
 
@@ -20,7 +20,7 @@ export default function ProjectsOverviewPage() {
             <Container>
                 <div className="flex items-center justify-center min-h-[400px]">
                     <div className="text-center">
-                        <p className="text-destructive">{t('errorLoading')}</p>
+                        <p className="text-destructive">{t('projects_error_loading')}</p>
                     </div>
                 </div>
             </Container>
@@ -34,16 +34,16 @@ export default function ProjectsOverviewPage() {
             <StateMaster
                 queryKey={['projects']}
                 isLoading={isLoading}
-                loadingMessage={t('loading')}
+                loadingMessage={t('projects_loading')}
                 useTableSkeleton={true}
             >
 
             <div className="space-y-6">
                 {/* Header */}
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">{t('projects')}</h1>
+                    <h1 className="text-3xl font-bold tracking-tight">{t('projects_title')}</h1>
                     <p className="text-muted-foreground mt-2">
-                        {t('projectsDescription') || 'Visualize todos os seus projetos'}
+                        {t('projects_description')}
                     </p>
                 </div>
 

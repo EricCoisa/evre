@@ -12,12 +12,12 @@ import { cn } from '@/lib/utils';
 import { StageView } from './stageView/stageView';
 import { StatusView } from './statusView/statusView';
 import { redirect } from 'next/navigation';
+import { useSetUserConfiguration, useUserConfiguration } from '@/lib/actions/userConfiguration/queries';
 
 interface ClientProjectBoardProps {
   projectId: string;
 }
 
-const viewModes = ["STAGE", "STATUS"];
 
 export function ClientProjectBoard({ projectId }: ClientProjectBoardProps) {
   const { t } = useTranslation('projects');
@@ -36,10 +36,21 @@ export function ClientProjectBoard({ projectId }: ClientProjectBoardProps) {
     [stages]
   );
 
-  const [mode, setMode] = useState<string>(viewModes[0]);
 
-  const handleChangeViewMode = (value: string) => {
-    setMode(value);
+  const { data: mode } = useUserConfiguration<string>('USERCONFIG_PROJECTVIEWMODE');
+  const updateUserConfig = useSetUserConfiguration();
+
+
+
+  const handleChangeViewMode = async (value: string) => {
+    if (!mode?.id) return;
+
+    await updateUserConfig.mutateAsync({
+      userConfiguration: {
+        ...mode,
+        value: value
+      }
+    });
   }
 
 
@@ -92,6 +103,14 @@ export function ClientProjectBoard({ projectId }: ClientProjectBoardProps) {
                   <MessageCircle className="h-4 w-4 mr-2" />
                   {t('seeProposal')}
                 </Button>
+                          <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => redirect(`/home/${projectId}/project-contract`)}
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  {t('seeContract')}
+                </Button>
                 <Button
                   size="sm"
                   variant="outline"
@@ -101,7 +120,7 @@ export function ClientProjectBoard({ projectId }: ClientProjectBoardProps) {
                   {t('comments')}
                 </Button>
                 <div>
-                  {mode === "STAGE" ? (
+                  {mode?.value === "STAGE" ? (
                     <LayoutGrid className='cursor-pointer' onClick={() => handleChangeViewMode("STATUS")} />
                   ) : (
                     <Rows3 className='cursor-pointer' onClick={() => handleChangeViewMode("STAGE")} />
@@ -116,12 +135,12 @@ export function ClientProjectBoard({ projectId }: ClientProjectBoardProps) {
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">{t('progress')}</span>
-                <span className="font-medium">{progress.reduce((acc, cur) => acc + cur.value, 0) / (progress.length || 1)}%</span>
+                <span className="font-medium">{(progress.reduce((acc, cur) => acc + cur.value, 0) / (progress.length || 1)).toFixed(1)}%</span>
               </div>
               <div className="h-2 bg-muted rounded-full overflow-hidden">
                 <div
                   className="h-full bg-primary transition-all duration-500"
-                  style={{ width: `${progress.reduce((acc, cur) => acc + cur.value, 0) / (progress.length || 1)}%` }}
+                  style={{ width: `${(progress.reduce((acc, cur) => acc + cur.value, 0) / (progress.length || 1)).toFixed(1)}%` }}
                 />
               </div>
             </div>
@@ -129,7 +148,7 @@ export function ClientProjectBoard({ projectId }: ClientProjectBoardProps) {
         </Card>
 
         {/* Board */}
-        {mode === "STAGE" ? (
+        {(mode == undefined ? "STAGE" : mode?.value) === "STAGE" ? (
           <StageView
             projectId={projectId}
             project={project}

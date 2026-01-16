@@ -92,7 +92,6 @@ export function DetailsTab({ project, isAdmin = false }: DetailsTabProps) {
       toast.error(error instanceof Error ? error.message : 'Error linking proposal');
     }
   };
-console.log("proposals", proposals);
 
   return (
     <div className="space-y-6">

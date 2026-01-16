@@ -39,10 +39,6 @@ export function BreadcrumbNav() {
     .split('/')
     .filter((seg) => seg);
 
-  console.log('segments', segments);
-  console.log('user?.routes', user?.routes);
-
-
   interface BreadHelp {
     path: string;
     labelKey?: string;
@@ -79,8 +75,6 @@ export function BreadcrumbNav() {
 
   const lastNoQuery = breadSegments.findLast((l) => !l.routePageQuery);
   const currentRoute = user?.routes.find((route) => route.path === lastNoQuery?.path);
-  console.log('currentRoute', currentRoute);
-  console.log('breadSegments', breadSegments);
   // routePath é o nome da rota (penúltimo se tiver ID, último se não tiver)
 
   const { data: home, refetch: refetchHome } = useHome();
@@ -109,14 +103,9 @@ export function BreadcrumbNav() {
       : undefined,
     enabled: !!queryConfig && !!segmentWithId?.path, // só executa se a rota existir e tiver ID
   });
-  console.log('queryConfig', queryConfig);
-  console.log('query', query.data);
-
   const { state } = useSidebar();
   const { t } = useTranslation('common');
   const { setItem, items } = useBread();
-
-  console.log('BreadcrumbNav items', items);
 
   // Atualiza o campo name quando query.data estiver disponível
   React.useEffect(() => {
@@ -126,8 +115,6 @@ export function BreadcrumbNav() {
         : null;
 
       if (name) {
-        console.log('Fetched name for breadcrumb:', name);
-
         // Só atualiza se o name for diferente
         setBreadSegments((prev) => {
           const needsUpdate = prev.some(seg =>

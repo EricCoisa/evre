@@ -41,5 +41,7 @@
   "configuration_invalid": "Configuração é inválida",
   "validate_configuration": "Validar Configuração",
   "systemconfig_email_contact": "Email de contato",
-  "systemconfig_email_contact_desc": "Endereço de email usado para mensagens de contato do site"
+  "systemconfig_email_contact_desc": "Endereço de email usado para mensagens de contato do site",
+  "user_system_project_view_mode": "Modo de visualização padrão do projeto",
+  "user_system_project_view_mode_desc": "Modo de visualização padrão aplicado aos projetos dos novos usuários"
 }

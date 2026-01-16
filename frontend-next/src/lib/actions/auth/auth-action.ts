@@ -12,7 +12,6 @@ import { queryClient } from "@/lib/queryClient";
 export async function loginClient(data: LoginFormData, router: AppRouterInstance): Promise<LoginResponse> {
    const loginResult = await login(data);
    // Limpa queries antigas e força refetch
-   queryClient.removeQueries();
    router.push(loginResult.user.routes.find(route => route.isHome)?.path || "/home");
    router.refresh();
    return loginResult;
