@@ -134,4 +134,9 @@
   "noProposalAssigned": "No proposal assigned",
   "seeProposal": "See Proposal",
   "seeContract": "See Contract"
+  ,
+  "editCompany": "Edit Company",
+  "editCompanyDescription": "Edit company information.",
+  "inviteTokenCreated": "Invite Token Created",
+  "inviteTokenDescription": "Copy and share this token with the invited user."
 }

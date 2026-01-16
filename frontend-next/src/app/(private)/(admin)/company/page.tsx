@@ -6,21 +6,14 @@ import { DataTable } from '@/components/data-table';
 import { GenericCreateFormModal } from '@/components/generic-create-form';
 import { createCompany } from '@/lib/actions/company/api';
 import { Button } from '@/components/ui/button';
-import { Copy, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Container } from '@/components/container';
-import type { Company } from '@/lib/actions/company/types';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { z } from 'zod';
 import { useQueryClient } from '@tanstack/react-query';
 import type { FieldConfig } from '@/lib/form/field-config';
 import { Alive } from '@/lib/api/collector';
-import Modal from '@/components/modal';
-import { CompanyEditPage } from './components/company-edit';
 import { getCompanyColumns } from './components/company-columns';
-import { createCompanyInvite } from '@/lib/actions/user/api';
-import { Input } from '@/components/ui/input';
-import { toast } from 'sonner';
-
 export default function CompaniesPage() {
   const { t } = useTranslation('company');
   const queryClient = useQueryClient();
@@ -57,9 +50,6 @@ export default function CompaniesPage() {
     getCompanyColumns(t),
     [t]
   );
-
-
-
 
   return (
     <Container variant="dataTable" border={false}>
