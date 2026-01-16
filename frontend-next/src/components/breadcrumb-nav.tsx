@@ -15,7 +15,7 @@ import { useSidebar } from '@/components/ui/sidebar';
 import { useTranslation } from '@/hooks/use-translation';
 import { useBread } from '@/contexts/bread-context';
 import { isUUID } from '@/lib/utils';
-import { nullFunction, RoutePageQuery, RoutePagesList } from '@/lib/types/routepages.types';
+import { nullFunction, RoutePage, RoutePageQuery, RoutePagesList } from '@/lib/types/routepages.types';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { useMe } from '@/lib/actions/auth/queries';
@@ -39,46 +39,75 @@ export function BreadcrumbNav() {
     .split('/')
     .filter((seg) => seg);
 
-  console.log('BreadcrumbNav pathname segments:', segments);
+  console.log('segments', segments);
+  console.log('user?.routes', user?.routes);
 
-  // Identificar se tem ID na URL (última posição é UUID)
-  const hasId = segments.length > 0 && isUUID(segments[segments.length - 1]);
-  const id = hasId ? segments[segments.length - 1] : undefined;
 
+  interface BreadHelp {
+    path: string;
+    labelKey?: string;
+    routePageQuery?: RoutePage<unknown>;
+    name?: string;
+  }
+
+  // Constrói o array de breadcrumbs baseado nos segmentos da URL
+  const initialBreadSegments = React.useMemo(() => {
+    if (!user?.routes) return [];
+    return segments.map((seg, i) => {
+      const routeMatch = user.routes.find((route) => route.path === "/" + seg);
+      const hasId = isUUID(seg);
+      let queryConfig: RoutePage<unknown> | undefined = undefined;
+      if (hasId && i > 0) {
+        const lastSeg = segments[i - 1];
+        queryConfig = RoutePagesList.find((r) => r.path === "/" + lastSeg);
+      }
+      return {
+        path: queryConfig ? seg : routeMatch?.path,
+        labelKey: routeMatch?.labelKey,
+        routePageQuery: queryConfig,
+        name: undefined
+      } as BreadHelp;
+    });
+  }, [pathname, user]);
+
+  const [breadSegments, setBreadSegments] = React.useState<BreadHelp[]>([]);
+
+  // Sincroniza breadSegments quando pathname ou user mudam
+  React.useEffect(() => {
+    setBreadSegments(initialBreadSegments);
+  }, [pathname, user?.routes]);
+
+  const lastNoQuery = breadSegments.findLast((l) => !l.routePageQuery);
+  const currentRoute = user?.routes.find((route) => route.path === lastNoQuery?.path);
+  console.log('currentRoute', currentRoute);
+  console.log('breadSegments', breadSegments);
   // routePath é o nome da rota (penúltimo se tiver ID, último se não tiver)
-  const routePath = hasId && segments.length > 1
-    ? segments[segments.length - 2]
-    : segments[0] || '';
 
   const { data: home, refetch: refetchHome } = useHome();
-  const { data: currentRoute, refetch } = useRoute(routePath);
+  // const { data: currentRoute, refetch } = useRoute(routePath);
 
   useEffect(() => {
-    refetch();
+    // refetch();
     refetchHome()
-  }, [pathname, refetch]);
+  }, [pathname]);
 
   // Buscar configuração de query para o nome do item
-  const route = RoutePagesList.find(r => r.path === currentRoute?.path);
-  console.log('currentRoute', currentRoute);
-  console.log('routrouteePath', route);
-  console.log('routePath', routePath);
-  console.log('home', home);
+
 
   const nullcast: RoutePageQuery<string> = ({
     queryKey: () => ["null", "null"],
     queryFn: () => nullFunction(),
   });
 
-  const queryConfig = route?.getBreadName() ?? nullcast;
-
+  const segmentWithId = breadSegments.find(x => x.routePageQuery);
+  const queryConfig = segmentWithId?.routePageQuery?.getBreadName() ?? nullcast;
   // Query para buscar o nome do item quando há ID
   const query = useQuery<string>({
-    queryKey: queryConfig ? (queryConfig.queryKey(id) as readonly unknown[]) : [],
+    queryKey: queryConfig ? (queryConfig.queryKey(segmentWithId?.path) as readonly unknown[]) : [],
     queryFn: queryConfig
-      ? (async () => await queryConfig.queryFn(id) as string)
+      ? (async () => await queryConfig.queryFn(segmentWithId?.path) as string)
       : undefined,
-    enabled: !!queryConfig && !!id, // só executa se a rota existir e tiver ID
+    enabled: !!queryConfig && !!segmentWithId?.path, // só executa se a rota existir e tiver ID
   });
   console.log('queryConfig', queryConfig);
   console.log('query', query.data);
@@ -88,19 +117,41 @@ export function BreadcrumbNav() {
   const { setItem, items } = useBread();
 
   console.log('BreadcrumbNav items', items);
-  useEffect(() => {
-    if (hasId && id && route) {
-      const name = query.data && route.key
-        ? getNestedProperty(query.data, route.key)
+
+  // Atualiza o campo name quando query.data estiver disponível
+  React.useEffect(() => {
+    if (segmentWithId && segmentWithId.path && segmentWithId.routePageQuery && query.data) {
+      const name = segmentWithId.routePageQuery.key
+        ? getNestedProperty(query.data, segmentWithId.routePageQuery.key)
         : null;
-      console.log('Fetched name for breadcrumb:', query.data, name);
-      if (name && name !== items) {
-        setItem(String(name));
+
+      if (name) {
+        console.log('Fetched name for breadcrumb:', name);
+
+        // Só atualiza se o name for diferente
+        setBreadSegments((prev) => {
+          const needsUpdate = prev.some(seg =>
+            seg.routePageQuery && seg.name !== String(name)
+          );
+
+          if (needsUpdate) {
+            return prev.map(seg =>
+              seg.routePageQuery
+                ? { ...seg, name: String(name) }
+                : seg
+            );
+          }
+          return prev;
+        });
+
+        if (String(name) !== items) {
+          setItem(String(name));
+        }
       }
     } else {
       if (items !== null) setItem(null);
     }
-  }, [hasId, id, route, query.data, items, setItem]);
+  }, [query.data, segmentWithId?.path, items, setItem, pathname]);
 
   if (pathname === '/(private)/redirect' || pathname === '/redirect') {
     return null;
@@ -118,12 +169,12 @@ export function BreadcrumbNav() {
               </Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
-          {hasId && (
+          {segmentWithId && (
             <>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
                 <BreadcrumbPage>
-                  {items || id}
+                  {items || segmentWithId.path}
                 </BreadcrumbPage>
               </BreadcrumbItem>
             </>
@@ -133,87 +184,33 @@ export function BreadcrumbNav() {
     );
   }
 
-  // Se a rota atual tem parent, renderizar Home > parent > rota atual (ou nome do item), mas evitar duplicidade se parent for o próprio home
-  if (currentRoute?.parent) {
-    const isParentHome = home && (currentRoute.parent.id === home.id || currentRoute.parent.path === home.path);
-    return (
-      <Breadcrumb className={`transition-all duration-200 ${state === 'collapsed' ? 'ml-0' : 'ml-0'}`}>
-        <BreadcrumbList>
-          {/* Home */}
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href={home?.path || "/home"} prefetch={true}>
-                {t(home?.labelKey || 'home')}
-              </Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          {/* Só renderiza o parent se não for o próprio home */}
-          {!isParentHome && <>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href={currentRoute.parent.path || "#"} prefetch={true}>
-                  {t(currentRoute.parent.labelKey || currentRoute.parent.path)}
-                </Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-          </>}
-          <BreadcrumbSeparator />
-          {/* Rota atual ou nome do item */}
-          <BreadcrumbItem>
-            {hasId ? (
-              <BreadcrumbPage>{items || id}</BreadcrumbPage>
-            ) : (
-              <BreadcrumbPage>{t(currentRoute.labelKey || routePath)}</BreadcrumbPage>
-            )}
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-    );
-  }
-
-  // Para rotas que não são home
-  const currentRouteLabel = currentRoute?.labelKey ? t(currentRoute.labelKey) : routePath;
-
   return (
     <Breadcrumb className={`transition-all duration-200 ${state === 'collapsed' ? 'ml-0' : 'ml-0'}`}>
       <BreadcrumbList>
-        {/* Sempre renderizar Home primeiro (quando não estamos na home) */}
-        <BreadcrumbItem>
-          <BreadcrumbLink asChild>
-            <Link href={home?.path || "/home"} prefetch={true}>
-              {t(home?.labelKey || 'home')}
-            </Link>
-          </BreadcrumbLink>
-        </BreadcrumbItem>
 
-        {/* Renderizar a rota atual */}
-        <BreadcrumbSeparator />
-        <BreadcrumbItem>
-          {hasId ? (
-            // Se tem ID, a rota atual é um link
-            <BreadcrumbLink asChild>
-              <Link href={`/${routePath}`} prefetch={true}>
-                {currentRouteLabel}
-              </Link>
-            </BreadcrumbLink>
-          ) : (
-            // Se não tem ID, a rota atual é a página final
-            <BreadcrumbPage>{currentRouteLabel}</BreadcrumbPage>
-          )}
-        </BreadcrumbItem>
-
-        {/* Se tem ID, renderizar o nome do item */}
-        {hasId && (
-          <>
-            <BreadcrumbSeparator />
+        {breadSegments.map((seg, index) => (
+          <React.Fragment key={index}>
             <BreadcrumbItem>
-              <BreadcrumbPage>
-                {items || id}
-              </BreadcrumbPage>
+              {seg.name ? (
+                <BreadcrumbLink asChild>
+                  <Link href={`${breadSegments[index - 1]?.path}/${seg.path}`} prefetch={true}>
+                    {seg.name}
+                  </Link>
+                </BreadcrumbLink>
+              ) :
+                <BreadcrumbLink asChild>
+                  <Link href={seg?.path || "/home"} prefetch={true}>
+                    {t(seg?.labelKey || 'home')}
+                  </Link>
+                </BreadcrumbLink>
+              }
             </BreadcrumbItem>
-          </>
-        )}
+            {breadSegments.length - 1 != index && (
+              <BreadcrumbSeparator />
+            )}
+          </React.Fragment>
+        ))}
+
       </BreadcrumbList>
     </Breadcrumb>
   );

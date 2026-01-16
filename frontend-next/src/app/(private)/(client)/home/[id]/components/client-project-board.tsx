@@ -87,7 +87,7 @@ export function ClientProjectBoard({ projectId }: ClientProjectBoardProps) {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => redirect(`/project-proposal/${projectId}`)}
+                  onClick={() => redirect(`/home/${projectId}/project-proposal`)}
                 >
                   <MessageCircle className="h-4 w-4 mr-2" />
                   {t('seeProposal')}
