@@ -6,10 +6,13 @@ import { LoginRequest, LoginResponse } from "./types";
 import { APINEXT } from "@/lib/api/apiNext";
 import { redirect } from "next/navigation";
 import { toast } from "sonner";
-import { set } from "zod";
+import { queryClient } from "@/lib/queryClient";
+
 
 export async function loginClient(data: LoginFormData, router: AppRouterInstance): Promise<LoginResponse> {
    const loginResult = await login(data);
+   // Limpa queries antigas e força refetch
+   queryClient.removeQueries();
    router.push(loginResult.user.routes.find(route => route.isHome)?.path || "/home");
    router.refresh();
    return loginResult;
@@ -26,6 +29,10 @@ export async function refresh(): Promise<void> {
 export async function logout(msg?: string | undefined): Promise<void> {
    function redirectToLogin() {
       localStorage.clear();
+      // Limpa completamente o cache do QueryClient
+      queryClient.cancelQueries();
+      queryClient.removeQueries();
+      queryClient.clear();
       redirect('/login');
    }
 

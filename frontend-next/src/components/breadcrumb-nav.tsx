@@ -188,28 +188,32 @@ export function BreadcrumbNav() {
     <Breadcrumb className={`transition-all duration-200 ${state === 'collapsed' ? 'ml-0' : 'ml-0'}`}>
       <BreadcrumbList>
 
-        {breadSegments.map((seg, index) => (
-          <React.Fragment key={index}>
-            <BreadcrumbItem>
-              {seg.name ? (
-                <BreadcrumbLink asChild>
-                  <Link href={`${breadSegments[index - 1]?.path}/${seg.path}`} prefetch={true}>
-                    {seg.name}
-                  </Link>
-                </BreadcrumbLink>
-              ) :
-                <BreadcrumbLink asChild>
-                  <Link href={seg?.path || "/home"} prefetch={true}>
-                    {t(seg?.labelKey || 'home')}
-                  </Link>
-                </BreadcrumbLink>
-              }
-            </BreadcrumbItem>
-            {breadSegments.length - 1 != index && (
-              <BreadcrumbSeparator />
-            )}
-          </React.Fragment>
-        ))}
+        {breadSegments.map((seg, index) => {
+          const isLast = index === breadSegments.length - 1;
+          const label = seg.name || t(seg?.labelKey || 'home');
+          let content;
+          if (isLast) {
+            content = <BreadcrumbPage>{label}</BreadcrumbPage>;
+          } else {
+            // Se for name, monta o href dinâmico, senão usa path padrão
+            const href = seg.name
+              ? `${breadSegments[index - 1]?.path}/${seg.path}`
+              : seg?.path || "/home";
+            content = (
+              <BreadcrumbLink asChild>
+                <Link href={href} prefetch={true}>
+                  {label}
+                </Link>
+              </BreadcrumbLink>
+            );
+          }
+          return (
+            <React.Fragment key={index}>
+              <BreadcrumbItem>{content}</BreadcrumbItem>
+              {!isLast && <BreadcrumbSeparator />}
+            </React.Fragment>
+          );
+        })}
 
       </BreadcrumbList>
     </Breadcrumb>
