@@ -12,20 +12,11 @@ import { getHomeRoute } from '@/lib/actions/access/route/api';
  * - Nunca redireciona para /redirect (evita loop)
  */
 export default async function RedirectPage() {
-  try {
     const home = await getHomeRoute();
     const targetPath = home?.data?.path;
-    
-    // Validações anti-loop
     if (!targetPath || targetPath === '/redirect') {
       redirect('/access-denied');
     }
-    
     redirect(targetPath);
-  } catch (error) {
-    console.error('Error getting home route:', error);
-    redirect('/access-denied');
-  }
-
   return <div>Redirecionando...</div>;
 }
