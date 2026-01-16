@@ -132,5 +132,6 @@
   "revert": "Reverter",
   "processing": "Processando...",
   "noProposalAssigned": "Nenhuma proposta atribuída",
-  "seeProposal": "Ver Proposta"
+  "seeProposal": "Ver Proposta",
+  "seeContract": "Ver Contrato"
 }

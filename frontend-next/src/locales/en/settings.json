@@ -41,5 +41,8 @@
   "configuration_invalid": "Configuration is invalid",
   "validate_configuration": "Validate Configuration",
   "systemconfig_email_contact": "Contact email",
-  "systemconfig_email_contact_desc": "Email address used for contact messages from the website"
+  "systemconfig_email_contact_desc": "Email address used for contact messages from the website",
+  "user_system_project_view_mode": "Default project view mode",
+  "user_system_project_view_mode_desc": "Default view mode applied to new users' projects"
+
 }

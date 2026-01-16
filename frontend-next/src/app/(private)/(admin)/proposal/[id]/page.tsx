@@ -7,7 +7,6 @@ export default async function ProposalDetailPage({
 }) {
   const { id } = await params;
   const { data: proposal } = await getProposal(id);
-  console.log('Proposal data:', proposal);
   
   if (!proposal) {
     return (

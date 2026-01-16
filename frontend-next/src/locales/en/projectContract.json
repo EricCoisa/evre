@@ -1,0 +1,10 @@
+{
+	"contract_not_found": "Contract not found",
+	"contract_not_found_description": "No contract was found for this project. Please check if the contract has been approved.",
+	"info_title": "Contract Information",
+	"info_description": "Details about the approved contract for this project.",
+	"contract_id": "Contract ID",
+	"contract_version": "Version",
+	"contract_created_at": "Created at",
+	"contract_updated_at": "Updated at"
+}

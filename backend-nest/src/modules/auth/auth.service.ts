@@ -321,6 +321,7 @@ export class AuthService {
       parentId: string | null;
       ordem: number;
       isHome: boolean;
+      isClientHome?: boolean;
       isActive: boolean;
       showSideBar: boolean;
     }>
@@ -352,6 +353,7 @@ export class AuthService {
         parentId: string | null;
         ordem: number;
         isHome: boolean;
+        isClientHome: boolean;
         isActive: boolean;
         showSideBar: boolean;
       }
@@ -379,6 +381,7 @@ export class AuthService {
           parentId: ur.route.parentId,
           ordem: ur.route.ordem,
           isHome: ur.route.isHome,
+          isClientHome: ur.route.isClientHome,
           isActive: ur.route.isActive,
           showSideBar: ur.route.showSideBar || false,
         });

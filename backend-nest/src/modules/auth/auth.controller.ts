@@ -287,6 +287,13 @@ export class AuthController {
   async getMe(@CurrentUser() user: AuthenticatedUser) {
     // Retorna dados do JWT + rotas permitidas
     const routes = await this.authService.getUserRoutes(user.id);
+    if (user.role === 'USER') {
+      for (const route of routes) {
+        route.isHome = route.isClientHome ?? false;
+        delete route?.isClientHome;
+        // Adicione aqui outros campos que deseja remover para USER
+      }
+    }
     return {
       ...user,
       routes,

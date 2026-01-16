@@ -35,6 +35,15 @@ export async function getContractDocumentsByProject(
   );
 }
 
+export async function getApprovedContractDocumentsByProject(
+  projectId: string,
+): Promise<ApiResponse<ContractDocument>> {
+  return await GET<ContractDocument>(
+    `/contract-documents/approved-project/${projectId}`,
+  );
+}
+
+
 export async function createContractDocument(
   data: CreateContractDocumentDto,
 ): Promise<ApiResponse<ContractDocument>> {

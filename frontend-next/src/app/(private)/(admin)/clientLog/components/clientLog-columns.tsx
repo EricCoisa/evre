@@ -33,7 +33,6 @@ export function getClientLogColumns(t: (key: string) => string): ColumnDef<Clien
        cell: ({ row }) => {
         const metadata = row.getValue("metadata");
         const parsedMetadata = metadata ? JSON.parse(String(metadata)) : {};
-        console.log('parsedMetadata', parsedMetadata);
         let data =  {};
         try {
           data = JSON.parse(String(parsedMetadata.metadata))

@@ -1,0 +1,14 @@
+{
+	"proposal_not_found": "Proposta não encontrada",
+	"proposal_not_found_description": "A proposta solicitada não foi localizada ou não está disponível.",
+	"info_title": "Informações",
+	"info_description": "Detalhes da proposta",
+	"proposal_id": "ID da Proposta",
+	"proposal_version": "Versão",
+	"proposal_created_at": "Criado em",
+	"proposal_updated_at": "Atualizado em",
+	"projects_error_loading": "Erro ao carregar projetos.",
+	"projects_loading": "Carregando projetos...",
+	"projects_title": "Projetos",
+	"projects_description": "Visualize todos os seus projetos"
+}

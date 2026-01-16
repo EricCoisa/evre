@@ -10,4 +10,5 @@ export const RouteSelect = {
   createdAt: true,
   updatedAt: true,
   showSideBar: true,
+  isClientHome: true,
 };

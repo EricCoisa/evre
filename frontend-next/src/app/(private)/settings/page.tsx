@@ -78,6 +78,19 @@ function UserDefaultConfig({ t }: { t: (key: string) => string }) {
     <Container variant="form" padding>
       <div className="flex items-center justify-between">
         <div>
+          <h3 className="font-medium">{t('user_system_project_view_mode')}</h3>
+          <p className="text-muted-foreground text-sm">
+            {t('user_system_project_view_mode_desc')}
+          </p>
+        </div>
+        <UserSystemDefinitions disableLabel={true} labelKey="USERCONFIG_PROJECTVIEWMODE" />
+      </div>
+
+      <Separator />
+      <br />
+
+      <div className="flex items-center justify-between">
+        <div>
           <h3 className="font-medium">{t('user_system_definition_theme')}</h3>
           <p className="text-muted-foreground text-sm">
             {t('user_system_definitions_theme_desc')}

@@ -132,5 +132,6 @@
   "revert": "Revert",
   "processing": "Processing...",
   "noProposalAssigned": "No proposal assigned",
-  "seeProposal": "See Proposal"
+  "seeProposal": "See Proposal",
+  "seeContract": "See Contract"
 }

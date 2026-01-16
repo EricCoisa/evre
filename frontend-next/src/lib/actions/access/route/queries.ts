@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getRoutes, updateRoute } from "./api";
+import { getHomeRoute, getRouteByPath, getRoutes, updateRoute } from "./api";
 import { PaginationParams } from "../../../types/pagination.types";
 import { QUERY_CONFIG } from '../../../config/performance.config';
 import type { UpdateRouteDto } from "./types";
@@ -16,6 +16,22 @@ export function useRoutes(params?: PaginationParams) {
     refetchOnWindowFocus: false,
     retry: QUERY_CONFIG.RETRY.DEFAULT_COUNT,
     retryDelay: QUERY_CONFIG.RETRY.RETRY_DELAY,
+  });
+}
+
+export function useHome() {
+  return useQuery({
+    queryKey: ['route', 'home'],
+    queryFn: Collector(() => getHomeRoute()),
+    enabled: true,
+  });
+}
+
+export function useRoute(path: string) {
+  return useQuery({
+    queryKey: ['route', path],
+    queryFn: Collector(() => getRouteByPath(path)),
+    enabled: !!path,
   });
 }
 

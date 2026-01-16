@@ -117,7 +117,7 @@ export function BaseConfiguration({
             <SelectContent>
               {options.map((option) => (
                 <SelectItem key={option} value={option}>
-                  {option}
+                  {t(option)}
                 </SelectItem>
               ))}
             </SelectContent>

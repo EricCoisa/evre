@@ -349,9 +349,48 @@ export class ContractDocumentService implements Omit<
       }
     }
 
-    return await this.prisma.contractDocument.findMany({
+    const result = await this.prisma.contractDocument.findMany({
       where: { projectId },
       orderBy: { createdAt: 'desc' },
     });
+
+    if (!result) {
+      throw new NotFoundException(this.i18n.t('project.errors.not_found'));
+    }
+
+    return result;
+  }
+
+  async findApprovedByProject(
+    projectId: string,
+    user?: { role: string; companyId?: string | null },
+  ): Promise<ContractDocument | null> {
+    // Valida que o project existe e verifica hierarquia
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      select: { id: true, companyId: true },
+    });
+
+    if (!project) {
+      throw new NotFoundException(this.i18n.t('project.errors.not_found'));
+    }
+
+    // 🔒 SECURITY: USER só pode acessar projects da própria empresa
+    if (user && user.role === 'USER' && user.companyId) {
+      if (project.companyId !== user.companyId) {
+        throw new NotFoundException(this.i18n.t('project.errors.not_found'));
+      }
+    }
+
+    const result = await this.prisma.contractDocument.findFirst({
+      where: { projectId, status: ContractStatusConst.ACCEPTED },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!result) {
+      throw new NotFoundException(this.i18n.t('project.errors.not_found'));
+    }
+
+    return result;
   }
 }
