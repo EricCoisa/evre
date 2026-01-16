@@ -15,6 +15,7 @@
     "ROUTE_CONTRACT_DOCUMENT": "Documento de Contrato",
     "ROUTE_COMPANY_DASHBOARD": "Dashboard da Empresa",
     "ROUTE_PROJECT_PROPOSAL": "Proposta do Projeto",
+    "ROUTE_PROJECT_CONTRACT": "Project Contract",
     "SYSTEMCONFIG_THEME": "Tema",
     "SYSTEMCONFIG_SUPORTURL": "URL de Suporte",
     "SYSTEMCONFIG_LOG_LIMITE": "Limite de retenção de logs",
@@ -29,6 +30,11 @@
     "SYSTEM_EMAIL_PROVIDER_API_KEY": "Chave API do provedor de email",
     "SYSTEM_EMAIL_DEFAULT_FROM": "Remetente padrão do email",
     "SYSTEM_EMAIL_SMTP_SECURE": "(TLS/SSL)",
+
+    "USERCONFIG_PROJECTVIEWMODE": "Modo de visualização padrão do projeto",
+
+    "STAGE": "Etapa",
+    "STATUS": "Status",
 
     "ALL": "Todos",
     "LOGIN": "Login",

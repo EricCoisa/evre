@@ -23,6 +23,9 @@ export class Route {
   isHome: boolean;
 
   @ApiProperty()
+  isClientHome: boolean;
+
+  @ApiProperty()
   isActive: boolean;
 
   @ApiProperty()

@@ -24,5 +24,6 @@
   "error": "Erro ao carregar dados",
   "userTab": "Tipo de Usuário",
   "routesTab": "Rotas",
-  "showSideBar": "Mostrar na Barra Lateral"
+  "showSideBar": "Mostrar na Barra Lateral",
+  "IsClientHome": "Home do Cliente"
 }

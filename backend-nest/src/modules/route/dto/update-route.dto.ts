@@ -15,6 +15,10 @@ export const UpdateRouteSchema = z.object({
   isHome: z.boolean().optional().describe('Define se é a página inicial'),
   isActive: z.boolean().optional().describe('Rota ativa'),
   showSideBar: z.boolean().optional().describe('Exibir na sidebar'),
+  isClientHome: z
+    .boolean()
+    .optional()
+    .describe('Define se é a página inicial do cliente'),
 });
 
 export class UpdateRouteDto extends createZodDto(UpdateRouteSchema) {}

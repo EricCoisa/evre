@@ -117,6 +117,20 @@ async function main() {
     },
   });
 
+  const projectContract = await prisma.route.upsert({
+    where: { path: '/project-contract' },
+    update: {},
+    create: {
+      path: '/project-contract',
+      labelKey: 'ROUTE_PROJECT_CONTRACT',
+      icon: 'Signature',
+      ordem: 2,
+      isHome: false,
+      isActive: true,
+      showSideBar: false,
+    },
+  });
+
   const dashboardRoute = await prisma.route.upsert({
     where: { path: '/dashboard' },
     update: {},
@@ -374,6 +388,20 @@ async function main() {
     },
   });
 
+  await prisma.roleRouteAccess.upsert({
+    where: {
+      roleId_routeId: {
+        roleId: 'USER',
+        routeId: projectContract.id,
+      },
+    },
+    update: {},
+    create: {
+      roleId: 'USER',
+      routeId: projectContract.id,
+    },
+  });
+
   console.log('✅ Role route accesses created');
 
   // Dar acesso específico ao usuário admin para todas as rotas
@@ -613,6 +641,17 @@ async function main() {
       labelKey: 'USERCONFIG_LANGUAGE',
       valueType: 'string',
       defaultValue: 'pt-BR',
+      isRequired: false,
+    },
+  });
+
+  await prisma.userConfigurationDefinition.upsert({
+    where: { labelKey: 'USERCONFIG_PROJECTVIEWMODE' },
+    update: {},
+    create: {
+      labelKey: 'USERCONFIG_PROJECTVIEWMODE',
+      valueType: '[STAGE, STATUS]',
+      defaultValue: 'STATUS',
       isRequired: false,
     },
   });

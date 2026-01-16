@@ -97,7 +97,6 @@ export class UserRouteAccessController {
     const normalizedPath = decodedPath.startsWith('/')
       ? decodedPath
       : `/${decodedPath}`;
-    console.log('Normalized Path:', normalizedPath);
     return await this.userRouteAccessService.checkAccess(
       currentUser.id,
       normalizedPath,

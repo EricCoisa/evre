@@ -43,6 +43,14 @@ export function useContractDocumentsByProject(projectId: string) {
   });
 }
 
+export function useApprovedContractDocumentByProject(projectId: string) {
+  return useQuery({
+    queryKey: ['contract-documents', 'project', projectId],
+    queryFn: Collector(() => getContractDocumentsByProject(projectId)),
+    enabled: !!projectId,
+  });
+}
+
 export function useCreateContractDocument() {
   const queryClient = useQueryClient();
   const { emulateError } = useApp();

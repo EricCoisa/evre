@@ -53,6 +53,7 @@ export class RouteService implements IBaseService<Route> {
             }
           : null,
         showSidebar: route.showSideBar,
+        isClientHome: route.isClientHome,
       }));
     }
 
@@ -82,6 +83,7 @@ export class RouteService implements IBaseService<Route> {
             }
           : null,
         showSidebar: route.showSideBar,
+        isClientHome: route.isClientHome,
       })),
       meta: {
         total,
@@ -107,8 +109,11 @@ export class RouteService implements IBaseService<Route> {
 
   async findHome(user: AuthenticatedUser): Promise<Route> {
     const acessDeniedRoute = { path: '/access-denied' } as Route;
+    // Para usuários com role USER, busca isClientHome, senão isHome
+    const whereHome =
+      user.role === 'USER' ? { isClientHome: true } : { isHome: true };
     const route = await this.prisma.route.findFirst({
-      where: { isHome: true },
+      where: whereHome,
       include: {
         userRouteAccesses: {
           where: { userId: user.id },
@@ -121,10 +126,7 @@ export class RouteService implements IBaseService<Route> {
       },
     });
 
-    console.log('1 HOME - ROUTE', route);
-
     if (!route) {
-      console.log('2 HOME - ROUTE', 'Acess Denied - No Home Route');
       return acessDeniedRoute;
     }
 
@@ -133,17 +135,29 @@ export class RouteService implements IBaseService<Route> {
 
     // Usuário tem acesso se TEM acesso individual OU se sua role tem acesso
     if (!hasUserAccess && !hasRoleAccess) {
-      console.log('3 HOME - ROUTE', 'Acess Denied - No User or Role Access');
       return acessDeniedRoute;
     }
 
     // Verifica se a rota está ativa
     if (!route.isActive) {
-      console.log('4 HOME - ROUTE', 'Acess Denied - Route Inactive');
       return acessDeniedRoute;
     }
+    return route;
+  }
 
-    console.log('6 HOME - ROUTE', route);
+  async findByPath(path: string): Promise<Route> {
+    path = path.includes('/') ? path : `/${path}`;
+    const route = await this.prisma.route.findUnique({
+      where: { path },
+      include: {
+        parent: true,
+      },
+    });
+
+    if (!route) {
+      throw new NotFoundException(this.i18n.t('route.not_found'));
+    }
+
     return route;
   }
 
@@ -262,6 +276,28 @@ export class RouteService implements IBaseService<Route> {
         await this.prisma.route.updateMany({
           where: { isHome: true, NOT: { id } },
           data: { isHome: false },
+        });
+      }
+    }
+    // Garante que sempre exista pelo menos uma rota com isClientHome true
+    if (dto.isClientHome !== undefined) {
+      // Se está tentando remover o isClientHome da rota atual
+      if (!dto.isClientHome && existing.isClientHome) {
+        // Verifica se existe outra rota com isClientHome true
+        const otherClientHome = await this.prisma.route.findFirst({
+          where: { isClientHome: true, NOT: { id } },
+        });
+        if (!otherClientHome) {
+          throw new ConflictException(
+            this.i18n.t('route.must_have_at_least_one_client_home'),
+          );
+        }
+      }
+      // Se está setando isClientHome como true, remove o isClientHome de outras rotas
+      if (dto.isClientHome) {
+        await this.prisma.route.updateMany({
+          where: { isClientHome: true, NOT: { id } },
+          data: { isClientHome: false },
         });
       }
     }

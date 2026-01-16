@@ -543,15 +543,7 @@ export class UserRouteAccessService implements Omit<
       select: { role: true },
     });
 
-    console.log('1 User Route Access Check:', {
-      userId,
-      path,
-      normalizedPath,
-      decodedPath,
-      user,
-    });
     if (!user) {
-      console.log('2 User Route Access Check: User not found');
       return false;
     }
 
@@ -570,10 +562,8 @@ export class UserRouteAccessService implements Omit<
       },
     });
 
-    console.log('3 User Route Access Check: Route found', route);
     // Se a rota não existe ou está inativa, nega acesso
     if (!route || !route.isActive) {
-      console.log('4 User Route Access Check: Route not found or inactive');
       return false;
     }
 
@@ -583,10 +573,6 @@ export class UserRouteAccessService implements Omit<
     const hasUserAccess = route.userRouteAccesses.length > 0;
     const hasRoleAccess = route.roleRouteAccesses.length > 0;
 
-    console.log('5 User Route Access Check:', {
-      hasUserAccess,
-      hasRoleAccess,
-    });
     return hasUserAccess || hasRoleAccess;
   }
 }

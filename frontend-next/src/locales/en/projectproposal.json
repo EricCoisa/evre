@@ -1,0 +1,14 @@
+{
+	"proposal_not_found": "Proposal not found",
+	"proposal_not_found_description": "The requested proposal was not found or is not available.",
+	"info_title": "Information",
+	"info_description": "Proposal details",
+	"proposal_id": "Proposal ID",
+	"proposal_version": "Version",
+	"proposal_created_at": "Created at",
+	"proposal_updated_at": "Updated at",
+    "projects_error_loading": "Error loading projects.",
+	"projects_loading": "Loading projects...",
+	"projects_title": "Projects",
+	"projects_description": "View all your projects"
+}
