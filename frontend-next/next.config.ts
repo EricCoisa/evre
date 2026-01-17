@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { remotePatterns } from "./remotePattern";
 const nextConfig: NextConfig = {
   // Performance optimizations
   experimental: {
@@ -14,16 +15,7 @@ const nextConfig: NextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 31536000, // 1 year
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'lh3.googleusercontent.com',
-      },
-    ],
+    remotePatterns: remotePatterns
   },
 
   // Output optimization
