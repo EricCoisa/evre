@@ -118,6 +118,20 @@ export class ApprovalRequestService implements IBaseService<
     return approvalRequest;
   }
 
+  async findByStage(stageId: string): Promise<ApprovalRequest[]> {
+    const approvalRequests = await this.prisma.approvalRequest.findMany({
+      where: { stageId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        project: { select: { id: true, name: true, companyId: true } },
+        stage: { select: { id: true, name: true, projectId: true } },
+        requestedBy: { select: { id: true, name: true, email: true } },
+      },
+    });
+
+    return approvalRequests;
+  }
+
   async create(
     dto: CreateApprovalRequestDto,
     performedById: string,

@@ -79,6 +79,16 @@ export class ApprovalRequestController {
   }
 
   @GetApi({
+    path: 'stage/:stageId',
+    summary: 'approval_request.find_by_stage.title',
+    status: 'OK',
+    authenticated: true,
+  })
+  async findByStage(@Param('stageId') stageId: string) {
+    return this.approvalRequestService.findByStage(stageId);
+  }
+
+  @GetApi({
     path: ':id',
     summary: 'approval_request.find.title',
     status: 'OK',

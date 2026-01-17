@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { useApprovalRequests, useCreateApprovalRequest } from '@/lib/actions/approval-request/queries';
+import { useApprovalRequestsByStage, useCreateApprovalRequest } from '@/lib/actions/approval-request/queries';
 import { useTranslation } from '@/hooks/use-translation';
 import { MessageSquare, Loader2 } from 'lucide-react';
 
@@ -17,17 +17,12 @@ export function StageApprovalRequestButton({
 }: StageApprovalRequestButtonProps) {
   const { t } = useTranslation('projects');
 
-  // Busca approval requests para este stage
-  const { data: approvalRequestsData } = useApprovalRequests({
-    filter: { stageId },
-    pagination: false
-  });
+  // Busca approval requests para este stage específico
+  const { data: approvalRequestsData } = useApprovalRequestsByStage(stageId);
 
   const createApprovalRequest = useCreateApprovalRequest();
 
-  const approvalRequests = Array.isArray(approvalRequestsData)
-    ? approvalRequestsData
-    : approvalRequestsData?.data || [];
+  const approvalRequests = approvalRequestsData || [];
 
   // Verifica se já existe uma solicitação (qualquer status)
   const hasApprovalRequest = approvalRequests.length > 0;

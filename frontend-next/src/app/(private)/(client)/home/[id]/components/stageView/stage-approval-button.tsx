@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useApprovalByRequest } from '@/lib/actions/project/queries';
-import { useApprovalRequests } from '@/lib/actions/approval-request/queries';
+import { useApprovalRequestsByStage } from '@/lib/actions/approval-request/queries';
 import { useTranslation } from '@/hooks/use-translation';
 import { CheckCircle, AlertCircle, XCircle, Loader2, MessageSquare } from 'lucide-react';
-import { ApprovalModal } from '@/components/approval-modal';
+import { ApprovalModal } from '@/app/(private)/(client)/home/[id]/components/approval-modal';
 import { ApprovalStatusColors } from '@/lib/actions/project/types';
 import { Badge } from '@/components/ui/badge';
 
@@ -26,15 +26,10 @@ export function StageApprovalButton({
   const { t } = useTranslation('projects');
   const [showModal, setShowModal] = useState(false);
 
-  // Busca approval requests para este stage
-  const { data: approvalRequestsData, isLoading: loadingRequests } = useApprovalRequests({ 
-    filter: { stageId },
-    pagination: false 
-  });
+  // Busca approval requests para este stage específico
+  const { data: approvalRequestsData, isLoading: loadingRequests } = useApprovalRequestsByStage(stageId);
 
-  const approvalRequests = Array.isArray(approvalRequestsData) 
-    ? approvalRequestsData 
-    : approvalRequestsData?.data || [];
+  const approvalRequests = approvalRequestsData || [];
 
   // Encontra o request pendente (se houver)
   const pendingRequest = approvalRequests.find(req => req.status === 'PENDING');

@@ -11,6 +11,10 @@ export async function getApprovalRequest(id: string): Promise<ApiResponse<Approv
   return await GET<ApprovalRequest>(`/approval-request/${id}`);
 }
 
+export async function getApprovalRequestsByStage(stageId: string): Promise<ApiResponse<ApprovalRequest[]>> {
+  return await GET<ApprovalRequest[]>(`/approval-request/stage/${stageId}`);
+}
+
 export async function createApprovalRequest(data: CreateApprovalRequestDto): Promise<ApiResponse<ApprovalRequest>> {
   return await POST<ApprovalRequest>(`/approval-request`, data);
 }

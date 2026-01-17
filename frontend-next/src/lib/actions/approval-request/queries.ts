@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getApprovalRequests, getApprovalRequest, createApprovalRequest, updateApprovalRequest, deleteApprovalRequest } from "./api";
+import { getApprovalRequests, getApprovalRequest, getApprovalRequestsByStage, createApprovalRequest, updateApprovalRequest, deleteApprovalRequest } from "./api";
 import type { CreateApprovalRequestDto, UpdateApprovalRequestDto } from "./types";
 import { PaginationParams } from "../../types/pagination.types";
 import { getQueryConfig } from '../../utils';
@@ -10,6 +10,15 @@ export function useApprovalRequests(params?: PaginationParams) {
   return useQuery({
     queryKey: ['approvalRequests', params],
     queryFn: Collector(() => getApprovalRequests(params)),
+    ...getQueryConfig('APPROVAL_REQUESTS'),
+  });
+}
+
+export function useApprovalRequestsByStage(stageId: string) {
+  return useQuery({
+    queryKey: ['approvalRequests', 'stage', stageId],
+    queryFn: Collector(() => getApprovalRequestsByStage(stageId)),
+    enabled: !!stageId,
     ...getQueryConfig('APPROVAL_REQUESTS'),
   });
 }
