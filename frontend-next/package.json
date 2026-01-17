@@ -9,7 +9,8 @@
     "lint": "eslint",
     "version:patch": "npm version patch",
     "version:minor": "npm version minor",
-    "version:major": "npm version major"
+    "version:major": "npm version major",
+    "plop": "plop"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

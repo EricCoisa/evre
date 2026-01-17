@@ -1,0 +1,24 @@
+"use server"
+import type { {{pascalCase name}}, Create{{pascalCase name}}Dto, Update{{pascalCase name}}Dto } from './types';
+import type { PaginatedResponse, PaginationParams } from '@/lib/types/pagination.types';
+import { GET, POST, PATCH, DELETE, ApiResponse } from '../../api/api';
+    
+export async function get{{pascalCase name}}s(params?: PaginationParams): Promise<ApiResponse<PaginatedResponse<{{pascalCase name}}> | {{pascalCase name}}[]>> {
+  return await GET<PaginatedResponse<{{pascalCase name}}> | {{pascalCase name}}[]>(`/{{kebabCase name}}`, { params });
+}
+
+export async function get{{pascalCase name}}(id: string): Promise<ApiResponse<{{pascalCase name}}>> {
+  return await GET<{{pascalCase name}}>(`/{{kebabCase name}}/${id}`);
+}
+
+export async function create{{pascalCase name}}(data: Create{{pascalCase name}}Dto): Promise<ApiResponse<{{pascalCase name}}>> {
+  return await POST<{{pascalCase name}}>(`/{{kebabCase name}}`, data);
+}
+
+export async function update{{pascalCase name}}(id: string, data: Update{{pascalCase name}}Dto): Promise<ApiResponse<{{pascalCase name}}>> {
+  return await PATCH<{{pascalCase name}}>(`/{{kebabCase name}}/${id}`, data);
+}
+
+export async function delete{{pascalCase name}}(id: string): Promise<ApiResponse<{ status: boolean; message: string }>> {
+  return await DELETE<{ status: boolean; message: string }>(`/{{kebabCase name}}/${id}`);
+}

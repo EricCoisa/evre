@@ -1,0 +1,202 @@
+'use client';
+
+import { Container } from "@/components/container";
+import { useTranslation } from "@/hooks/use-translation";
+import { use{{pascalCase name}}s, useCreate{{pascalCase name}}, useDelete{{pascalCase name}} } from "@/lib/actions/{{kebabCase name}}/queries";
+import { useState, useCallback, useMemo } from 'react';
+import { DataTable } from "@/components/data-table";
+import { get{{pascalCase name}}Columns } from "./components/{{kebabCase name}}-columns";
+import Modal from "@/components/modal";
+import { GenericCreateFormModal } from "@/components/generic-create-form";
+import { {{pascalCase name}}Edit } from "./components/{{kebabCase name}}-edit";
+import type { {{pascalCase name}} } from "@/lib/actions/{{kebabCase name}}/types";
+import { z } from "zod";
+import type { FieldConfig } from '@/lib/form/field-config';
+import { useQueryClient } from "@tanstack/react-query";
+import { Alive } from "@/lib/api/collector";
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
+
+export default function {{pascalCase name}}Page() {
+  const { t } = useTranslation('{{camelCase name}}');
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+  const [globalFilter, setGlobalFilter] = useState('');
+  const [filters, setFilters] = useState<Record<string, string>>({});
+  const [editing{{pascalCase name}}, setEditing{{pascalCase name}}] = useState<{{pascalCase name}} | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [deleting{{pascalCase name}}, setDeleting{{pascalCase name}}] = useState<{{pascalCase name}} | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const queryClient = useQueryClient();
+
+  const handleEdit = useCallback((item: {{pascalCase name}}) => {
+    setEditing{{pascalCase name}}(item);
+    setIsEditDialogOpen(true);
+  }, []);
+
+  const handleDelete = useCallback((item: {{pascalCase name}}) => {
+    setDeleting{{pascalCase name}}(item);
+    setIsDeleteDialogOpen(true);
+  }, []);
+
+  const queryParams = {
+    page: pagination.pageIndex + 1,
+    limit: pagination.pageSize,
+    pagination: true,
+    ...(globalFilter && { search: globalFilter }),
+    ...(Object.keys(filters).length > 0 && { filter: JSON.stringify(filters) }),
+  };
+
+  const { data, error } = use{{pascalCase name}}s(queryParams);
+
+  const create{{pascalCase name}}Mutation = useCreate{{pascalCase name}}();
+  const delete{{pascalCase name}}Mutation = useDelete{{pascalCase name}}();
+
+  const create{{pascalCase name}}Schema = useMemo(() =>
+    z.object({
+      name: z.string().min(1, t('nameRequired') || 'Name is required'),
+      description: z.string().optional(),
+      isActive: z.boolean().optional().default(true),
+    }),
+  [t]);
+
+  const create{{pascalCase name}}FieldConfig = useMemo(() => ({
+    name: {
+      label: t('name') || 'Name',
+      placeholder: t('namePlaceholder') || 'Enter name',
+    },
+    description: {
+      label: t('description') || 'Description',
+      type: 'textarea' as const,
+      placeholder: t('descriptionPlaceholder') || 'Enter description',
+    },
+    isActive: {
+      label: t('isActive') || 'Active',
+      type: 'checkbox' as const,
+    },
+  } satisfies FieldConfig<typeof create{{pascalCase name}}Schema>), [t]);
+
+  
+  const columns = useMemo(() =>
+    get{{pascalCase name}}Columns({ t, onEdit: handleEdit, onDelete: handleDelete }),
+    [t, handleEdit, handleDelete]
+  );
+  
+  return (
+    <Container border={false}>
+      <DataTable
+        columns={columns}
+        data={data}
+        error={error}
+        queryKey={['{{camelCase name}}s', queryParams]}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        globalFilter={globalFilter}
+        enableGlobalFilter={true}
+        onGlobalFilterChange={setGlobalFilter}
+        filters={filters}
+        onFiltersChange={setFilters}
+        searchPlaceholder={t('searchPlaceholder') ?? 'Search {{lowerCase name}}s...'}
+        loadingMessage={t('loading') ?? 'Loading...'}
+        emptyMessage={t('empty') ?? 'No {{lowerCase name}}s found'}
+        entityName={t('entity') ?? '{{lowerCase name}}'}
+        entityNamePlural={t('entityPlural') ?? '{{lowerCase name}}s'}
+      >
+        <DataTable.Input
+          title={t('searchText')}
+          placeholder={t('searchPlaceholder')}
+        />
+        <DataTable.Select
+          title={t('filterByStatus')}
+          accessorKey="isActive"
+          placeholder={t('filterByStatus')}
+        />
+        <DataTable.Actions className="sm:justify-end sm:w-full">
+          <GenericCreateFormModal
+            trigger={
+              <Button>
+                <Plus /> {t('new{{pascalCase name}}') || 'New {{pascalCase name}}'}
+              </Button>
+            }
+            closeOnsuccess={true}
+            title={t('createNew{{pascalCase name}}') || 'Create New {{pascalCase name}}'}
+            description={t('create{{pascalCase name}}Description') || 'Fill in the details below'}
+            schema={create{{pascalCase name}}Schema}
+            fieldConfig={ create{{pascalCase name}}FieldConfig}
+            onSubmit={async (data) => {
+              const result = await Alive(() => create{{pascalCase name}}Mutation.mutateAsync(data))();
+              return result;
+            }}
+            onSuccess={() => {
+              queryClient.invalidateQueries({ queryKey: ['{{camelCase name}}s'] });
+            }}
+            onError={(error) => {
+              console.error('Error creating {{lowerCase name}}:', error);
+            }}
+            submitLabel={t('create') || 'Create'}
+            defaultValues=\{{
+              isActive: true,
+            }}
+          />
+        </DataTable.Actions>
+      </DataTable>
+
+      {/* Modal de edição */}
+      <Modal
+        open={isEditDialogOpen}
+        onOpenChange={(open) => {
+          setIsEditDialogOpen(open);
+          if (!open) setEditing{{pascalCase name}}(null);
+        }}
+        title={editing{{pascalCase name}} ? `${t('edit')} ${editing{{pascalCase name}}.name}` : t('edit')}
+        description={t('editDescription') || 'Update the information below'}
+      >
+        <{{pascalCase name}}Edit
+          { ...{ {{lowerCase name}}: editing{{pascalCase name}} } }
+          onCancel={() => {
+            setIsEditDialogOpen(false);
+            setEditing{{pascalCase name}}(null);
+          }}
+          onSuccess={() => {
+            setIsEditDialogOpen(false);
+            setEditing{{pascalCase name}}(null);
+          }}
+        />
+      </Modal>
+
+      {/* Modal de confirmação de exclusão */}
+      <Modal
+        open={isDeleteDialogOpen}
+        onOpenChange={(open) => {
+          setIsDeleteDialogOpen(open);
+          if (!open) setDeleting{{pascalCase name}}(null);
+        }}
+        title={t('deleteConfirm') || 'Confirm deletion'}
+        description={deleting{{pascalCase name}} ? `${t('deleteConfirmDescription')} "${deleting{{pascalCase name}}.name}"?` : ''}
+      >
+        <div className="flex gap-2 justify-end">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setIsDeleteDialogOpen(false);
+              setDeleting{{pascalCase name}}(null);
+            }}
+          >
+            {t('cancel') || 'Cancel'}
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={async () => {
+              if (!deleting{{pascalCase name}}) return;
+              await Alive(() => delete{{pascalCase name}}Mutation.mutateAsync(deleting{{pascalCase name}}.id))();
+              queryClient.invalidateQueries({ queryKey: ['{{camelCase name}}s'] });
+              setIsDeleteDialogOpen(false);
+              setDeleting{{pascalCase name}}(null);
+            }}
+          >
+            {t('delete') || 'Delete'}
+          </Button>
+        </div>
+      </Modal>
+    </Container>
+  )
+}

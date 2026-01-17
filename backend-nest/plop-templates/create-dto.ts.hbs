@@ -1,0 +1,12 @@
+import { createZodDto } from 'nestjs-zod';
+import { z } from 'zod';
+
+export const Create{{pascalCase name}}Schema = z
+  .object({
+    name: z.string().min(1).describe('Name of the {{lowerCase name}}'),
+    description: z.string().optional().describe('Description of the {{lowerCase name}}'),
+    isActive: z.boolean().optional().default(true).describe('Active status'),
+  })
+  .strict();
+
+export class Create{{pascalCase name}}Dto extends createZodDto(Create{{pascalCase name}}Schema) {}

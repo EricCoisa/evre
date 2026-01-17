@@ -1,0 +1,77 @@
+"use client";
+import { GenericCreateForm } from "@/components/generic-create-form";
+import { update{{pascalCase name}} } from "@/lib/actions/{{kebabCase name}}/api";
+import { {{pascalCase name}} } from "@/lib/actions/{{kebabCase name}}/types";
+import { Alive } from "@/lib/api/collector";
+import { FieldConfig } from "@/lib/form/field-config";
+import { useTranslation } from "@/hooks/use-translation";
+import { useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
+import { z } from 'zod';
+
+interface {{pascalCase name}}EditProps {
+    {{lowerCase name}}: {{pascalCase name}} | null;
+    onCancel?: () => void;
+    onSuccess?: () => void;
+}
+
+export function {{pascalCase name}}Edit({ {{lowerCase name}}, onCancel, onSuccess }: {{pascalCase name}}EditProps) {
+    const { t } = useTranslation('{{camelCase name}}');
+    const queryClient = useQueryClient();
+
+    const update{{pascalCase name}}Schema = useMemo(() =>
+        z.object({
+            name: z.string().min(1, t('nameRequired') || 'Name is required'),
+            description: z.string().optional(),
+            isActive: z.boolean().optional(),
+        }),
+    [t]);
+
+    const {{lowerCase name}}FieldConfig = useMemo(() => ({
+        name: {
+            label: t('name') || 'Name',
+            placeholder: t('namePlaceholder') || 'Enter name',
+        },
+        description: {
+            label: t('description') || 'Description',
+            type: 'textarea' as const,
+            placeholder: t('descriptionPlaceholder') || 'Enter description',
+        },
+        isActive: {
+            label: t('isActive') || 'Active',
+            type: 'checkbox' as const,
+        },
+    } satisfies FieldConfig<typeof update{{pascalCase name}}Schema>), [t]);
+
+    return (
+        <GenericCreateForm
+            key={ {{lowerCase name}}?.id || 'edit-form'}
+            schema={update{{pascalCase name}}Schema}
+            fieldConfig={ {{lowerCase name}}FieldConfig}
+            onCancel={onCancel}
+            onSubmit={async (data) => {
+                if (!{{lowerCase name}}) return;
+                const cleanData = Object.fromEntries(
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                    Object.entries(data).filter(([_, v]) => v !== undefined)
+                );
+                const result = await Alive(() => update{{pascalCase name}}({{lowerCase name}}.id, cleanData))();
+                return result;
+            }}
+            onSuccess={() => {
+                queryClient.invalidateQueries({ queryKey: ['{{camelCase name}}s'] });
+                if (onSuccess) onSuccess();
+            }}
+            onError={(error) => {
+                console.error('Error updating {{lowerCase name}}:', error);
+            }}
+            submitLabel={t('save') || 'Save'}
+            cancelLabel={t('cancel') || 'Cancel'}
+            defaultValues={ {{lowerCase name}} ? {
+                name: {{lowerCase name}}.name,
+                description: {{lowerCase name}}.description || undefined,
+                isActive: {{lowerCase name}}.isActive,
+            } : undefined}
+        />
+    )
+}

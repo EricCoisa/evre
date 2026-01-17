@@ -1,0 +1,134 @@
+
+"use client";
+
+import type { ColumnDef } from "@tanstack/react-table";
+import { {{pascalCase name}} } from "@/lib/actions/{{kebabCase name}}/types";
+import { Button } from "@/components/ui/button";
+import { ArrowDown, ArrowUp, ArrowUpDown, Pencil, Trash2 } from "lucide-react";
+import { DataCell, TableHead } from "@/components/table-utils";
+import { Badge } from "@/components/ui/badge";
+import { formatDate } from "@/lib/utils";
+
+interface Get{{pascalCase name}}ColumnsProps {
+  t: (key: string) => string;
+  onEdit?: (item: {{pascalCase name}}) => void;
+  onDelete?: (item: {{pascalCase name}}) => void;
+}
+
+export function get{{pascalCase name}}Columns({ t, onEdit, onDelete }: Get{{pascalCase name}}ColumnsProps): ColumnDef<{{pascalCase name}}>[]{
+  return [
+    {
+      accessorKey: "name",
+      header: () => <TableHead>{t("name") || "Nome"}</TableHead>,
+      cell: ({ row }) => <DataCell>{row.getValue("name") || t("noName")}</DataCell>,
+      meta: {
+        mobileOrder: 1,
+        mobileWidth: "half",
+      },
+    },
+    {
+      accessorKey: "description",
+      header: () => <TableHead>{t("description") || "Descrição"}</TableHead>,
+      cell: ({ row }) => <DataCell>{row.getValue("description") || "-"}</DataCell>,
+      meta: {
+        mobileOrder: 2,
+        mobileWidth: "full",
+      },
+    },
+    {
+      accessorKey: "isActive",
+      header: () => <TableHead>{t("status") || "Status"}</TableHead>,
+      cell: ({ row }) => {
+        const isActive = row.getValue("isActive") as boolean;
+        return (
+          <DataCell>
+            <Badge variant={isActive ? "default" : "secondary"}>
+              {isActive ? t("active") : t("inactive")}
+            </Badge>
+          </DataCell>
+        );
+      },
+      meta: {
+        mobileOrder: 3,
+        mobileWidth: "half",
+      },
+    },
+    {
+      accessorKey: "createdAt",
+      header: ({ column }) => {
+        const isSorted = column.getIsSorted && column.getIsSorted();
+        return (
+          <DataCell>
+            <div className="text-center">
+              <Button
+                variant="ghost"
+                onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                className="p-0 hover:bg-transparent justify-center font-medium"
+              >
+                {t("createdAt")}
+                {isSorted === "asc" ? (
+                  <ArrowUp className="ml-2 h-4 w-4" />
+                ) : isSorted === "desc" ? (
+                  <ArrowDown className="ml-2 h-4 w-4" />
+                ) : (
+                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </DataCell>
+        );
+      },
+      cell: ({ row }) => (
+        <DataCell>
+          {formatDate(row.getValue("createdAt"))}
+        </DataCell>
+      ),
+      enableSorting: true,
+      sortingFn: "datetime",
+      meta: {
+        mobileOrder: 4,
+        mobileWidth: "half",
+        mobileLabel: t("createdAt"),
+      },
+    },
+    {
+      id: "actions",
+      header: () => <TableHead>{t("actions") || "Ações"}</TableHead>,
+      cell: ({ row }) => {
+        const item = row.original;
+        return (
+          <DataCell>
+            <div className="flex gap-2 items-center">
+              {onEdit && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onEdit(item)}
+                  title={t("editTooltip") || "Editar"}
+                  className="h-6 p-0 min-h-0"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              )}
+              {onDelete && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onDelete(item)}
+                  title={t("deleteTooltip") || "Excluir"}
+                  className="h-6 p-0 min-h-0 text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </DataCell>
+        );
+      },
+      meta: {
+        mobileOrder: 5,
+        mobileWidth: "half",
+      },
+    },
+  ];
+}

@@ -1,0 +1,116 @@
+import { Body, Controller, Param, Query } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
+import { ZodValidationPipe } from 'nestjs-zod';
+import { plainToInstance } from 'class-transformer';
+import {
+  DeleteApi,
+  GetApi,
+  PatchApi,
+  PostApi,
+} from '../../common/decorators/api-method.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { {{pascalCase name}}Service } from './{{kebabCase name}}.service';
+import { Create{{pascalCase name}}Dto } from './dto/create-{{kebabCase name}}.dto';
+import { Update{{pascalCase name}}Dto } from './dto/update-{{kebabCase name}}.dto';
+import { {{pascalCase name}}Dto } from './dto/{{kebabCase name}}.dto';
+import { commonPaginationQueries } from '../../common/swagger/pagination-queries';
+import type { AuthenticatedUser } from '../../common/types/auth.types';
+import {
+  type PaginationQuery,
+  PaginationQuerySchema,
+} from 'src/common/schemas/pagination.schema';
+import { PaginatedResponse } from 'src/common/types/pagination.types';
+
+@ApiTags('{{kebabCase name}}')
+@Controller('{{kebabCase name}}')
+export class {{pascalCase name}}Controller {
+  constructor(private readonly {{camelCase name}}Service: {{pascalCase name}}Service) {}
+
+  @PostApi({
+    summary: '{{snakeCase name}}.create.title',
+    description: '{{snakeCase name}}.create.description',
+    body: Create{{pascalCase name}}Dto,
+    status: 'CREATED',
+    authenticated: true,
+    roles: ['ADMIN'],
+  })
+  async create(
+    @Body() dto: Create{{pascalCase name}}Dto,
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ) {
+    return this.{{camelCase name}}Service.create(dto, currentUser.id);
+  }
+
+  @GetApi({
+    summary: '{{snakeCase name}}.list.title',
+    status: 'OK',
+    authenticated: true,
+    roles: ['ADMIN'],
+    queries: commonPaginationQueries,
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Paginated response',
+          schema: { dto: {{pascalCase name}}Dto, isArray: true, isPagination: true },
+        },
+      ],
+    },
+  })
+  async findAll(
+    @Query(new ZodValidationPipe(PaginationQuerySchema)) query: PaginationQuery,
+  ): Promise<PaginatedResponse<{{pascalCase name}}Dto> | {{pascalCase name}}Dto[]> {
+    const result = await this.{{camelCase name}}Service.findAll(query);
+
+    if (Array.isArray(result)) {
+      return plainToInstance({{pascalCase name}}Dto, result);
+    }
+
+    return {
+      data: plainToInstance({{pascalCase name}}Dto, result.data),
+      meta: result.meta,
+      ...(result.filter ? { filter: result.filter } : {}),
+    };
+  }
+
+  @GetApi({
+    path: ':id',
+    summary: '{{snakeCase name}}.find.title',
+    status: 'OK',
+    authenticated: true,
+    roles: ['ADMIN'],
+  })
+  async findOne(@Param('id') id: string) {
+    return this.{{camelCase name}}Service.findOne(id);
+  }
+
+  @PatchApi({
+    path: ':id',
+    summary: '{{snakeCase name}}.update.title',
+    body: Update{{pascalCase name}}Dto,
+    status: 'OK',
+    authenticated: true,
+    roles: ['ADMIN'],
+  })
+  async update(
+    @Param('id') id: string,
+    @Body() dto: Update{{pascalCase name}}Dto,
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ) {
+    return this.{{camelCase name}}Service.update(id, dto, currentUser.id);
+  }
+
+  @DeleteApi({
+    path: ':id',
+    summary: '{{snakeCase name}}.delete.title',
+    status: 'OK',
+    authenticated: true,
+    roles: ['ADMIN'],
+  })
+  async remove(
+    @Param('id') id: string,
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ) {
+    return this.{{camelCase name}}Service.remove(currentUser.id, id);
+  }
+}

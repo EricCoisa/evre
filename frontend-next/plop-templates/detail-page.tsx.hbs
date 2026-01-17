@@ -1,0 +1,24 @@
+import { Container } from "@/components/container";
+import { get{{pascalCase name}} } from "@/lib/actions/{{kebabCase name}}/api";
+import { {{pascalCase name}}Edit } from "../components/{{kebabCase name}}-edit";
+import { notFound } from "next/navigation";
+
+export default async function {{pascalCase name}}DetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+
+  let data;
+  try {
+    const response = await get{{pascalCase name}}(id);
+    data = response.data;
+  } catch {
+    notFound();
+  }
+
+  if (!data) {
+    notFound();
+  }
+
+  return (
+      <{{pascalCase name}}Edit {{lowerCase name}}={data} />
+  );
+}

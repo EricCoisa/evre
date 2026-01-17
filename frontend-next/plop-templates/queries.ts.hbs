@@ -1,0 +1,63 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { get{{pascalCase name}}s, get{{pascalCase name}}, create{{pascalCase name}}, update{{pascalCase name}}, delete{{pascalCase name}} } from "./api";
+import { PaginationParams } from "../../types/pagination.types";
+import { getQueryConfig } from '../../utils';
+import { Collector } from "@/lib/api/collector";
+import { toast } from "sonner";
+
+export function use{{pascalCase name}}s(params?: PaginationParams) {
+  return useQuery({
+    queryKey: ['{{camelCase name}}s', params],
+    queryFn: Collector(() => get{{pascalCase name}}s(params)),
+    ...getQueryConfig('{{constantCase name}}S'),
+  });
+}
+
+export function use{{pascalCase name}}(id: string) {
+  return useQuery({
+    queryKey: ['{{camelCase name}}', id],
+    queryFn: Collector(() => get{{pascalCase name}}(id)),
+    enabled: !!id,
+    ...getQueryConfig('{{constantCase name}}'),
+  });
+}
+
+
+export function useCreate{{pascalCase name}}() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: Create{{pascalCase name}}Dto) => create{{pascalCase name}}(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['{{camelCase name}}s'] });
+      toast.success('{{pascalCase name}} created successfully');
+    }
+  });
+}
+
+
+export function useUpdate{{pascalCase name}}() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Update{{pascalCase name}}Dto }) =>
+      update{{pascalCase name}}(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['{{camelCase name}}s'] });
+      queryClient.invalidateQueries({ queryKey: ['{{camelCase name}}', variables.id] });
+      toast.success('{{pascalCase name}} updated successfully');
+    }
+  });
+}
+
+export function useDelete{{pascalCase name}}() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: delete{{pascalCase name}},
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['{{camelCase name}}s'] });
+      toast.success('{{pascalCase name}} deleted successfully');
+    }
+  });
+}

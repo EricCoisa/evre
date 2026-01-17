@@ -1,0 +1,181 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { I18nService } from 'nestjs-i18n';
+import { PrismaService } from '../../prisma/prisma.service';
+import { LoggingService } from '../logging/logging.service';
+import { IBaseService } from '../../domain/interface/base-service.interface';
+import type { {{pascalCase name}} } from '../../domain/{{kebabCase name}}/{{kebabCase name}}.entity';
+import type { Create{{pascalCase name}}Dto } from './dto/create-{{kebabCase name}}.dto';
+import type { Update{{pascalCase name}}Dto } from './dto/update-{{kebabCase name}}.dto';
+import type { PaginationQuery } from '../../common/schemas/pagination.schema';
+import type { PaginatedResponse } from '../../common/types/pagination.types';
+import { LogActions } from 'src/common/types/logging.types';
+import { IsActiveStatusConst } from 'src/domain/{{kebabCase name}}/isActiveStatus.const';
+
+@Injectable()
+export class {{pascalCase name}}Service implements IBaseService<
+  {{pascalCase name}},
+  Create{{pascalCase name}}Dto,
+  Update{{pascalCase name}}Dto
+> {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly i18n: I18nService,
+    private readonly loggingService: LoggingService,
+  ) {}
+
+  async findAll(
+    query: PaginationQuery,
+  ): Promise<PaginatedResponse<{{pascalCase name}}> | {{pascalCase name}}[]> {
+    const { page, limit, pagination, search, filter } = query;
+
+    // Constrói a cláusula where separando search e filter
+    const where: {
+      OR?: Array<{
+        name?: { contains: string; mode: 'insensitive' };
+        description?: { contains: string; mode: 'insensitive' };
+      }>;
+      isActive?: boolean;
+    } = {};
+
+    // Aplica filtro de busca global (search)
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    // Aplica filtros específicos (filter)
+    if (filter?.isActive !== undefined) {
+      where.isActive = String(filter.isActive) === 'true';
+    }
+
+    if (!pagination) {
+      const data = await this.prisma.{{camelCase name}}.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+      });
+      return data;
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.prisma.{{camelCase name}}.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.{{camelCase name}}.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    const isActiveStatusSet = Object.values(IsActiveStatusConst);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+      },
+      filter: {
+        isActive: Array.from(isActiveStatusSet),
+      },
+    };
+  }
+
+  async findOne(id: string): Promise<{{pascalCase name}} | null> {
+    const {{camelCase name}} = await this.prisma.{{camelCase name}}.findUnique({
+      where: { id },
+    });
+
+    if (!{{camelCase name}}) {
+      throw new NotFoundException(
+        this.i18n.t('{{snakeCase name}}.not_found', {
+          lang: 'en',
+        }),
+      );
+    }
+
+    return {{camelCase name}};
+  }
+
+  async create(dto: Create{{pascalCase name}}Dto, performedById: string): Promise<{{pascalCase name}}> {
+    const {{camelCase name}} = await this.prisma.{{camelCase name}}.create({
+      data: {
+        ...dto,
+      },
+    });
+
+    await this.loggingService.create(
+      {
+        module: '{{constantCase name}}',
+        action: LogActions.CREATE,
+        message: `{{pascalCase name}} created: ${dto.name}`,
+        metadata: { {{camelCase name}}Id: {{camelCase name}}.id },
+      },
+      performedById,
+    );
+
+    return {{camelCase name}};
+  }
+
+  async update(
+    id: string,
+    dto: Update{{pascalCase name}}Dto,
+    performedById: string,
+  ): Promise<{{pascalCase name}}> {
+    await this.findOne(id);
+
+    const {{camelCase name}} = await this.prisma.{{camelCase name}}.update({
+      where: { id },
+      data: {
+        ...dto,
+      },
+    });
+
+    await this.loggingService.create(
+      {
+        module: '{{constantCase name}}',
+        action: LogActions.UPDATE,
+        message: `{{pascalCase name}} updated: {{camelCase name}}`,
+        metadata: { {{camelCase name}}Id: id },
+      },
+      performedById,
+    );
+
+    return {{camelCase name}};
+  }
+
+  async remove(
+    performedById: string,
+    id: string,
+  ): Promise<{ status: boolean; message: string }> {
+    await this.findOne(id);
+
+    await this.prisma.{{camelCase name}}.delete({
+      where: { id },
+    });
+
+    await this.loggingService.create(
+      {
+        module: '{{constantCase name}}',
+        action: LogActions.DELETE,
+        message: `{{pascalCase name}} deleted: {{camelCase name}}`,
+        metadata: { {{camelCase name}}Id: id },
+      },
+      performedById,
+    );
+
+    return {
+      status: true,
+      message: this.i18n.t('{{snakeCase name}}.deleted_successfully', {
+        lang: 'en',
+      }),
+    };
+  }
+}

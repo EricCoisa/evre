@@ -1,0 +1,25 @@
+export interface {{pascalCase name}} {
+  id: string;
+  name: string;
+  description?: string | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Create{{pascalCase name}}Dto {
+  name: string;
+  description?: string;
+  isActive?: boolean;
+}
+
+export interface Update{{pascalCase name}}Dto {
+  name?: string;
+  description?: string;
+  isActive?: boolean;
+}
+
+export const {{pascalCase name}}StatusColors = {
+  ACTIVE: 'bg-green-100 text-green-800',
+  INACTIVE: 'bg-gray-100 text-gray-800',
+};
