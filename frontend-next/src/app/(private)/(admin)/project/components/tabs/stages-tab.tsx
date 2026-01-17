@@ -1,7 +1,7 @@
 'use client';
 
 import { Project, Stage, StageStatus } from '@/lib/actions/project/types';
-import { useStages, useCreateStage, useCreateApproval, useStagesByProject } from '@/lib/actions/project/queries';
+import { useStages, useCreateStage, useStagesByProject } from '@/lib/actions/project/queries';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useMemo } from 'react';
@@ -26,7 +26,6 @@ export function StagesTab({ project, isAdmin = false }: StagesTabProps) {
 
   const { data: stagesData } = useStagesByProject(project.id, { filter: { projectId: project.id }, pagination: false });
   const createStage = useCreateStage();
-  const createApproval = useCreateApproval();
 
   const stages = useMemo(() =>
     Array.isArray(stagesData) ? stagesData : stagesData?.data || [],
@@ -45,40 +44,6 @@ export function StagesTab({ project, isAdmin = false }: StagesTabProps) {
       placeholder: t('stageNamePlaceholder'),
     },
   } satisfies FieldConfig<typeof createStageSchema>), [t]);
-
-  // Schema e config para criar Approval
-  const createApprovalSchema = useMemo(() =>
-    z.object({
-      stageId: z.string().min(1, t('stageRequired')),
-      status: z.enum(['APPROVED', 'REJECTED']),
-      comment: z.string().optional(),
-    }),
-    [t]);
-
-  const approvalFieldConfig = useMemo(() => ({
-    stageId: {
-      label: t('stage'),
-      placeholder: t('selectStage'),
-      type: 'select' as const,
-      options: stages.map((stage) => ({
-        value: stage.id,
-        label: stage.name,
-      })),
-    },
-    status: {
-      label: t('status'),
-      type: 'select' as const,
-      options: [
-        { value: 'APPROVED', label: t('approved') },
-        { value: 'REJECTED', label: t('rejected') },
-      ],
-    },
-    comment: {
-      label: t('approvalComment'),
-      placeholder: t('approvalCommentPlaceholder'),
-      type: 'textarea' as const,
-    },
-  } satisfies FieldConfig<typeof createApprovalSchema>), [t, stages]);
 
   return (
     <div className="space-y-6">
@@ -134,45 +99,6 @@ export function StagesTab({ project, isAdmin = false }: StagesTabProps) {
           )}
         </CardContent>
       </Card>
-
-      {isAdmin && stages.length > 0 && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle><LangLabel text="addApproval" langJson="projects" /></CardTitle>
-              <GenericCreateFormModal
-                trigger={
-                  <Button size="sm">
-                    <Plus className="mr-2 h-4 w-4" />
-                    {t('addApproval')}
-                  </Button>
-                }
-                closeOnsuccess={true}
-                title={t('addApproval')}
-                description={t('addApprovalDescription')}
-                schema={createApprovalSchema}
-                fieldConfig={approvalFieldConfig}
-                onSubmit={async (data) => {
-                  await createApproval.mutateAsync({
-                    projectId: project.id,
-                    entityType: 'STAGE',
-                    entityId: data.stageId,
-                    status: data.status,
-                    comment: data.comment,
-                  });
-                }}
-                onSuccess={() => {
-                  queryClient.invalidateQueries({ queryKey: ['approvals'] });
-                }}
-                submitLabel={t('create')}
-                defaultValues={{
-                  status: 'APPROVED',
-                }}
-              />
-            </div>
-          </CardHeader>
-        </Card>
-      )}
     </div>
   );
 }

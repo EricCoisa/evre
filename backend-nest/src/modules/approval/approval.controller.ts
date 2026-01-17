@@ -14,7 +14,7 @@ export class ApprovalController {
 
   @PostApi({
     path: '',
-    summary: 'Create a new approval',
+    summary: 'Create a new approval (respond to approval request)',
     response: {
       success: [
         {
@@ -32,6 +32,27 @@ export class ApprovalController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<ApprovalDto> {
     return this.approvalService.create(createApprovalDto, user.id, user);
+  }
+
+  @GetApi({
+    path: 'by-request/:approvalRequestId',
+    summary: 'Get approval by approval request ID',
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Approval retrieved successfully',
+          schema: { dto: ApprovalDto },
+        },
+      ],
+    },
+    authenticated: true,
+  })
+  async findByApprovalRequest(
+    @Param('approvalRequestId') approvalRequestId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<ApprovalDto | null> {
+    return this.approvalService.findByApprovalRequest(approvalRequestId, user);
   }
 
   @GetApi({

@@ -13,12 +13,14 @@ import type { Activity, Stage } from '@/lib/actions/project/types';
 interface ClientStageStatusCardProps {
   stage: Stage;
   projectId: string;
+  projectName: string;
  setProgress?: React.Dispatch<React.SetStateAction<{stageId: string, value: number}[]>>;
 }
 
 export function ClientStageStatusCard({ 
   stage, 
-  projectId, 
+  projectId,
+  projectName, 
   setProgress 
 }: ClientStageStatusCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -117,6 +119,7 @@ export function ClientStageStatusCard({
               stageId={stage.id}
               stageName={stage.name}
               projectId={projectId}
+              projectName={projectName}
             />
           </div>
         </CardHeader>

@@ -20,6 +20,7 @@ import {
   createComment,
   deleteComment,
   getApprovalsByEntity,
+  getApprovalByRequest,
   createApproval,
   getHistoryByProject,
   getProjectStatusList,
@@ -373,6 +374,15 @@ export function useApprovalsByStage(stageId: string) {
   return useApprovalsByEntity('STAGE', stageId);
 }
 
+export function useApprovalByRequest(approvalRequestId: string) {
+  return useQuery({
+    queryKey: ['approval', 'by-request', approvalRequestId],
+    queryFn: Collector(() => getApprovalByRequest(approvalRequestId)),
+    enabled: !!approvalRequestId,
+    ...getQueryConfig('APPROVALS'),
+  });
+}
+
 export function useCreateApproval() {
   const queryClient = useQueryClient();
   const { emulateError } = useApp();
@@ -382,9 +392,13 @@ export function useCreateApproval() {
       EmulateMutationError(emulateError, 'Emulated error from useCreateApproval');
       return Alive(() => createApproval(data))();
     },
-    onSuccess: (_, variables) => {
-      // Invalida cache para a entidade específica
-      queryClient.invalidateQueries({ queryKey: ['approvals', variables.entityType, variables.entityId] });
+    onSuccess: (response) => {
+      // Invalida cache para aprovações
+      queryClient.invalidateQueries({ queryKey: ['approvals'] });
+      queryClient.invalidateQueries({ queryKey: ['approval'] });
+      // Invalida approval requests para atualizar status
+      queryClient.invalidateQueries({ queryKey: ['approvalRequests'] });
+      queryClient.invalidateQueries({ queryKey: ['approvalRequest'] });
     },
   });
 }

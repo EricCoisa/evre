@@ -47,7 +47,6 @@ export class ApprovalRequestController {
     summary: 'approval_request.list.title',
     status: 'OK',
     authenticated: true,
-    roles: ['ADMIN'],
     queries: commonPaginationQueries,
     response: {
       success: [

@@ -130,6 +130,7 @@ export type ApprovalEntityType = 'STAGE';
 
 export interface Approval {
   id: string;
+  approvalRequestId: string;
   projectId: string;
   entityType: ApprovalEntityType;
   entityId: string;
@@ -139,18 +140,17 @@ export interface Approval {
   createdAt: string;
 }
 
-export type ApprovalStatus = 'APPROVED' | 'REJECTED';
+export type ApprovalStatus = 'APPROVED' | 'APPROVED_WITH_REMARKS' | 'REJECTED';
 
 export interface CreateApprovalDto {
-  projectId: string;
-  entityType: ApprovalEntityType;
-  entityId: string;
+  approvalRequestId: string;
   status: ApprovalStatus;
   comment?: string;
 }
 
 export const ApprovalStatusColors = {
   APPROVED: 'bg-green-100 text-green-800',
+  APPROVED_WITH_REMARKS: 'bg-yellow-100 text-yellow-800',
   REJECTED: 'bg-red-100 text-red-800',
 };
 

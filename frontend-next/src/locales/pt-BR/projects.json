@@ -139,5 +139,22 @@
   "editCompanyDescription": "Editar informações da empresa.",
   "inviteTokenCreated": "Token de Convite Criado",
   "inviteTokenDescription": "Copie e compartilhe este token com o usuário convidado.",
-  "sendToApproval": "Solicitar Aprovação"
+  "sendToApproval": "Solicitar Aprovação",
+  "respondApprovalRequest": "Responder Solicitação de Aprovação",
+  "approvalModalDescription": "Você está revisando uma etapa do projeto. Sua decisão é importante para o progresso do projeto.",
+  "importantDecision": "Decisão Importante",
+  "rejectionWarning": "A reprovação é uma decisão grave que pode exigir retrabalho. Só reprove se houver problemas significativos.",
+  "yourDecision": "Sua Decisão",
+  "approveStage": "Aprovar Etapa",
+  "approveDescription": "Tudo está conforme o esperado. A etapa pode prosseguir.",
+  "approveWithRemarks": "Aprovar com Ressalvas",
+  "approveWithRemarksDescription": "Aprovar, mas com observações ou sugestões de melhoria.",
+  "rejectStage": "Reprovar Etapa",
+  "rejectDescription": "Há problemas significativos que precisam ser corrigidos antes de prosseguir.",
+  "commentRequiredPlaceholder": "Por favor, explique sua decisão (obrigatório)",
+  "commentOptionalPlaceholder": "Comentários adicionais (opcional)",
+  "commentRequiredMessage": "Comentário é obrigatório para este tipo de decisão",
+  "submitDecision": "Enviar Decisão",
+  "approvalSubmitted": "Sua decisão foi enviada com sucesso",
+  "pendingApproval": "Aprovação Pendente"
 }

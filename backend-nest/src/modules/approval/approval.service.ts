@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { I18nService } from 'nestjs-i18n';
 import { CreateApprovalDto } from './dto/create-approval.dto';
@@ -6,6 +11,7 @@ import { ApprovalDto } from './dto/approval.dto';
 import { LoggingService } from '../logging/logging.service';
 import { LogActions } from 'src/common/types/logging.types';
 import { ApprovalEntityType } from '@prisma/client';
+import { ApprovalStatusConst } from 'src/domain/project/approvalStatus.const';
 
 @Injectable()
 export class ApprovalService {
@@ -15,70 +21,116 @@ export class ApprovalService {
     private readonly loggingService: LoggingService,
   ) {}
 
+  /**
+   * 🔒 REGRA DE DOMÍNIO: Apenas usuários CLIENTE podem criar Approval
+   * 🔒 REGRA DE DOMÍNIO: Approval só pode ser criado se ApprovalRequest existir e estiver PENDING
+   * 🔒 REGRA DE DOMÍNIO: Comentário obrigatório para REJECTED e APPROVED_WITH_REMARKS
+   * 🔒 REGRA DE DOMÍNIO: Approval é imutável (não pode ser editado)
+   */
   async create(
     createApprovalDto: CreateApprovalDto,
     userId: string,
     user?: { role: string; companyId?: string | null },
   ): Promise<ApprovalDto> {
-    // Valida se o projeto existe
-    const project = await this.prisma.project.findUnique({
-      where: { id: createApprovalDto.projectId },
-    });
-    if (!project)
-      throw new NotFoundException(
-        this.i18n.t('approval.errors.project_not_found') || 'Project not found',
+    // 🔒 SECURITY: Apenas CLIENTE pode criar Approval
+    if (user && user.role !== 'USER') {
+      throw new ForbiddenException(
+        this.i18n.t('approval.errors.only_client_can_approve') ||
+          'Only clients can create approvals',
       );
-
-    // 🔒 SECURITY: USER só pode criar aprovações em projetos da própria empresa
-    if (user && user.role === 'USER' && user.companyId) {
-      if (project.companyId !== user.companyId) {
-        throw new NotFoundException(
-          this.i18n.t('approval.errors.project_not_found') ||
-            'Project not found',
-        );
-      }
     }
 
-    // Valida se a entidade existe baseado no tipo
-    let stageName: string | undefined;
-    if (createApprovalDto.entityType === 'STAGE') {
-      const stage = await this.prisma.stage.findUnique({
-        where: { id: createApprovalDto.entityId },
-      });
-      if (!stage)
-        throw new NotFoundException(
-          this.i18n.t('approval.errors.stage_not_found') || 'Stage not found',
-        );
-      // Valida que a stage pertence ao projeto informado
-      if (stage.projectId !== createApprovalDto.projectId) {
-        throw new NotFoundException(
-          this.i18n.t('approval.errors.project_mismatch') || 'Project mismatch',
-        );
-      }
-      stageName = stage.name;
+    // Busca e valida ApprovalRequest
+    const approvalRequest = await this.prisma.approvalRequest.findUnique({
+      where: { id: createApprovalDto.approvalRequestId },
+      include: {
+        project: true,
+        stage: true,
+      },
+    });
+
+    if (!approvalRequest) {
+      throw new NotFoundException(
+        this.i18n.t('approval.errors.approval_request_not_found') ||
+          'Approval request not found',
+      );
     }
 
+    // Valida que o request está PENDING
+    if (approvalRequest.status !== 'PENDING') {
+      throw new BadRequestException(
+        this.i18n.t('approval.errors.request_not_pending') ||
+          'Approval request is not pending',
+      );
+    }
+
+    // 🔒 SECURITY: Cliente só pode aprovar projetos da própria empresa
+    if (
+      user &&
+      user.companyId &&
+      approvalRequest.project.companyId !== user.companyId
+    ) {
+      throw new ForbiddenException(
+        this.i18n.t('approval.errors.not_your_company') ||
+          'You can only approve projects from your company',
+      );
+    }
+
+    // Valida comentário obrigatório para REJECTED e APPROVED_WITH_REMARKS
+    if (
+      (createApprovalDto.status === ApprovalStatusConst.REJECTED ||
+        createApprovalDto.status ===
+          ApprovalStatusConst.APPROVED_WITH_REMARKS) &&
+      !createApprovalDto.comment?.trim()
+    ) {
+      throw new BadRequestException(
+        this.i18n.t('approval.errors.comment_required') ||
+          'Comment is required for rejection or approval with remarks',
+      );
+    }
+
+    // Verifica se já existe uma aprovação para este request
+    const existingApproval = await this.prisma.approval.findFirst({
+      where: { approvalRequestId: createApprovalDto.approvalRequestId },
+    });
+
+    if (existingApproval) {
+      throw new BadRequestException(
+        this.i18n.t('approval.errors.already_answered') ||
+          'This approval request has already been answered',
+      );
+    }
+
+    // Cria a Approval
     const approval = await this.prisma.approval.create({
       data: {
-        projectId: createApprovalDto.projectId,
-        entityType: createApprovalDto.entityType,
-        entityId: createApprovalDto.entityId,
+        approvalRequestId: createApprovalDto.approvalRequestId,
+        projectId: approvalRequest.projectId,
+        entityType: 'STAGE',
+        entityId: approvalRequest.stageId,
         userId,
         status: createApprovalDto.status,
-        comment: createApprovalDto.comment || null,
+        comment: createApprovalDto.comment?.trim() || null,
       },
+    });
+
+    // Atualiza status do ApprovalRequest para ANSWERED
+    await this.prisma.approvalRequest.update({
+      where: { id: createApprovalDto.approvalRequestId },
+      data: { status: 'ANSWERED' },
     });
 
     // Registra histórico no projeto
     await this.prisma.projectHistory.create({
       data: {
-        projectId: createApprovalDto.projectId,
+        projectId: approvalRequest.projectId,
         type: 'APPROVAL',
         payload: JSON.stringify({
           approvalId: approval.id,
+          approvalRequestId: approval.approvalRequestId,
           entityType: approval.entityType,
           entityId: approval.entityId,
-          stageName,
+          stageName: approvalRequest.stage.name,
           userId,
           status: approval.status,
           comment: approval.comment,
@@ -90,12 +142,12 @@ export class ApprovalService {
       {
         module: 'APPROVAL',
         action: LogActions.CREATE,
-        message: `${createApprovalDto.entityType} ${approval.status.toLowerCase()}`,
+        message: `Stage ${approval.status.toLowerCase()} by client`,
         metadata: {
           approvalId: approval.id,
-          projectId: createApprovalDto.projectId,
-          entityType: createApprovalDto.entityType,
-          entityId: createApprovalDto.entityId,
+          approvalRequestId: approval.approvalRequestId,
+          projectId: approvalRequest.projectId,
+          stageId: approvalRequest.stageId,
         },
       },
       userId,
@@ -104,13 +156,15 @@ export class ApprovalService {
     return new ApprovalDto(approval);
   }
 
+  /**
+   * Busca aprovações por entidade (mantido para compatibilidade)
+   */
   async findByEntity(
     entityType: string,
     entityId: string,
     user?: { role: string; companyId?: string | null },
   ): Promise<ApprovalDto[]> {
     // 🔒 SECURITY: USER só pode acessar aprovações de projetos da própria empresa
-    // Busca o projectId através da entidade aprovada
     let projectId: string | null = null;
 
     if (entityType === 'STAGE') {
@@ -140,5 +194,37 @@ export class ApprovalService {
       orderBy: { createdAt: 'desc' },
     });
     return approvals.map((a) => new ApprovalDto(a));
+  }
+
+  /**
+   * Busca aprovação por ApprovalRequest (novo método)
+   */
+  async findByApprovalRequest(
+    approvalRequestId: string,
+    user?: { role: string; companyId?: string | null },
+  ): Promise<ApprovalDto | null> {
+    const approval = await this.prisma.approval.findUnique({
+      where: { approvalRequestId },
+      include: {
+        approvalRequest: {
+          include: {
+            project: true,
+          },
+        },
+      },
+    });
+
+    if (!approval) {
+      return null;
+    }
+
+    // 🔒 SECURITY: USER só pode acessar aprovações de projetos da própria empresa
+    if (user && user.role === 'USER' && user.companyId) {
+      if (approval.approvalRequest.project.companyId !== user.companyId) {
+        throw new ForbiddenException('Access denied');
+      }
+    }
+
+    return new ApprovalDto(approval);
   }
 }

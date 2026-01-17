@@ -197,6 +197,12 @@ export async function getApprovalsByEntity(
   return await GET<Approval[]>(`/approval/${entityType}/${entityId}`);
 }
 
+export async function getApprovalByRequest(
+  approvalRequestId: string,
+): Promise<ApiResponse<Approval | null>> {
+  return await GET<Approval | null>(`/approval/by-request/${approvalRequestId}`);
+}
+
 export async function createApproval(
   data: CreateApprovalDto,
 ): Promise<ApiResponse<Approval>> {

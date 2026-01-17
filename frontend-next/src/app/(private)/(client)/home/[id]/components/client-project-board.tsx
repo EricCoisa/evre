@@ -158,6 +158,7 @@ export function ClientProjectBoard({ projectId }: ClientProjectBoardProps) {
         ) : (
           <StatusView
             projectId={projectId}
+            projectName={project.name}
             stages={stageList}
             setProgress={setProgress}
           />

@@ -9,6 +9,12 @@ export class Approval {
   id: string;
 
   @ApiProperty({
+    description: 'Approval request identifier (required link)',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  approvalRequestId: string;
+
+  @ApiProperty({
     description: 'Project identifier (context root)',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })

@@ -60,6 +60,7 @@ export function StageView({ projectId, project, stages, setProgress }: StageView
                                         key={stage.id}
                                         stage={stage}
                                         projectId={projectId}
+                                        projectName={project.name}
                                         setProgress={setProgress}
                                     />
                                 ))}

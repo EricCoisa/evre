@@ -62,6 +62,7 @@ enum ActivityStatus {
 
 enum ApprovalStatus {
   APPROVED
+  APPROVED_WITH_REMARKS
   REJECTED
 }
 
@@ -404,18 +405,21 @@ model Comment {
 }
 
 model Approval {
-  id         String              @id @default(uuid())
-  projectId  String              // Contexto raiz obrigatório
-  entityType ApprovalEntityType  // STAGE (por enquanto)
-  entityId   String              // ID da entidade aprovada
-  userId     String
-  status     ApprovalStatus
-  comment    String?             @db.Text
-  createdAt  DateTime            @default(now())
+  id                String              @id @default(uuid())
+  approvalRequestId String              @unique // Vínculo obrigatório 1:1
+  projectId         String              // Contexto raiz obrigatório
+  entityType        ApprovalEntityType  // STAGE (por enquanto)
+  entityId          String              // ID da entidade aprovada
+  userId            String
+  status            ApprovalStatus
+  comment           String?             @db.Text
+  createdAt         DateTime            @default(now())
 
-  project    Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  approvalRequest   ApprovalRequest     @relation(fields: [approvalRequestId], references: [id], onDelete: Cascade)
+  project           Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([approvalRequestId])
   @@index([projectId])
   @@index([entityType, entityId])
   @@index([userId])
@@ -500,6 +504,7 @@ model ApprovalRequest {
   project       Project                @relation(fields: [projectId], references: [id], onDelete: Cascade)
   stage         Stage                  @relation(fields: [stageId], references: [id], onDelete: Cascade)
   requestedBy   User                   @relation(fields: [requestedById], references: [id], onDelete: Cascade)
+  approval      Approval?              // Relação 1:1 opcional (pode não ter resposta ainda)
 
   @@unique([stageId, status], map: "unique_pending_per_stage")
   @@index([projectId])

@@ -13,10 +13,11 @@ import type { Stage } from '@/lib/actions/project/types';
 interface ClientStageColumnProps {
   stage: Stage;
   projectId: string;
+  projectName: string;
   setProgress?: React.Dispatch<React.SetStateAction<{stageId: string, value: number}[]>>;
 }
 
-export function ClientStageColumn({ stage, projectId, setProgress }: ClientStageColumnProps) {
+export function ClientStageColumn({ stage, projectId, projectName, setProgress }: ClientStageColumnProps) {
   const [showComments, setShowComments] = useState(false);
 
   const { data: activities, isLoading } = useActivitiesByStage(stage.id, {
@@ -73,6 +74,7 @@ export function ClientStageColumn({ stage, projectId, setProgress }: ClientStage
             stageId={stage.id}
             stageName={stage.name}
             projectId={projectId}
+            projectName={projectName}
           />
         </CardHeader>
 

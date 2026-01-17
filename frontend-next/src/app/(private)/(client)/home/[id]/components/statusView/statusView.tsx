@@ -8,10 +8,11 @@ import { ClientStageStatusCard } from './client-stage-status-card';
 interface StatusViewProps {
   stages: Stage[];
   projectId: string;
+  projectName: string;
   setProgress?: React.Dispatch<React.SetStateAction<{stageId: string, value: number}[]>>;
 }
 
-export function StatusView({ projectId, stages, setProgress }: StatusViewProps) {
+export function StatusView({ projectId, projectName, stages, setProgress }: StatusViewProps) {
   const { t } = useTranslation('projects');
 
   return (
@@ -22,6 +23,7 @@ export function StatusView({ projectId, stages, setProgress }: StatusViewProps) 
             key={stage.id}
             stage={stage}
             projectId={projectId}
+            projectName={projectName}
            setProgress={setProgress}
           />
         ))

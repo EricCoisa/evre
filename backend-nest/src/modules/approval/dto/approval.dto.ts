@@ -5,6 +5,7 @@ export class ApprovalDto {
   constructor(approval?: Approval) {
     if (!approval) return;
     this.id = approval.id;
+    this.approvalRequestId = approval.approvalRequestId;
     this.projectId = approval.projectId;
     this.entityType = approval.entityType;
     this.entityId = approval.entityId;
@@ -19,6 +20,12 @@ export class ApprovalDto {
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   id: string;
+
+  @ApiProperty({
+    description: 'Approval request identifier',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  approvalRequestId: string;
 
   @ApiProperty({
     description: 'Project identifier (context root)',

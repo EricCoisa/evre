@@ -2,70 +2,51 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { useApprovalsByEntity, useCreateApproval } from '@/lib/actions/project/queries';
+import { useApprovalByRequest } from '@/lib/actions/project/queries';
+import { useApprovalRequests } from '@/lib/actions/approval-request/queries';
 import { useTranslation } from '@/hooks/use-translation';
-import { CheckCircle, XCircle, Loader2, Clock } from 'lucide-react';
-import { toast } from 'sonner';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { formatDistanceToNow } from 'date-fns';
-import { ptBR, enUS } from 'date-fns/locale';
+import { CheckCircle, AlertCircle, XCircle, Loader2, MessageSquare } from 'lucide-react';
+import { ApprovalModal } from '@/components/approval-modal';
+import { ApprovalStatusColors } from '@/lib/actions/project/types';
+import { Badge } from '@/components/ui/badge';
 
 interface StageApprovalButtonProps {
   stageId: string;
   stageName: string;
   projectId: string;
+  projectName: string;
 }
 
 export function StageApprovalButton({
   stageId,
   stageName,
   projectId,
+  projectName,
 }: StageApprovalButtonProps) {
-  const { t, locale: currentLocale } = useTranslation('projects');
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [action, setAction] = useState<'approve' | 'revert'>('approve');
+  const { t } = useTranslation('projects');
+  const [showModal, setShowModal] = useState(false);
 
-  const { data: approvals, isLoading } = useApprovalsByEntity('STAGE', stageId);
-  const createApprovalMutation = useCreateApproval();
+  // Busca approval requests para este stage
+  const { data: approvalRequestsData, isLoading: loadingRequests } = useApprovalRequests({ 
+    filter: { stageId },
+    pagination: false 
+  });
 
-  const isApproved = approvals && approvals.length > 0 && approvals[0].status === 'APPROVED';
-  const lastApproval = approvals && approvals.length > 0 ? approvals[0] : null;
+  const approvalRequests = Array.isArray(approvalRequestsData) 
+    ? approvalRequestsData 
+    : approvalRequestsData?.data || [];
 
-  const handleConfirm = async () => {
-    try {
-      await createApprovalMutation.mutateAsync({
-        status: action === 'approve' ? 'APPROVED' : 'REJECTED',
-        entityType: 'STAGE',
-        entityId: stageId,
-        projectId,
-      });
+  // Encontra o request pendente (se houver)
+  const pendingRequest = approvalRequests.find(req => req.status === 'PENDING');
+  
+  // Se existe request, busca a aprovação (se já foi respondida)
+  const { data: approval, isLoading: loadingApproval } = useApprovalByRequest(
+    pendingRequest?.id || '',
+  );
 
-      toast.success(
-        action === 'approve' ? t('stageApproved') : t('stageApprovalReverted')
-      );
-      setShowConfirm(false);
-    } catch {
-      toast.error(t('approvalError'));
-    }
-  };
+  console.log('StageApprovalButton', { stageId, pendingRequest, approval });
 
-  const handleClick = (actionType: 'approve' | 'revert') => {
-    setAction(actionType);
-    setShowConfirm(true);
-  };
-
-  const locale = currentLocale === 'pt-BR' ? ptBR : enUS;
-
-  if (isLoading) {
+  if (loadingRequests || loadingApproval) {
     return (
       <Button size="sm" variant="ghost" disabled>
         <Loader2 className="h-4 w-4 animate-spin" />
@@ -73,91 +54,65 @@ export function StageApprovalButton({
     );
   }
 
-  return (
-    <>
-      <div className="flex items-center gap-2">
-        {isApproved ? (
-          <>
-            <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
-              <CheckCircle className="h-4 w-4" />
-              <span>{t('approved')}</span>
-            </div>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => handleClick('revert')}
-              className="h-8 px-2"
-            >
-              <XCircle className="h-4 w-4 text-orange-600" />
-            </Button>
-          </>
-        ) : (
-          <>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Clock className="h-4 w-4" />
-              <span>{t('pending')}</span>
-            </div>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => handleClick('approve')}
-              className="h-8 px-2"
-            >
-              <CheckCircle className="h-4 w-4 text-green-600" />
-            </Button>
-          </>
+  // Se não há request pendente, não mostra nada
+  if (!pendingRequest) {
+    return null;
+  }
+
+  // Se já foi respondido, mostra o status da aprovação
+  if (approval) {
+    const statusIcon = {
+      APPROVED: <CheckCircle className="h-4 w-4" />,
+      APPROVED_WITH_REMARKS: <AlertCircle className="h-4 w-4" />,
+      REJECTED: <XCircle className="h-4 w-4" />,
+    }[approval.status];
+
+    const statusText = {
+      APPROVED: t('approved'),
+      APPROVED_WITH_REMARKS: t('approveWithRemarks'),
+      REJECTED: t('rejected'),
+    }[approval.status];
+
+    return (
+      <div className="space-y-2">
+        <Badge className={ApprovalStatusColors[approval.status]}>
+          <div className="flex items-center gap-1">
+            {statusIcon}
+            <span>{statusText}</span>
+          </div>
+        </Badge>
+        {approval.comment && (
+          <div className="flex items-start gap-2 text-sm text-muted-foreground bg-muted p-2 rounded">
+            <MessageSquare className="h-4 w-4 flex-shrink-0 mt-0.5" />
+            <p>{approval.comment}</p>
+          </div>
         )}
       </div>
+    );
+  }
 
-      {lastApproval && (
-        <div className="text-xs text-muted-foreground">
-          {t('by')} {t('unknownUser')} •{' '}
-          {formatDistanceToNow(new Date(lastApproval.createdAt), {
-            addSuffix: true,
-            locale,
-          })}
-        </div>
-      )}
+  // Se há request pendente e não foi respondido, mostra botão para responder
+  return (
+    <>
+      <Button
+        size="sm"
+        onClick={() => setShowModal(true)}
+        className="bg-blue-600 hover:bg-blue-700"
+      >
+        <MessageSquare className="h-4 w-4 mr-2" />
+        {t('respondApprovalRequest')}
+      </Button>
 
-      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {action === 'approve' ? t('confirmApproval') : t('confirmRevert')}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {action === 'approve'
-                ? t('confirmApprovalDescription', { stageName })
-                : t('confirmRevertDescription', { stageName })}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={createApprovalMutation.isPending}>
-              {t('cancel')}
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirm}
-              disabled={createApprovalMutation.isPending}
-              className={
-                action === 'approve'
-                  ? 'bg-green-600 hover:bg-green-700'
-                  : 'bg-orange-600 hover:bg-orange-700'
-              }
-            >
-              {createApprovalMutation.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  {t('processing')}
-                </>
-              ) : action === 'approve' ? (
-                t('approve')
-              ) : (
-                t('revert')
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ApprovalModal
+        open={showModal}
+        onOpenChange={setShowModal}
+        approvalRequestId={pendingRequest.id}
+        projectName={projectName}
+        stageName={stageName}
+        onSuccess={() => {
+          // Modal fecha e dados são revalidados automaticamente
+        }}
+      />
     </>
   );
 }

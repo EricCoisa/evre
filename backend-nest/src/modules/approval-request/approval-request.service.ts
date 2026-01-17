@@ -146,13 +146,6 @@ export class ApprovalRequestService implements IBaseService<
       );
     }
 
-    // Validar que o admin pertence à mesma company do projeto
-    if (admin.companyId !== project.companyId) {
-      throw new ForbiddenException(
-        this.i18n.t('approval_request.company_mismatch', { lang: 'en' }),
-      );
-    }
-
     // Validar que o stage existe e pertence ao projeto
     const stage = await this.prisma.stage.findUnique({
       where: { id: dto.stageId },
@@ -264,12 +257,6 @@ export class ApprovalRequestService implements IBaseService<
       );
     }
 
-    if (admin.companyId !== project.companyId) {
-      throw new ForbiddenException(
-        this.i18n.t('approval_request.company_mismatch', { lang: 'en' }),
-      );
-    }
-
     const approvalRequest = await this.prisma.approvalRequest.update({
       where: { id },
       data: {
@@ -322,12 +309,6 @@ export class ApprovalRequestService implements IBaseService<
     if (!project) {
       throw new NotFoundException(
         this.i18n.t('project.not_found', { lang: 'en' }),
-      );
-    }
-
-    if (admin.companyId !== project.companyId) {
-      throw new ForbiddenException(
-        this.i18n.t('approval_request.company_mismatch', { lang: 'en' }),
       );
     }
 
