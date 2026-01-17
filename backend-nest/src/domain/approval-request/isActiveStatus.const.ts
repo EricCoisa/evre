@@ -1,0 +1,8 @@
+export const IsActiveStatusConst = {
+  ACTIVE: 'true',
+  INACTIVE: 'false',
+};
+
+export type IsActiveStatus = keyof typeof IsActiveStatusConst;
+export type IsActiveStatusValue =
+  (typeof IsActiveStatusConst)[keyof typeof IsActiveStatusConst];

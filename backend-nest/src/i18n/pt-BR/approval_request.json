@@ -1,0 +1,20 @@
+{
+  "create": {
+    "title": "Criar novo approvalrequest",
+    "description": "Registrar um novo approvalrequest no sistema"
+  },
+  "list": {
+    "title": "Listar approvalrequests"
+  },
+  "find": {
+    "title": "Obter approvalrequest por ID"
+  },
+  "update": {
+    "title": "Atualizar approvalrequest"
+  },
+  "delete": {
+    "title": "Excluir approvalrequest"
+  },
+  "not_found": "ApprovalRequest não encontrado",
+  "deleted_successfully": "ApprovalRequest excluído com sucesso"
+}

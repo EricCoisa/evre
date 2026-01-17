@@ -109,6 +109,7 @@ enum LogModule {
   COMMENT
   APPROVAL
   PROJECT_HISTORY
+  APPROVAL_REQUEST
 }
 
 // Example model - customize as needed
@@ -474,4 +475,16 @@ model ContractDocument {
   @@index([proposalId])
   @@index([status])
   @@map("contract_documents")
+}
+
+
+model ApprovalRequest {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("approval_requests")
 }

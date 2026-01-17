@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ApprovalRequestModule } from './modules/approval-request/approval-request.module';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -82,6 +83,7 @@ import { ClientLogModule } from './modules/clientLog/clientLog.module';
     ProjectHistoryModule,
     ContactModule,
     ClientLogModule,
+    ApprovalRequestModule,
   ],
 })
 export class AppModule {}

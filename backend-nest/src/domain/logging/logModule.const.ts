@@ -18,6 +18,7 @@ export const LogModuleConst = {
   APPROVAL: 'APPROVAL',
   PROJECT_HISTORY: 'PROJECT_HISTORY',
   CONTRACT_DOCUMENT: 'CONTRACT_DOCUMENT',
+  APPROVAL_REQUEST: 'APPROVAL_REQUEST', // Adicionado pelo Plop
 };
 
 export type LogModule = keyof typeof LogModuleConst;

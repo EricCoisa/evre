@@ -1,0 +1,20 @@
+{
+  "create": {
+    "title": "Create new approvalrequest",
+    "description": "Register a new approvalrequest in the system"
+  },
+  "list": {
+    "title": "List approvalrequests"
+  },
+  "find": {
+    "title": "Get approvalrequest by ID"
+  },
+  "update": {
+    "title": "Update approvalrequest"
+  },
+  "delete": {
+    "title": "Delete approvalrequest"
+  },
+  "not_found": "ApprovalRequest not found",
+  "deleted_successfully": "ApprovalRequest deleted successfully"
+}
