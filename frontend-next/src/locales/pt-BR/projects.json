@@ -156,5 +156,9 @@
   "commentRequiredMessage": "Comentário é obrigatório para este tipo de decisão",
   "submitDecision": "Enviar Decisão",
   "approvalSubmitted": "Sua decisão foi enviada com sucesso",
-  "pendingApproval": "Aprovação Pendente"
+  "pendingApproval": "Aprovação Pendente",
+  "approvalRequested": "Aprovação Solicitada",
+  "requestedBy": "Solicitado por",
+  "respondedBy": "Respondido por",
+  "stage": "Etapa"
 }

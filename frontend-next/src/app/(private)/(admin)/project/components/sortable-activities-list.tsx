@@ -22,7 +22,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { GripVertical, Pencil, Trash2 } from 'lucide-react';
+import { GripVertical, Pencil, Trash2, MessageCircle } from 'lucide-react';
 import type { Activity } from '@/lib/actions/project/types';
 import { useUpdateActivity, useDeleteActivity, useActivityStatus } from '@/lib/actions/project/queries';
 import { useQueryClient } from '@tanstack/react-query';
@@ -32,11 +32,13 @@ import { set, z } from 'zod';
 import type { FieldConfig } from '@/lib/form/field-config';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { CommentModal } from '@/app/(private)/(client)/home/[id]/components/comment-modal';
 
 interface SortableActivitiesListProps {
   activities: Activity[];
   stageId: string;
   isAdmin?: boolean;
+  projectId?: string;
 }
 
 function SortableActivityRow({ 
@@ -46,6 +48,7 @@ function SortableActivityRow({
   onStatusChange,
   isAdmin,
   activityStatusList,
+  projectId,
 }: { 
   activity: Activity;
   onEdit: (activity: Activity) => void;
@@ -53,7 +56,10 @@ function SortableActivityRow({
   onStatusChange: (activityId: string, status: string) => void;
   isAdmin?: boolean;
   activityStatusList?: string[];
+  projectId?: string;
 }) {
+  const [showComments, setShowComments] = useState(false);
+  
   const {
     attributes,
     listeners,
@@ -70,74 +76,95 @@ function SortableActivityRow({
   };
 
   return (
-    <div 
-      ref={setNodeRef} 
-      style={style} 
-      className={`flex items-start justify-between border-l-2 pl-3 py-2 gap-2 ${isDragging ? 'z-50 bg-muted' : ''}`}
-    >
-      <div className="flex items-start gap-2 flex-1">
-        <button
-          className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded touch-none mt-0.5"
-          {...attributes}
-          {...listeners}
-        >
-          <GripVertical className="h-4 w-4 text-muted-foreground" />
-        </button>
-        <div className="flex-1">
-          <p className="font-medium">{activity.title}</p>
-          {activity.description && (
-            <p className="text-sm text-muted-foreground">{activity.description}</p>
+    <>
+      <div 
+        ref={setNodeRef} 
+        style={style} 
+        className={`flex items-start justify-between border-l-2 pl-3 py-2 gap-2 ${isDragging ? 'z-50 bg-muted' : ''}`}
+      >
+        <div className="flex items-start gap-2 flex-1">
+          <button
+            className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded touch-none mt-0.5"
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical className="h-4 w-4 text-muted-foreground" />
+          </button>
+          <div className="flex-1">
+            <p className="font-medium">{activity.title}</p>
+            {activity.description && (
+              <p className="text-sm text-muted-foreground">{activity.description}</p>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {isAdmin ? (
+            <Select
+              value={activity.status}
+              onValueChange={(value) => onStatusChange(activity.id, value)}
+            >
+              <SelectTrigger className="w-[110px] h-8">
+                <SelectValue>
+                  <Badge>{activity.status}</Badge>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {activityStatusList?.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    <Badge>{status}</Badge>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Badge>{activity.status}</Badge>
+          )}
+          {isAdmin && (
+            <>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setShowComments(true)}
+                className="h-8 w-8 p-0"
+              >
+                <MessageCircle className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => onEdit(activity)}
+                className="h-8 w-8 p-0"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => onDelete(activity.id)}
+                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </>
           )}
         </div>
       </div>
-      <div className="flex items-center gap-2">
-        {isAdmin ? (
-          <Select
-            value={activity.status}
-            onValueChange={(value) => onStatusChange(activity.id, value)}
-          >
-            <SelectTrigger className="w-[110px] h-8">
-              <SelectValue>
-                <Badge>{activity.status}</Badge>
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {activityStatusList?.map((status) => (
-                <SelectItem key={status} value={status}>
-                  <Badge>{status}</Badge>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ) : (
-          <Badge>{activity.status}</Badge>
-        )}
-        {isAdmin && (
-          <>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => onEdit(activity)}
-              className="h-8 w-8 p-0"
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => onDelete(activity.id)}
-              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </>
-        )}
-      </div>
-    </div>
+      
+      {projectId && (
+        <CommentModal
+          isOpen={showComments}
+          onClose={() => setShowComments(false)}
+          entityType="ACTIVITY"
+          entityId={activity.id}
+          projectId={projectId}
+          entityName={activity.title}
+        />
+      )}
+    </>
   );
 }
 
-export function SortableActivitiesList({ activities: initialActivities, stageId, isAdmin = false }: SortableActivitiesListProps) {
+export function SortableActivitiesList({ activities: initialActivities, stageId, isAdmin = false, projectId }: SortableActivitiesListProps) {
   const { t } = useTranslation('projects');
   const queryClient = useQueryClient();
   const [activities, setActivities] = useState(initialActivities);
@@ -318,6 +345,7 @@ export function SortableActivitiesList({ activities: initialActivities, stageId,
                   onStatusChange={handleStatusChange}
                   isAdmin={isAdmin}
                   activityStatusList={activityStatusList}
+                  projectId={projectId}
                 />
               ))}
             </div>

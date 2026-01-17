@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { formatDate } from '@/lib/utils';
 import { useState, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Plus, Pencil, ChevronUp, ChevronDown } from 'lucide-react';
+import { Plus, Pencil, ChevronUp, ChevronDown, MessageCircle, MessageSquare, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import { z } from 'zod';
 import { useQueryClient } from '@tanstack/react-query';
 import type { FieldConfig } from '@/lib/form/field-config';
@@ -19,6 +19,9 @@ import { SortableActivitiesList } from '../sortable-activities-list';
 import Modal from '@/components/modal';
 import { useTranslation } from '@/hooks/use-translation';
 import { StageApprovalRequestButton } from '@/app/(private)/(admin)/project/components/stage-approval-request-button';
+import { CommentModal } from '@/app/(private)/(client)/home/[id]/components/comment-modal';
+import { useApprovalRequestsByStage } from '@/lib/actions/approval-request/queries';
+import { useApprovalByRequest } from '@/lib/actions/project/queries';
 
 interface StageItemProps {
   stage: Stage;
@@ -40,6 +43,7 @@ export function StageItem({
   const { t } = useTranslation('projects');
   const queryClient = useQueryClient();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [showComments, setShowComments] = useState(false);
   
   const { data: activitiesData } = useActivitiesByStage(stage.id, { 
     pagination: false 
@@ -50,6 +54,14 @@ export function StageItem({
   const createActivity = useCreateActivity();
   const updateStage = useUpdateStage();
   const updateStageStatus = useUpdateStageStatus();
+
+  // Buscar approval requests para este stage
+  const { data: approvalRequestsData } = useApprovalRequestsByStage(stage.id);
+  const approvalRequests = approvalRequestsData || [];
+  const pendingRequest = approvalRequests.find(req => req.status === 'PENDING');
+  
+  // Buscar a aprovação correspondente se existir request pendente
+  const { data: approval } = useApprovalByRequest(pendingRequest?.id || '');
 
   const activities = Array.isArray(activitiesData) ? activitiesData : activitiesData?.data || [];
   const approvals = approvalsData || [];
@@ -181,6 +193,14 @@ export function StageItem({
                 <Button
                   size="sm"
                   variant="ghost"
+                  onClick={() => setShowComments(true)}
+                  className="h-8 w-8 p-0"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
                   onClick={() => handleMoveStage('up')}
                   disabled={stageIndex === 0}
                   className="h-8 w-8 p-0"
@@ -250,27 +270,79 @@ export function StageItem({
             {activities.length === 0 ? (
               <p className="text-sm text-muted-foreground">{t('noActivities')}</p>
             ) : (
-              <SortableActivitiesList activities={activities} stageId={stage.id} isAdmin={isAdmin} />
+              <SortableActivitiesList 
+                activities={activities} 
+                stageId={stage.id} 
+                isAdmin={isAdmin} 
+                projectId={project.id}
+              />
             )}
           </div>
 
           <div>
             <p className="text-sm font-medium mb-2"><LangLabel text="approvals" langJson="projects" /></p>
-            {approvals.length === 0 ? (
+            
+            {/* Approval Request Status */}
+            {pendingRequest && (
+              <div className="mb-3 p-3 border rounded-lg bg-blue-50 dark:bg-blue-950">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium">{t('approvalRequested')}</span>
+                  </div>
+                  <Badge variant="outline" className="bg-blue-100 text-blue-700">
+                    {pendingRequest.status}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {t('requestedBy')}: {pendingRequest.requestedBy?.name || t('unknownUser')}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {formatDate(pendingRequest.createdAt.toString())}
+                </p>
+                
+                {/* Client Response */}
+                {approval && (
+                  <div className="mt-3 pt-3 border-t">
+                    <div className="flex items-center gap-2 mb-2">
+                      {approval.status === 'APPROVED' && <CheckCircle className="h-4 w-4 text-green-600" />}
+                      {approval.status === 'APPROVED_WITH_REMARKS' && <AlertCircle className="h-4 w-4 text-yellow-600" />}
+                      {approval.status === 'REJECTED' && <XCircle className="h-4 w-4 text-red-600" />}
+                      <Badge className={ApprovalStatusColors[approval.status]}>
+                        {approval.status}
+                      </Badge>
+                    </div>
+                    {approval.comment && (
+                      <div className="flex items-start gap-2 text-sm bg-muted p-2 rounded mt-2">
+                        <MessageSquare className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                        <p>{approval.comment}</p>
+                      </div>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {formatDate(approval.createdAt.toString())}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Historical Approvals */}
+            {approvals.length === 0 && !pendingRequest ? (
               <p className="text-sm text-muted-foreground">{t('noApprovals')}</p>
-            ) : (
+            ) : approvals.length > 0 && (
               <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">{t('history')}</p>
                 {approvals.map((approval: Approval) => (
-                  <div key={approval.id} className="flex items-start justify-between text-sm">
+                  <div key={approval.id} className="flex items-start justify-between text-sm border-l-2 pl-2">
                     <div>
                       <Badge className={ApprovalStatusColors[approval.status as keyof typeof ApprovalStatusColors]}>
                         {approval.status}
                       </Badge>
                       {approval.comment && (
-                        <p className="text-muted-foreground mt-1">{approval.comment}</p>
+                        <p className="text-muted-foreground mt-1 text-xs">{approval.comment}</p>
                       )}
                     </div>
-                    <span className="text-muted-foreground">{formatDate(approval.createdAt)}</span>
+                    <span className="text-muted-foreground text-xs">{formatDate(approval.createdAt)}</span>
                   </div>
                 ))}
               </div>
@@ -298,6 +370,15 @@ export function StageItem({
           }}
         />
       </Modal>
+
+      <CommentModal
+        isOpen={showComments}
+        onClose={() => setShowComments(false)}
+        entityType="STAGE"
+        entityId={stage.id}
+        projectId={project.id}
+        entityName={stage.name}
+      />
     </>
   );
 }

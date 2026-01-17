@@ -156,5 +156,9 @@
   "commentRequiredMessage": "Comment is required for this type of decision",
   "submitDecision": "Submit Decision",
   "approvalSubmitted": "Your decision has been submitted successfully",
-  "pendingApproval": "Pending Approval"
+  "pendingApproval": "Pending Approval",
+  "approvalRequested": "Approval Requested",
+  "requestedBy": "Requested by",
+  "respondedBy": "Responded by",
+  "stage": "Stage"
 }
