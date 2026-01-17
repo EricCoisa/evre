@@ -69,6 +69,7 @@ enum ProjectHistoryType {
   STATUS_CHANGE
   COMMENT
   APPROVAL
+  APPROVAL_REQUESTED
   STAGE_CREATED
   STAGE_UPDATED
   STAGE_DELETED
@@ -87,6 +88,12 @@ enum CommentEntityType {
 
 enum ApprovalEntityType {
   STAGE
+}
+
+enum ApprovalRequestStatus {
+  PENDING
+  ANSWERED
+  CANCELED
 }
 
 enum LogModule {
@@ -133,6 +140,7 @@ model User {
   company             Company?             @relation(fields: [companyId], references: [id], onDelete: SetNull)
   comments            Comment[]
   approvals           Approval[]
+  approvalRequests    ApprovalRequest[]
 
   @@index([companyId])
   @@map("users")
@@ -332,6 +340,7 @@ model Project {
   contracts   ContractDocument[] // Um projeto pode ter vários contratos
   comments    Comment[]
   approvals   Approval[]
+  approvalRequests ApprovalRequest[]
   clientLogs  ClientLog[]      // Adicionando relação inversa com ClientLog
 
   @@index([companyId])
@@ -350,6 +359,7 @@ model Stage {
 
   project    Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
   activities Activity[]
+  approvalRequests ApprovalRequest[]
 
   @@index([projectId])
   @@index([order])
@@ -479,12 +489,22 @@ model ContractDocument {
 
 
 model ApprovalRequest {
-  id          String   @id @default(uuid())
-  name        String
-  description String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  id            String                 @id @default(uuid())
+  projectId     String
+  stageId       String
+  requestedById String
+  status        ApprovalRequestStatus  @default(PENDING)
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+
+  project       Project                @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  stage         Stage                  @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  requestedBy   User                   @relation(fields: [requestedById], references: [id], onDelete: Cascade)
+
+  @@unique([stageId, status], map: "unique_pending_per_stage")
+  @@index([projectId])
+  @@index([stageId])
+  @@index([requestedById])
+  @@index([status])
   @@map("approval_requests")
 }

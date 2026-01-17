@@ -1,7 +1,8 @@
 'use client';
 
-import { Stage, ApprovalStatusColors, Approval, StageStatus } from '@/lib/actions/project/types';
+import { Stage, ApprovalStatusColors, Approval, StageStatus, Project } from '@/lib/actions/project/types';
 import { useActivitiesByStage, useApprovalsByStage, useActivityStatus, useUpdateStage, useCreateActivity, useStageStatus, useUpdateStageStatus } from '@/lib/actions/project/queries';
+import { useApprovalRequests, useCreateApprovalRequest } from '@/lib/actions/approval-request/queries';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,7 @@ interface StageItemProps {
   stages: Stage[];
   stageIndex: number;
   totalStages: number;
+  project: Project;
 }
 
 export function StageItem({ 
@@ -32,7 +34,8 @@ export function StageItem({
   isAdmin, 
   stages, 
   stageIndex, 
-  totalStages 
+  totalStages,
+  project
 }: StageItemProps) {
   const { t } = useTranslation('projects');
   const queryClient = useQueryClient();
@@ -48,8 +51,15 @@ export function StageItem({
   const updateStage = useUpdateStage();
   const updateStageStatus = useUpdateStageStatus();
 
+  const { data: approvalRequestsData } = useApprovalRequests({ filter: { stageId: stage.id } });
+  const createApprovalRequest = useCreateApprovalRequest();
+
   const activities = Array.isArray(activitiesData) ? activitiesData : activitiesData?.data || [];
   const approvals = approvalsData || [];
+  const approvalRequests = Array.isArray(approvalRequestsData) ? approvalRequestsData : approvalRequestsData?.data || [];
+
+  const hasPendingRequest = approvalRequests.some(req => req.status === 'PENDING');
+  const hasApproval = approvals.length > 0;
 
   // Schema e config para editar Stage
   const updateStageSchema = useMemo(() =>
@@ -200,6 +210,15 @@ export function StageItem({
                   className="h-8 w-8 p-0"
                 >
                   <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => createApprovalRequest.mutateAsync({ projectId: project.id, stageId: stage.id })}
+                  disabled={createApprovalRequest.isPending || hasPendingRequest || hasApproval}
+                  className="ml-2"
+                >
+                  {createApprovalRequest.isPending ? t('sending') : t('sendToApproval')}
                 </Button>
               </div>
             )}

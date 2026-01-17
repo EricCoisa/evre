@@ -138,5 +138,6 @@
   "editCompany": "Editar Empresa",
   "editCompanyDescription": "Editar informações da empresa.",
   "inviteTokenCreated": "Token de Convite Criado",
-  "inviteTokenDescription": "Copie e compartilhe este token com o usuário convidado."
+  "inviteTokenDescription": "Copie e compartilhe este token com o usuário convidado.",
+  "sendToApproval": "Solicitar Aprovação"
 }

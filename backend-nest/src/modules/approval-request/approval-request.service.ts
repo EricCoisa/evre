@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { I18nService } from 'nestjs-i18n';
 import { PrismaService } from '../../prisma/prisma.service';
 import { LoggingService } from '../logging/logging.service';
@@ -9,7 +14,10 @@ import type { UpdateApprovalRequestDto } from './dto/update-approval-request.dto
 import type { PaginationQuery } from '../../common/schemas/pagination.schema';
 import type { PaginatedResponse } from '../../common/types/pagination.types';
 import { LogActions } from 'src/common/types/logging.types';
-import { IsActiveStatusConst } from 'src/domain/approval-request/isActiveStatus.const';
+import {
+  ApprovalRequestStatus,
+  ApprovalRequestStatusEnum,
+} from 'src/domain/approval-request/approval-requestStatus.const';
 
 @Injectable()
 export class ApprovalRequestService implements IBaseService<
@@ -26,34 +34,32 @@ export class ApprovalRequestService implements IBaseService<
   async findAll(
     query: PaginationQuery,
   ): Promise<PaginatedResponse<ApprovalRequest> | ApprovalRequest[]> {
-    const { page, limit, pagination, search, filter } = query;
+    const { page, limit, pagination, filter } = query;
 
-    // Constrói a cláusula where separando search e filter
     const where: {
-      OR?: Array<{
-        name?: { contains: string; mode: 'insensitive' };
-        description?: { contains: string; mode: 'insensitive' };
-      }>;
-      isActive?: boolean;
+      status?: ApprovalRequestStatus;
+      stageId?: string;
     } = {};
 
-    // Aplica filtro de busca global (search)
-    if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-      ];
+    // Filtro por status
+    if (filter?.status) {
+      where.status = filter.status as ApprovalRequestStatus;
     }
 
-    // Aplica filtros específicos (filter)
-    if (filter?.isActive !== undefined) {
-      where.isActive = String(filter.isActive) === 'true';
+    // Filtro por stageId
+    if (filter?.stageId) {
+      where.stageId = filter.stageId;
     }
 
     if (!pagination) {
       const data = await this.prisma.approvalRequest.findMany({
         where,
         orderBy: { createdAt: 'desc' },
+        include: {
+          project: { select: { id: true, name: true } },
+          stage: { select: { id: true, name: true } },
+          requestedBy: { select: { id: true, name: true, email: true } },
+        },
       });
       return data;
     }
@@ -66,13 +72,16 @@ export class ApprovalRequestService implements IBaseService<
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
+        include: {
+          project: { select: { id: true, name: true } },
+          stage: { select: { id: true, name: true } },
+          requestedBy: { select: { id: true, name: true, email: true } },
+        },
       }),
       this.prisma.approvalRequest.count({ where }),
     ]);
 
     const totalPages = Math.ceil(total / limit);
-
-    const isActiveStatusSet = Object.values(IsActiveStatusConst);
 
     return {
       data,
@@ -83,14 +92,19 @@ export class ApprovalRequestService implements IBaseService<
         totalPages,
       },
       filter: {
-        isActive: Array.from(isActiveStatusSet),
+        status: Object.values(ApprovalRequestStatus),
       },
     };
   }
 
-  async findOne(id: string): Promise<ApprovalRequest | null> {
+  async findOne(id: string): Promise<ApprovalRequest> {
     const approvalRequest = await this.prisma.approvalRequest.findUnique({
       where: { id },
+      include: {
+        project: { select: { id: true, name: true, companyId: true } },
+        stage: { select: { id: true, name: true, projectId: true } },
+        requestedBy: { select: { id: true, name: true, email: true } },
+      },
     });
 
     if (!approvalRequest) {
@@ -104,19 +118,114 @@ export class ApprovalRequestService implements IBaseService<
     return approvalRequest;
   }
 
-  async create(dto: CreateApprovalRequestDto, performedById: string): Promise<ApprovalRequest> {
-    const approvalRequest = await this.prisma.approvalRequest.create({
-      data: {
-        ...dto,
+  async create(
+    dto: CreateApprovalRequestDto,
+    performedById: string,
+  ): Promise<ApprovalRequest> {
+    // Buscar informações do usuário admin
+    const admin = await this.prisma.user.findUnique({
+      where: { id: performedById },
+      select: { role: true, companyId: true },
+    });
+
+    if (!admin || admin.role !== 'ADMIN') {
+      throw new ForbiddenException(
+        this.i18n.t('approval_request.admin_only', { lang: 'en' }),
+      );
+    }
+
+    // Validar que o projeto existe
+    const project = await this.prisma.project.findUnique({
+      where: { id: dto.projectId },
+      select: { id: true, companyId: true },
+    });
+
+    if (!project) {
+      throw new NotFoundException(
+        this.i18n.t('project.not_found', { lang: 'en' }),
+      );
+    }
+
+    // Validar que o admin pertence à mesma company do projeto
+    if (admin.companyId !== project.companyId) {
+      throw new ForbiddenException(
+        this.i18n.t('approval_request.company_mismatch', { lang: 'en' }),
+      );
+    }
+
+    // Validar que o stage existe e pertence ao projeto
+    const stage = await this.prisma.stage.findUnique({
+      where: { id: dto.stageId },
+      select: { id: true, projectId: true, name: true },
+    });
+
+    if (!stage) {
+      throw new NotFoundException(
+        this.i18n.t('stage.not_found', { lang: 'en' }),
+      );
+    }
+
+    if (stage.projectId !== dto.projectId) {
+      throw new BadRequestException(
+        this.i18n.t('approval_request.stage_not_in_project', { lang: 'en' }),
+      );
+    }
+
+    // Validar que não existe um ApprovalRequest PENDING para este stage
+    const existingPendingRequest = await this.prisma.approvalRequest.findFirst({
+      where: {
+        stageId: dto.stageId,
+        status: ApprovalRequestStatusEnum.PENDING,
       },
     });
 
+    if (existingPendingRequest) {
+      throw new BadRequestException(
+        this.i18n.t('approval_request.already_pending', { lang: 'en' }),
+      );
+    }
+
+    // Criar o ApprovalRequest
+    const approvalRequest = await this.prisma.approvalRequest.create({
+      data: {
+        projectId: dto.projectId,
+        stageId: dto.stageId,
+        requestedById: performedById,
+        status: ApprovalRequestStatusEnum.PENDING,
+      },
+      include: {
+        project: { select: { id: true, name: true } },
+        stage: { select: { id: true, name: true } },
+        requestedBy: { select: { id: true, name: true, email: true } },
+      },
+    });
+
+    // Registrar no histórico do projeto
+    await this.prisma.projectHistory.create({
+      data: {
+        projectId: dto.projectId,
+        type: 'APPROVAL_REQUESTED',
+        payload: JSON.stringify({
+          stageId: dto.stageId,
+          stageName: stage.name,
+          requestedById: performedById,
+          approvalRequestId: approvalRequest.id,
+          timestamp: new Date().toISOString(),
+        }),
+      },
+    });
+
+    // Log da ação
     await this.loggingService.create(
       {
         module: 'APPROVAL_REQUEST',
         action: LogActions.CREATE,
-        message: `ApprovalRequest created: ${dto.name}`,
-        metadata: { approvalRequestId: approvalRequest.id },
+        message: `Approval request created for stage: ${stage.name}`,
+        metadata: {
+          approvalRequestId: approvalRequest.id,
+          projectId: dto.projectId,
+          stageId: dto.stageId,
+        },
       },
       performedById,
     );
@@ -129,12 +238,47 @@ export class ApprovalRequestService implements IBaseService<
     dto: UpdateApprovalRequestDto,
     performedById: string,
   ): Promise<ApprovalRequest> {
-    await this.findOne(id);
+    const existing = await this.findOne(id);
+
+    // Validar se o usuário é admin da mesma company
+    const admin = await this.prisma.user.findUnique({
+      where: { id: performedById },
+      select: { role: true, companyId: true },
+    });
+
+    if (!admin || admin.role !== 'ADMIN') {
+      throw new ForbiddenException(
+        this.i18n.t('approval_request.admin_only', { lang: 'en' }),
+      );
+    }
+
+    // Buscar o projeto para verificar a company
+    const project = await this.prisma.project.findUnique({
+      where: { id: existing.projectId },
+      select: { companyId: true },
+    });
+
+    if (!project) {
+      throw new NotFoundException(
+        this.i18n.t('project.not_found', { lang: 'en' }),
+      );
+    }
+
+    if (admin.companyId !== project.companyId) {
+      throw new ForbiddenException(
+        this.i18n.t('approval_request.company_mismatch', { lang: 'en' }),
+      );
+    }
 
     const approvalRequest = await this.prisma.approvalRequest.update({
       where: { id },
       data: {
         ...dto,
+      },
+      include: {
+        project: { select: { id: true, name: true } },
+        stage: { select: { id: true, name: true } },
+        requestedBy: { select: { id: true, name: true, email: true } },
       },
     });
 
@@ -142,7 +286,7 @@ export class ApprovalRequestService implements IBaseService<
       {
         module: 'APPROVAL_REQUEST',
         action: LogActions.UPDATE,
-        message: `ApprovalRequest updated: approvalRequest`,
+        message: `Approval request updated`,
         metadata: { approvalRequestId: id },
       },
       performedById,
@@ -155,7 +299,37 @@ export class ApprovalRequestService implements IBaseService<
     performedById: string,
     id: string,
   ): Promise<{ status: boolean; message: string }> {
-    await this.findOne(id);
+    const existing = await this.findOne(id);
+
+    // Validar se o usuário é admin da mesma company
+    const admin = await this.prisma.user.findUnique({
+      where: { id: performedById },
+      select: { role: true, companyId: true },
+    });
+
+    if (!admin || admin.role !== 'ADMIN') {
+      throw new ForbiddenException(
+        this.i18n.t('approval_request.admin_only', { lang: 'en' }),
+      );
+    }
+
+    // Buscar o projeto para verificar a company
+    const project = await this.prisma.project.findUnique({
+      where: { id: existing.projectId },
+      select: { companyId: true },
+    });
+
+    if (!project) {
+      throw new NotFoundException(
+        this.i18n.t('project.not_found', { lang: 'en' }),
+      );
+    }
+
+    if (admin.companyId !== project.companyId) {
+      throw new ForbiddenException(
+        this.i18n.t('approval_request.company_mismatch', { lang: 'en' }),
+      );
+    }
 
     await this.prisma.approvalRequest.delete({
       where: { id },
@@ -165,7 +339,7 @@ export class ApprovalRequestService implements IBaseService<
       {
         module: 'APPROVAL_REQUEST',
         action: LogActions.DELETE,
-        message: `ApprovalRequest deleted: approvalRequest`,
+        message: `Approval request deleted`,
         metadata: { approvalRequestId: id },
       },
       performedById,

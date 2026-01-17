@@ -1,14 +1,13 @@
 import { createZodDto } from 'nestjs-zod';
+import { ApprovalRequestStatusEnum } from 'src/domain/approval-request/approval-requestStatus.const';
 import { z } from 'zod';
 
 export const UpdateApprovalRequestSchema = z
   .object({
-    name: z.string().min(1).optional().describe('Name of the approvalrequest'),
-    description: z
-      .string()
+    status: z
+      .nativeEnum(ApprovalRequestStatusEnum)
       .optional()
-      .describe('Description of the approvalrequest'),
-    isActive: z.boolean().optional().describe('Active status'),
+      .describe('Approval request status'),
   })
   .strict();
 

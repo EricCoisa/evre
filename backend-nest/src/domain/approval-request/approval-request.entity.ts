@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { ApprovalRequestStatus } from './approval-requestStatus.const';
 
 export class ApprovalRequest {
   @ApiProperty({
@@ -8,23 +9,29 @@ export class ApprovalRequest {
   id: string;
 
   @ApiProperty({
-    description: 'Name of the approvalrequest',
-    example: 'Example ApprovalRequest',
+    description: 'Project ID',
+    example: '550e8400-e29b-41d4-a716-446655440001',
   })
-  name: string;
+  projectId: string;
 
   @ApiProperty({
-    description: 'Description of the approvalrequest',
-    example: 'This is an example description',
-    required: false,
+    description: 'Stage ID',
+    example: '550e8400-e29b-41d4-a716-446655440002',
   })
-  description?: string | null;
+  stageId: string;
 
   @ApiProperty({
-    description: 'Active status',
-    example: true,
+    description: 'ID of the admin who requested the approval',
+    example: '550e8400-e29b-41d4-a716-446655440003',
   })
-  isActive: boolean;
+  requestedById: string;
+
+  @ApiProperty({
+    description: 'Approval request status',
+    enum: ApprovalRequestStatus,
+    example: ApprovalRequestStatus.PENDING,
+  })
+  status: ApprovalRequestStatus;
 
   @ApiProperty({
     description: 'Creation timestamp',

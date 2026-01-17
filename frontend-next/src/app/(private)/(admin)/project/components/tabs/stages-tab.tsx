@@ -27,17 +27,17 @@ export function StagesTab({ project, isAdmin = false }: StagesTabProps) {
   const { data: stagesData } = useStagesByProject(project.id, { filter: { projectId: project.id }, pagination: false });
   const createStage = useCreateStage();
   const createApproval = useCreateApproval();
-  
-  const stages = useMemo(() => 
+
+  const stages = useMemo(() =>
     Array.isArray(stagesData) ? stagesData : stagesData?.data || [],
-  [stagesData]);
+    [stagesData]);
 
   // Schema e config para criar Stage
   const createStageSchema = useMemo(() =>
     z.object({
       name: z.string().min(1, t('stageNameRequired')),
     }),
-  [t]);
+    [t]);
 
   const stageFieldConfig = useMemo(() => ({
     name: {
@@ -53,7 +53,7 @@ export function StagesTab({ project, isAdmin = false }: StagesTabProps) {
       status: z.enum(['APPROVED', 'REJECTED']),
       comment: z.string().optional(),
     }),
-  [t]);
+    [t]);
 
   const approvalFieldConfig = useMemo(() => ({
     stageId: {
@@ -120,13 +120,14 @@ export function StagesTab({ project, isAdmin = false }: StagesTabProps) {
           ) : (
             <div className="space-y-4">
               {stages.map((stage, index) => (
-                <StageItem 
-                  key={stage.id} 
-                  stage={stage} 
-                  isAdmin={isAdmin} 
+                <StageItem
+                  key={stage.id}
+                  stage={stage}
+                  isAdmin={isAdmin}
                   stages={stages}
                   stageIndex={index}
                   totalStages={stages.length}
+                  project={project}
                 />
               ))}
             </div>

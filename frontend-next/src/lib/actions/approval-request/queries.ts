@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getApprovalRequests, getApprovalRequest, createApprovalRequest, updateApprovalRequest, deleteApprovalRequest } from "./api";
+import type { CreateApprovalRequestDto, UpdateApprovalRequestDto } from "./types";
 import { PaginationParams } from "../../types/pagination.types";
 import { getQueryConfig } from '../../utils';
 import { Collector } from "@/lib/api/collector";
@@ -30,7 +31,7 @@ export function useCreateApprovalRequest() {
     mutationFn: (data: CreateApprovalRequestDto) => createApprovalRequest(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['approvalRequests'] });
-      toast.success('ApprovalRequest created successfully');
+      toast.success('Solicitação de aprovação criada com sucesso');
     }
   });
 }
@@ -45,7 +46,7 @@ export function useUpdateApprovalRequest() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['approvalRequests'] });
       queryClient.invalidateQueries({ queryKey: ['approvalRequest', variables.id] });
-      toast.success('ApprovalRequest updated successfully');
+      toast.success('Solicitação de aprovação atualizada com sucesso');
     }
   });
 }
@@ -57,7 +58,7 @@ export function useDeleteApprovalRequest() {
     mutationFn: deleteApprovalRequest,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['approvalRequests'] });
-      toast.success('ApprovalRequest deleted successfully');
+      toast.success('Solicitação de aprovação deletada com sucesso');
     }
   });
 }

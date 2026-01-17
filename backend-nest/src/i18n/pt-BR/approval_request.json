@@ -1,20 +1,24 @@
 {
   "create": {
-    "title": "Criar novo approvalrequest",
-    "description": "Registrar um novo approvalrequest no sistema"
+    "title": "Solicitar aprovação para um estágio",
+    "description": "Criar uma solicitação de aprovação para um estágio específico do projeto"
   },
   "list": {
-    "title": "Listar approvalrequests"
+    "title": "Listar solicitações de aprovação"
   },
   "find": {
-    "title": "Obter approvalrequest por ID"
+    "title": "Obter solicitação de aprovação por ID"
   },
   "update": {
-    "title": "Atualizar approvalrequest"
+    "title": "Atualizar solicitação de aprovação"
   },
   "delete": {
-    "title": "Excluir approvalrequest"
+    "title": "Deletar solicitação de aprovação"
   },
-  "not_found": "ApprovalRequest não encontrado",
-  "deleted_successfully": "ApprovalRequest excluído com sucesso"
+  "not_found": "Solicitação de aprovação não encontrada",
+  "deleted_successfully": "Solicitação de aprovação deletada com sucesso",
+  "admin_only": "Apenas administradores podem gerenciar solicitações de aprovação",
+  "company_mismatch": "Você não tem permissão para gerenciar esta solicitação de aprovação",
+  "stage_not_in_project": "O estágio não pertence ao projeto especificado",
+  "already_pending": "Já existe uma solicitação de aprovação pendente para este estágio"
 }

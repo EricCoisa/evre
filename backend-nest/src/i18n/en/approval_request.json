@@ -1,20 +1,24 @@
 {
   "create": {
-    "title": "Create new approvalrequest",
-    "description": "Register a new approvalrequest in the system"
+    "title": "Request approval for a stage",
+    "description": "Create an approval request for a specific project stage"
   },
   "list": {
-    "title": "List approvalrequests"
+    "title": "List approval requests"
   },
   "find": {
-    "title": "Get approvalrequest by ID"
+    "title": "Get approval request by ID"
   },
   "update": {
-    "title": "Update approvalrequest"
+    "title": "Update approval request"
   },
   "delete": {
-    "title": "Delete approvalrequest"
+    "title": "Delete approval request"
   },
-  "not_found": "ApprovalRequest not found",
-  "deleted_successfully": "ApprovalRequest deleted successfully"
+  "not_found": "Approval request not found",
+  "deleted_successfully": "Approval request deleted successfully",
+  "admin_only": "Only administrators can manage approval requests",
+  "company_mismatch": "You do not have permission to manage this approval request",
+  "stage_not_in_project": "The stage does not belong to the specified project",
+  "already_pending": "There is already a pending approval request for this stage"
 }

@@ -1,11 +1,13 @@
 import { createZodDto } from 'nestjs-zod';
+import { ApprovalRequestStatus } from 'src/domain/approval-request/approval-requestStatus.const';
 import { z } from 'zod';
 
 export const ApprovalRequestSchema = z.object({
   id: z.string().uuid(),
-  name: z.string(),
-  description: z.string().optional().nullable(),
-  isActive: z.boolean(),
+  projectId: z.string().uuid(),
+  stageId: z.string().uuid(),
+  requestedById: z.string().uuid(),
+  status: z.nativeEnum(ApprovalRequestStatus),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
