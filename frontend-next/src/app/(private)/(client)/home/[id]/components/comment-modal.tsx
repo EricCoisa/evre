@@ -88,7 +88,7 @@ export function CommentModal({
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="font-medium text-sm">
-                    {t('unknownUser')}
+                    {comment.userName || comment.userEmail || t('unknownUser')}
                   </div>
                   <div className="text-xs text-muted-foreground">
                     {formatDistanceToNow(new Date(comment.createdAt), {

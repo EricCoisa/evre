@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Comment } from 'src/domain/project/comment.entity';
 
 export class CommentDto {
-  constructor(comment?: Comment) {
+  constructor(comment?: Comment & { user?: { name: string | null; email: string } }) {
     if (!comment) return;
     this.id = comment.id;
     this.projectId = comment.projectId;
@@ -11,6 +11,8 @@ export class CommentDto {
     this.userId = comment.userId;
     this.content = comment.content;
     this.createdAt = comment.createdAt;
+    this.userName = comment.user?.name ?? undefined;
+    this.userEmail = comment.user?.email;
   }
 
   @ApiProperty({
@@ -48,6 +50,20 @@ export class CommentDto {
     example: 'The design looks great! Let\'s proceed with implementation.',
   })
   content: string;
+
+  @ApiProperty({
+    description: 'User name (optional)',
+    example: 'John Doe',
+    required: false,
+  })
+  userName?: string;
+
+  @ApiProperty({
+    description: 'User email (optional)',
+    example: 'john@example.com',
+    required: false,
+  })
+  userEmail?: string;
 
   @ApiProperty({
     description: 'Creation timestamp',

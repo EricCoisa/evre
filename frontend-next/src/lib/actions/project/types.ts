@@ -125,6 +125,8 @@ export interface Comment {
   userId: string;
   content: string;
   createdAt: string;
+  userName?: string;
+  userEmail?: string;
 }
 
 export interface CreateCommentDto {

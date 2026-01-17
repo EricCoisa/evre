@@ -4,10 +4,11 @@ import { useState, useMemo, useEffect } from 'react';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronRight, MessageCircle } from 'lucide-react';
-import { useActivitiesByStage, useActivityStatus } from '@/lib/actions/project/queries';
+import { useActivitiesByStage, useActivityStatus, useStageApprovalState } from '@/lib/actions/project/queries';
 import { ClientActivityCard } from '../stageView/client-activity-card';
 import { CommentModal } from '../comment-modal';
 import { StageApprovalButton } from '../stageView/stage-approval-button';
+import { ApprovalStatusBadge } from '@/components/approval-status-badge';
 import type { Activity, Stage } from '@/lib/actions/project/types';
 
 interface ClientStageStatusCardProps {
@@ -35,7 +36,8 @@ export function ClientStageStatusCard({
     [activities]
   );
 
-    const { data: activitiStatus } = useActivityStatus();
+  const { data: activitiStatus } = useActivityStatus();
+  const { data: approvalState } = useStageApprovalState(stage.id);
 
 
   // Agrupa atividades dinamicamente por status
@@ -81,7 +83,10 @@ export function ClientStageStatusCard({
                 )}
               </Button>
               <div className="flex-1 space-y-2">
-                <h3 className="font-semibold text-base">{stage.name}</h3>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-semibold text-base">{stage.name}</h3>
+                  <ApprovalStatusBadge approvalState={approvalState} showComment={false} />
+                </div>
                 
                 {/* Barra de progresso */}
                 <div>

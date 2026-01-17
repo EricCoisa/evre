@@ -40,6 +40,8 @@ export function useCreateApprovalRequest() {
     mutationFn: (data: CreateApprovalRequestDto) => createApprovalRequest(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['approvalRequests'] });
+      // Invalida approval-state para atualizar badges e botões
+      queryClient.invalidateQueries({ queryKey: ['stage', 'approval-state'] });
       toast.success('Solicitação de aprovação criada com sucesso');
     }
   });

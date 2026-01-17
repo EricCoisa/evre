@@ -10,7 +10,7 @@ import { CreateApprovalDto } from './dto/create-approval.dto';
 import { ApprovalDto } from './dto/approval.dto';
 import { LoggingService } from '../logging/logging.service';
 import { LogActions } from 'src/common/types/logging.types';
-import { ApprovalEntityType } from '@prisma/client';
+import { ApprovalEntityType, ProjectHistoryType } from '@prisma/client';
 import { ApprovalStatusConst } from 'src/domain/project/approvalStatus.const';
 
 @Injectable()
@@ -95,6 +95,12 @@ export class ApprovalService {
     });
 
     if (existingApproval) {
+      console.error('[APPROVAL DEBUG] Tentativa de criar approval duplicada:', {
+        approvalRequestId: createApprovalDto.approvalRequestId,
+        existingApprovalId: existingApproval.id,
+        existingApprovalStatus: existingApproval.status,
+        requestedStatus: createApprovalDto.status,
+      });
       throw new BadRequestException(
         this.i18n.t('approval.errors.already_answered') ||
           'This approval request has already been answered',
@@ -140,7 +146,7 @@ export class ApprovalService {
     await this.prisma.projectHistory.create({
       data: {
         projectId: approvalRequest.projectId,
-        type: historyType as any,
+        type: historyType as ProjectHistoryType,
         payload: JSON.stringify({
           approvalId: approval.id,
           approvalRequestId: approval.approvalRequestId,

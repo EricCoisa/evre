@@ -410,6 +410,8 @@ export function useCreateApproval() {
       // Invalida approval requests para atualizar status
       queryClient.invalidateQueries({ queryKey: ['approvalRequests'] });
       queryClient.invalidateQueries({ queryKey: ['approvalRequest'] });
+      // Invalida approval-state para atualizar badges
+      queryClient.invalidateQueries({ queryKey: ['stage', 'approval-state'] });
     },
   });
 }

@@ -31,17 +31,15 @@ export function StageApprovalButton({
 
   const approvalRequests = approvalRequestsData || [];
 
-  // Encontra o request pendente (se houver)
+  // Encontra o request pendente (se houver) - APENAS PENDING
   const pendingRequest = approvalRequests.find(req => req.status === 'PENDING');
   
-  // Se existe request, busca a aprovação (se já foi respondida)
+  // Se existe request PENDING, busca se já tem aprovação (não deveria, mas validamos)
   const { data: approval, isLoading: loadingApproval } = useApprovalByRequest(
     pendingRequest?.id || '',
   );
 
-  console.log('StageApprovalButton', { stageId, pendingRequest, approval });
-
-  if (loadingRequests || loadingApproval) {
+  if (loadingRequests || (pendingRequest && loadingApproval)) {
     return (
       <Button size="sm" variant="ghost" disabled>
         <Loader2 className="h-4 w-4 animate-spin" />
@@ -54,36 +52,11 @@ export function StageApprovalButton({
     return null;
   }
 
-  // Se já foi respondido, mostra o status da aprovação
+  // Se o request pendente já foi respondido (não deveria acontecer), esconde o botão
   if (approval) {
-    const statusIcon = {
-      APPROVED: <CheckCircle className="h-4 w-4" />,
-      APPROVED_WITH_REMARKS: <AlertCircle className="h-4 w-4" />,
-      REJECTED: <XCircle className="h-4 w-4" />,
-    }[approval.status];
-
-    const statusText = {
-      APPROVED: t('approved'),
-      APPROVED_WITH_REMARKS: t('approveWithRemarks'),
-      REJECTED: t('rejected'),
-    }[approval.status];
-
-    return (
-      <div className="space-y-2">
-        <Badge className={ApprovalStatusColors[approval.status]}>
-          <div className="flex items-center gap-1">
-            {statusIcon}
-            <span>{statusText}</span>
-          </div>
-        </Badge>
-        {approval.comment && (
-          <div className="flex items-start gap-2 text-sm text-muted-foreground bg-muted p-2 rounded">
-            <MessageSquare className="h-4 w-4 flex-shrink-0 mt-0.5" />
-            <p>{approval.comment}</p>
-          </div>
-        )}
-      </div>
-    );
+    // Request está marcado como PENDING mas já tem approval - inconsistência
+    // O botão não deve aparecer nesse caso
+    return null;
   }
 
   // Se há request pendente e não foi respondido, mostra botão para responder

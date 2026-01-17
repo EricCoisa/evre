@@ -148,6 +148,14 @@ export class CommentService {
         entityType: entityType as CommentEntityType,
         entityId,
       },
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
       orderBy: { createdAt: 'desc' },
     });
     return comments.map((c) => new CommentDto(c));
