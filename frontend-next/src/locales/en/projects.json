@@ -140,6 +140,7 @@
   "inviteTokenCreated": "Invite Token Created",
   "inviteTokenDescription": "Copy and share this token with the invited user.",
   "sendToApproval": "Request Approval",
+  "requestNewApproval": "Request New Approval",
   "respondApprovalRequest": "Respond to Approval Request",
   "approvalModalDescription": "You are reviewing a project stage. Your decision is important for the project progress.",
   "importantDecision": "Important Decision",

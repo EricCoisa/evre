@@ -140,6 +140,7 @@
   "inviteTokenCreated": "Token de Convite Criado",
   "inviteTokenDescription": "Copie e compartilhe este token com o usuário convidado.",
   "sendToApproval": "Solicitar Aprovação",
+  "requestNewApproval": "Solicitar Nova Aprovação",
   "respondApprovalRequest": "Responder Solicitação de Aprovação",
   "approvalModalDescription": "Você está revisando uma etapa do projeto. Sua decisão é importante para o progresso do projeto.",
   "importantDecision": "Decisão Importante",

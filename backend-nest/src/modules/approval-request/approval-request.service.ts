@@ -192,6 +192,21 @@ export class ApprovalRequestService implements IBaseService<
       );
     }
 
+    // Verificar se é uma reaprovação (existe request ANSWERED anterior)
+    const previousRequest = await this.prisma.approvalRequest.findFirst({
+      where: {
+        stageId: dto.stageId,
+        status: ApprovalRequestStatusEnum.ANSWERED,
+      },
+      include: {
+        approval: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const isReapproval = !!previousRequest;
+    const wasRejected = previousRequest?.approval?.status === 'REJECTED';
+
     // Criar o ApprovalRequest
     const approvalRequest = await this.prisma.approvalRequest.create({
       data: {
@@ -208,15 +223,20 @@ export class ApprovalRequestService implements IBaseService<
     });
 
     // Registrar no histórico do projeto
+    const historyType = isReapproval ? 'APPROVAL_REQUEST_RECREATED' : 'APPROVAL_REQUESTED';
+    
     await this.prisma.projectHistory.create({
       data: {
         projectId: dto.projectId,
-        type: 'APPROVAL_REQUESTED',
+        type: historyType,
         payload: JSON.stringify({
           stageId: dto.stageId,
           stageName: stage.name,
           requestedById: performedById,
           approvalRequestId: approvalRequest.id,
+          isReapproval,
+          wasRejected,
+          previousRequestId: previousRequest?.id,
           timestamp: new Date().toISOString(),
         }),
       },

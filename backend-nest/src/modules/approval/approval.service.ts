@@ -120,20 +120,38 @@ export class ApprovalService {
       data: { status: 'ANSWERED' },
     });
 
-    // Registra histórico no projeto
+    // Determinar o tipo de histórico baseado no status
+    let historyType: string;
+    switch (approval.status) {
+      case ApprovalStatusConst.APPROVED:
+        historyType = 'APPROVAL_APPROVED';
+        break;
+      case ApprovalStatusConst.APPROVED_WITH_REMARKS:
+        historyType = 'APPROVAL_APPROVED_WITH_REMARKS';
+        break;
+      case ApprovalStatusConst.REJECTED:
+        historyType = 'APPROVAL_REJECTED';
+        break;
+      default:
+        historyType = 'APPROVAL';
+    }
+
+    // Registra histórico no projeto com evento específico
     await this.prisma.projectHistory.create({
       data: {
         projectId: approvalRequest.projectId,
-        type: 'APPROVAL',
+        type: historyType as any,
         payload: JSON.stringify({
           approvalId: approval.id,
           approvalRequestId: approval.approvalRequestId,
           entityType: approval.entityType,
           entityId: approval.entityId,
+          stageId: approvalRequest.stageId,
           stageName: approvalRequest.stage.name,
           userId,
           status: approval.status,
           comment: approval.comment,
+          timestamp: new Date().toISOString(),
         }),
       },
     });

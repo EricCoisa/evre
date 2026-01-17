@@ -1,7 +1,7 @@
 'use client';
 
 import { Stage, ApprovalStatusColors, Approval, StageStatus, Project } from '@/lib/actions/project/types';
-import { useActivitiesByStage, useApprovalsByStage, useActivityStatus, useUpdateStage, useCreateActivity, useStageStatus, useUpdateStageStatus } from '@/lib/actions/project/queries';
+import { useActivitiesByStage, useApprovalsByStage, useActivityStatus, useUpdateStage, useCreateActivity, useStageStatus, useUpdateStageStatus, useStageApprovalState } from '@/lib/actions/project/queries';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,7 @@ import { StageApprovalRequestButton } from '@/app/(private)/(admin)/project/comp
 import { CommentModal } from '@/app/(private)/(client)/home/[id]/components/comment-modal';
 import { useApprovalRequestsByStage } from '@/lib/actions/approval-request/queries';
 import { useApprovalByRequest } from '@/lib/actions/project/queries';
+import { ApprovalStatusBadge } from '@/components/approval-status-badge';
 
 interface StageItemProps {
   stage: Stage;
@@ -62,6 +63,9 @@ export function StageItem({
   
   // Buscar a aprovação correspondente se existir request pendente
   const { data: approval } = useApprovalByRequest(pendingRequest?.id || '');
+
+  // Buscar estado de aprovação com refetch automático
+  const { data: approvalState } = useStageApprovalState(stage.id);
 
   const activities = Array.isArray(activitiesData) ? activitiesData : activitiesData?.data || [];
   const approvals = approvalsData || [];
@@ -168,6 +172,7 @@ export function StageItem({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <CardTitle className="text-lg">{stage.name}</CardTitle>
+              <ApprovalStatusBadge approvalState={approvalState} showComment={true} />
               <Badge variant="outline">Order: {stage.order}</Badge>
               {isAdmin ? (
                 <Select value={stage.status} onValueChange={handleStageStatusChange}>
@@ -314,7 +319,7 @@ export function StageItem({
                     </div>
                     {approval.comment && (
                       <div className="flex items-start gap-2 text-sm bg-muted p-2 rounded mt-2">
-                        <MessageSquare className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                        <MessageSquare className="h-4 w-4 shrink-0 mt-0.5" />
                         <p>{approval.comment}</p>
                       </div>
                     )}

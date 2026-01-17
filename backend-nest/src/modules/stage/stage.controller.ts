@@ -167,6 +167,32 @@ export class StageController {
     return this.stageService.findOne(id, user);
   }
 
+  @GetApi({
+    path: ':id/approval-state',
+    summary: 'Get stage approval state',
+    description:
+      'Returns the derived approval state of a stage (not stored, computed from ApprovalRequest + Approval)',
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Approval state retrieved successfully',
+        },
+      ],
+    },
+    authenticated: true,
+  })
+  async getApprovalState(@Param('id') id: string): Promise<{
+    hasPendingApproval: boolean;
+    lastApprovalStatus: string | null;
+    lastApprovalAt: Date | null;
+    lastApprovalComment: string | null;
+    lastApprovalRequestId: string | null;
+    canRequestNewApproval: boolean;
+  }> {
+    return this.stageService.getApprovalState(id);
+  }
+
   @PatchApi({
     path: ':id',
     summary: 'Update a stage',

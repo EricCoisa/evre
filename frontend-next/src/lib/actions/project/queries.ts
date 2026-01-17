@@ -28,6 +28,7 @@ import {
   getStageStatusList,
   getActivities,
   getStagesByProject,
+  getStageApprovalState,
 } from './api';
 import type { PaginationParams } from '@/lib/types/pagination.types';
 import type {
@@ -43,6 +44,7 @@ import type {
   CreateCommentDto,
   CreateApprovalDto,
   StageStatus,
+  ApprovalState,
 } from './types';
 import { Collector, Alive, EmulateMutationError } from '@/lib/api/collector';
 import { getQueryConfig } from '@/lib/utils';
@@ -130,6 +132,15 @@ export function useStagesByProject(projectId: string, params?: PaginationParams)
     queryFn: Collector(() => getStagesByProject(projectId, params)),
     enabled: !!projectId,
     ...getQueryConfig('STAGES'),
+  });
+}
+
+export function useStageApprovalState(stageId: string) {
+  return useQuery<ApprovalState>({
+    queryKey: ['stage', 'approval-state', stageId],
+    queryFn: Collector(() => getStageApprovalState(stageId)),
+    enabled: !!stageId,
+    refetchInterval: 10000, // Revalida a cada 10s para atualizar status
   });
 }
 

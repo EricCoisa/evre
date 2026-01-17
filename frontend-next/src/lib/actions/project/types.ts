@@ -60,6 +60,15 @@ export interface UpdateStageStatusDto {
   status: StageStatus;
 }
 
+export interface ApprovalState {
+  hasPendingApproval: boolean;
+  lastApprovalStatus: string | null;
+  lastApprovalAt: string | null;
+  lastApprovalComment: string | null;
+  lastApprovalRequestId: string | null;
+  canRequestNewApproval: boolean;
+}
+
 export interface ReorderStagesDto {
   stages: Array<{
     stageId: string;

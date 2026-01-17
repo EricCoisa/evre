@@ -22,6 +22,7 @@ import type {
   Approval,
   CreateApprovalDto,
   ProjectHistory,
+  ApprovalState,
 } from './types';
 
 // Project API
@@ -79,6 +80,10 @@ export async function getStagesByProject(
 
 export async function getStage(id: string): Promise<ApiResponse<Stage>> {
   return await GET<Stage>(`/stage/${id}`);
+}
+
+export async function getStageApprovalState(stageId: string): Promise<ApiResponse<ApprovalState>> {
+  return await GET<ApprovalState>(`/stage/${stageId}/approval-state`);
 }
 
 export async function createStage(

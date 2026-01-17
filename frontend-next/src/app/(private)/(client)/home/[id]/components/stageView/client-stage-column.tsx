@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MessageCircle, Loader2 } from 'lucide-react';
-import { useActivitiesByStage } from '@/lib/actions/project/queries';
+import { useActivitiesByStage, useStageApprovalState } from '@/lib/actions/project/queries';
 import { ClientActivityCard } from './client-activity-card';
 import { CommentModal } from '../comment-modal';
 import { StageApprovalButton } from './stage-approval-button';
+import { ApprovalStatusBadge } from '@/components/approval-status-badge';
 import type { Stage } from '@/lib/actions/project/types';
 
 interface ClientStageColumnProps {
@@ -23,6 +24,9 @@ export function ClientStageColumn({ stage, projectId, projectName, setProgress }
   const { data: activities, isLoading } = useActivitiesByStage(stage.id, {
     pagination: false,
   });
+
+  // Buscar estado de aprovação
+  const { data: approvalState } = useStageApprovalState(stage.id);
 
   const activityList = Array.isArray(activities) ? activities : activities?.data || [];
   const totalActivities = activityList.length;
@@ -69,6 +73,12 @@ export function ClientStageColumn({ stage, projectId, projectName, setProgress }
               <MessageCircle className="h-4 w-4" />
             </Button>
           </div>
+
+          {/* Badge de Status de Aprovação */}
+          <ApprovalStatusBadge 
+            approvalState={approvalState} 
+            showComment={true}
+          />
 
           <StageApprovalButton
             stageId={stage.id}

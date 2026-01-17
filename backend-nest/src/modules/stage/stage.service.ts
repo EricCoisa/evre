@@ -493,6 +493,61 @@ export class StageService implements IBaseService<
     };
   }
 
+  /**
+   * 📊 HELPER: Obtém estado de aprovação derivado de um Stage
+   * ⚠️ Não armazena no Stage - apenas consulta o último ApprovalRequest + Approval
+   */
+  async getApprovalState(stageId: string): Promise<{
+    hasPendingApproval: boolean;
+    lastApprovalStatus: string | null;
+    lastApprovalAt: Date | null;
+    lastApprovalComment: string | null;
+    lastApprovalRequestId: string | null;
+    canRequestNewApproval: boolean;
+  }> {
+    // Buscar o último ApprovalRequest do stage
+    const lastRequest = await this.prisma.approvalRequest.findFirst({
+      where: { stageId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        approval: true,
+      },
+    });
+
+    if (!lastRequest) {
+      return {
+        hasPendingApproval: false,
+        lastApprovalStatus: null,
+        lastApprovalAt: null,
+        lastApprovalComment: null,
+        lastApprovalRequestId: null,
+        canRequestNewApproval: true,
+      };
+    }
+
+    const hasPendingApproval = lastRequest.status === 'PENDING';
+    const isAnswered = lastRequest.status === 'ANSWERED';
+    const lastApproval = lastRequest.approval;
+
+    // Pode solicitar nova aprovação se:
+    // - Não tem request pendente
+    // - E (não tem nenhuma aprovação OU última foi REJECTED ou APPROVED_WITH_REMARKS)
+    const canRequestNewApproval = 
+      !hasPendingApproval && 
+      (!lastApproval || 
+        lastApproval.status === 'REJECTED' || 
+        lastApproval.status === 'APPROVED_WITH_REMARKS');
+
+    return {
+      hasPendingApproval,
+      lastApprovalStatus: lastApproval?.status || null,
+      lastApprovalAt: lastApproval?.createdAt || null,
+      lastApprovalComment: lastApproval?.comment || null,
+      lastApprovalRequestId: lastRequest.id,
+      canRequestNewApproval,
+    };
+  }
+
   getStatusList(): string[] {
     return Object.values(StageStatusConst);
   }
