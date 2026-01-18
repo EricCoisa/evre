@@ -1,7 +1,7 @@
 'use client';
 
 import { Stage, ApprovalStatusColors, Approval, StageStatus, Project } from '@/lib/actions/project/types';
-import { useActivitiesByStage, useApprovalsByStage, useActivityStatus, useUpdateStage, useCreateActivity, useStageStatus, useUpdateStageStatus, useStageApprovalState } from '@/lib/actions/project/queries';
+import { useActivitiesByStage, useApprovalsByStage, useActivityStatus, useUpdateStage, useCreateActivity, useStageStatus, useUpdateStageStatus, useStageApprovalState, useDeleteStage } from '@/lib/actions/project/queries';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -45,6 +45,7 @@ export function StageItem({
   const queryClient = useQueryClient();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   const { data: activitiesData } = useActivitiesByStage(stage.id, { 
     pagination: false 
@@ -55,6 +56,7 @@ export function StageItem({
   const createActivity = useCreateActivity();
   const updateStage = useUpdateStage();
   const updateStageStatus = useUpdateStageStatus();
+  const deleteStage = useDeleteStage();
 
   // Buscar approval requests para este stage
   const { data: approvalRequestsData } = useApprovalRequestsByStage(stage.id);
@@ -87,7 +89,7 @@ export function StageItem({
   // Schema e config para criar Activity
   const createActivitySchema = useMemo(() =>
     z.object({
-      title: z.string().min(1, t('activityTitleRequired')),
+      title: z.string().min(3, t('activityTitleRequired')),
       description: z.string().optional(),
       status: z.string().optional(),
     }),
@@ -229,6 +231,16 @@ export function StageItem({
                 >
                   <Pencil className="h-4 w-4" />
                 </Button>
+                {/* Botão de delete stage */}
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="h-8 w-8 p-0"
+                  title={t('deleteStage')}
+                  onClick={() => setShowDeleteConfirm(true)}
+                >
+                  <XCircle className="h-4 w-4" />
+                </Button>
                 <StageApprovalRequestButton
                   stageId={stage.id}
                   projectId={project.id}
@@ -264,6 +276,9 @@ export function StageItem({
                     queryClient.invalidateQueries({ 
                       queryKey: ['activities', 'stage', stage.id]
                     });
+                  }}
+                  onError={(e)=>{
+                    console.log('Error creating activity', e);
                   }}
                   submitLabel={t('create')}
                   defaultValues={{
@@ -355,6 +370,38 @@ export function StageItem({
           </div>
         </CardContent>
       </Card>
+
+      {/* Modal de confirmação de delete */}
+      <Modal
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title={t('deleteStage') || 'Deletar Etapa'}
+        description={t('deleteStageConfirm') || 'Tem certeza que deseja deletar esta etapa? Esta ação não pode ser desfeita.'}
+      >
+        <div className="flex justify-end gap-2 mt-4">
+          <Button
+            variant="outline"
+            onClick={() => setShowDeleteConfirm(false)}
+          >
+            {t('cancel') || 'Cancelar'}
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={async () => {
+              try {
+                await deleteStage.mutateAsync(stage.id);
+                queryClient.invalidateQueries({ queryKey: ['stages'] });
+                toast.success(t('stageDeleted') || 'Etapa deletada com sucesso');
+                setShowDeleteConfirm(false);
+              } catch (error) {
+                toast.error(t('errorDeletingStage') || 'Erro ao deletar etapa');
+              }
+            }}
+          >
+            {t('delete') || 'Deletar'}
+          </Button>
+        </div>
+      </Modal>
 
       <Modal
         open={isEditModalOpen}

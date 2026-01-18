@@ -510,7 +510,6 @@ model ApprovalRequest {
   requestedBy   User                   @relation(fields: [requestedById], references: [id], onDelete: Cascade)
   approval      Approval?              // Relação 1:1 opcional (pode não ter resposta ainda)
 
-  @@unique([stageId, status], map: "unique_pending_per_stage")
   @@index([projectId])
   @@index([stageId])
   @@index([requestedById])
