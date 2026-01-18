@@ -6,6 +6,7 @@ import { Text } from './Text';
 import { ImageComponent } from './Image';
 import { Topic } from './Topic';
 import { Container } from './Container';
+import { IframeComponent } from './Iframe';
 import type {
   ProposalComponent,
   ProposalSchema,
@@ -75,6 +76,18 @@ function ComponentRenderer({ component }: ComponentRendererProps) {
 
     case 'Topic':
       return <Topic value={component.value} className={component.className} />;
+
+    case 'Iframe':
+      return (
+        <IframeComponent
+          value={component.value}
+          title={component.title}
+          width={component.width}
+          height={component.height}
+          allow={component.allow}
+          className={component.className}
+        />
+      );
 
     default:
       return null;

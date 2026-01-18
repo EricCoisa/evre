@@ -5,7 +5,16 @@
  * Define os componentes renderizáveis e suas propriedades
  */
 
-export type ComponentType = 'Container' | 'Title' | 'Text' | 'Image' | 'Topic';
+export type ComponentType = 'Container' | 'Title' | 'Text' | 'Image' | 'Topic' | 'Iframe';
+export interface IframeComponent extends BaseComponent {
+  object: 'Iframe';
+  value: string; // URL do iframe
+  title?: string;
+  width?: string | number;
+  height?: string | number;
+  allow?: string;
+  className?: string;
+}
 
 export interface BaseComponent {
   object: ComponentType;
@@ -54,7 +63,8 @@ export type ProposalComponent =
   | TitleComponent
   | TextComponent
   | ImageComponent
-  | TopicComponent;
+  | TopicComponent
+  | IframeComponent;
 
 export interface ProposalSchema {
   version: string;
@@ -69,7 +79,7 @@ export function isValidComponent(obj: unknown): obj is ProposalComponent {
   const component = obj as Record<string, unknown>;
   return (
     typeof component.object === 'string' &&
-    ['Container', 'Title', 'Text', 'Image', 'Topic'].includes(component.object) &&
+    ['Container', 'Title', 'Text', 'Image', 'Topic', 'Iframe'].includes(component.object) &&
     'value' in component
   );
 }

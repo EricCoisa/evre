@@ -8,8 +8,8 @@ import {
 } from '@/components/ui/dialog';
 
 interface ModalProps {
-    title: string;
-    description?: string;
+    title?: string | null;
+    description?: string | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
     children: React.ReactNode;
@@ -21,12 +21,12 @@ export default function Modal({ title, description, open, onOpenChange, children
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={`overflow-y-auto max-h-[90vh] sm:max-w-max ${className}`}>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>
+        {title || description &&<DialogHeader>
+          {title && <DialogTitle>{title}</DialogTitle>}
+          {description && <DialogDescription>
             {description}
-          </DialogDescription>
-        </DialogHeader>
+          </DialogDescription>}
+        </DialogHeader>}
 
          {children}
  
