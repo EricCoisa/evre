@@ -189,6 +189,7 @@ export default function ProposalsPage() {
     "height": 400, // altura em px ou string
     "allow": "fullscreen; clipboard-write", // permissões opcionais
     "className": "classe-css-opcional"
+    "modal": true // se true, abre em modal ao clicar
   }
 
   ## Exemplo Completo

@@ -86,6 +86,7 @@ function ComponentRenderer({ component }: ComponentRendererProps) {
           height={component.height}
           allow={component.allow}
           className={component.className}
+          modal={component.modal}
         />
       );
 

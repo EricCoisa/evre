@@ -14,6 +14,7 @@ export interface IframeComponent extends BaseComponent {
   height?: string | number;
   allow?: string;
   className?: string;
+  modal?: boolean;
 }
 
 export interface BaseComponent {

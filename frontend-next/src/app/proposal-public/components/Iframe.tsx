@@ -12,9 +12,10 @@ interface IframeComponentProps {
     height?: string | number;
     allow?: string;
     className?: string;
+    modal?: boolean;
 }
 
-export function IframeContainer({onscroll, value, title, width = '100%', height = 400, allow, className }: IframeComponentProps) {
+export function IframeContainer({onscroll, value, title, width = '100%', height = 400, allow, className, modal }: IframeComponentProps) {
     return (
         <div className="relative w-full h-full" style={{width: '100%', height: '100%'}}>
             <iframe
@@ -29,7 +30,7 @@ export function IframeContainer({onscroll, value, title, width = '100%', height 
                 allowFullScreen
                 scrolling={onscroll ? 'yes' : 'no'}
             />
-            {!onscroll && (
+            {(!onscroll && modal == true) && (
                 <div
                     className="absolute inset-0 z-10 cursor-pointer"
                     style={{ pointerEvents: 'auto', cursor: 'pointer' }}
@@ -39,15 +40,15 @@ export function IframeContainer({onscroll, value, title, width = '100%', height 
     );
 }
 
-export function IframeComponent({ value, title, width = '100%', height = 400, allow, className }: IframeComponentProps) {
+export function IframeComponent({ value, title, width = '100%', height = 400, allow, className, modal = true }: IframeComponentProps) {
     const [onModal, setModal] = useState(false);
 
     return (
         <>
-            <figure className={cn('my-4 md:my-8', className)} onClick={()=>setModal(true)}>
+            <figure className={cn('my-4 md:my-8', className)} onClick={()=> modal == true && setModal(true)}>
                 <div className="relative w-full rounded-xl overflow-hidden shadow-lg">
                     {!onModal &&
-                        <IframeContainer onscroll={false} value={value} title={title} width={width} height={height} allow={allow} className={className} />
+                        <IframeContainer onscroll={false} value={value} title={title} width={width} height={height} allow={allow} className={className} modal={modal} />
                     }
                 </div>
                 {title && (
