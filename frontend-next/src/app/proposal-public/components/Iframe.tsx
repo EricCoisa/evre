@@ -63,7 +63,7 @@ export function IframeComponent({ value, title, width = '100%', height = 400, al
                 onOpenChange={setModal}
                 title={title}
             >
-                <div className="w-full h-[80vh] min-h-[400px]" style={{width: '80vw', height: '80vh', minHeight: 400}}>
+                <div className="w-full h-[80vh] min-h-[400px]" style={{height: '80vh', minHeight: 400}}>
                     <IframeContainer
                         onscroll={true}
                         value={value}
