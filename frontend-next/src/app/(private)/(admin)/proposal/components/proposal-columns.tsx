@@ -3,7 +3,7 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import type { Proposal } from '@/lib/actions/proposal/types';
 import { Button } from '@/components/ui/button';
-import { ArrowDown, ArrowUp, ArrowUpDown, Eye, Send, Check } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Eye, Send, Check, Trash } from 'lucide-react';
 import { DataCell, TableHead } from '@/components/table-utils';
 import { Badge } from '@/components/ui/badge';
 import { ProposalStatusColors } from '@/lib/actions/proposal/types';
@@ -13,13 +13,15 @@ interface GetProposalColumnsProps {
   onView: (proposal: Proposal) => void;
   onSend?: (proposal: Proposal) => void;
   onApprove?: (proposal: Proposal) => void;
+  onDelete?: (proposal: Proposal) => void;
 }
 
-export function getProposalColumns({ 
-  t, 
-  onView, 
+export function getProposalColumns({
+  t,
+  onView,
   onSend,
-  onApprove 
+  onApprove,
+  onDelete
 }: GetProposalColumnsProps): ColumnDef<Proposal>[] {
   return [
     {
@@ -142,6 +144,14 @@ export function getProposalColumns({
               >
                 <Eye className="h-4 w-4" />
               </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onDelete && onDelete(proposal)}
+                title={t('deleteProposalTooltip') || 'Excluir proposta'}
+              >
+                <Trash className="h-4 w-4" />
+              </Button>
               {proposal.status === 'DRAFT' && onSend && (
                 <Button
                   variant="ghost"
@@ -162,6 +172,7 @@ export function getProposalColumns({
                   <Check className="h-4 w-4" />
                 </Button>
               )}
+
             </div>
           </DataCell>
         );

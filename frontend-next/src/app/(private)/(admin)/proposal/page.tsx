@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslation } from '@/hooks/use-translation';
-import { useProposals, useSendProposal, useApproveProposal } from '@/lib/actions/proposal/queries';
+import { useProposals, useSendProposal, useApproveProposal, useDeleteProposal } from '@/lib/actions/proposal/queries';
 import { useCompanies } from '@/lib/actions/company/queries';
 import { DataTable } from '@/components/data-table';
 import { GenericCreateFormModal } from '@/components/generic-create-form';
@@ -20,6 +20,7 @@ import { getProposalColumns } from './components/proposal-columns';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Textarea } from '@/components/ui/textarea';
+import { promptTemplate } from '@/lib/actions/proposal/promptText';
 
 export default function ProposalsPage() {
   const { t } = useTranslation('proposal');
@@ -31,11 +32,15 @@ export default function ProposalsPage() {
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [copied, setCopied] = useState(false);
 
+  const [deletingProposal, setDeletingProposal] = useState<Proposal | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
   const sendProposalMutation = useSendProposal();
   const approveProposalMutation = useApproveProposal();
 
   // Busca todas as empresas para o select
   const { data: companiesData } = useCompanies({ pagination: false });
+  const deleteProposalMutation = useDeleteProposal();
 
   const companyOptions = useMemo(() => {
     if (!companiesData || Array.isArray(companiesData)) {
@@ -115,130 +120,21 @@ export default function ProposalsPage() {
     },
   } satisfies FieldConfig<typeof createProposalSchema>), [t, companyOptions]);
 
+  const handleDelete = useCallback((item: Proposal) => {
+    setDeletingProposal(item);
+    setIsDeleteDialogOpen(true);
+  }, []);
+
   const columns = useMemo(() =>
     getProposalColumns({
       t,
       onView: handleView,
       onSend: handleSend,
       onApprove: handleApprove,
+      onDelete: handleDelete
     }),
-    [t, handleView, handleSend, handleApprove]
+    [t, handleView, handleSend, handleApprove, handleDelete]
   );
-
-  const promptTemplate = `Crie uma proposta comercial em formato JSON seguindo esta estrutura:
-
-  ## Estrutura do JSON
-
-  {
-    "version": "v1",
-    "components": [
-      // Array de componentes
-    ]
-  }
-
-  ## Componentes Disponíveis
-
-  ### 1. Title - Títulos
-  {
-    "object": "Title",
-    "value": "Texto do título",
-    "level": 1  // Níveis: 1, 2, 3 ou 4
-  }
-
-  ### 2. Text - Parágrafos
-  {
-    "object": "Text",
-    "value": "Texto do parágrafo"
-  }
-
-  ### 3. Container - Agrupar componentes
-  {
-    "object": "Container",
-    "value": [
-      // Outros componentes aqui
-    ]
-  }
-
-  ### 4. Topic - Tópico com lista
-  {
-    "object": "Topic",
-    "value": {
-      "title": "Título do tópico",
-      "description": "Descrição opcional",
-      "items": [
-        "Item 1",
-        "Item 2"
-      ]
-    }
-  }
-
-  ### 5. Image - Imagens
-  {
-    "object": "Image",
-    "value": "https://url-da-imagem.com/image.jpg",
-    "alt": "Texto alternativo",
-    "caption": "Legenda da imagem"
-  }
-
-  ### 6. Iframe - Conteúdo incorporado
-  {
-    "object": "Iframe",
-    "value": "https://url-do-iframe.com",
-    "title": "Título opcional do iframe",
-    "width": "100%", // ou número em px
-    "height": 400, // altura em px ou string
-    "allow": "fullscreen; clipboard-write", // permissões opcionais
-    "className": "classe-css-opcional"
-    "modal": true // se true, abre em modal ao clicar
-  }
-
-  ## Exemplo Completo
-
-  {
-    "version": "v1",
-    "components": [
-      {
-        "object": "Title",
-        "value": "Proposta de Desenvolvimento Web",
-        "level": 1
-      },
-      {
-        "object": "Text",
-        "value": "Apresentamos nossa proposta comercial para desenvolvimento de sistema."
-      },
-      {
-        "object": "Topic",
-        "value": {
-          "title": "Tecnologias",
-          "items": ["Next.js", "NestJS", "PostgreSQL"]
-        }
-      },
-      {
-        "object": "Container",
-        "value": [
-          {
-            "object": "Title",
-            "value": "Investimento",
-            "level": 2
-          },
-          {
-            "object": "Text",
-            "value": "R$ 150.000,00"
-          }
-        ]
-      },
-      {
-        "object": "Iframe",
-        "value": "https://www.youtube.com/embed/dQw4w9WgXcQ",
-        "title": "Vídeo institucional",
-        "height": 400
-      }
-    ]
-  }
-
-  ## Sua Tarefa
-
-  Crie uma proposta comercial completa seguindo este formato. Seja criativo e profissional!`;
 
   const handleCopyPrompt = async () => {
     try {
@@ -251,6 +147,8 @@ export default function ProposalsPage() {
     }
   };
   const [llmOpen, setLlmOpen] = useState(false);
+
+
 
   return (
     <Container variant="dataTable" border={false}>
@@ -350,6 +248,40 @@ export default function ProposalsPage() {
         </Button>
       </Modal>
 
+        {/* Modal de confirmação de exclusão */}
+      <Modal
+        open={isDeleteDialogOpen}
+        onOpenChange={(open) => {
+          setIsDeleteDialogOpen(open);
+          if (!open) setDeletingProposal(null);
+        }}
+        title={t('deleteConfirm') || 'Confirm deletion'}
+        description={deletingProposal ? `${t('deleteConfirmDescription')} "${deletingProposal.name}"?` : ''}
+      >
+        <div className="flex gap-2 justify-end">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setIsDeleteDialogOpen(false);
+              setDeletingProposal(null);
+            }}
+          >
+            {t('cancel') || 'Cancel'}
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={async () => {
+              deleteProposalMutation.mutateAsync(deletingProposal!.id)
+              setIsDeleteDialogOpen(false);
+              setDeletingProposal(null);
+            }}
+          >
+            {t('delete') || 'Delete'}
+          </Button>
+        </div>
+      </Modal>
+
     </Container>
   );
 }
+

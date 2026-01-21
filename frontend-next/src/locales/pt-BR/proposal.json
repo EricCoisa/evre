@@ -50,5 +50,8 @@
   "nameRequired": "Nome é obrigatório",
   "totalProposals": "Propostas criadas",
   "viewAll": "Ver todos",
-  "name": "Nome"
+  "name": "Nome",
+  "deleteProposalTooltip": "Excluir Proposta",
+  "deleteConfirm": "Tem certeza de que deseja excluir esta proposta?",
+  "delete": "Excluir"
 }

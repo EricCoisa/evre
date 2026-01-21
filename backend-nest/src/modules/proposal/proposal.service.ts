@@ -405,4 +405,39 @@ export class ProposalService implements Omit<IBaseService<Proposal>, 'remove'> {
       orderBy: { createdAt: 'desc' },
     });
   }
+
+  async remove(
+    id: string,
+    performedById?: string,
+  ): Promise<{ status: boolean; message: string }> {
+    // Verifica se a proposta existe
+    const proposal = await this.prisma.proposal.findUnique({
+      where: { id },
+    });
+
+    if (!proposal) {
+      throw new NotFoundException(this.i18n.t('proposal.not_found'));
+    }
+
+    // Deleta a proposta
+    await this.prisma.proposal.delete({
+      where: { id },
+    });
+
+    // Log da ação
+    await this.loggingService.create(
+      {
+        module: 'PROPOSAL',
+        action: LogActions.DELETE,
+        message: `Proposta ${id} deletada`,
+        metadata: {
+          proposalId: id,
+          companyId: proposal.companyId,
+        },
+      },
+      performedById ?? null,
+    );
+
+    return { status: true, message: this.i18n.t('proposal.deleted') };
+  }
 }

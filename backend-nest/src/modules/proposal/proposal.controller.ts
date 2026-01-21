@@ -5,6 +5,7 @@ import {
   GetApi,
   PostApi,
   PutApi,
+  DeleteApi,
 } from '../../common/decorators/api-method.decorator';
 import { ProposalDto } from './dto/proposal.dto';
 import { plainToInstance } from 'class-transformer';
@@ -263,5 +264,28 @@ export class ProposalController {
   async approvePublic(@Param('id') id: string): Promise<ProposalDto> {
     const proposal = await this.proposalService.approve(id);
     return plainToInstance(ProposalDto, proposal);
+  }
+
+  @DeleteApi({
+    path: ':id',
+    summary: 'Deletar proposta',
+    description: 'Remove uma proposta do sistema',
+    status: 'OK',
+    authenticated: true,
+    roles: ['ADMIN'],
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Proposta deletada com sucesso',
+        },
+      ],
+    },
+  })
+  async remove(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ status: boolean; message: string }> {
+    return await this.proposalService.remove(id, user.id);
   }
 }

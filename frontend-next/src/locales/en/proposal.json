@@ -50,5 +50,8 @@
   "nameRequired": "Name is required",
   "totalProposals": "Proposals created",
   "viewAll": "View all",
-  "name": "Name"
+  "name": "Name",
+  "deleteProposalTooltip": "Delete Proposal",
+  "deleteConfirm": "Are you sure you want to delete this proposal?",
+  "delete": "Delete"
 }

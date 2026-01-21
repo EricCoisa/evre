@@ -3,6 +3,7 @@
 	"cannot_edit_non_draft": "Não é possível editar uma proposta que não está em status RASCUNHO",
 	"already_sent_or_approved": "A proposta já foi enviada ou aprovada",
 	"already_approved": "A proposta já foi aprovada",
+	"deleted": "Proposta deletada com sucesso",
 	"content": {
 		"invalid_json": "Conteúdo JSON inválido"
 	}

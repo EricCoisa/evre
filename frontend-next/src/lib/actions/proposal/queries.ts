@@ -9,7 +9,8 @@ import {
   sendProposal,
   approveProposal,
   updateProposalProject,
-  getProposalByProject
+  getProposalByProject,
+  deleteProposal
 } from './api';
 import { getQueryConfig } from '@/lib/utils';
 import { Alive, Collector, EmulateMutationError } from '@/lib/api/collector';
@@ -137,6 +138,21 @@ export function useApproveProposal() {
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['proposal', id] });
       queryClient.invalidateQueries({ queryKey: ['proposal', 'public', id] });
+      queryClient.invalidateQueries({ queryKey: ['proposals'] });
+    },
+  });
+}
+
+export function useDeleteProposal() {
+  const queryClient = useQueryClient();
+  const { emulateError } = useApp();
+  
+  return useMutation({
+    mutationFn: (id: string) => {
+      EmulateMutationError(emulateError, 'Emulated error from useDeleteProposal');
+      return Alive(() => deleteProposal(id))();
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['proposals'] });
     },
   });

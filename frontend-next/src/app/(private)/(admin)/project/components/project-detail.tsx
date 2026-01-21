@@ -36,7 +36,7 @@ export function ProjectDetail({ project, isAdmin = false }: ProjectDetailProps) 
       </TabsList>
 
       <TabsContent value="details">
-        <DetailsTab project={project} isAdmin={isAdmin} />
+        <DetailsTab project={project} />
       </TabsContent>
 
       <TabsContent value="stages">

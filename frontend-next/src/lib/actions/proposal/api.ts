@@ -1,5 +1,5 @@
 "use server";
-import { GET, POST, PUT, ApiResponse } from '../../api/api';
+import { GET, POST, PUT, DELETE, ApiResponse } from '../../api/api';
 import type { Proposal, CreateProposalDto, UpdateProposalContentDto, UpdateProposalProjectDto } from './types';
 import type { PaginatedResponse, PaginationParams } from '@/lib/types/pagination.types';
 
@@ -53,4 +53,8 @@ export async function sendProposal(id: string): Promise<ApiResponse<Proposal>> {
 
 export async function approveProposal(id: string): Promise<ApiResponse<Proposal>> {
   return await POST<Proposal>(`/proposals/public/${id}/approve`, {});
+}
+
+export async function deleteProposal(id: string): Promise<ApiResponse<{ status: boolean; message: string }>> {
+  return await DELETE<{ status: boolean; message: string }>(`/proposals/${id}`);
 }

@@ -14,14 +14,13 @@ import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import LangLabel from '@/components/ui/langLabel';
 import { useTranslation } from '@/hooks/use-translation';
-import { useProposalProject, useProposals, useProposalsByCompany, useUpdateProposalProject } from '@/lib/actions/proposal/queries';
+import { useProposalsByCompany, useUpdateProposalProject } from '@/lib/actions/proposal/queries';
 
 interface DetailsTabProps {
   project: Project;
-  isAdmin?: boolean;
 }
 
-export function DetailsTab({ project, isAdmin = false }: DetailsTabProps) {
+export function DetailsTab({ project }: DetailsTabProps) {
   const { t } = useTranslation('projects');
   const queryClient = useQueryClient();
   const [newComment, setNewComment] = useState('');
@@ -29,7 +28,7 @@ export function DetailsTab({ project, isAdmin = false }: DetailsTabProps) {
   const { data: commentsData } = useCommentsByProject(project.id);
   const { data: statusList } = useProjectStatus();
   const { data: proposals } = useProposalsByCompany(project.companyId);
-  const { data: proposalProject } = useProposalProject(project.id);
+
 
   const availableStatuses = useMemo(() => statusList || [], [statusList]);
   
