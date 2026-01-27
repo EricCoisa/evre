@@ -62,8 +62,11 @@ export function IframeComponent({ value, title, width = '100%', height = 400, al
                 open={onModal}
                 onOpenChange={setModal}
                 title={title}
+                maxWidth="98vw"
+                width="98vw"
+                height="90vh"
             >
-                <div className="w-full h-[80vh] min-h-[400px]" style={{height: '80vh', minHeight: 400}}>
+                <div className="w-full h-[85vh] min-h-[400px] flex items-stretch" style={{height: '85vh', minHeight: 400}}>
                     <IframeContainer
                         onscroll={true}
                         value={value}
