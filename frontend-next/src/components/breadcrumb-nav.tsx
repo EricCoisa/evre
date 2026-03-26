@@ -94,7 +94,8 @@ export function BreadcrumbNav() {
   });
 
   const segmentWithId = breadSegments.find(x => x.routePageQuery);
-  const queryConfig = segmentWithId?.routePageQuery?.getBreadName() ?? nullcast;
+  const queryConfig = segmentWithId?.routePageQuery?.getBreadName(segmentWithId?.path) ?? nullcast;
+
   // Query para buscar o nome do item quando há ID
   const query = useQuery<string>({
     queryKey: queryConfig ? (queryConfig.queryKey(segmentWithId?.path) as readonly unknown[]) : [],
@@ -177,7 +178,7 @@ export function BreadcrumbNav() {
 
         {breadSegments.map((seg, index) => {
           const isLast = index === breadSegments.length - 1;
-          const label = seg.name || t(seg?.labelKey || 'home');
+          const label = seg.name || t(seg?.labelKey || 'loading');
           let content;
           if (isLast) {
             content = <BreadcrumbPage>{label}</BreadcrumbPage>;

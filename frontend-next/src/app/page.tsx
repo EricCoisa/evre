@@ -2,6 +2,7 @@
 
   import { motion, useInView } from 'motion/react';
   import Image from 'next/image';
+  import { EvreLogoAnimation } from '@/components/evre-logo-animation';
   import { Button } from '@/components/ui/button';
   import { ArrowRight, Code2, Layers, Zap } from 'lucide-react';
   import { GenericCreateForm } from '@/components/generic-create-form';
@@ -72,14 +73,9 @@
         <section className="border-b border-neutral-200">
           <div className="max-w-6xl mx-auto px-6 lg:px-8 py-32 md:py-40">
           {/* Logo */}
-          <motion.div 
-            className="flex items-center gap-3 mb-16"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <span className="text-2xl font-semibold text-neutral-900 tracking-tight">EVRE</span>
-          </motion.div>
+          <div className="flex items-center gap-3 mb-16">
+            <EvreLogoAnimation className="h-8 w-auto" />
+          </div>
 
           <div className="max-w-3xl">
             <motion.div
