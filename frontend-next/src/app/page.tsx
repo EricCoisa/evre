@@ -12,6 +12,8 @@
   import { FieldConfig } from '@/lib/form/field-config';
   import { toast } from 'sonner';
   import Modal from '@/components/modal';
+  import backgroundData from '../../public/Grid Loop background.json';
+import Lottie from 'lottie-react';
 
   // Componente de Seção com Animação Sutil
   function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
@@ -70,11 +72,27 @@
       <div className="min-h-screen bg-neutral-50 antialiased">
 
         {/* Hero Section */}
-        <section className="border-b border-neutral-200">
-          <div className="max-w-6xl mx-auto px-6 lg:px-8 py-32 md:py-40">
+        <section className="relative border-b border-neutral-200 overflow-hidden">
+          <div className="absolute inset-0 -z-10 pointer-events-none">
+            <div
+              style={{
+                width: '100%',
+                height: '100%',
+                 background: 'linear-gradient(45deg, rgba(255,255,255,1) 0%, rgba(255,255,255,1) 20%, rgba(255,255,255,0) 20%, rgba(255,255,255,0) 100%)',
+              }}
+            >
+              <Lottie
+                animationData={backgroundData}
+                loop={true}
+                aria-label="EVRE"
+                style={{ width: '100%', height: '100%' }}
+              />
+            </div>
+          </div>
+          <div className="max-w-6xl mx-auto px-6 lg:px-8 py-32 md:py-40 relative z-10">
           {/* Logo */}
-          <div className="flex items-center gap-3 mb-16">
-            <EvreLogoAnimation className="h-8 w-auto" />
+          <div className="flex items-center gap-3">
+            <EvreLogoAnimation className="h-50 w-auto" />
           </div>
 
           <div className="max-w-3xl">

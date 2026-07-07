@@ -45,6 +45,7 @@
     "date-fns": "^4.1.0",
     "i18next": "^25.7.2",
     "js-cookie": "^3.0.5",
+    "lottie-react": "^2.4.1",
     "lucide-react": "^0.555.0",
     "motion": "^12.23.25",
     "next": "^16.0.8",
