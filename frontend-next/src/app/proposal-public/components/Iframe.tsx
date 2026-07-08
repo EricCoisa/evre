@@ -7,6 +7,7 @@ import Modal from '@/components/modal';
 interface IframeComponentProps {
     onscroll?: boolean;
     value: string; // URL do iframe
+    srcDoc?: string; // HTML inline (tem prioridade sobre value)
     title?: string;
     width?: string | number;
     height?: string | number;
@@ -15,15 +16,18 @@ interface IframeComponentProps {
     modal?: boolean;
 }
 
-export function IframeContainer({onscroll, value, title, width = '100%', height = 400, allow, className, modal }: IframeComponentProps) {
+export function IframeContainer({onscroll, value, srcDoc, title, width = '100%', height = 400, allow, className, modal }: IframeComponentProps) {
     return (
         <div className="relative w-full h-full" style={{width: '100%', height: '100%'}}>
             <iframe
-                src={value}
+                {...(srcDoc ? { srcDoc } : { src: value })}
                 title={title || 'Conteúdo incorporado'}
                 width="100%"
                 height="100%"
                 allow={allow}
+                // ponytail: sandbox só no HTML inline p/ não quebrar embeds externos (YouTube etc).
+                // allow-scripts p/ JS das demos; SEM allow-same-origin p/ manter origem única e isolar da app.
+                sandbox={srcDoc ? 'allow-scripts allow-popups allow-modals allow-forms' : undefined}
                 className={cn("w-full h-full min-h-[300px] border-0", className)}
                 style={{ width: width, height: height, minHeight: 300, display: 'block' }}
                 loading="lazy"
@@ -40,7 +44,7 @@ export function IframeContainer({onscroll, value, title, width = '100%', height 
     );
 }
 
-export function IframeComponent({ value, title, width = '100%', height = 400, allow, className, modal = true }: IframeComponentProps) {
+export function IframeComponent({ value, srcDoc, title, width = '100%', height = 400, allow, className, modal = true }: IframeComponentProps) {
     const [onModal, setModal] = useState(false);
 
     return (
@@ -48,7 +52,7 @@ export function IframeComponent({ value, title, width = '100%', height = 400, al
             <figure className={cn('my-4 md:my-8', className)} onClick={()=> modal == true && setModal(true)}>
                 <div className="relative w-full rounded-xl overflow-hidden shadow-lg">
                     {!onModal &&
-                        <IframeContainer onscroll={false} value={value} title={title} width={width} height={height} allow={allow} className={className} modal={modal} />
+                        <IframeContainer onscroll={false} value={value} srcDoc={srcDoc} title={title} width={width} height={height} allow={allow} className={className} modal={modal} />
                     }
                 </div>
                 {title && (
@@ -70,6 +74,7 @@ export function IframeComponent({ value, title, width = '100%', height = 400, al
                     <IframeContainer
                         onscroll={true}
                         value={value}
+                        srcDoc={srcDoc}
                         title={title}
                         width="100%"
                         height="100%"
