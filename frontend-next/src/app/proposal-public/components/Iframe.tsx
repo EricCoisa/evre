@@ -6,7 +6,7 @@ import Modal from '@/components/modal';
 
 interface IframeComponentProps {
     onscroll?: boolean;
-    value: string; // URL do iframe
+    value?: string; // URL do iframe
     srcDoc?: string; // HTML inline (tem prioridade sobre value)
     title?: string;
     width?: string | number;
@@ -21,6 +21,8 @@ export function IframeContainer({onscroll, value, srcDoc, title, width = '100%',
         <div className="relative w-full h-full" style={{width: '100%', height: '100%'}}>
             <iframe
                 {...(srcDoc ? { srcDoc } : { src: value })}
+                // srcDoc é HTML arbitrário: o browser normaliza o srcdoc diferente do SSR → hydration mismatch (React #418).
+                suppressHydrationWarning
                 title={title || 'Conteúdo incorporado'}
                 width="100%"
                 height="100%"
