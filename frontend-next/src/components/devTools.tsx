@@ -13,7 +13,11 @@ import { Label } from './ui/label';
 export function DevTools() {
     const { devTools ,reactScan, setReactScan, setDevTools, emulateError, setEmulateError  } = useApp();
     const queryClient = useQueryClient();
-    const queries = queryClient.getQueryCache().findAll();
+    // O cache de queries é estado vivo que difere entre SSR e cliente → hydration mismatch.
+    // Só lê o cache depois do mount, no cliente.
+    const [mounted, setMounted] = React.useState(false);
+    React.useEffect(() => setMounted(true), []);
+    const queries = mounted ? queryClient.getQueryCache().findAll() : [];
 
     return (
         <Window setClosed={setDevTools} name='devTools' title="Dev Tools" enabled={devTools}>

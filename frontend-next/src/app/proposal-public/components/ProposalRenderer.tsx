@@ -81,6 +81,7 @@ function ComponentRenderer({ component }: ComponentRendererProps) {
       return (
         <IframeComponent
           value={component.value}
+          srcDoc={component.srcDoc}
           title={component.title}
           width={component.width}
           height={component.height}

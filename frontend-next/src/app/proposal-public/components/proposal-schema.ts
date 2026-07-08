@@ -8,7 +8,8 @@
 export type ComponentType = 'Container' | 'Title' | 'Text' | 'Image' | 'Topic' | 'Iframe';
 export interface IframeComponent extends BaseComponent {
   object: 'Iframe';
-  value: string; // URL do iframe
+  value?: string; // URL do iframe
+  srcDoc?: string; // HTML inline (tem prioridade sobre value)
   title?: string;
   width?: string | number;
   height?: string | number;
@@ -81,6 +82,7 @@ export function isValidComponent(obj: unknown): obj is ProposalComponent {
   return (
     typeof component.object === 'string' &&
     ['Container', 'Title', 'Text', 'Image', 'Topic', 'Iframe'].includes(component.object) &&
-    'value' in component
+    // Iframe pode vir só com srcDoc (HTML inline) em vez de value (URL)
+    ('value' in component || 'srcDoc' in component)
   );
 }
