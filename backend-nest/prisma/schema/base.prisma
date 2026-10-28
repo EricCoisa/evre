@@ -46,8 +46,10 @@ enum LogModule {
   MESSAGING
   NOTIFICATION
   VERIFICATION
+  COMPANY
 
   @@schema("public")
+  PROPOSAL
 }
 
 enum FeatureFlagCategory {

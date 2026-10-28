@@ -11,6 +11,12 @@ export const QUERY_CONFIG = {
     LOGGING: 2 * 60 * 1000,            // 2 minutos - logs (mudam frequentemente)
     USER: 10 * 60 * 1000,              // 5 minutos - usuário
     ME: 10 * 60 * 1000,              // 5 minutos - usuário
+    COMPANY: 5 * 60 * 1000, // 5 minutos - Company
+    COMPANYS: 5 * 60 * 1000, // 5 minutos - Companys
+
+    PROPOSAL: 5 * 60 * 1000, // 5 minutos - Proposal
+    PROPOSALS: 5 * 60 * 1000, // 5 minutos - Proposals
+
   },
   
   // Garbage Collection Times (tempo que dados ficam no cache após stale)
@@ -21,6 +27,12 @@ export const QUERY_CONFIG = {
     LOGGING: 5 * 60 * 1000,            // 5 minutos - logs podem ser removidos rapidamente
     USER: 15 * 60 * 1000,              // 15 minutos - usuário
     ME: 15 * 60 * 1000,              // 15 minutos - usuário
+    COMPANY: 10 * 60 * 1000, // 10 minutos - Company
+    COMPANYS: 10 * 60 * 1000, // 10 minutos - Companys
+
+    PROPOSAL: 10 * 60 * 1000, // 10 minutos - Proposal
+    PROPOSALS: 10 * 60 * 1000, // 10 minutos - Proposals
+
   },
   
   // Configurações de retry

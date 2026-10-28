@@ -1,11 +1,32 @@
 import { z } from 'zod';
+import {
+  DEFAULT_PROFILE,
+  LAYOUT_PROFILES,
+  type LayoutProfileName,
+} from './profiles';
 
 /** labelKey da UserConfigurationDefinition (valueType JSON) que guarda o mapa de layouts. */
 export const PAGE_LAYOUTS_KEY = 'PAGE_LAYOUTS';
 
-// Espelham MAX_BLOCKS/MAX_CHILDREN do backend; o editor desabilita "adicionar" ao atingir o teto.
-export const MAX_BLOCKS = 20;
-export const MAX_CHILDREN = 12;
+// Tetos do profile `dashboard`; o editor desabilita "adicionar" ao atingir o teto.
+export const MAX_BLOCKS = LAYOUT_PROFILES.dashboard.maxBlocks;
+export const MAX_CHILDREN = LAYOUT_PROFILES.dashboard.maxChildren;
+
+export function maxBlocksFor(profile: LayoutProfileName = DEFAULT_PROFILE): number {
+  return LAYOUT_PROFILES[profile].maxBlocks;
+}
+
+export function maxChildrenFor(
+  profile: LayoutProfileName = DEFAULT_PROFILE,
+): number {
+  return LAYOUT_PROFILES[profile].maxChildren;
+}
+
+// O schema aceita o teto do profile mais largo; quem recusa pelo teto do profile ativo é o
+// validador do backend, que sabe qual profile está gravando.
+const profiles = Object.values(LAYOUT_PROFILES);
+const WIDEST_BLOCKS = Math.max(...profiles.map((p) => p.maxBlocks));
+const WIDEST_CHILDREN = Math.max(...profiles.map((p) => p.maxChildren));
 
 const LeafBlockSchema = z.object({
   id: z.string().min(1),
@@ -28,12 +49,18 @@ const LeafBlockSchema = z.object({
 // Espelha backend-nest/src/modules/page-builder/dto/page-layout.dto.ts: UM nível de
 // aninhamento, filho não tem `children`.
 export const PageBlockSchema = LeafBlockSchema.extend({
-  children: z.array(LeafBlockSchema).max(MAX_CHILDREN).optional(),
+  children: z.array(LeafBlockSchema).max(WIDEST_CHILDREN).optional(),
 });
 
 export const PageLayoutSchema = z.object({
+  // ponytail: um membro só, alargar agora é ruído. F1-05 já publica layout imutável em
+  // ProposalVersion.layout — a partir daqui, layout antigo precisa continuar renderizando para
+  // sempre. `v: z.literal(1)` virar uma união (`z.literal(1) | z.literal(2) | ...`) com um
+  // renderer por versão passa a ser obrigatório ANTES da primeira mudança de schema de bloco —
+  // hoje layout inválido cai em fallback (`EMPTY_LAYOUT`), e numa proposta publicada isso é
+  // documento comercial em branco, não um grid vazio de rascunho.
   v: z.literal(1),
-  blocks: z.array(PageBlockSchema).max(MAX_BLOCKS),
+  blocks: z.array(PageBlockSchema).max(WIDEST_BLOCKS),
 });
 
 export type PageBlock = z.infer<typeof PageBlockSchema>;

@@ -1,0 +1,34 @@
+{
+  "create": {
+    "title": "Create new company",
+    "description": "Register a new company in the system"
+  },
+  "list": {
+    "title": "List companies"
+  },
+  "find": {
+    "title": "Get company by ID"
+  },
+  "update": {
+    "title": "Update company"
+  },
+  "delete": {
+    "title": "Archive company"
+  },
+  "not_found": "Company not found",
+  "contact_not_found": "Contact not found",
+  "contacts": {
+    "list": {
+      "title": "List company contacts"
+    },
+    "create": {
+      "title": "Create company contact"
+    },
+    "update": {
+      "title": "Update company contact"
+    },
+    "delete": {
+      "title": "Archive company contact"
+    }
+  }
+}

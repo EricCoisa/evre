@@ -15,10 +15,11 @@ import {
   resolveGridLayout,
   swapBlocksInGrid,
 } from '../grid-engine';
+import type { LayoutProfileName } from '../profiles';
 import {
-  MAX_BLOCKS,
-  MAX_CHILDREN,
   defaultRowSpanForType,
+  maxBlocksFor,
+  maxChildrenFor,
   normalizeRowSpan,
   normalizeSpan,
   type PageBlock,
@@ -136,21 +137,21 @@ export function removeBlock(layout: PageLayout, id: string): PageLayout {
   };
 }
 
-/** Teto por nível — o editor desabilita o botão em vez de deixar o save falhar no Zod. */
+/** Teto por nível — o editor desabilita o botão em vez de deixar o save falhar na validação. */
 export function canAdd(
   layout: PageLayout,
   parentId?: string,
   childType?: string,
+  profile?: LayoutProfileName,
 ): boolean {
-  if (!parentId) return layout.blocks.length < MAX_BLOCKS;
+  if (!parentId) return layout.blocks.length < maxBlocksFor(profile);
   const parent = layout.blocks.find((b) => b.id === parentId);
   if (!parent || !canAcceptChildrenType(parent.type)) return false;
-  if ((parent.children?.length ?? 0) >= MAX_CHILDREN) return false;
-  if (childType) {
-    if (isContainerType(childType)) return false;
-    if (!isContainerType(parent.type) && !isInlineBlockType(childType)) return false;
-  }
-  return true;
+  if ((parent.children?.length ?? 0) >= maxChildrenFor(profile)) return false;
+  if (!childType) return true;
+  // Container dentro de container é recusado na escrita; bloco de dado só entra em container geral.
+  if (isContainerType(childType)) return false;
+  return isContainerType(parent.type) || isInlineBlockType(childType);
 }
 
 export function createBlock(type: BlockType, parentId?: string): PageBlock {
@@ -177,8 +178,9 @@ export function addBlock(
   layout: PageLayout,
   block: PageBlock,
   parentId?: string,
+  profile?: LayoutProfileName,
 ): PageLayout {
-  if (!canAdd(layout, parentId, block.type)) return layout;
+  if (!canAdd(layout, parentId, block.type, profile)) return layout;
   if (!parentId) return { ...layout, blocks: [...layout.blocks, block] };
 
   return {
@@ -195,8 +197,9 @@ export function insertBlockAt(
   block: PageBlock,
   index: number,
   parentId?: string,
+  profile?: LayoutProfileName,
 ): PageLayout {
-  if (!canAdd(layout, parentId, block.type)) return layout;
+  if (!canAdd(layout, parentId, block.type, profile)) return layout;
   return insertAt(layout, block, parentId, index);
 }
 
@@ -208,8 +211,9 @@ export function insertBlockAtGrid(
   y: number,
   span?: number,
   parentId?: string,
+  profile?: LayoutProfileName,
 ): PageLayout {
-  if (!canAdd(layout, parentId, block.type)) return layout;
+  if (!canAdd(layout, parentId, block.type, profile)) return layout;
   const placedBlock: PageBlock = {
     ...block,
     span: span ? normalizeSpan(span) : block.span,
@@ -252,10 +256,11 @@ export function insertBlockAtGrid(
 export function duplicateBlock(
   layout: PageLayout,
   id: string,
+  profile?: LayoutProfileName,
 ): { layout: PageLayout; newId: string } | null {
   const located = findBlock(layout, id);
   if (!located) return null;
-  if (!canAdd(layout, located.parentId)) return null;
+  if (!canAdd(layout, located.parentId, undefined, profile)) return null;
 
   const cloneId = `${located.block.type.replace(/\./g, '-')}-${crypto.randomUUID().slice(0, 6)}`;
   const clonedBlock: PageBlock = {

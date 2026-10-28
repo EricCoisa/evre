@@ -24,6 +24,7 @@ import {
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/cn';
 import { BLOCK_META, isInlineBlockType, type BlockType } from '../blocks.meta';
+import { LAYOUT_PROFILES } from '../profiles';
 import { useEditorOrThrow } from './context';
 import { isContainerType } from './mutations';
 
@@ -142,7 +143,11 @@ export function BlockInserter({
   const parentOnlyAcceptsInline =
     !!parentBlock && !isContainerType(parentBlock.type);
 
-  const filteredBlocks = BLOCK_DEFINITIONS.filter((item) => {
+  const inProfile = new Set<string>(LAYOUT_PROFILES[editor.profile].blocks);
+
+  const filteredBlocks = BLOCK_DEFINITIONS.filter((item) =>
+    inProfile.has(item.type),
+  ).filter((item) => {
     if (parentId && isContainerType(item.type)) return false;
     if (parentOnlyAcceptsInline && !isInlineBlockType(item.type)) return false;
 

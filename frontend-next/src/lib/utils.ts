@@ -44,6 +44,12 @@ export function formatDate(date: string): string {
         }
 }
 
+/** Centavos → moeda formatada (pt-BR). `null` cai em "-", igual às demais colunas monetárias. */
+export function formatCents(cents: number | null | undefined, currency: string): string {
+  if (cents === null || cents === undefined) return '-';
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(cents / 100);
+}
+
 export function isUUID(text: string): boolean {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   return uuidRegex.test(text);

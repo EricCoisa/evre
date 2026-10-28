@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { ProposalModule } from './modules/proposal/proposal.module';
+import { CompanyModule } from './modules/company/company.module';
 import { ConfigModule } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import { BullModule } from '@nestjs/bullmq';
@@ -29,6 +31,7 @@ import { ClientLogModule } from './modules/client-log/client-log.module';
 import { PayloadUserModule } from './modules/auth/adapters/payload-user.module';
 import { RedisModule } from './common/infrastructure/redis/redis.module';
 import { RouteCeilingModule } from './common/infrastructure/route-ceiling/route-ceiling.module';
+import { ResourceAccessModule } from './common/infrastructure/resource-access/resource-access.module';
 import { RoleModule } from './modules/role/role.module';
 import { FeatureFlagModule } from './modules/feature-flag/feature-flag.module';
 import { CapabilityModule } from './modules/capability/capability.module';
@@ -86,6 +89,7 @@ const redisConnection = new RedisMockCtor();
     PrismaModule,
     RedisModule,
     RouteCeilingModule,
+    ResourceAccessModule,
     PayloadUserModule,
     LoggingModule,
     AuthModule,
@@ -114,6 +118,8 @@ const redisConnection = new RedisMockCtor();
     VerificationModule,
     NotificationModule,
     ShortUrlModule,
+    CompanyModule,
+    ProposalModule,
   ],
 })
 export class AppOpenApiModule {}

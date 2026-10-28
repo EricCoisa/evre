@@ -1,8 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { BLOCK_META } from './blocks.meta';
+import { LAYOUT_PROFILES } from './profiles';
 import {
+  MAX_BLOCKS,
+  MAX_CHILDREN,
   SPANS,
   SPAN_CLASS,
+  maxBlocksFor,
+  maxChildrenFor,
   parsePageLayout,
   resolvePageLayout,
 } from './schema';
@@ -219,5 +224,28 @@ describe('tokens de layout', () => {
     );
 
     expect(offenders).toEqual([]);
+  });
+});
+
+describe('tetos por profile', () => {
+  it('as constantes exportadas continuam sendo as do dashboard', () => {
+    expect(MAX_BLOCKS).toBe(LAYOUT_PROFILES.dashboard.maxBlocks);
+    expect(MAX_CHILDREN).toBe(LAYOUT_PROFILES.dashboard.maxChildren);
+  });
+
+  it('o teto vem do profile, não de um número fixo', () => {
+    expect(maxBlocksFor('dashboard')).toBe(20);
+    expect(maxBlocksFor('proposal')).toBe(80);
+    expect(maxChildrenFor('proposal')).toBe(12);
+  });
+
+  it('o schema aceita até o teto do profile mais largo — o validador aplica o do ativo', () => {
+    const blocks = Array.from({ length: maxBlocksFor('proposal') }, (_, i) => ({
+      id: `b${i}`,
+      type: 'text.rich',
+      props: { content: 'x' },
+    }));
+
+    expect(parsePageLayout({ '/p': { v: 1, blocks } }, '/p').status).toBe('ok');
   });
 });

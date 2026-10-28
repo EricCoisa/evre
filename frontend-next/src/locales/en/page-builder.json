@@ -6,6 +6,22 @@
   "blockWithoutSource": "This block needs a data source and has no valid one.",
   "blockDataError": "Could not load this block's data.",
   "blockForbidden": "You don't have access to this block's data source. It stays hidden for you outside edit mode.",
+  "investmentEmpty": "Investment not filled in.",
+  "investmentTerm": "Term",
+  "investmentDays": "days",
+  "investmentValidUntil": "Valid until",
+  "investmentIncluded": "Included items",
+  "investmentOptional": "Optional items",
+  "investmentRecurrence": {
+    "ONE_TIME": "One-time payment",
+    "MONTHLY": "Monthly",
+    "QUARTERLY": "Quarterly",
+    "YEARLY": "Yearly"
+  },
+  "iframeMissingArtifact": "This block has no uploaded artifact yet.",
+  "iframeLoadError": "Could not load this artifact.",
+  "iframeOpen": "Open fullscreen",
+  "iframeModalTitle": "Demo",
   "editor": {
     "edit": "Edit page",
     "title": "Edit page",
@@ -52,7 +68,12 @@
     "moveDown": "Move down",
     "insertVariable": "Variable",
     "clearSource": "Clear source",
-    "optionalSourceHint": "Optional: pick a source to insert {{var}} variables into the text."
+    "optionalSourceHint": "Optional: pick a source to insert {{var}} variables into the text.",
+    "artifactUpload": "Upload artifact",
+    "artifactUploading": "Uploading...",
+    "artifactUploadError": "Failed to upload the artifact.",
+    "artifactStorageDisabled": "Upload disabled: storage is currently unavailable.",
+    "artifactMissingRecord": "Save the proposal before uploading the artifact."
   },
   "blocks": {
     "group": "Group",
@@ -75,6 +96,7 @@
     },
     "list": {
       "feed": "Feed"
-    }
+    },
+    "iframe": "Demo (HTML/image)"
   }
 }

@@ -7063,6 +7063,1216 @@
           "mcp"
         ]
       }
+    },
+    "/company": {
+      "post": {
+        "description": "company.create.description",
+        "operationId": "CompanyController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCompanyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "company.create.title",
+        "tags": [
+          "company"
+        ]
+      },
+      "get": {
+        "operationId": "CompanyController_findAll",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Número da página",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Quantidade de itens por página (máximo 100)",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "pagination",
+            "required": false,
+            "in": "query",
+            "description": "Habilitar/desabilitar paginação",
+            "schema": {
+              "example": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Termo de busca",
+            "schema": {
+              "example": "",
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "required": false,
+            "in": "query",
+            "description": "Filtros adicionais",
+            "schema": {
+              "example": {},
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/Object"
+                }
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CompanyDto"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "number"
+                        },
+                        "page": {
+                          "type": "number"
+                        },
+                        "limit": {
+                          "type": "number"
+                        },
+                        "totalPages": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "company.list.title",
+        "tags": [
+          "company"
+        ]
+      }
+    },
+    "/company/{id}": {
+      "get": {
+        "operationId": "CompanyController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "company.find.title",
+        "tags": [
+          "company"
+        ]
+      },
+      "patch": {
+        "operationId": "CompanyController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCompanyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "company.update.title",
+        "tags": [
+          "company"
+        ]
+      },
+      "delete": {
+        "operationId": "CompanyController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "company.delete.title",
+        "tags": [
+          "company"
+        ]
+      }
+    },
+    "/company/{id}/contacts": {
+      "get": {
+        "operationId": "CompanyController_listContacts",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contacts of the company",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ContactDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "company.contacts.list.title",
+        "tags": [
+          "company"
+        ]
+      },
+      "post": {
+        "operationId": "CompanyController_createContact",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateContactDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "company.contacts.create.title",
+        "tags": [
+          "company"
+        ]
+      }
+    },
+    "/company/{id}/contacts/{contactId}": {
+      "put": {
+        "operationId": "CompanyController_updateContact",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "contactId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateContactDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "company.contacts.update.title",
+        "tags": [
+          "company"
+        ]
+      },
+      "delete": {
+        "operationId": "CompanyController_archiveContact",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "contactId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "company.contacts.delete.title",
+        "tags": [
+          "company"
+        ]
+      }
+    },
+    "/proposal": {
+      "post": {
+        "description": "proposal.create.description",
+        "operationId": "ProposalController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProposalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "proposal.create.title",
+        "tags": [
+          "proposal"
+        ]
+      },
+      "get": {
+        "operationId": "ProposalController_findAll",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Número da página",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Quantidade de itens por página (máximo 100)",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "pagination",
+            "required": false,
+            "in": "query",
+            "description": "Habilitar/desabilitar paginação",
+            "schema": {
+              "example": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Termo de busca",
+            "schema": {
+              "example": "",
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "required": false,
+            "in": "query",
+            "description": "Filtros adicionais",
+            "schema": {
+              "example": {},
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/Object"
+                }
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ProposalDto"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "number"
+                        },
+                        "page": {
+                          "type": "number"
+                        },
+                        "limit": {
+                          "type": "number"
+                        },
+                        "totalPages": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "proposal.list.title",
+        "tags": [
+          "proposal"
+        ]
+      }
+    },
+    "/proposal/{id}": {
+      "get": {
+        "operationId": "ProposalController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "proposal.find.title",
+        "tags": [
+          "proposal"
+        ]
+      },
+      "put": {
+        "operationId": "ProposalController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProposalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "proposal.update.title",
+        "tags": [
+          "proposal"
+        ]
+      },
+      "delete": {
+        "operationId": "ProposalController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "proposal.delete.title",
+        "tags": [
+          "proposal"
+        ]
+      }
+    },
+    "/proposal/{id}/duplicate": {
+      "post": {
+        "operationId": "ProposalController_duplicate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "proposal.duplicate.title",
+        "tags": [
+          "proposal"
+        ]
+      }
+    },
+    "/proposal/{id}/layout": {
+      "put": {
+        "operationId": "ProposalController_updateLayout",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProposalLayoutDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "proposal.layout.update.title",
+        "tags": [
+          "proposal"
+        ]
+      }
+    },
+    "/proposal/{id}/terms": {
+      "put": {
+        "operationId": "ProposalController_updateTerms",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProposalTermsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "proposal.terms.update.title",
+        "tags": [
+          "proposal"
+        ]
+      }
+    },
+    "/proposal/{id}/status": {
+      "put": {
+        "operationId": "ProposalController_updateStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProposalStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "proposal.status.update.title",
+        "tags": [
+          "proposal"
+        ]
+      }
+    },
+    "/proposal/{id}/artifacts": {
+      "get": {
+        "operationId": "ProposalController_listArtifacts",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Artifacts of the proposal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProposalArtifactDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "proposal.artifact.list.title",
+        "tags": [
+          "proposal"
+        ]
+      },
+      "post": {
+        "operationId": "ProposalController_uploadArtifact",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Artifact uploaded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalArtifactDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "proposal.artifact.upload.title",
+        "tags": [
+          "proposal"
+        ]
+      }
+    },
+    "/proposal/{id}/artifacts/{artifactId}": {
+      "delete": {
+        "operationId": "ProposalController_archiveArtifact",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "artifactId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "proposal.artifact.delete.title",
+        "tags": [
+          "proposal"
+        ]
+      }
+    },
+    "/proposal/{id}/publish": {
+      "post": {
+        "operationId": "ProposalController_publish",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Proposal published, new version is now live",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishProposalResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "proposal.publish.title",
+        "tags": [
+          "proposal"
+        ]
+      }
+    },
+    "/proposal/{id}/revoke": {
+      "post": {
+        "operationId": "ProposalController_revoke",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current public version revoked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevokeProposalPublicationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "proposal.revoke.title",
+        "tags": [
+          "proposal"
+        ]
+      }
+    },
+    "/proposal/{id}/versions": {
+      "get": {
+        "operationId": "ProposalController_listVersions",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Versions of the proposal, newest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProposalVersionDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "proposal.versions.list.title",
+        "tags": [
+          "proposal"
+        ]
+      }
+    },
+    "/proposal/{id}/accept-offline": {
+      "post": {
+        "operationId": "ProposalController_acceptOffline",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptProposalOfflineDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Acceptance recorded on behalf of the client",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptProposalVersionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "proposal.accept.offline.title",
+        "tags": [
+          "proposal"
+        ]
+      }
+    },
+    "/proposal/{id}/send": {
+      "post": {
+        "operationId": "ProposalController_send",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendProposalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Send attempted; succeeded tells whether the channel delivered it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendProposalResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "proposal.send.title",
+        "tags": [
+          "proposal"
+        ]
+      }
+    },
+    "/proposal/{id}/sends": {
+      "get": {
+        "operationId": "ProposalController_listSends",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Send history of the proposal, newest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProposalSendDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "proposal.sends.list.title",
+        "tags": [
+          "proposal"
+        ]
+      }
+    },
+    "/proposals/public/{token}": {
+      "get": {
+        "operationId": "ProposalPublicController_getPublic",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Public proposal content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicProposalDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "proposal.public.get.title",
+        "tags": [
+          "proposal-public"
+        ]
+      }
+    },
+    "/proposals/public/{token}/renew-request": {
+      "post": {
+        "operationId": "ProposalPublicController_requestRenewal",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "proposal.public.renew.title",
+        "tags": [
+          "proposal-public"
+        ]
+      }
+    },
+    "/proposals/public/{token}/accept": {
+      "post": {
+        "operationId": "ProposalPublicController_accept",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptPublicProposalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Proposal accepted by the client",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptProposalVersionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "proposal.accept.title",
+        "tags": [
+          "proposal-public"
+        ]
+      }
     }
   },
   "info": {
@@ -7141,7 +8351,9 @@
               "MCP",
               "MESSAGING",
               "NOTIFICATION",
-              "VERIFICATION"
+              "VERIFICATION",
+              "COMPANY",
+              "PROPOSAL"
             ],
             "example": "USER"
           },
@@ -11216,6 +12428,13 @@
             "type": "string",
             "pattern": "^\\/[a-z0-9\\-/]*$"
           },
+          "profile": {
+            "type": "string",
+            "enum": [
+              "dashboard",
+              "proposal"
+            ]
+          },
           "layout": {
             "type": "object",
             "properties": {
@@ -11226,7 +12445,7 @@
               },
               "blocks": {
                 "type": "array",
-                "maxItems": 20,
+                "maxItems": 80,
                 "items": {
                   "type": "object",
                   "properties": {
@@ -11449,6 +12668,957 @@
           "description",
           "fields",
           "params"
+        ]
+      },
+      "CreateCompanyDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Company name — the only required field",
+            "type": "string",
+            "minLength": 1
+          },
+          "tradeName": {
+            "description": "Trade name (fantasy name)",
+            "type": "string"
+          },
+          "taxId": {
+            "description": "Tax identifier (CNPJ/CPF)",
+            "type": "string"
+          },
+          "site": {
+            "description": "Website",
+            "type": "string"
+          },
+          "segment": {
+            "description": "Market segment",
+            "type": "string"
+          },
+          "notes": {
+            "description": "Free-text notes",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "CompanyDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "tradeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "taxId": {
+            "type": "string",
+            "nullable": true
+          },
+          "site": {
+            "type": "string",
+            "nullable": true
+          },
+          "segment": {
+            "type": "string",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "archivedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "tradeName",
+          "taxId",
+          "site",
+          "segment",
+          "notes",
+          "archivedAt",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UpdateCompanyDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Company name",
+            "type": "string",
+            "minLength": 1
+          },
+          "tradeName": {
+            "description": "Trade name (fantasy name)",
+            "type": "string"
+          },
+          "taxId": {
+            "description": "Tax identifier (CNPJ/CPF)",
+            "type": "string"
+          },
+          "site": {
+            "description": "Website",
+            "type": "string"
+          },
+          "segment": {
+            "description": "Market segment",
+            "type": "string"
+          },
+          "notes": {
+            "description": "Free-text notes",
+            "type": "string"
+          }
+        }
+      },
+      "ContactDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "companyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "isPrimary": {
+            "type": "boolean"
+          },
+          "isDecisionMaker": {
+            "type": "boolean"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "archivedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "companyId",
+          "name",
+          "role",
+          "email",
+          "phone",
+          "isPrimary",
+          "isDecisionMaker",
+          "notes",
+          "archivedAt",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CreateContactDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Contact name",
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "description": "Role at the company",
+            "type": "string"
+          },
+          "email": {
+            "description": "Contact email",
+            "type": "string",
+            "format": "email"
+          },
+          "phone": {
+            "description": "Contact phone",
+            "type": "string"
+          },
+          "isPrimary": {
+            "type": "boolean",
+            "default": false
+          },
+          "isDecisionMaker": {
+            "type": "boolean",
+            "default": false
+          },
+          "notes": {
+            "description": "Free-text notes",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateContactDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Contact name",
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "description": "Role at the company",
+            "type": "string"
+          },
+          "email": {
+            "description": "Contact email",
+            "type": "string",
+            "format": "email"
+          },
+          "phone": {
+            "description": "Contact phone",
+            "type": "string"
+          },
+          "isPrimary": {
+            "type": "boolean"
+          },
+          "isDecisionMaker": {
+            "type": "boolean"
+          },
+          "notes": {
+            "description": "Free-text notes",
+            "type": "string"
+          }
+        }
+      },
+      "CreateProposalDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Nome da proposta — único campo obrigatório",
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "ProposalDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "companyId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "ownerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "SENT",
+              "ACCEPTED",
+              "LOST"
+            ]
+          },
+          "lostReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "layout": {
+            "type": "object",
+            "additionalProperties": {},
+            "nullable": true,
+            "x-nestjs_zod-self-required": true
+          },
+          "totalCents": {
+            "type": "integer",
+            "nullable": true
+          },
+          "currency": {
+            "type": "string"
+          },
+          "recurrence": {
+            "type": "string",
+            "enum": [
+              "ONE_TIME",
+              "MONTHLY",
+              "QUARTERLY",
+              "YEARLY"
+            ]
+          },
+          "termDays": {
+            "type": "integer",
+            "nullable": true
+          },
+          "validUntil": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "includedItems": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "optionalItems": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "archivedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "daysWithoutMovement": {
+            "type": "integer"
+          },
+          "companyName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "companyId",
+          "ownerId",
+          "name",
+          "status",
+          "lostReason",
+          "layout",
+          "totalCents",
+          "currency",
+          "recurrence",
+          "termDays",
+          "validUntil",
+          "includedItems",
+          "optionalItems",
+          "archivedAt",
+          "createdAt",
+          "updatedAt",
+          "companyName"
+        ]
+      },
+      "UpdateProposalDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Nome da proposta",
+            "type": "string",
+            "minLength": 1
+          },
+          "companyId": {
+            "description": "Empresa vinculada — null desvincula",
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        }
+      },
+      "UpdateProposalLayoutDto": {
+        "type": "object",
+        "properties": {
+          "layout": {
+            "description": "Layout do PageBuilder (rascunho) — JSON livre nesta etapa",
+            "type": "object",
+            "additionalProperties": {},
+            "x-nestjs_zod-self-required": true
+          }
+        },
+        "required": [
+          "layout"
+        ]
+      },
+      "UpdateProposalTermsDto": {
+        "type": "object",
+        "properties": {
+          "totalCents": {
+            "description": "Valor total em centavos — nunca float",
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": false,
+            "nullable": true
+          },
+          "currency": {
+            "description": "ISO 4217, ex. BRL",
+            "type": "string"
+          },
+          "recurrence": {
+            "type": "string",
+            "enum": [
+              "ONE_TIME",
+              "MONTHLY",
+              "QUARTERLY",
+              "YEARLY"
+            ]
+          },
+          "termDays": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "nullable": true
+          },
+          "validUntil": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "includedItems": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "optionalItems": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "totalCents",
+          "termDays",
+          "validUntil"
+        ]
+      },
+      "UpdateProposalStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "SENT",
+              "ACCEPTED",
+              "LOST"
+            ]
+          },
+          "lostReason": {
+            "description": "Obrigatório quando status é LOST",
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "ProposalArtifactDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "proposalId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "storageKey": {
+            "type": "string"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "contentType": {
+            "type": "string"
+          },
+          "sizeBytes": {
+            "type": "integer"
+          },
+          "createdById": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "archivedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "proposalId",
+          "storageKey",
+          "fileName",
+          "contentType",
+          "sizeBytes",
+          "createdById",
+          "archivedAt",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "PublishProposalResponseDto": {
+        "type": "object",
+        "properties": {
+          "proposalId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "publicToken": {
+            "type": "string"
+          },
+          "publicUrl": {
+            "type": "string"
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "SENT",
+              "ACCEPTED",
+              "LOST"
+            ]
+          }
+        },
+        "required": [
+          "proposalId",
+          "version",
+          "publicToken",
+          "publicUrl",
+          "publishedAt",
+          "status"
+        ]
+      },
+      "RevokeProposalPublicationResponseDto": {
+        "type": "object",
+        "properties": {
+          "proposalId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "nullable": true
+          },
+          "revokedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "alreadyRevoked": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "proposalId",
+          "version",
+          "revokedAt",
+          "alreadyRevoked"
+        ]
+      },
+      "ProposalVersionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "proposalId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "layout": {
+            "type": "object",
+            "additionalProperties": {},
+            "x-nestjs_zod-self-required": true
+          },
+          "totalCents": {
+            "type": "integer",
+            "nullable": true
+          },
+          "currency": {
+            "type": "string"
+          },
+          "recurrence": {
+            "type": "string",
+            "enum": [
+              "ONE_TIME",
+              "MONTHLY",
+              "QUARTERLY",
+              "YEARLY"
+            ]
+          },
+          "termDays": {
+            "type": "integer",
+            "nullable": true
+          },
+          "validUntil": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "includedItems": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "optionalItems": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "publicToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "revokedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "EXPIRED",
+              "REVOKED",
+              "NONE"
+            ]
+          },
+          "shortUrl": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "proposalId",
+          "version",
+          "layout",
+          "totalCents",
+          "currency",
+          "recurrence",
+          "termDays",
+          "validUntil",
+          "includedItems",
+          "optionalItems",
+          "publicToken",
+          "publishedAt",
+          "revokedAt",
+          "createdAt",
+          "state",
+          "shortUrl"
+        ]
+      },
+      "AcceptProposalVersionResponseDto": {
+        "type": "object",
+        "properties": {
+          "proposalId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "versionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "acceptedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "alreadyAccepted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "proposalId",
+          "versionId",
+          "acceptedAt",
+          "alreadyAccepted"
+        ]
+      },
+      "AcceptProposalOfflineDto": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "description": "Onde a decisão foi recebida — telefone, reunião, email",
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "note"
+        ]
+      },
+      "SendProposalResponseDto": {
+        "type": "object",
+        "properties": {
+          "proposalId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "versionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "succeeded": {
+            "type": "boolean"
+          },
+          "toPhone": {
+            "type": "string"
+          },
+          "shortUrl": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "proposalId",
+          "versionId",
+          "succeeded",
+          "toPhone",
+          "shortUrl"
+        ]
+      },
+      "SendProposalDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "ProposalSendDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "versionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "channel": {
+            "type": "string"
+          },
+          "toPhone": {
+            "type": "string",
+            "nullable": true
+          },
+          "toEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "succeeded": {
+            "type": "boolean"
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          },
+          "sentById": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "versionId",
+          "channel",
+          "toPhone",
+          "toEmail",
+          "succeeded",
+          "detail",
+          "sentById",
+          "createdAt"
+        ]
+      },
+      "PublicProposalDto": {
+        "type": "object",
+        "properties": {
+          "proposalName": {
+            "type": "string"
+          },
+          "companyName": {
+            "type": "string",
+            "nullable": true
+          },
+          "layout": {
+            "type": "object",
+            "additionalProperties": {},
+            "x-nestjs_zod-self-required": true
+          },
+          "envelope": {
+            "type": "object",
+            "properties": {
+              "totalCents": {
+                "type": "integer",
+                "nullable": true
+              },
+              "currency": {
+                "type": "string"
+              },
+              "recurrence": {
+                "type": "string",
+                "enum": [
+                  "ONE_TIME",
+                  "MONTHLY",
+                  "QUARTERLY",
+                  "YEARLY"
+                ]
+              },
+              "termDays": {
+                "type": "integer",
+                "nullable": true
+              },
+              "validUntil": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true
+              },
+              "includedItems": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "optionalItems": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "totalCents",
+              "currency",
+              "recurrence",
+              "termDays",
+              "validUntil",
+              "includedItems",
+              "optionalItems"
+            ],
+            "x-nestjs_zod-self-required": true
+          },
+          "acceptedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "proposalName",
+          "companyName",
+          "layout",
+          "envelope",
+          "acceptedAt"
+        ]
+      },
+      "AcceptPublicProposalDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Nome de quem está aceitando — identidade disponível no link",
+            "type": "string",
+            "minLength": 1
+          },
+          "email": {
+            "description": "Email de quem está aceitando",
+            "type": "string",
+            "format": "email"
+          }
+        },
+        "required": [
+          "name",
+          "email"
         ]
       }
     }

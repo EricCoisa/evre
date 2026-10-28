@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
+import type { LayoutProfileName } from './dto/page-layout.dto';
 
 export interface PageBlockDescription {
   type: string;
@@ -16,6 +17,7 @@ export interface PageBlockDescription {
   props: Array<{ name: string; type: string; required: boolean }>;
 }
 export interface PageBuilderSchemaResponse {
+  /** Já filtrados pelo profile pedido; sem profile, o catálogo inteiro. */
   blocks: PageBlockDescription[];
   /** Páginas que renderizam <PageRenderer> — escrever em qualquer outra não tem efeito. */
   pages: Array<{ pageKey: string; description: string }>;
@@ -35,16 +37,19 @@ export class PageBuilderBridgeService {
     );
   }
 
-  async describeSchema(): Promise<PageBuilderSchemaResponse> {
+  async describeSchema(
+    profile?: LayoutProfileName,
+  ): Promise<PageBuilderSchemaResponse> {
     const secret = this.configService.get<string>('AGENT_CMS_SECRET');
     if (!secret) {
       throw new Error(
         'AGENT_CMS_SECRET not configured in environment variables',
       );
     }
+    const query = profile ? `?profile=${profile}` : '';
     try {
       const { data } = await axios.get<PageBuilderSchemaResponse>(
-        `${this.baseUrl()}/api/agent/page-builder/schema`,
+        `${this.baseUrl()}/api/agent/page-builder/schema${query}`,
         { headers: { 'x-agent-secret': secret } },
       );
       return data;

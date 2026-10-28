@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EditorPanel } from './panel';
 import { EditorProvider, useEditorOrThrow } from './context';
 import { EMPTY_LAYOUT } from './mutations';
+import type { LayoutProfileName } from '../profiles';
 import { MAX_CHILDREN, type PageLayout } from '../schema';
 
 /** `panel.tsx` só depende de `useEditorOrThrow` (contexto real, sem mock) e `usePageSources`
@@ -67,6 +68,7 @@ function renderPanel(options?: {
   onSaveAsDefault?: () => void;
   onCancel?: () => void;
   preselect?: string;
+  profile?: LayoutProfileName;
 }) {
   const props = {
     pageKey: '/dashboard',
@@ -78,7 +80,10 @@ function renderPanel(options?: {
   };
 
   const utils = render(
-    <EditorProvider initial={options?.initial ?? EMPTY_LAYOUT}>
+    <EditorProvider
+      initial={options?.initial ?? EMPTY_LAYOUT}
+      profile={options?.profile}
+    >
       {options?.preselect ? <SelectBlockButton id={options.preselect} /> : null}
       <EditorPanel {...props} />
     </EditorProvider>,
@@ -167,6 +172,15 @@ describe('Palette', () => {
     expect(screen.getByText('editor.limitReached')).toBeInTheDocument();
     expect(addButton('alert.banner')).toBeDisabled();
     expect(addButton('table.basic')).toBeDisabled();
+  });
+
+  it('profile proposal oferece só os blocos dele', () => {
+    renderPanel({ profile: 'proposal' });
+
+    expect(addButton('text.rich')).toBeInTheDocument();
+    expect(addButton('group')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /table\.basic/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /chart\./ })).not.toBeInTheDocument();
   });
 });
 

@@ -6,6 +6,22 @@
   "blockWithoutSource": "Este bloco precisa de uma fonte de dados e não tem uma válida.",
   "blockDataError": "Não foi possível carregar os dados deste bloco.",
   "blockForbidden": "Você não tem acesso à fonte de dados deste bloco. Ele fica oculto para você fora do modo de edição.",
+  "investmentEmpty": "Investimento não preenchido.",
+  "investmentTerm": "Prazo",
+  "investmentDays": "dias",
+  "investmentValidUntil": "Válido até",
+  "investmentIncluded": "Itens inclusos",
+  "investmentOptional": "Itens opcionais",
+  "investmentRecurrence": {
+    "ONE_TIME": "Pagamento único",
+    "MONTHLY": "Mensal",
+    "QUARTERLY": "Trimestral",
+    "YEARLY": "Anual"
+  },
+  "iframeMissingArtifact": "Este bloco ainda não tem um artefato enviado.",
+  "iframeLoadError": "Não foi possível carregar este artefato.",
+  "iframeOpen": "Abrir em tela cheia",
+  "iframeModalTitle": "Demonstração",
   "editor": {
     "edit": "Editar página",
     "title": "Editar página",
@@ -52,7 +68,12 @@
     "moveDown": "Mover para baixo",
     "insertVariable": "Variável",
     "clearSource": "Limpar fonte",
-    "optionalSourceHint": "Opcional: escolha uma fonte para inserir variáveis {{var}} no texto."
+    "optionalSourceHint": "Opcional: escolha uma fonte para inserir variáveis {{var}} no texto.",
+    "artifactUpload": "Enviar artefato",
+    "artifactUploading": "Enviando...",
+    "artifactUploadError": "Falha ao enviar o artefato.",
+    "artifactStorageDisabled": "Upload desabilitado: o storage está indisponível no momento.",
+    "artifactMissingRecord": "Salve a proposta antes de enviar o artefato."
   },
   "blocks": {
     "group": "Grupo",
@@ -75,6 +96,7 @@
     },
     "list": {
       "feed": "Feed"
-    }
+    },
+    "iframe": "Demonstração (HTML/imagem)"
   }
 }

@@ -1,0 +1,107 @@
+{
+  "create": {
+    "title": "Create new proposal",
+    "description": "Register a new proposal draft — name only"
+  },
+  "list": {
+    "title": "List proposals"
+  },
+  "find": {
+    "title": "Get proposal by ID"
+  },
+  "update": {
+    "title": "Update proposal"
+  },
+  "delete": {
+    "title": "Archive proposal"
+  },
+  "duplicate": {
+    "title": "Duplicate proposal"
+  },
+  "publish": {
+    "title": "Publish proposal"
+  },
+  "revoke": {
+    "title": "Revoke proposal publication"
+  },
+  "accept": {
+    "title": "Accept a published proposal (via link)",
+    "offline": {
+      "title": "Record an acceptance received through another channel"
+    }
+  },
+  "versions": {
+    "list": {
+      "title": "List proposal published versions"
+    }
+  },
+  "send": {
+    "title": "Send a published proposal via WhatsApp"
+  },
+  "sends": {
+    "list": {
+      "title": "List the proposal's send history"
+    }
+  },
+  "send_no_active_version": "This proposal has no active published version",
+  "send_no_contact": "Provide a phone number or register a primary contact with a phone for the company",
+  "send_channel_unavailable": "The WhatsApp channel did not send the message — copy the link and send it manually",
+  "layout": {
+    "update": {
+      "title": "Update proposal layout draft"
+    }
+  },
+  "terms": {
+    "update": {
+      "title": "Update proposal commercial envelope"
+    }
+  },
+  "status": {
+    "update": {
+      "title": "Update proposal status"
+    }
+  },
+  "artifact": {
+    "upload": {
+      "title": "Upload proposal artifact"
+    },
+    "list": {
+      "title": "List proposal artifacts"
+    },
+    "delete": {
+      "title": "Archive proposal artifact"
+    },
+    "not_found": "Artifact not found",
+    "invalid_content_type": "File type not allowed for artifact",
+    "too_large": "File exceeds the maximum allowed size"
+  },
+  "not_found": "Proposal not found",
+  "cannot_edit_non_draft": "Only a proposal in DRAFT status can be edited",
+  "lost_reason_required": "lostReason is required when status is LOST",
+  "invalid_status_transition": "This proposal status cannot be changed anymore",
+  "cannot_publish_without_layout": "Cannot publish an archived proposal or one without content",
+  "already_revoked": "This proposal's publication was already revoked",
+  "version_not_found": "This proposal has no published version yet",
+  "public_token_generation_failed": "Could not generate a unique public token for the proposal",
+  "acceptance_revoked": "This proposal can no longer be accepted — its publication was revoked",
+  "acceptance_expired": "This proposal can no longer be accepted — it has expired",
+  "acceptance_other_version_accepted": "This proposal already has another accepted version",
+  "acceptance_note_required": "State where the decision came from — note is required for a team-recorded acceptance",
+  "acceptance_notified_title": "Proposal accepted",
+  "acceptance_notified_message": "{name} was accepted.",
+  "public": {
+    "get": {
+      "title": "Get a public proposal by token"
+    },
+    "renew": {
+      "title": "Request renewal of a public proposal"
+    },
+    "not_found": "Proposal not found",
+    "revoked": "This proposal was updated. Ask for the latest link.",
+    "expired": "This proposal has expired.",
+    "opened_title": "Proposal opened by the client",
+    "opened_message": "{name} was opened by the client.",
+    "renew_requested_title": "Renewal requested",
+    "renew_requested_message": "The client asked for a new link to {name}."
+  }
+}

@@ -8,7 +8,11 @@ import type {
 } from 'src/domain/ai/ai-tool.types';
 import { PageSourceRegistry } from '../page-source-registry.service';
 import { PageBuilderBridgeService } from '../page-builder-bridge.service';
-import { MAX_BLOCKS } from '../dto/page-layout.dto';
+import {
+  DEFAULT_LAYOUT_PROFILE,
+  LAYOUT_PROFILES,
+  type LayoutProfileName,
+} from '../dto/page-layout.dto';
 
 @AiToolDef()
 @Injectable()
@@ -24,8 +28,23 @@ export class DescribePageBuilderTool implements IAiTool {
       'então inventar uma não tem efeito visual). Sempre chame esta tool ' +
       'antes de set_page_layout e use apenas os `type`, `source`, `fields`, `params` e `pageKey` ' +
       'retornados aqui: o catálogo muda conforme blocos e endpoints são adicionados, e nome de ' +
-      'campo ou de param inventado vira coluna vazia ou erro de validação na tela.',
-    inputSchema: z.object({}),
+      'campo ou de param inventado vira coluna vazia ou erro de validação na tela. ' +
+      'O catálogo depende do `profile` da superfície que você vai montar: cada profile ' +
+      'oferece blocos e classNames diferentes, e alguns não buscam dado de fonte nenhuma. ' +
+      'Passe o MESMO profile em set_page_layout.',
+    inputSchema: z.object({
+      profile: z
+        .enum(
+          Object.keys(LAYOUT_PROFILES) as [
+            LayoutProfileName,
+            ...LayoutProfileName[],
+          ],
+        )
+        .optional()
+        .describe(
+          `Superfície a montar. Ausente vale "${DEFAULT_LAYOUT_PROFILE}".`,
+        ),
+    }),
     // sem roles: qualquer autenticado pode customizar a própria tela; as fontes já vêm
     // filtradas pelo role em listForRole()
     invalidates: [],
@@ -36,21 +55,28 @@ export class DescribePageBuilderTool implements IAiTool {
     private readonly bridge: PageBuilderBridgeService,
   ) {}
 
-  async execute(_input: unknown, ctx: AiToolContext) {
-    const schema = await this.bridge.describeSchema();
+  async execute(input: { profile?: LayoutProfileName }, ctx: AiToolContext) {
+    const profile = input?.profile ?? DEFAULT_LAYOUT_PROFILE;
+    const schema = await this.bridge.describeSchema(profile);
+    const noSources = LAYOUT_PROFILES[profile].dataSources === 'none';
     return {
+      profile,
       blocks: schema.blocks,
       pages: schema.pages,
       spans: schema.spans,
       classNames: schema.classNames,
-      maxBlocks: MAX_BLOCKS,
-      sources: this.pageSources.listForRole(ctx.roleName).map((s) => ({
-        key: s.key,
-        kind: s.kind,
-        description: s.description,
-        fields: s.fields ?? [],
-        params: s.params ?? [],
-      })),
+      maxBlocks: LAYOUT_PROFILES[profile].maxBlocks,
+      maxChildren: LAYOUT_PROFILES[profile].maxChildren,
+      // Profile sem fonte recusa `data.source` em qualquer bloco: oferecer a lista mentiria.
+      sources: noSources
+        ? []
+        : this.pageSources.listForRole(ctx.roleName).map((s) => ({
+            key: s.key,
+            kind: s.kind,
+            description: s.description,
+            fields: s.fields ?? [],
+            params: s.params ?? [],
+          })),
     };
   }
 }

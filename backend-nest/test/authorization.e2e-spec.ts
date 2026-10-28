@@ -30,7 +30,7 @@ async function loginAndGetToken(
     .send({ email, password });
   if (res.status !== 200)
     throw new Error(`Login failed for ${email}: ${res.status}`);
-  const cookies: string[] = res.headers['set-cookie'] as string[];
+  const cookies = res.headers['set-cookie'] as unknown as string[];
   const c = cookies?.find((s) => s.startsWith('access_token='));
   if (!c) throw new Error('No access_token cookie');
   return c.split(';')[0].split('=')[1];
@@ -45,6 +45,9 @@ describe('Authorization matrix (e2e)', () => {
   beforeAll(async () => {
     prisma = new PrismaClient();
     const { salt, hash } = await hashPassword(USER_PASSWORD);
+    // O papel mora em Role/roleId — User não tem coluna `role`.
+    const userRole = await prisma.role.findUnique({ where: { name: 'USER' } });
+    if (!userRole) throw new Error('Role USER not found — seed may have failed');
     await prisma.user.upsert({
       where: { email: USER_EMAIL },
       update: {},
@@ -53,7 +56,7 @@ describe('Authorization matrix (e2e)', () => {
         salt,
         hash,
         name: 'AuthZ E2E User',
-        role: 'USER',
+        roleId: userRole.id,
         status: 'ACTIVE',
       },
     });

@@ -17,6 +17,7 @@ import ptBRAgent from '../locales/pt-BR/agent.json';
 import ptBRPageBuilder from '../locales/pt-BR/page-builder.json';
 import ptBRMessaging from '../locales/pt-BR/messaging.json';
 import ptBRNotification from '../locales/pt-BR/notification.json';
+import ptBRVocabulary from '../locales/pt-BR/vocabulary.json';
 import enCommon from '../locales/en/common.json';
 import enAccess from '../locales/en/access.json';
 import enDashboard from '../locales/en/dashboard.json';
@@ -36,10 +37,17 @@ import enAgent from '../locales/en/agent.json';
 import enPageBuilder from '../locales/en/page-builder.json';
 import enMessaging from '../locales/en/messaging.json';
 import enNotification from '../locales/en/notification.json';
+import enVocabulary from '../locales/en/vocabulary.json';
 
 
+import ptBRCompany from '../locales/pt-BR/company.json';
+import enCompany from '../locales/en/company.json';
+import ptBRProposal from '../locales/pt-BR/proposal.json';
+import enProposal from '../locales/en/proposal.json';
 export const resources = {
 	'pt-BR': {
+		proposal: ptBRProposal,
+		company: ptBRCompany,
 		common: ptBRCommon,
 		access: ptBRAccess,
 		dashboard: ptBRDashboard,
@@ -59,8 +67,11 @@ export const resources = {
     'page-builder': ptBRPageBuilder,
     messaging: ptBRMessaging,
     notification: ptBRNotification,
+    vocabulary: ptBRVocabulary,
 	},
 	en: {
+		proposal: enProposal,
+		company: enCompany,
 		common: enCommon,
 		access: enAccess,
 		dashboard: enDashboard,
@@ -80,6 +91,7 @@ export const resources = {
     'page-builder': enPageBuilder,
     messaging: enMessaging,
     notification: enNotification,
+    vocabulary: enVocabulary,
 	},
 };
 

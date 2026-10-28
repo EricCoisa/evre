@@ -187,11 +187,28 @@ module.exports = function (plop) {
       });
 
       // 18. Adicionar rota em prisma/seeds/routes.seed.ts do backend (seed.ts só orquestra os seeds/*)
+      // `ordem` calculado a partir do maior valor já existente no arquivo — `ordem: 8` fixo colidia
+      // com settingsRoute. `isHome` removido: campo não existe em `model Route`.
       actions.push({
         type: 'modify',
         path: '../backend-nest/prisma/seeds/routes.seed.ts',
-        pattern: /(const settingsRoute = await prisma\.route\.upsert\([\s\S]*?\);\s*\n)/,
-        template: `$1  const {{camelCase name}}Route = await prisma.route.upsert({\n    where: { path: '/{{kebabCase name}}' },\n    update: {},\n    create: {\n      path: '/{{kebabCase name}}',\n      labelKey: 'ROUTE_{{constantCase name}}',\n      icon: 'Box',\n      ordem: 8,\n      isHome: false,\n      isActive: true,\n    },\n  });\n`,
+        transform: (fileContents, data) => {
+          const anchor = /(const settingsRoute = await prisma\.route\.upsert\([\s\S]*?\);\s*\n)/;
+          if (!anchor.test(fileContents)) return fileContents;
+
+          const existingOrdens = [...fileContents.matchAll(/ordem:\s*(\d+)/g)].map((m) =>
+            Number(m[1]),
+          );
+          const nextOrdem = existingOrdens.length ? Math.max(...existingOrdens) + 1 : 1;
+
+          const kebab = data.name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+          const camel = data.name.charAt(0).toLowerCase() + data.name.slice(1);
+          const constant = data.name.replace(/([A-Z])/g, '_$1').toUpperCase().replace(/^_/, '');
+
+          const block = `  const ${camel}Route = await prisma.route.upsert({\n    where: { path: '/${kebab}' },\n    update: {},\n    create: {\n      path: '/${kebab}',\n      labelKey: 'ROUTE_${constant}',\n      icon: 'Box',\n      ordem: ${nextOrdem},\n      isActive: true,\n    },\n  });\n`;
+
+          return fileContents.replace(anchor, `$1${block}`);
+        },
       });
 
       // 19. Adicionar permissões por área em prisma/seeds/routes.seed.ts. Ancorado no fechamento `]`

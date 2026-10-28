@@ -9,6 +9,7 @@ import React, {
   useState,
 } from 'react';
 import type { BlockType } from '../blocks.meta';
+import { DEFAULT_PROFILE, type LayoutProfileName } from '../profiles';
 import type { PageBlock, PageLayout } from '../schema';
 import {
   addBlock,
@@ -39,6 +40,11 @@ import {
 /** Estado do editor: rascunho local do layout, histórico (Undo/Redo) e controles de seleção. */
 export interface EditorContextValue {
   draft: PageLayout;
+  /** Superfície sendo editada: decide blocos oferecidos, classNames válidos e tetos. */
+  profile: LayoutProfileName;
+  /** Id do registro dono do layout quando `storage: 'record'` (ex: proposalId). `undefined` em
+   * profiles com `storage: 'config'`, que não têm um dono além do próprio usuário/sistema. */
+  recordId?: string;
   dirty: boolean;
   selectedId: string | null;
   /** Bloco sendo arrastado agora; as zonas de destino só existem durante o arrasto. */
@@ -101,9 +107,13 @@ export function useEditorOrThrow(): EditorContextValue {
 
 export function EditorProvider({
   initial,
+  profile = DEFAULT_PROFILE,
+  recordId,
   children,
 }: {
   initial: PageLayout;
+  profile?: LayoutProfileName;
+  recordId?: string;
   children: React.ReactNode;
 }) {
   const [draft, setDraft] = useState<PageLayout>(initial);
@@ -175,6 +185,8 @@ export function EditorProvider({
 
     return {
       draft,
+      profile,
+      recordId,
       dirty: JSON.stringify(draft) !== JSON.stringify(initial),
       selectedId,
       draggingId,
@@ -183,23 +195,25 @@ export function EditorProvider({
       select: setSelectedId,
       add: (type, parentId) => {
         const block = createBlock(type, parentId);
-        applyChange((d) => addBlock(d, block, parentId));
+        applyChange((d) => addBlock(d, block, parentId, profile));
         setSelectedId(block.id);
       },
       insertAt: (type, index, parentId) => {
         const block = createBlock(type, parentId);
-        applyChange((d) => insertBlockAt(d, block, index, parentId));
+        applyChange((d) => insertBlockAt(d, block, index, parentId, profile));
         setSelectedId(block.id);
       },
       insertAtGrid: (type, x, y, span, parentId) => {
         const block = createBlock(type, parentId);
-        applyChange((d) => insertBlockAtGrid(d, block, x, y, span, parentId));
+        applyChange((d) =>
+          insertBlockAtGrid(d, block, x, y, span, parentId, profile),
+        );
         setSelectedId(block.id);
       },
       duplicate: (id) => {
         let createdId: string | null = null;
         applyChange((d) => {
-          const res = duplicateBlock(d, id);
+          const res = duplicateBlock(d, id, profile);
           if (!res) return d;
           createdId = res.newId;
           return res.layout;
@@ -238,7 +252,7 @@ export function EditorProvider({
       setProp: (id, name, v) => applyChange((d) => setBlockProp(d, id, name, v)),
       setSource: (id, source) => applyChange((d) => setBlockSource(d, id, source)),
       setParam: (id, name, v) => applyChange((d) => setBlockParam(d, id, name, v)),
-      canAddTo: (parentId) => canAdd(draft, parentId),
+      canAddTo: (parentId) => canAdd(draft, parentId, undefined, profile),
       canUndo: past.length > 0,
       canRedo: future.length > 0,
       undo,
@@ -246,6 +260,8 @@ export function EditorProvider({
     };
   }, [
     draft,
+    profile,
+    recordId,
     initial,
     selectedId,
     draggingId,

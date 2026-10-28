@@ -27,6 +27,7 @@ export const LOG_ACTION_LEVEL: Record<LogActions, LogLevel> = {
   [LogActions.CREATE]: LogLevel.INFO,
   [LogActions.UPDATE]: LogLevel.INFO,
   [LogActions.DELETE]: LogLevel.INFO,
+  [LogActions.ARCHIVE]: LogLevel.INFO,
   [LogActions.DELETE_BY_ROLE]: LogLevel.INFO,
   [LogActions.LOG_CLEANUP]: LogLevel.INFO,
   [LogActions.CREATE_DEFINITION]: LogLevel.INFO,

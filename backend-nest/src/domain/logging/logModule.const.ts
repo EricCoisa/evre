@@ -17,6 +17,8 @@ export const LogModuleConst = {
   MESSAGING: 'MESSAGING',
   NOTIFICATION: 'NOTIFICATION', // Adicionado pelo Plop
   VERIFICATION: 'VERIFICATION',
+  COMPANY: 'COMPANY', // Adicionado pelo Plop
+  PROPOSAL: 'PROPOSAL', // Adicionado pelo Plop
 };
 
 export type LogModule = keyof typeof LogModuleConst;

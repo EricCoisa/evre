@@ -1,0 +1,21 @@
+{
+  "entity": {
+    "proposal": "Proposta",
+    "company": "Empresa",
+    "contact": "Contato"
+  },
+  "proposalStatus": {
+    "DRAFT": "Rascunho",
+    "SENT": "Enviada",
+    "ACCEPTED": "Aceita",
+    "LOST": "Não fechada",
+    "UNKNOWN": "Desconhecido"
+  },
+  "publication": {
+    "ACTIVE": "Link ativo",
+    "EXPIRED": "Link expirado",
+    "REVOKED": "Link revogado",
+    "NONE": "Não publicada",
+    "UNKNOWN": "Desconhecido"
+  }
+}

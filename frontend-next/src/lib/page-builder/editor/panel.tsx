@@ -23,6 +23,8 @@ import { Switch } from '@/components/ui/switch';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useTranslation } from '@/hooks/use-translation';
 import { usePageSources } from '@/lib/actions/pageBuilder/queries';
+import { useUploadProposalArtifact } from '@/lib/actions/proposal/queries';
+import { useStorageHealth } from '@/lib/actions/user/queries';
 import type { PageSourceDto } from '@/lib/generated/schemas';
 import {
   BLOCK_META,
@@ -31,8 +33,9 @@ import {
   type BlockPropMeta,
   type BlockType,
 } from '../blocks.meta';
-import { ALLOWED_CLASS_NAMES } from '../class-names';
+import { classNamesFor } from '../class-names';
 import { getMaxResizeBounds } from '../grid-engine';
+import { LAYOUT_PROFILES } from '../profiles';
 import {
   QUICK_HEIGHTS,
   QUICK_WIDTHS,
@@ -140,6 +143,9 @@ function Palette() {
     : undefined;
 
   const full = !editor.canAddTo(target);
+  const blockTypes = (Object.keys(BLOCK_META) as BlockType[]).filter((type) =>
+    (LAYOUT_PROFILES[editor.profile].blocks as readonly string[]).includes(type),
+  );
 
   return (
     <section className="space-y-2">
@@ -147,7 +153,7 @@ function Palette() {
         {target ? t('editor.addToContainer') : t('editor.addBlock')}
       </Label>
       <div className="grid grid-cols-2 gap-2">
-        {(Object.keys(BLOCK_META) as BlockType[]).map((type) => {
+        {blockTypes.map((type) => {
           const blockLabel = t(`blocks.${type}`, { defaultValue: type });
           const effectiveTarget = isInlineBlockType(type) ? inlineParentTarget : target;
           const canAddThis = editor.canAddTo(effectiveTarget);
@@ -256,16 +262,24 @@ function BlockForm({
         </div>
       ) : null}
 
-      {meta.props.map((prop) => (
-        <PropField
-          key={prop.name}
-          meta={prop}
-          value={block.props?.[prop.name]}
-          fields={source?.fields ?? []}
-          variables={availableVariables}
-          onChange={(v) => editor.setProp(block.id, prop.name, v)}
-        />
-      ))}
+      {meta.props.map((prop) =>
+        block.type === 'iframe' && prop.name === 'storageKey' ? (
+          <ArtifactStorageKeyField
+            key={prop.name}
+            value={block.props?.[prop.name]}
+            onChange={(v) => editor.setProp(block.id, prop.name, v)}
+          />
+        ) : (
+          <PropField
+            key={prop.name}
+            meta={prop}
+            value={block.props?.[prop.name]}
+            fields={source?.fields ?? []}
+            variables={availableVariables}
+            onChange={(v) => editor.setProp(block.id, prop.name, v)}
+          />
+        ),
+      )}
 
       {source?.params.length ? (
         <div className="space-y-3">
@@ -419,6 +433,75 @@ const RICH_TEXT_PROP_NAMES = new Set([
   'description',
 ]);
 
+/** Campo de `storageKey` do bloco `iframe`: sobe o arquivo em vez de pedir a chave como texto —
+ * o conteúdo nunca mora no layout (ver docs/frontend/page-builder.md). Desabilita com motivo
+ * visível quando o storage está fora do ar ([[service-health-gate]]) ou a proposta ainda não
+ * existe (`editor.recordId` ausente — rascunho novo que ainda não foi salvo). */
+function ArtifactStorageKeyField({
+  value,
+  onChange,
+}: {
+  value: unknown;
+  onChange: (value: unknown) => void;
+}) {
+  const { t } = useTranslation('page-builder');
+  const editor = useEditorOrThrow();
+  const { data: health } = useStorageHealth();
+  const upload = useUploadProposalArtifact();
+  const recordId = editor.recordId;
+  const storageDisabled = health?.operational === false;
+  const isDisabled = !recordId || storageDisabled || upload.isPending;
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !recordId) return;
+    upload.mutate(
+      { proposalId: recordId, file },
+      { onSuccess: (artifact) => onChange(artifact.storageKey) },
+    );
+  };
+
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">
+        {t('editor.artifactUpload')}
+        <span className="text-destructive">*</span>
+      </Label>
+      {typeof value === 'string' && value ? (
+        <p className="text-muted-foreground truncate text-xs" title={value}>
+          {value}
+        </p>
+      ) : null}
+      <Input
+        type="file"
+        accept=".html,image/png,image/jpeg,image/svg+xml,image/webp"
+        disabled={isDisabled}
+        onChange={handleFile}
+      />
+      {!recordId ? (
+        <p className="text-muted-foreground text-xs">
+          {t('editor.artifactMissingRecord', {
+            defaultValue: 'Salve a proposta antes de enviar o artefato.',
+          })}
+        </p>
+      ) : storageDisabled ? (
+        <p className="text-destructive text-xs">
+          {t('editor.artifactStorageDisabled')}
+        </p>
+      ) : upload.isPending ? (
+        <p className="text-muted-foreground text-xs">
+          {t('editor.artifactUploading')}
+        </p>
+      ) : upload.isError ? (
+        <p className="text-destructive text-xs">
+          {t('editor.artifactUploadError')}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 /** Um campo por entrada de `BlockPropMeta` — o `type` da meta decide o controle. */
 function PropField({
   meta,
@@ -530,7 +613,7 @@ function PropField({
   );
 }
 
-/** Estilo é vocabulário fechado (`ALLOWED_CLASS_NAMES`): select adiciona, chip remove. */
+/** Estilo é vocabulário fechado (`classNamesFor(profile)`): select adiciona, chip remove. */
 function ClassNamePicker({
   value,
   onChange,
@@ -539,6 +622,7 @@ function ClassNamePicker({
   onChange: (value: string | undefined) => void;
 }) {
   const { t } = useTranslation('page-builder');
+  const { profile } = useEditorOrThrow();
   const current = value?.split(/\s+/).filter(Boolean) ?? [];
   const set = (next: string[]) => onChange(next.length ? next.join(' ') : undefined);
 
@@ -566,11 +650,13 @@ function ClassNamePicker({
           <SelectValue placeholder={t('editor.addClass')} />
         </SelectTrigger>
         <SelectContent>
-          {ALLOWED_CLASS_NAMES.filter((c) => !current.includes(c)).map((cls) => (
-            <SelectItem key={cls} value={cls}>
-              {cls}
-            </SelectItem>
-          ))}
+          {classNamesFor(profile)
+            .filter((c) => !current.includes(c))
+            .map((cls) => (
+              <SelectItem key={cls} value={cls}>
+                {cls}
+              </SelectItem>
+            ))}
         </SelectContent>
       </Select>
     </div>

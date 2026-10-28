@@ -3,7 +3,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { BlockGrid, PageRenderer } from './renderer';
+import { BlockGrid, LayoutBody, PageRenderer } from './renderer';
 import type { PageBlock } from './schema';
 
 /** Cobre a árvore de blocos (BlockGrid/Block), a integração com fontes de dado via
@@ -70,8 +70,12 @@ const mockUserConfig = vi.hoisted(() => ({
   current: undefined as { id: string; value: unknown } | undefined,
 }));
 const mockResetMutate = vi.hoisted(() => vi.fn());
+const mockUseUserConfiguration = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/actions/userConfiguration/queries', () => ({
-  useUserConfiguration: () => ({ data: mockUserConfig.current }),
+  useUserConfiguration: () => {
+    mockUseUserConfiguration();
+    return { data: mockUserConfig.current };
+  },
   useResetUserConfiguration: () => ({ mutate: mockResetMutate, isPending: false }),
 }));
 
@@ -82,6 +86,7 @@ beforeEach(() => {
   mockSystemLayouts.current = { layouts: {} };
   mockUserConfig.current = undefined;
   mockResetMutate.mockReset();
+  mockUseUserConfiguration.mockReset();
 });
 
 function renderWithClient(ui: React.ReactElement) {
@@ -483,5 +488,48 @@ describe('PageRenderer', () => {
 
     expect(screen.getByText('Meu layout')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'restoreDefault' })).toBeEnabled();
+  });
+});
+
+describe('LayoutBody — layout injetado', () => {
+  it('renderiza o layout recebido sem consultar a configuração do usuário', () => {
+    renderWithClient(
+      <LayoutBody
+        profile="dashboard"
+        layout={{
+          v: 1,
+          blocks: [pageBlock({ id: 'b1', type: 'group', props: { title: 'Injetado' } })],
+        }}
+      />,
+    );
+
+    expect(screen.getByText('Injetado')).toBeInTheDocument();
+    // É o que a página pública usa: nenhum hook de config, de sessão ou de flag é chamado.
+    expect(mockUseUserConfiguration).not.toHaveBeenCalled();
+  });
+
+  it('descarta bloco que não pertence ao profile', () => {
+    renderWithClient(
+      <LayoutBody
+        profile="proposal"
+        layout={{
+          v: 1,
+          blocks: [
+            pageBlock({ id: 'b1', type: 'alert.banner', props: { title: 'Fica', content: 'ok' } }),
+            pageBlock({
+              id: 'b2',
+              type: 'table.basic',
+              props: { title: 'Sai', columns: ['a'] },
+              data: { source: 'users.list' },
+            }),
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByText('Fica')).toBeInTheDocument();
+    expect(screen.queryByText('Sai')).not.toBeInTheDocument();
+    // Bloco fora do profile nem chega a pedir fonte de dado.
+    expect(mockGetDataSource).not.toHaveBeenCalled();
   });
 });

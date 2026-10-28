@@ -48,6 +48,10 @@ model User {
   notificationRecipients NotificationRecipient[]
   notificationsCreated   Notification[]          @relation("NotificationCreatedBy")
   shortLinks             ShortLink[]
+  memberships            Membership[]
+  proposals              Proposal[]
+  proposalArtifacts      ProposalArtifact[]
+  proposalSends          ProposalSend[]
 
   @@index([deletedAt])
   @@map("users")

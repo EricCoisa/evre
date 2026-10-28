@@ -1,8 +1,10 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { innerAlignClass } from './class-names';
+import { useProposalTerms } from './proposal-terms-context';
 
 import { Info } from 'lucide-react';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, XAxis } from 'recharts';
@@ -27,10 +29,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
+import Modal from '@/components/modal';
 import { cn } from '@/lib/cn';
 import { useTranslation } from '@/hooks/use-translation';
+import { usePresignedUrl } from '@/lib/actions/storage/queries';
 import { parseWhatsAppFormat, type FormattedPart } from '@/lib/messaging/format-whatsapp-text';
 import { linkify } from '@/lib/messaging/linkify';
 import { BLOCK_META, type BlockType } from './blocks.meta';
@@ -62,6 +67,10 @@ export const BLOCK_REGISTRY: Record<BlockType, (p: BlockProps) => React.ReactNod
   'button.action': ButtonActionBlock,
   'list.feed': ListFeed,
   'table.basic': BasicTable,
+  topic: TopicBlock,
+  image: ImageBlock,
+  investment: InvestmentBlock,
+  iframe: IframeBlock,
 };
 
 export function isKnownBlock(type: string): type is BlockType {
@@ -267,6 +276,251 @@ function AlertBanner({ props, bare, className, children }: BlockProps) {
           <div className="flex flex-wrap items-center gap-2 pt-1">{children}</div>
         ) : null}
       </div>
+    </Panel>
+  );
+}
+
+function TopicBlock({ props, bare, className, children }: BlockProps) {
+  const items = toStringArray(props.items);
+  return (
+    <Panel
+      bare={bare}
+      className={className}
+      header={
+        <CardTitle>
+          <FormattedRichText text={str(props.title)} inline />
+        </CardTitle>
+      }
+    >
+      <div className="space-y-2">
+        {props.description ? (
+          <CardDescription>
+            <FormattedRichText text={str(props.description)} />
+          </CardDescription>
+        ) : null}
+        {items.length > 0 ? (
+          <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+            {items.map((item, index) => (
+              <li key={index}>{item}</li>
+            ))}
+          </ul>
+        ) : null}
+        {children ? (
+          <div className="flex flex-wrap items-center gap-2 pt-1">{children}</div>
+        ) : null}
+      </div>
+    </Panel>
+  );
+}
+
+function ImageBlock({ props, bare, className }: BlockProps) {
+  // Mesma whitelist de esquema que os links do RichText: nunca javascript:/data:.
+  const url = safeHref(props.url);
+  const alt = str(props.alt);
+  const caption = str(props.caption);
+
+  return (
+    <Panel bare={bare} className={className}>
+      <figure className="space-y-2">
+        {url ? (
+          <Image
+            src={url}
+            alt={alt}
+            width={1600}
+            height={900}
+            // ponytail: URL de imagem é arbitrária (anexo do autor da proposta), não um asset
+            // interno — unoptimized pula a checagem de `images.remotePatterns` do next.config.
+            unoptimized
+            className="aspect-video w-full rounded-lg object-cover"
+          />
+        ) : (
+          <div className="aspect-video w-full rounded-lg bg-muted" />
+        )}
+        {caption ? (
+          <figcaption className="text-center text-sm text-muted-foreground">
+            {caption}
+          </figcaption>
+        ) : null}
+      </figure>
+    </Panel>
+  );
+}
+
+/** Centavos + moeda do envelope → string formatada; nunca dividir por 100 e concatenar símbolo. */
+function formatCents(cents: number | null, currency: string): string {
+  if (typeof cents !== 'number') return '—';
+  try {
+    // ponytail: locale fixo pt-BR — trocar por locale derivado da currency/idioma de exibição
+    // quando a proposta precisar de outro idioma.
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(cents / 100);
+  } catch {
+    return '—';
+  }
+}
+
+function formatDate(value: string): string {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('pt-BR').format(date);
+}
+
+function InvestmentBlock({ props, bare, className }: BlockProps) {
+  const { t } = useTranslation('page-builder');
+  const terms = useProposalTerms();
+
+  if (!terms) {
+    return (
+      <Panel bare={bare} className={className}>
+        <p className="text-sm text-muted-foreground">{t('investmentEmpty')}</p>
+      </Panel>
+    );
+  }
+
+  const showOptional = props.showOptional === true;
+
+  return (
+    <Panel
+      bare={bare}
+      className={className}
+      header={
+        props.title ? (
+          <CardTitle>
+            <FormattedRichText text={str(props.title)} inline />
+          </CardTitle>
+        ) : undefined
+      }
+    >
+      <div className="space-y-4">
+        <div>
+          <p className="text-3xl font-bold text-foreground">
+            {formatCents(terms.totalCents, terms.currency)}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {t(`investmentRecurrence.${terms.recurrence}`)}
+          </p>
+        </div>
+        {terms.termDays != null || terms.validUntil ? (
+          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+            {terms.termDays != null ? (
+              <span>
+                {t('investmentTerm')}: {terms.termDays} {t('investmentDays')}
+              </span>
+            ) : null}
+            {terms.validUntil ? (
+              <span>
+                {t('investmentValidUntil')} {formatDate(terms.validUntil)}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+        {terms.includedItems.length > 0 ? (
+          <div>
+            <p className="text-sm font-semibold text-foreground">{t('investmentIncluded')}</p>
+            <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+              {terms.includedItems.map((item, index) => (
+                <li key={index}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+        {showOptional && terms.optionalItems.length > 0 ? (
+          <div>
+            <p className="text-sm font-semibold text-foreground">{t('investmentOptional')}</p>
+            <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+              {terms.optionalItems.map((item, index) => (
+                <li key={index}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </div>
+    </Panel>
+  );
+}
+
+/** Liberado nos dois estados (preview e modal) — SEM `allow-same-origin`, sempre. O artefato é
+ * HTML de terceiro (protótipo do Claude, apresentação); com `allow-same-origin` ele alcançaria
+ * sessão e cookie da aplicação através do mesmo iframe que executa o script dele. */
+const ARTIFACT_SANDBOX = 'allow-scripts allow-popups allow-modals allow-forms';
+
+/** Demonstração HTML/imagem em sandbox: preview capturado por uma camada de clique (sem scroll
+ * nem interação própria), toque abre modal 98vw×90vh com scroll e interação liberados. */
+function IframeBlock({ props, bare, className }: BlockProps) {
+  const { t } = useTranslation('page-builder');
+  const [open, setOpen] = React.useState(false);
+  const storageKey = typeof props.storageKey === 'string' ? props.storageKey : undefined;
+  const title = str(props.title);
+  const height = typeof props.height === 'number' ? props.height : 400;
+  const aspect = props.aspect === 'video' || props.aspect === 'square' ? props.aspect : undefined;
+
+  const { data, isLoading, isError } = usePresignedUrl(storageKey);
+  const url = data?.url;
+  const previewStyle: React.CSSProperties = aspect
+    ? { aspectRatio: aspect === 'video' ? '16 / 9' : '1 / 1' }
+    : { height };
+
+  if (!storageKey) {
+    return (
+      <Panel bare={bare} className={className}>
+        <Alert variant="destructive">
+          <AlertDescription>{t('iframeMissingArtifact')}</AlertDescription>
+        </Alert>
+      </Panel>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Panel bare={bare} className={className}>
+        <Alert variant="destructive">
+          <AlertDescription>{t('iframeLoadError')}</AlertDescription>
+        </Alert>
+      </Panel>
+    );
+  }
+
+  return (
+    <Panel bare={bare} className={className}>
+      {isLoading || !url ? (
+        <LoadingSkeleton className="w-full" style={previewStyle} />
+      ) : (
+        <div className="relative w-full overflow-hidden rounded-lg border" style={previewStyle}>
+          <iframe
+            src={url}
+            title={title || 'Artefato'}
+            className="h-full w-full border-0"
+            sandbox={ARTIFACT_SANDBOX}
+            scrolling="no"
+            loading="lazy"
+          />
+          {/* Camada transparente por cima: captura o toque/clique sem deixar o iframe
+           * interagir ou rolar sozinho em linha — é isso que resolve o scroll sequestrado
+           * no mobile. Interação real só dentro do modal. */}
+          <button
+            type="button"
+            aria-label={t('iframeOpen', { defaultValue: 'Abrir em tela cheia' })}
+            className="absolute inset-0 cursor-pointer bg-transparent"
+            onClick={() => setOpen(true)}
+          />
+        </div>
+      )}
+
+      <Modal
+        open={open}
+        onOpenChange={setOpen}
+        title={title || t('iframeModalTitle', { defaultValue: 'Demonstração' })}
+        size="full"
+        className="h-[90vh]! max-h-[90vh]! w-[98vw]! max-w-[98vw]!"
+      >
+        {url ? (
+          <iframe
+            src={url}
+            title={title || 'Artefato'}
+            className="h-full w-full border-0"
+            sandbox={ARTIFACT_SANDBOX}
+            scrolling="yes"
+          />
+        ) : null}
+      </Modal>
     </Panel>
   );
 }
@@ -498,7 +752,7 @@ function ListFeed({
   children,
 }: BlockProps) {
   const { t } = useTranslation('common');
-  const columns = tableColumns(props.columns);
+  const columns = toStringArray(props.columns);
   const primary = columns[0];
   const secondary = columns[1];
   const rows = (data as ListResponse | undefined)?.data ?? [];
@@ -545,7 +799,7 @@ function BasicTable({
   isLoading,
   children,
 }: BlockProps) {
-  const columns = tableColumns(props.columns);
+  const columns = toStringArray(props.columns);
   const { data: rows = [], meta } = (data as ListResponse | undefined) ?? {};
   const { limit: skeletonRows = 5, page = 1, totalPages = 1 } = meta ?? {};
   return (
@@ -582,7 +836,7 @@ function BasicTable({
   );
 }
 
-function tableColumns(value: unknown): string[] {
+function toStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.map(str) : [];
 }
 

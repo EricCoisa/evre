@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAgentSecret } from '@/lib/api/agent-cms-auth';
 import { describeBlocks } from '@/lib/page-builder/blocks.meta';
-import { ALLOWED_CLASS_NAMES } from '@/lib/page-builder/class-names';
+import { classNamesFor } from '@/lib/page-builder/class-names';
 import { describePages } from '@/lib/page-builder/pages';
+import {
+  LAYOUT_PROFILES,
+  isLayoutProfileName,
+} from '@/lib/page-builder/profiles';
 import { SPANS } from '@/lib/page-builder/schema';
 
 /** Catálogo de blocos e páginas do PageBuilder, servido ao backend via x-agent-secret. */
@@ -10,11 +14,24 @@ export async function GET(req: NextRequest) {
   const unauthorized = requireAgentSecret(req);
   if (unauthorized) return unauthorized;
 
+  const raw = req.nextUrl.searchParams.get('profile');
+  // Profile desconhecido é recusado em vez de ignorado: ignorar devolveria o catálogo inteiro
+  // e um typo no nome alargaria a allowlist do validador em silêncio.
+  if (raw !== null && !isLayoutProfileName(raw)) {
+    return NextResponse.json(
+      {
+        message: `profile "${raw}" não existe. Disponíveis: ${Object.keys(LAYOUT_PROFILES).join(', ')}.`,
+      },
+      { status: 400 },
+    );
+  }
+  const profile = raw ?? undefined;
+
   return NextResponse.json({
-    blocks: describeBlocks(),
+    blocks: describeBlocks(profile),
     pages: describePages(),
     spans: [...SPANS],
-    // Lista fechada de classNames Tailwind permitidos
-    classNames: [...ALLOWED_CLASS_NAMES],
+    // Lista fechada de classNames Tailwind permitidos no profile
+    classNames: classNamesFor(profile),
   });
 }

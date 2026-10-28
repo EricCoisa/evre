@@ -47,8 +47,8 @@
 /* PageBuilder — classes que um bloco pode receber pelo `className` do layout do usuário.
    O Tailwind v4 só emite o que ele VÊ nos arquivos-fonte, e essas classes vivem no banco,
    não no código: sem este bloco elas não existiriam no CSS e o `className` seria um no-op.
-   Fonte única: `lib/page-builder/class-names.ts` (ALLOWED_CLASS_NAMES) — `class-names.test.ts`
-   falha se as duas listas divergirem. Ver docs/frontend/page-builder.md. */
+   Fonte única: `lib/page-builder/class-names.ts` (ALLOWED_CLASS_NAMES + EDITORIAL_CLASS_NAMES)
+   — `class-names.test.ts` falha se as duas listas divergirem. Ver docs/frontend/page-builder.md. */
 @source inline("{h,w}-full");
 @source inline("flex flex-{col,row,wrap,1}");
 @source inline("items-{start,center,end}");
@@ -68,6 +68,11 @@
 @source inline("rounded-{md,lg,xl}");
 @source inline("shadow-{sm,none}");
 @source inline("overflow-hidden overflow-x-auto");
+/* Vocabulário editorial — só o profile `proposal` o aceita (EDITORIAL_CLASS_NAMES). */
+@source inline("max-w-prose mx-auto aspect-video");
+@source inline("tracking-{tight,wide} leading-relaxed text-5xl");
+@source inline("italic underline border-l-4");
+@source inline("space-y-{2,4,6,8}");
 
 @custom-variant dark (&:is(.dark *));
 

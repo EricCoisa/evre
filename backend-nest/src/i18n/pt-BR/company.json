@@ -1,0 +1,34 @@
+{
+  "create": {
+    "title": "Criar nova empresa",
+    "description": "Registra uma nova empresa no sistema"
+  },
+  "list": {
+    "title": "Listar empresas"
+  },
+  "find": {
+    "title": "Buscar empresa por ID"
+  },
+  "update": {
+    "title": "Atualizar empresa"
+  },
+  "delete": {
+    "title": "Arquivar empresa"
+  },
+  "not_found": "Empresa não encontrada",
+  "contact_not_found": "Contato não encontrado",
+  "contacts": {
+    "list": {
+      "title": "Listar contatos da empresa"
+    },
+    "create": {
+      "title": "Criar contato da empresa"
+    },
+    "update": {
+      "title": "Atualizar contato da empresa"
+    },
+    "delete": {
+      "title": "Arquivar contato da empresa"
+    }
+  }
+}

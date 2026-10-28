@@ -4,8 +4,14 @@
   // typecheck — sem este arquivo, erro de tipo em spec fica invisível até
   // alguém rodar tsc na mão. `npm run typecheck` cobre esse buraco.
   //
-  // `test/` está de fora porque as suites e2e de Organization/Membership/User.role
-  // arrastam um schema drift PRÉ-EXISTENTE (13 erros, sem relação com o módulo
-  // ai/). Remover esta exclusão assim que esse schema for reconciliado.
-  "exclude": ["node_modules", "dist", "test"]
+  // Os dois arquivos abaixo carregam um erro de tipo PRÉ-EXISTENTE, sem relação com
+  // o schema (Organization/Membership/User.role, reconciliado em F0-05): cast direto
+  // `as string[]` sobre `set-cookie` (TS2352) e import com caminho relativo quebrado
+  // (TS2307). Remover a exclusão de cada um assim que for corrigido.
+  "exclude": [
+    "node_modules",
+    "dist",
+    "test/auth.e2e-spec.ts",
+    "test/messaging-webhook.e2e-spec.ts"
+  ]
 }

@@ -117,15 +117,28 @@ describe('SetPageLayoutUseCase', () => {
     mockSources.listForRole.mockReturnValue([usersListSource]);
     mockSources.getKind.mockReturnValue('list');
     mockSources.get.mockReturnValue(usersListSource);
-    mockBridge.describeSchema.mockResolvedValue({
-      blocks: [
+    // A ponte devolve o catálogo JÁ filtrado pelo profile; o mock espelha isso.
+    mockBridge.describeSchema.mockImplementation((profile?: string) => {
+      const dataBlocks = [
         { type: 'stat.card', description: '', accepts: ['list', 'count'], container: false, props: [] },
         { type: 'chart.area', description: '', accepts: ['series'], container: false, props: [] },
+      ];
+      const contentBlocks = [
         { type: 'group', description: '', accepts: [], container: true, props: [] },
-      ],
-      pages: [{ pageKey: '/dashboard', description: '' }],
-      spans: [1, 2, 3, 4],
-      classNames: ['text-center', 'font-bold'],
+        { type: 'text.rich', description: '', accepts: [], container: false, inline: true, props: [] },
+      ];
+      return Promise.resolve({
+        blocks:
+          profile === 'proposal'
+            ? contentBlocks
+            : [...dataBlocks, ...contentBlocks],
+        pages: [{ pageKey: '/dashboard', description: '' }],
+        spans: [1, 2, 3, 4],
+        classNames:
+          profile === 'proposal'
+            ? ['text-center', 'font-bold', 'max-w-prose']
+            : ['text-center', 'font-bold'],
+      });
     });
     mockGetByKey.execute.mockResolvedValue({
       id: 'def-1',
@@ -417,5 +430,155 @@ describe('SetPageLayoutUseCase', () => {
         layout: layout('users.list'),
       }),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  // O profile é a base de segurança da F1: a página pública renderiza sem sessão, então
+  // nenhum bloco dela pode chamar endpoint.
+  describe('profile', () => {
+    const textBlock = (
+      extra: Record<string, unknown> = {},
+    ): PageLayout =>
+      ({
+        v: 1,
+        blocks: [{ id: 'b1', type: 'text.rich', span: 12, ...extra }],
+      }) as PageLayout;
+
+    it('profile none recusa bloco com data.source', async () => {
+      await expect(
+        useCase.execute('u1', 'ADMIN', {
+          pageKey: '/dashboard',
+          profile: 'proposal',
+          layout: textBlock({ data: { source: 'users.list' } }),
+        }),
+      ).rejects.toThrow(/não busca dado de nenhuma fonte.*b1/s);
+      expect(mockSet.execute).not.toHaveBeenCalled();
+    });
+
+    it('profile none recusa data.source também dentro de children', async () => {
+      await expect(
+        useCase.execute('u1', 'ADMIN', {
+          pageKey: '/dashboard',
+          profile: 'proposal',
+          layout: {
+            v: 1,
+            blocks: [
+              {
+                id: 'g1',
+                type: 'group',
+                span: 12,
+                children: [
+                  { id: 'c1', type: 'text.rich', span: 6 },
+                  { id: 'c2', type: 'text.rich', span: 6, data: { source: 'users.list' } },
+                ],
+              },
+            ],
+          } as PageLayout,
+        }),
+      ).rejects.toThrow(/não busca dado de nenhuma fonte.*c2/s);
+      expect(mockSet.execute).not.toHaveBeenCalled();
+    });
+
+    it('profile none aceita bloco de conteúdo puro, sem conferir role', async () => {
+      mockSources.listForRole.mockReturnValue([]);
+
+      await useCase.execute('u1', 'USER', {
+        pageKey: '/dashboard',
+        profile: 'proposal',
+        layout: textBlock({ props: { content: 'Olá' } }),
+      });
+
+      expect(mockSet.execute).toHaveBeenCalled();
+      expect(mockSources.listForRole).not.toHaveBeenCalled();
+    });
+
+    it('profile none recusa bloco que não existe no catálogo dele', async () => {
+      await expect(
+        useCase.execute('u1', 'ADMIN', {
+          pageKey: '/dashboard',
+          profile: 'proposal',
+          layout: layout('users.list', 'chart.area'),
+        }),
+      ).rejects.toThrow(/não busca dado de nenhuma fonte/);
+    });
+
+    it('storage record não exige pageKey do catálogo', async () => {
+      await useCase.execute('u1', 'ADMIN', {
+        pageKey: '/proposal/rascunho',
+        profile: 'proposal',
+        layout: textBlock({ props: { content: 'Olá' } }),
+      });
+
+      expect(mockSet.execute).toHaveBeenCalled();
+    });
+
+    it('storage config continua exigindo pageKey do catálogo', async () => {
+      await expect(
+        useCase.execute('u1', 'ADMIN', {
+          pageKey: '/inexistente',
+          profile: 'dashboard',
+          layout: layout('users.list'),
+        }),
+      ).rejects.toThrow(/não é customizável/);
+    });
+
+    it('profile ausente vale dashboard: consulta a ponte com o catálogo do dashboard', async () => {
+      await useCase.execute('u1', 'ADMIN', {
+        pageKey: '/dashboard',
+        layout: layout('users.list'),
+      });
+
+      expect(mockBridge.describeSchema).toHaveBeenCalledWith('dashboard');
+    });
+
+    it('dashboard recusa className que só o profile editorial aceita', async () => {
+      await expect(
+        useCase.execute('u1', 'ADMIN', {
+          pageKey: '/dashboard',
+          layout: {
+            v: 1,
+            blocks: [
+              {
+                id: 'b1',
+                type: 'stat.card',
+                className: 'max-w-prose',
+                data: { source: 'users.list' },
+              },
+            ],
+          } as PageLayout,
+        }),
+      ).rejects.toThrow(/max-w-prose/);
+    });
+
+    it('recusa layout acima do teto de blocos do profile', async () => {
+      const blocks = Array.from({ length: 21 }, (_, i) => ({
+        id: `b${i}`,
+        type: 'stat.card',
+        data: { source: 'users.list' },
+      }));
+
+      await expect(
+        useCase.execute('u1', 'ADMIN', {
+          pageKey: '/dashboard',
+          layout: { v: 1, blocks } as PageLayout,
+        }),
+      ).rejects.toThrow(/excede o teto de 20/);
+      expect(mockSet.execute).not.toHaveBeenCalled();
+    });
+
+    it('o mesmo layout passa no profile de teto maior', async () => {
+      const blocks = Array.from({ length: 21 }, (_, i) => ({
+        id: `b${i}`,
+        type: 'text.rich',
+        props: { content: 'x' },
+      }));
+
+      await useCase.execute('u1', 'ADMIN', {
+        pageKey: '/proposal/rascunho',
+        profile: 'proposal',
+        layout: { v: 1, blocks } as PageLayout,
+      });
+
+      expect(mockSet.execute).toHaveBeenCalled();
+    });
   });
 });

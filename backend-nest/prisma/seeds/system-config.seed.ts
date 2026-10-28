@@ -8,6 +8,10 @@ import { notificationConfigKeys } from '../../dist/src/domain/notification/notif
 import { AI_CONFIG_KEYS, AiProviderConst } from '../../dist/src/domain/ai/ai.const';
 import { EMAIL_CONFIG_KEYS } from '../../dist/src/domain/mail/mail.const';
 import { STORAGE_CONFIG_KEYS } from '../../dist/src/domain/storage/storage.const';
+import {
+  PROPOSAL_ARTIFACT_CONFIG_KEYS,
+  PROPOSAL_ARTIFACT_DEFAULT_MAX_SIZE_BYTES,
+} from '../../dist/src/domain/proposal/proposal-artifact.const';
 
 export async function seedSystemConfigurations(prisma: PrismaClient) {
   const sysConfigs: Array<{
@@ -311,6 +315,13 @@ export async function seedSystemConfigurations(prisma: PrismaClient) {
     // Layout padrão do PageBuilder: o que quem não customizou a página enxerga. Nasce vazio
     // (= ninguém publicou padrão ainda), e o admin grava pelo "Salvar como Padrão" do editor.
     { labelKey: 'PAGE_LAYOUTS', valueType: 'JSON', value: '{}' },
+    // Tamanho máximo (bytes) do upload de artefato do bloco `iframe`. Sem tela de ajuste nesta
+    // etapa (ver docs da F1-03) — editável só por quem grava SystemConfiguration diretamente.
+    {
+      labelKey: PROPOSAL_ARTIFACT_CONFIG_KEYS.maxSizeBytes,
+      valueType: 'NUMBER',
+      value: String(PROPOSAL_ARTIFACT_DEFAULT_MAX_SIZE_BYTES),
+    },
   ];
 
   // Limpa placeholders legados que possam ter ficado em bancos locais existentes

@@ -1,0 +1,107 @@
+{
+  "create": {
+    "title": "Criar nova proposta",
+    "description": "Registrar um rascunho de proposta — só o nome"
+  },
+  "list": {
+    "title": "Listar propostas"
+  },
+  "find": {
+    "title": "Obter proposta por ID"
+  },
+  "update": {
+    "title": "Atualizar proposta"
+  },
+  "delete": {
+    "title": "Arquivar proposta"
+  },
+  "duplicate": {
+    "title": "Duplicar proposta"
+  },
+  "publish": {
+    "title": "Publicar proposta"
+  },
+  "revoke": {
+    "title": "Revogar publicação da proposta"
+  },
+  "accept": {
+    "title": "Aceitar proposta publicada (via link)",
+    "offline": {
+      "title": "Registrar aceite recebido por outro canal"
+    }
+  },
+  "versions": {
+    "list": {
+      "title": "Listar versões publicadas da proposta"
+    }
+  },
+  "send": {
+    "title": "Enviar proposta publicada por WhatsApp"
+  },
+  "sends": {
+    "list": {
+      "title": "Listar histórico de envios da proposta"
+    }
+  },
+  "send_no_active_version": "Esta proposta não tem uma versão publicada ativa",
+  "send_no_contact": "Informe um telefone ou cadastre um contato principal com telefone na empresa",
+  "send_channel_unavailable": "O canal de WhatsApp não enviou a mensagem — copie o link e envie manualmente",
+  "layout": {
+    "update": {
+      "title": "Atualizar rascunho do layout da proposta"
+    }
+  },
+  "terms": {
+    "update": {
+      "title": "Atualizar envelope comercial da proposta"
+    }
+  },
+  "status": {
+    "update": {
+      "title": "Atualizar status da proposta"
+    }
+  },
+  "artifact": {
+    "upload": {
+      "title": "Enviar artefato da proposta"
+    },
+    "list": {
+      "title": "Listar artefatos da proposta"
+    },
+    "delete": {
+      "title": "Arquivar artefato da proposta"
+    },
+    "not_found": "Artefato não encontrado",
+    "invalid_content_type": "Tipo de arquivo não permitido para artefato",
+    "too_large": "Arquivo excede o tamanho máximo permitido"
+  },
+  "not_found": "Proposta não encontrada",
+  "cannot_edit_non_draft": "Só é possível editar proposta com status DRAFT",
+  "lost_reason_required": "lostReason é obrigatório quando o status é LOST",
+  "invalid_status_transition": "Esta proposta não pode mais mudar de status",
+  "cannot_publish_without_layout": "Não é possível publicar uma proposta arquivada ou sem conteúdo",
+  "already_revoked": "A publicação desta proposta já estava revogada",
+  "version_not_found": "Esta proposta ainda não tem nenhuma versão publicada",
+  "public_token_generation_failed": "Não foi possível gerar um token público único para a proposta",
+  "acceptance_revoked": "Esta proposta não pode mais ser aceita — a publicação foi revogada",
+  "acceptance_expired": "Esta proposta não pode mais ser aceita — o prazo de validade passou",
+  "acceptance_other_version_accepted": "Esta proposta já tem outra versão aceita",
+  "acceptance_note_required": "Informe de onde veio a decisão — nota obrigatória para aceite registrado pela equipe",
+  "acceptance_notified_title": "Proposta aceita",
+  "acceptance_notified_message": "{name} foi aceita.",
+  "public": {
+    "get": {
+      "title": "Obter proposta pública por token"
+    },
+    "renew": {
+      "title": "Pedir renovação de uma proposta pública"
+    },
+    "not_found": "Proposta não encontrada",
+    "revoked": "Esta proposta foi atualizada. Peça o link mais recente.",
+    "expired": "Esta proposta expirou.",
+    "opened_title": "Proposta aberta pelo cliente",
+    "opened_message": "{name} foi aberta pelo cliente.",
+    "renew_requested_title": "Renovação solicitada",
+    "renew_requested_message": "O cliente pediu um link novo para {name}."
+  }
+}

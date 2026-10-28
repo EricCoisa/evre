@@ -3,9 +3,23 @@ import type { ReactNode } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BLOCK_REGISTRY, isKnownBlock } from './registry';
+import { ProposalTermsProvider, type ProposalTerms } from './proposal-terms-context';
 
 vi.mock('@/hooks/use-translation', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
+}));
+
+/** `iframe` resolve a URL via `usePresignedUrl` (react-query + server action) — mockado direto
+ * em vez de montar QueryClientProvider, igual o padrão de `renderer.test.tsx` para os hooks de ação. */
+const mockPresignedUrl = vi.hoisted(() => ({
+  current: { data: undefined, isLoading: false, isError: false } as {
+    data?: { url: string };
+    isLoading: boolean;
+    isError: boolean;
+  },
+}));
+vi.mock('@/lib/actions/storage/queries', () => ({
+  usePresignedUrl: () => mockPresignedUrl.current,
 }));
 
 // ResponsiveContainer nunca ganha tamanho real no jsdom, então o recharts de verdade não
@@ -459,6 +473,183 @@ describe('list.feed', () => {
     );
 
     expect(document.querySelectorAll('.animate-pulse').length).toBeGreaterThan(0);
+  });
+});
+
+describe('topic', () => {
+  it('renderiza título, descrição e os 3 itens da lista', () => {
+    const TopicBlock = BLOCK_REGISTRY.topic;
+    render(
+      React.createElement(TopicBlock, {
+        props: {
+          title: 'Escopo',
+          description: 'O que entra no projeto',
+          items: ['Descoberta', 'Implementação', 'Entrega'],
+        },
+      }),
+    );
+
+    expect(screen.getByText('Escopo')).toBeInTheDocument();
+    expect(screen.getByText('O que entra no projeto')).toBeInTheDocument();
+    expect(screen.getAllByRole('listitem')).toHaveLength(3);
+  });
+});
+
+describe('image', () => {
+  it('sem alt não quebra — renderiza com alt vazio', () => {
+    const ImageBlock = BLOCK_REGISTRY.image;
+    render(
+      React.createElement(ImageBlock, {
+        props: { url: 'https://cdn.example.com/mock.png' },
+      }),
+    );
+
+    const img = document.querySelector('img');
+    expect(img).not.toBeNull();
+    expect(img).toHaveAttribute('alt', '');
+  });
+
+  it('mostra a legenda quando informada', () => {
+    const ImageBlock = BLOCK_REGISTRY.image;
+    render(
+      React.createElement(ImageBlock, {
+        props: { url: 'https://cdn.example.com/mock.png', caption: 'Tela inicial' },
+      }),
+    );
+
+    expect(screen.getByText('Tela inicial')).toBeInTheDocument();
+  });
+});
+
+describe('investment', () => {
+  it('sem contexto mostra o estado vazio explícito', () => {
+    const InvestmentBlock = BLOCK_REGISTRY.investment;
+    render(React.createElement(InvestmentBlock, { props: {} }));
+
+    expect(screen.getByText('investmentEmpty')).toBeInTheDocument();
+  });
+
+  it('formata totalCents: 2400000 + BRL como R$ 24.000,00', () => {
+    const InvestmentBlock = BLOCK_REGISTRY.investment;
+    const terms: ProposalTerms = {
+      totalCents: 2400000,
+      currency: 'BRL',
+      recurrence: 'ONE_TIME',
+      termDays: null,
+      validUntil: null,
+      includedItems: [],
+      optionalItems: [],
+    };
+
+    render(
+      React.createElement(ProposalTermsProvider, {
+        terms,
+        children: React.createElement(InvestmentBlock, { props: {} }),
+      }),
+    );
+
+    expect(screen.getByText('R$ 24.000,00')).toBeInTheDocument();
+  });
+
+  it('mostra itens inclusos e, só com showOptional, os opcionais', () => {
+    const InvestmentBlock = BLOCK_REGISTRY.investment;
+    const terms: ProposalTerms = {
+      totalCents: 100000,
+      currency: 'BRL',
+      recurrence: 'MONTHLY',
+      termDays: 30,
+      validUntil: null,
+      includedItems: ['Suporte'],
+      optionalItems: ['Manutenção extra'],
+    };
+
+    render(
+      React.createElement(ProposalTermsProvider, {
+        terms,
+        children: React.createElement(InvestmentBlock, { props: {} }),
+      }),
+    );
+
+    expect(screen.getByText('Suporte')).toBeInTheDocument();
+    expect(screen.queryByText('Manutenção extra')).not.toBeInTheDocument();
+
+    render(
+      React.createElement(ProposalTermsProvider, {
+        terms,
+        children: React.createElement(InvestmentBlock, { props: { showOptional: true } }),
+      }),
+    );
+
+    expect(screen.getByText('Manutenção extra')).toBeInTheDocument();
+  });
+});
+
+describe('iframe', () => {
+  const NO_SAME_ORIGIN_SANDBOX = 'allow-scripts allow-popups allow-modals allow-forms';
+
+  beforeEach(() => {
+    mockPresignedUrl.current = {
+      data: { url: 'https://cdn.example.com/artifacts/demo.html' },
+      isLoading: false,
+      isError: false,
+    };
+  });
+
+  it('sem storageKey mostra aviso em vez do iframe', () => {
+    const IframeBlock = BLOCK_REGISTRY.iframe;
+    render(React.createElement(IframeBlock, { props: {} }));
+
+    expect(screen.getByText('iframeMissingArtifact')).toBeInTheDocument();
+    expect(document.querySelector('iframe')).toBeNull();
+  });
+
+  it('colapsado: iframe não é interativo — scrolling="no" e camada de clique por cima, sandbox sem allow-same-origin', () => {
+    const IframeBlock = BLOCK_REGISTRY.iframe;
+    render(
+      React.createElement(IframeBlock, { props: { storageKey: 'proposals/p1/artifacts/x.html' } }),
+    );
+
+    const iframe = document.querySelector('iframe');
+    expect(iframe).not.toBeNull();
+    expect(iframe).toHaveAttribute('scrolling', 'no');
+    expect(iframe?.getAttribute('sandbox')).toBe(NO_SAME_ORIGIN_SANDBOX);
+    expect(iframe?.getAttribute('sandbox')).not.toContain('allow-same-origin');
+
+    // camada transparente captura o clique — não dá para digitar/rolar dentro do preview
+    expect(screen.getByRole('button', { name: 'iframeOpen' })).toBeInTheDocument();
+    // modal ainda fechado: só o iframe do preview existe
+    expect(document.querySelectorAll('iframe')).toHaveLength(1);
+  });
+
+  it('clique/toque abre o modal com scrolling="yes" e sandbox igual, sem allow-same-origin', () => {
+    const IframeBlock = BLOCK_REGISTRY.iframe;
+    render(
+      React.createElement(IframeBlock, { props: { storageKey: 'proposals/p1/artifacts/x.html' } }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'iframeOpen' }));
+
+    const iframes = document.querySelectorAll('iframe');
+    expect(iframes).toHaveLength(2);
+    const modalIframe = iframes[1];
+    expect(modalIframe).toHaveAttribute('scrolling', 'yes');
+    expect(modalIframe.getAttribute('sandbox')).toBe(NO_SAME_ORIGIN_SANDBOX);
+    expect(modalIframe.getAttribute('sandbox')).not.toContain('allow-same-origin');
+
+    // o preview continua com o mesmo sandbox restrito — liberar no modal não afrouxa o resto
+    const previewIframe = iframes[0];
+    expect(previewIframe.getAttribute('sandbox')).toBe(NO_SAME_ORIGIN_SANDBOX);
+  });
+
+  it('falha ao resolver a URL mostra aviso no lugar do bloco, sem derrubar o componente', () => {
+    mockPresignedUrl.current = { data: undefined, isLoading: false, isError: true };
+    const IframeBlock = BLOCK_REGISTRY.iframe;
+    render(
+      React.createElement(IframeBlock, { props: { storageKey: 'proposals/p1/artifacts/x.html' } }),
+    );
+
+    expect(screen.getByText('iframeLoadError')).toBeInTheDocument();
+    expect(document.querySelector('iframe')).toBeNull();
   });
 });
 

@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import { toast } from 'sonner';
 import PageEditor from './editor';
 import { BLOCK_META } from '../blocks.meta';
+import type { LayoutProfileName } from '../profiles';
 import { EMPTY_LAYOUT } from './mutations';
 
 /** Smoke test da cola React do editor: paleta, contexto, grid e painel ligados. */
@@ -66,7 +67,10 @@ vi.mock('@/lib/api/collector', () => ({
 }));
 vi.mock('../data-sources', () => ({ getDataSource: () => undefined }));
 
-function renderEditor(onExit: () => void = vi.fn()) {
+function renderEditor(
+  onExit: () => void = vi.fn(),
+  profile?: LayoutProfileName,
+) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -77,7 +81,12 @@ function renderEditor(onExit: () => void = vi.fn()) {
   return {
     onExit,
     ...render(
-      <PageEditor pageKey="/dashboard" initial={EMPTY_LAYOUT} onExit={onExit} />,
+      <PageEditor
+        pageKey="/dashboard"
+        profile={profile}
+        initial={EMPTY_LAYOUT}
+        onExit={onExit}
+      />,
       { wrapper },
     ),
   };
@@ -273,6 +282,39 @@ describe('Palette — alvo de inserção', () => {
       .find((el) => el.dataset.testid?.startsWith('pb-block-group-'))!;
     expect(group).toBeTruthy();
     expect(group.querySelectorAll('[data-testid^="pb-block-"]')).toHaveLength(2);
+  });
+});
+
+describe('BlockInserter — catálogo do profile', () => {
+  /** O popover do `+` é um PopoverContent do Radix (role dialog); a paleta do painel repete os
+   * mesmos rótulos, então a busca precisa ficar escopada nele. */
+  const openInserter = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.click(screen.getByRole('button', { name: 'editor.addBlock' }));
+    return within(await screen.findByRole('dialog'));
+  };
+
+  it('dashboard oferece os 9 blocos, inclusive os de dado', async () => {
+    const user = userEvent.setup();
+    renderEditor();
+
+    const inserter = await openInserter(user);
+
+    expect(inserter.getByText('blocks.table.basic')).toBeInTheDocument();
+    expect(inserter.getByText('blocks.chart.area')).toBeInTheDocument();
+    expect(inserter.getByText('blocks.list.feed')).toBeInTheDocument();
+  });
+
+  it('proposal lista só os blocos do profile', async () => {
+    const user = userEvent.setup();
+    renderEditor(vi.fn(), 'proposal');
+
+    const inserter = await openInserter(user);
+
+    expect(inserter.getByText('blocks.text.rich')).toBeInTheDocument();
+    expect(inserter.getByText('blocks.group')).toBeInTheDocument();
+    expect(inserter.queryByText('blocks.table.basic')).not.toBeInTheDocument();
+    expect(inserter.queryByText('blocks.chart.area')).not.toBeInTheDocument();
+    expect(inserter.queryByText('blocks.list.feed')).not.toBeInTheDocument();
   });
 });
 

@@ -1,7 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import path from 'path';
-import { ALLOWED_CLASS_NAMES, filterClassName, innerAlignClass } from './class-names';
+import {
+  ALLOWED_CLASS_NAMES,
+  EDITORIAL_CLASS_NAMES,
+  classNamesFor,
+  filterClassName,
+  innerAlignClass,
+} from './class-names';
+
+const ALL_CLASS_NAMES = [...ALLOWED_CLASS_NAMES, ...EDITORIAL_CLASS_NAMES];
 
 /** Compara `ALLOWED_CLASS_NAMES` com o safelist `@source inline(...)` do globals.css. */
 function safelistedClasses(): Set<string> {
@@ -39,16 +47,36 @@ describe('ALLOWED_CLASS_NAMES × @source inline', () => {
   });
 
   it('toda classe permitida é emitida pelo Tailwind', () => {
-    const missing = ALLOWED_CLASS_NAMES.filter((c) => !safelisted.has(c));
+    const missing = ALL_CLASS_NAMES.filter((c) => !safelisted.has(c));
 
     expect(missing).toEqual([]);
   });
 
   it('nenhuma classe safelistada está fora da lista permitida (CSS morto)', () => {
-    const allowed = new Set<string>(ALLOWED_CLASS_NAMES);
+    const allowed = new Set<string>(ALL_CLASS_NAMES);
     const dead = [...safelisted].filter((c) => !allowed.has(c));
 
     expect(dead).toEqual([]);
+  });
+});
+
+describe('classNamesFor', () => {
+  it('dashboard é o conjunto base, sem o vocabulário editorial', () => {
+    const dashboard = classNamesFor('dashboard');
+
+    expect(dashboard).toEqual([...ALLOWED_CLASS_NAMES]);
+    expect(dashboard).not.toContain('max-w-prose');
+  });
+
+  it('proposal soma o vocabulário editorial ao base', () => {
+    const proposal = classNamesFor('proposal');
+
+    expect(proposal).toEqual(ALL_CLASS_NAMES);
+    EDITORIAL_CLASS_NAMES.forEach((c) => expect(proposal).toContain(c));
+  });
+
+  it('sem profile cai no dashboard', () => {
+    expect(classNamesFor()).toEqual(classNamesFor('dashboard'));
   });
 });
 
@@ -65,6 +93,11 @@ describe('filterClassName', () => {
     expect(filterClassName('bg-red-500')).toBeUndefined();
     expect(filterClassName('')).toBeUndefined();
     expect(filterClassName(42)).toBeUndefined();
+  });
+
+  it('aceita classe editorial — a leitura é a união dos profiles', () => {
+    // Quem recusa classe fora do profile é a escrita; descartar aqui apagaria estilo já gravado.
+    expect(filterClassName('max-w-prose space-y-6')).toBe('max-w-prose space-y-6');
   });
 
   it('não deixa passar classe arbitrária da paleta bruta', () => {

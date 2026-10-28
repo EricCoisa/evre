@@ -1,0 +1,150 @@
+enum ProposalStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  LOST
+
+  @@schema("public")
+}
+
+enum ProposalRecurrence {
+  ONE_TIME
+  MONTHLY
+  QUARTERLY
+  YEARLY
+
+  @@schema("public")
+}
+
+enum ProposalAcceptanceSource {
+  LINK
+  OFFLINE
+
+  @@schema("public")
+}
+
+/// Registro editável da proposta — rascunho + envelope comercial em coluna. Ver docs/architecture/data-model.md.
+model Proposal {
+  id            String             @id @default(uuid())
+  companyId     String?
+  ownerId       String
+  name          String
+  status        ProposalStatus     @default(DRAFT)
+  lostReason    String?
+  layout        Json?
+  totalCents    Int?
+  currency      String             @default("BRL")
+  recurrence    ProposalRecurrence @default(ONE_TIME)
+  termDays      Int?
+  validUntil    DateTime?
+  includedItems String[]
+  optionalItems String[]
+  archivedAt    DateTime?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  company   Company?           @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  owner     User               @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  versions  ProposalVersion[]
+  artifacts ProposalArtifact[]
+
+  @@index([companyId])
+  @@index([status])
+  @@map("proposals")
+  @@schema("public")
+}
+
+/// Snapshot imutável de uma proposta publicada — fonte de verdade de acesso público via `publicToken`.
+model ProposalVersion {
+  id            String             @id @default(uuid())
+  proposalId    String
+  version       Int
+  layout        Json
+  totalCents    Int?
+  currency      String
+  recurrence    ProposalRecurrence
+  termDays      Int?
+  validUntil    DateTime?
+  includedItems String[]
+  optionalItems String[]
+  publicToken   String?            @unique
+  /// Código do ShortLink que encurta `<FRONTEND_URL>/p/<publicToken>` — gerado uma vez, reusado nos envios seguintes.
+  shortUrlCode  String?
+  publishedAt   DateTime?
+  revokedAt     DateTime?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  acceptedAt       DateTime?
+  acceptedByName   String?
+  acceptedByEmail  String?
+  acceptanceSource ProposalAcceptanceSource?
+  acceptanceNote   String?
+  acceptanceIp     String?
+  acceptanceAgent  String?
+
+  proposal Proposal       @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  sends    ProposalSend[]
+
+  @@unique([proposalId, version])
+  @@index([publicToken])
+  @@map("proposal_versions")
+  @@schema("public")
+}
+
+/// Registro de cada tentativa de envio da proposta (WhatsApp/email/manual) — grava mesmo quando
+/// o canal falha, para a tela mostrar "mandei e não chegou". Ver docs/architecture/data-model.md.
+model ProposalSend {
+  id        String   @id @default(uuid())
+  versionId String
+  channel   String // WHATSAPP | EMAIL | MANUAL
+  toPhone   String?
+  toEmail   String?
+  succeeded Boolean
+  detail    String?
+  sentById  String?
+  createdAt DateTime @default(now())
+
+  version ProposalVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  sentBy  User?           @relation(fields: [sentById], references: [id], onDelete: SetNull)
+
+  @@index([versionId])
+  @@map("proposal_sends")
+  @@schema("public")
+}
+
+/// Registro de abertura da página pública de uma versão — conta eventos para disparar a
+/// notificação só na primeira abertura. Ver docs/architecture/data-model.md.
+model ProposalOpenEvent {
+  id        String   @id @default(uuid())
+  versionId String
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([versionId])
+  @@map("proposal_open_events")
+  @@schema("public")
+}
+
+/// Arquivo de demonstração (HTML/imagem) anexado a uma proposta — `storageKey` é imutável, nunca
+/// sobrescrita; substituir o artefato cria uma linha nova. Ver docs/architecture/data-model.md.
+model ProposalArtifact {
+  id          String    @id @default(uuid())
+  proposalId  String
+  storageKey  String
+  fileName    String
+  contentType String
+  sizeBytes   Int
+  createdById String?
+  archivedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  proposal  Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  createdBy User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([proposalId])
+  @@map("proposal_artifacts")
+  @@schema("public")
+}

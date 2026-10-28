@@ -29,7 +29,9 @@ export class SetPageLayoutTool implements IAiTool {
       '`span` é um token de grid de 1 a 4 (4 = largura total): três gráficos na vertical = três ' +
       'blocos com span 4. `className` aceita SOMENTE classes da lista `classNames` devolvida por ' +
       'describe_page_builder — qualquer outra classe Tailwind não existe no CSS da aplicação e ' +
-      'seria ignorada, então é recusada aqui. Nunca envie CSS inline nem cor fora dessa lista.',
+      'seria ignorada, então é recusada aqui. Nunca envie CSS inline nem cor fora dessa lista. ' +
+      'Envie o MESMO `profile` que você passou em describe_page_builder: é ele que decide quais ' +
+      '`type` e `classNames` valem aqui, e se blocos podem ter `data.source`.',
     inputSchema: SetPageLayoutSchema,
     // sem roles: self-service, espelha POST /user-configuration/me
     approvalScope: McpScopes.USER_CONFIGURATION_WRITE,

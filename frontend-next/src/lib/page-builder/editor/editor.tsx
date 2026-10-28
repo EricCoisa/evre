@@ -20,6 +20,7 @@ import {
   useSavePageLayout,
   useSaveSystemPageLayout,
 } from '@/lib/actions/pageBuilder/queries';
+import { DEFAULT_PROFILE, type LayoutProfileName } from '../profiles';
 import { BlockGrid } from '../renderer';
 import type { PageLayout } from '../schema';
 import {
@@ -38,15 +39,28 @@ import { EditorTopBar } from './top-bar';
 export default function PageEditor({
   pageKey,
   initial,
+  profile = DEFAULT_PROFILE,
+  recordId,
   onExit,
+  onSave,
+  saving,
 }: {
   pageKey: string;
   initial: PageLayout;
+  profile?: LayoutProfileName;
+  /** Dono do layout quando o profile persiste em registro próprio (ex: `proposalId`). */
+  recordId?: string;
   onExit: () => void;
+  /** Override de persistência para profiles com `storage: 'record'` — substitui o PUT genérico
+   * de `page-builder/layout` (que grava em User/SystemConfiguration, sem sentido para um registro
+   * próprio). Quem chama decide sucesso/erro e quando sair do editor. */
+  onSave?: (layout: PageLayout) => void;
+  /** Pending do `onSave` externo — mantém "Salvar" desabilitado durante o PUT do registro. */
+  saving?: boolean;
 }) {
   return (
-    <EditorProvider initial={initial}>
-      <EditorShell pageKey={pageKey} onExit={onExit} />
+    <EditorProvider initial={initial} profile={profile} recordId={recordId}>
+      <EditorShell pageKey={pageKey} onExit={onExit} onSave={onSave} saving={saving} />
     </EditorProvider>
   );
 }
@@ -54,9 +68,13 @@ export default function PageEditor({
 function EditorShell({
   pageKey,
   onExit,
+  onSave: externalSave,
+  saving: externalSaving,
 }: {
   pageKey: string;
   onExit: () => void;
+  onSave?: (layout: PageLayout) => void;
+  saving?: boolean;
 }) {
   const { t } = useTranslation('page-builder');
   const editor = useEditorOrThrow();
@@ -113,6 +131,10 @@ function EditorShell({
   const handleDragCancel = () => editor.setDraggingId(null);
 
   const handleSave = () => {
+    if (externalSave) {
+      externalSave(editor.draft);
+      return;
+    }
     save.mutate(
       { pageKey, layout: editor.draft },
       {
@@ -142,6 +164,12 @@ function EditorShell({
     onExit();
   };
 
+  // Calculados uma vez, usados pelos dois lugares que desenham a mesma barra de ações
+  // (top bar + painel) — "Salvar como Padrão" não existe para quem tem `onSave` próprio
+  // (storage: 'record' não tem layout padrão do sistema).
+  const isSaving = externalSaving ?? (save.isPending || saveAsDefault.isPending);
+  const onSaveAsDefaultProp = !externalSave && isAdmin ? handleSaveAsDefault : undefined;
+
   return (
     <div
       className={cn(
@@ -153,9 +181,9 @@ function EditorShell({
       <EditorTopBar
         pageKey={pageKey}
         dirty={editor.dirty}
-        saving={save.isPending || saveAsDefault.isPending}
+        saving={isSaving}
         onSave={handleSave}
-        onSaveAsDefault={isAdmin ? handleSaveAsDefault : undefined}
+        onSaveAsDefault={onSaveAsDefaultProp}
         onCancel={handleCancel}
         onOpenPanel={() => setPanelOpen((prev) => !prev)}
       />
@@ -213,9 +241,9 @@ function EditorShell({
         <EditorPanel
           pageKey={pageKey}
           dirty={editor.dirty}
-          saving={save.isPending || saveAsDefault.isPending}
+          saving={isSaving}
           onSave={handleSave}
-          onSaveAsDefault={isAdmin ? handleSaveAsDefault : undefined}
+          onSaveAsDefault={onSaveAsDefaultProp}
           onCancel={handleCancel}
         />
       ) : null}

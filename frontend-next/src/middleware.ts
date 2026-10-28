@@ -16,6 +16,8 @@ const PUBLIC_PATHS = [
   '/.well-known',
   '/legal',
   '/s',
+  // Página pública da proposta (token no publicToken) — sem sessão, sem cookie.
+  '/p',
 ];
 const PUBLIC_EXACT = ['/'];
 

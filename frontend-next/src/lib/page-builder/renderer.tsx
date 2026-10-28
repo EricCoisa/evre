@@ -23,6 +23,8 @@ import {
 } from './blocks.meta';
 import { filterClassName } from './class-names';
 import { getDataSource } from './data-sources';
+import { LAYOUT_PROFILES, type LayoutProfileName } from './profiles';
+import { ProposalTermsProvider, type ProposalTerms } from './proposal-terms-context';
 import {
   BlockChrome,
   EmptySlotDropZone,
@@ -55,6 +57,9 @@ const PageEditor = dynamic(() => import('./editor/editor'), { ssr: false });
 /** RolesGuard/ScopeGuard do backend respondem 403 quando o role não alcança o endpoint. */
 const FORBIDDEN = 403;
 
+/** `PageRenderer` é a superfície de dashboard: layout em config, fonte filtrada por role. */
+const PAGE_RENDERER_PROFILE: LayoutProfileName = 'dashboard';
+
 interface PageRendererProps {
   pageKey: string;
   /** A página em código. É para onde tudo cai quando algo não está de pé. */
@@ -70,13 +75,39 @@ export function PageRenderer(props: PageRendererProps) {
   );
 }
 
+/** Renderiza um layout JÁ resolvido. Não busca config, não depende de sessão nem de
+ * `AsyncBoundary` externo — é o que a página pública monta a partir de um layout publicado.
+ * `proposalTerms` monta o envelope comercial que o bloco `investment` lê por contexto; sem ele
+ * (ex: profile `dashboard`) nenhum provider é montado. */
+export function LayoutBody({
+  layout,
+  profile,
+  proposalTerms,
+}: {
+  layout: PageLayout;
+  profile: LayoutProfileName;
+  proposalTerms?: ProposalTerms;
+}) {
+  const allowed = new Set<string>(LAYOUT_PROFILES[profile].blocks);
+  // Bloco fora do profile é descartado como `type` desconhecido: a escrita já o recusa,
+  // inclusive nos `children`, então aqui basta a folha de topo.
+  const grid = <BlockGrid blocks={layout.blocks.filter((b) => allowed.has(b.type))} />;
+  return proposalTerms ? (
+    <ProposalTermsProvider terms={proposalTerms}>{grid}</ProposalTermsProvider>
+  ) : (
+    grid
+  );
+}
+
 function PageContentBody({
   result,
   fallback,
+  profile,
   t,
 }: {
   result: ReturnType<typeof resolvePageLayout>;
   fallback: React.ReactNode;
+  profile: LayoutProfileName;
   t: (key: string) => string;
 }) {
   return (
@@ -88,7 +119,7 @@ function PageContentBody({
         </Alert>
       )}
       {result.status === 'ok' ? (
-        <BlockGrid blocks={result.layout.blocks} />
+        <LayoutBody layout={result.layout} profile={profile} />
       ) : (
         fallback
       )}
@@ -110,6 +141,7 @@ function PageRendererContent({ pageKey, fallback }: PageRendererProps) {
     return (
       <PageEditor
         pageKey={pageKey}
+        profile={PAGE_RENDERER_PROFILE}
         initial={result.status === 'ok' ? result.layout : EMPTY_LAYOUT}
         onExit={() => setEditing(false)}
       />
@@ -122,7 +154,12 @@ function PageRendererContent({ pageKey, fallback }: PageRendererProps) {
 
   return (
     <div className="space-y-4">
-      <PageContentBody result={result} fallback={fallback} t={t} />
+      <PageContentBody
+        result={result}
+        fallback={fallback}
+        profile={PAGE_RENDERER_PROFILE}
+        t={t}
+      />
       <PageActions
         onEdit={canEdit ? () => setEditing(true) : undefined}
         onReset={handleReset}

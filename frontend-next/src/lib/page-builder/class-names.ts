@@ -1,4 +1,6 @@
-/** Lista de classes Tailwind permitidas em blocos do page builder. */
+import { DEFAULT_PROFILE, type LayoutProfileName } from './profiles';
+
+/** Classes Tailwind permitidas em blocos do profile `dashboard`. */
 export const ALLOWED_CLASS_NAMES = [
   // layout
   'h-full', 'w-full', 'flex', 'flex-col', 'flex-row', 'flex-wrap', 'flex-1',
@@ -23,7 +25,31 @@ export const ALLOWED_CLASS_NAMES = [
   'overflow-hidden', 'overflow-x-auto',
 ] as const;
 
-const ALLOWED = new Set<string>(ALLOWED_CLASS_NAMES);
+/** Vocabulário editorial de página de leitura (proposta): medida de linha, ritmo vertical e ênfase. */
+export const EDITORIAL_CLASS_NAMES = [
+  'max-w-prose', 'mx-auto', 'aspect-video',
+  'tracking-tight', 'tracking-wide', 'leading-relaxed', 'text-5xl',
+  'italic', 'underline', 'border-l-4',
+  'space-y-2', 'space-y-4', 'space-y-6', 'space-y-8',
+] as const;
+
+const BY_PROFILE: Record<LayoutProfileName, readonly string[]> = {
+  dashboard: ALLOWED_CLASS_NAMES,
+  proposal: [...ALLOWED_CLASS_NAMES, ...EDITORIAL_CLASS_NAMES],
+};
+
+/** Allowlist publicada ao validador e ao editor. Sem profile cai no `dashboard`. */
+export function classNamesFor(profile?: LayoutProfileName): string[] {
+  return [...BY_PROFILE[profile ?? DEFAULT_PROFILE]];
+}
+
+// A leitura é permissiva de propósito: o conjunto é a união de todos os profiles, porque quem
+// recusa classe fora do profile é a escrita (o validador), e descartar classe já gravada
+// mudaria a tela sem o autor poder corrigir.
+const ALLOWED = new Set<string>([
+  ...ALLOWED_CLASS_NAMES,
+  ...EDITORIAL_CLASS_NAMES,
+]);
 
 /** Mantém só os tokens conhecidos, descartando o resto em silêncio para não quebrar layout já gravado. */
 export function filterClassName(raw: unknown): string | undefined {

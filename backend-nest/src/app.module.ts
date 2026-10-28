@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { ProposalModule } from './modules/proposal/proposal.module';
+import { CompanyModule } from './modules/company/company.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard } from '@nestjs/throttler';
@@ -33,6 +35,7 @@ import { ClientLogModule } from './modules/client-log/client-log.module';
 import { PayloadUserModule } from './modules/auth/adapters/payload-user.module';
 import { RedisModule } from './common/infrastructure/redis/redis.module';
 import { RouteCeilingModule } from './common/infrastructure/route-ceiling/route-ceiling.module';
+import { ResourceAccessModule } from './common/infrastructure/resource-access/resource-access.module';
 import { RoleModule } from './modules/role/role.module';
 import { FeatureFlagModule } from './modules/feature-flag/feature-flag.module';
 import { CapabilityModule } from './modules/capability/capability.module';
@@ -104,6 +107,7 @@ import { SentryModule } from '@sentry/nestjs/setup';
     PrismaModule,
     RedisModule,
     RouteCeilingModule,
+    ResourceAccessModule,
     PayloadUserModule,
     LoggingModule,
     AuthModule,
@@ -132,6 +136,8 @@ import { SentryModule } from '@sentry/nestjs/setup';
     VerificationModule,
     NotificationModule,
     ShortUrlModule,
+    CompanyModule,
+    ProposalModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
