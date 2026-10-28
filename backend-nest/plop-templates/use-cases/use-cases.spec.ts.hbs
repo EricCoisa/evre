@@ -1,0 +1,136 @@
+import { Test } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
+import { I18nService } from 'nestjs-i18n';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { LoggingService } from '../../logging/logging.service';
+import { FindAll{{pascalCase name}}UseCase } from './find-all.use-case';
+import { FindOne{{pascalCase name}}UseCase } from './find-one.use-case';
+import { Create{{pascalCase name}}UseCase } from './create.use-case';
+import { Update{{pascalCase name}}UseCase } from './update.use-case';
+import { Remove{{pascalCase name}}UseCase } from './remove.use-case';
+
+const row = {
+  id: 'id-1',
+  name: 'Exemplo',
+  description: null,
+  isActive: true,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
+const mockPrisma = {
+  {{camelCase name}}: {
+    findMany: vi.fn(),
+    findUnique: vi.fn(),
+    count: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  },
+};
+
+const mockI18n = { t: vi.fn().mockReturnValue('mensagem') };
+const mockLogging = { create: vi.fn() };
+
+describe('{{pascalCase name}} use-cases', () => {
+  let findAll: FindAll{{pascalCase name}}UseCase;
+  let findOne: FindOne{{pascalCase name}}UseCase;
+  let create: Create{{pascalCase name}}UseCase;
+  let update: Update{{pascalCase name}}UseCase;
+  let remove: Remove{{pascalCase name}}UseCase;
+
+  beforeEach(async () => {
+    const mod = await Test.createTestingModule({
+      providers: [
+        FindAll{{pascalCase name}}UseCase,
+        FindOne{{pascalCase name}}UseCase,
+        Create{{pascalCase name}}UseCase,
+        Update{{pascalCase name}}UseCase,
+        Remove{{pascalCase name}}UseCase,
+        { provide: PrismaService, useValue: mockPrisma },
+        { provide: I18nService, useValue: mockI18n },
+        { provide: LoggingService, useValue: mockLogging },
+      ],
+    }).compile();
+
+    findAll = mod.get(FindAll{{pascalCase name}}UseCase);
+    findOne = mod.get(FindOne{{pascalCase name}}UseCase);
+    create = mod.get(Create{{pascalCase name}}UseCase);
+    update = mod.get(Update{{pascalCase name}}UseCase);
+    remove = mod.get(Remove{{pascalCase name}}UseCase);
+
+    vi.clearAllMocks();
+    mockPrisma.{{camelCase name}}.findMany.mockResolvedValue([row]);
+    mockPrisma.{{camelCase name}}.findUnique.mockResolvedValue(row);
+    mockPrisma.{{camelCase name}}.count.mockResolvedValue(1);
+    mockPrisma.{{camelCase name}}.create.mockResolvedValue(row);
+    mockPrisma.{{camelCase name}}.update.mockResolvedValue(row);
+    mockPrisma.{{camelCase name}}.delete.mockResolvedValue(row);
+  });
+
+  it('findAll aplica skip/take e devolve o envelope paginado', async () => {
+    const result = (await findAll.execute({
+      page: 2,
+      limit: 5,
+      pagination: true,
+    })) as { meta: { total: number; totalPages: number } };
+
+    expect(mockPrisma.{{camelCase name}}.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ skip: 5, take: 5 }),
+    );
+    expect(result.meta).toEqual({
+      total: 1,
+      page: 2,
+      limit: 5,
+      totalPages: 1,
+    });
+  });
+
+  it('findAll busca em name e description, case-insensitive', async () => {
+    await findAll.execute({ page: 1, limit: 10, pagination: false, search: 'ex' });
+
+    const where = mockPrisma.{{camelCase name}}.findMany.mock.calls[0][0]
+      .where as { OR: Array<Record<string, { mode: string }>> };
+    expect(Object.keys(Object.assign({}, ...where.OR)).sort()).toEqual([
+      'description',
+      'name',
+    ]);
+    expect(where.OR[0].name.mode).toBe('insensitive');
+  });
+
+  it('findOne lança NotFoundException quando não existe', async () => {
+    mockPrisma.{{camelCase name}}.findUnique.mockResolvedValue(null);
+
+    await expect(findOne.execute('nao-existe')).rejects.toThrow(
+      NotFoundException,
+    );
+  });
+
+  it('create grava e registra no audit trail', async () => {
+    await create.execute({ name: 'Exemplo' } as never, 'user-1');
+
+    expect(mockPrisma.{{camelCase name}}.create).toHaveBeenCalled();
+    expect(mockLogging.create).toHaveBeenCalledWith(
+      expect.objectContaining({ module: '{{constantCase name}}' }),
+      'user-1',
+    );
+  });
+
+  it('update valida a existência antes de escrever', async () => {
+    mockPrisma.{{camelCase name}}.findUnique.mockResolvedValue(null);
+
+    await expect(
+      update.execute('nao-existe', { name: 'x' } as never, 'user-1'),
+    ).rejects.toThrow(NotFoundException);
+    expect(mockPrisma.{{camelCase name}}.update).not.toHaveBeenCalled();
+  });
+
+  it('remove valida a existência antes de apagar', async () => {
+    mockPrisma.{{camelCase name}}.findUnique.mockResolvedValue(null);
+
+    await expect(remove.execute('nao-existe', 'user-1')).rejects.toThrow(
+      NotFoundException,
+    );
+    expect(mockPrisma.{{camelCase name}}.delete).not.toHaveBeenCalled();
+  });
+});

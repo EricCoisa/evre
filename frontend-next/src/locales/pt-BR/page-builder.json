@@ -1,0 +1,80 @@
+{
+  "restoreDefault": "Restaurar padrão",
+  "invalidLayout": "Layout inválido",
+  "invalidLayoutDescription": "O layout salvo para esta página não pôde ser lido. A página em código está sendo exibida — restaure o padrão para limpar a customização.",
+  "blockUnavailable": "Bloco indisponível.",
+  "blockWithoutSource": "Este bloco precisa de uma fonte de dados e não tem uma válida.",
+  "blockDataError": "Não foi possível carregar os dados deste bloco.",
+  "blockForbidden": "Você não tem acesso à fonte de dados deste bloco. Ele fica oculto para você fora do modo de edição.",
+  "editor": {
+    "edit": "Editar página",
+    "title": "Editar página",
+    "close": "Fechar editor",
+    "save": "Salvar",
+    "saving": "Salvando...",
+    "saved": "Layout salvo.",
+    "saveAsDefault": "Salvar como Padrão",
+    "saveAsDefaultHint": "Publica este layout como padrão do sistema: passa a valer para todos os usuários que não têm um layout próprio.",
+    "saveAsDefaultConfirm": "Publicar este layout como padrão do sistema? Todos os usuários sem layout próprio passarão a vê-lo.",
+    "savedAsDefault": "Layout publicado como padrão do sistema.",
+    "cancel": "Cancelar",
+    "discardConfirm": "Descartar as alterações não salvas?",
+    "nothingSelected": "Selecione um bloco na página para editar as propriedades dele.",
+    "emptyPage": "Página vazia. Adicione um bloco pelo painel ao lado.",
+    "emptyContainer": "Selecione este card e adicione blocos dentro dele.",
+    "addBlock": "Adicionar bloco",
+    "addToContainer": "Adicionar dentro do card",
+    "limitReached": "Limite de blocos atingido.",
+    "unknownType": "Bloco de tipo \"{{type}}\" não existe no catálogo.",
+    "dataSource": "Fonte de dados",
+    "pickSource": "Escolha uma fonte",
+    "pickSourceFirst": "Escolha uma fonte para listar os campos",
+    "sourceRequired": "Este bloco precisa de uma fonte para mostrar dados.",
+    "parameters": "Parâmetros",
+    "width": "Largura",
+    "height": "Altura (Linhas)",
+    "style": "Estilo",
+    "addClass": "Adicionar estilo",
+    "removeClass": "Remover {{class}}",
+    "drag": "Arrastar para reordenar",
+    "narrower": "Estreitar",
+    "wider": "Alargar",
+    "remove": "Remover bloco",
+    "dropBefore": "Acima",
+    "dropInside": "Dentro",
+    "dropAfter": "Abaixo",
+    "dropSwap": "Trocar de posição",
+    "dropHere": "Soltar neste espaço",
+    "addHere": "Adicionar aqui",
+    "moveLeft": "Mover para esquerda",
+    "moveRight": "Mover para direita",
+    "moveUp": "Mover para cima",
+    "moveDown": "Mover para baixo",
+    "insertVariable": "Variável",
+    "clearSource": "Limpar fonte",
+    "optionalSourceHint": "Opcional: escolha uma fonte para inserir variáveis {{var}} no texto."
+  },
+  "blocks": {
+    "group": "Grupo",
+    "table": {
+      "basic": "Tabela"
+    },
+    "chart": {
+      "area": "Gráfico de Área",
+      "bar": "Gráfico de Barras",
+      "line": "Gráfico de Linhas"
+    },
+    "alert": {
+      "banner": "Alerta"
+    },
+    "text": {
+      "rich": "Texto (Rich Text)"
+    },
+    "button": {
+      "action": "Botão"
+    },
+    "list": {
+      "feed": "Feed"
+    }
+  }
+}

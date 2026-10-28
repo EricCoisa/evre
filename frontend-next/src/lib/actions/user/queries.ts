@@ -1,5 +1,10 @@
+"use client";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getUsers, getRoles, getStatus, getUserRoutes, getUserRoutesManagement, grantUserRouteAccess, revokeUserRouteAccess, getUser } from './api';
+import {
+  getUsers, getRoles, getStatus, getUserRoutes, getUserRoutesManagement, getUser, deleteUser, getInvites, deleteInvite,
+} from './api';
+import { grantUserRouteAccess, revokeUserRouteAccess } from '@/lib/actions/access/userRoute/api';
+import { getStorageHealth } from '@/lib/actions/storage/api';
 import type { PaginationParams } from '@/lib/types/pagination.types';
 import { getQueryConfig } from '@/lib/utils';
 import { Alive, Collector, EmulateMutationError } from '@/lib/api/collector';
@@ -51,6 +56,22 @@ export function useUserRoutesManagement(userId: string, params?: PaginationParam
     queryKey: ['users', userId, 'routes-management', params],
     queryFn: Collector(() => getUserRoutesManagement(userId, params)),
     enabled: !!userId,
+    staleTime: 0,          // sempre stale — modal deve ver estado atual
+    refetchOnMount: true,  // refetch toda vez que o modal abre
+  });
+}
+
+export function useDeleteUser() {
+  const queryClient = useQueryClient();
+  const { emulateError } = useApp();
+  return useMutation({
+    mutationFn: (id: string) => {
+      EmulateMutationError(emulateError, 'Emulated error from useDeleteUser');
+      return Alive(() => deleteUser(id))();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
   });
 }
 
@@ -65,6 +86,37 @@ export function useGrantUserRouteAccess() {
     onSuccess: (_, { userId }) => {
       queryClient.invalidateQueries({ queryKey: ['users', userId, 'routes-management'] });
       queryClient.invalidateQueries({ queryKey: ['users', userId, 'routes'] });
+    },
+  });
+}
+
+export function useInvites() {
+  return useQuery({
+    queryKey: ['invites'],
+    queryFn: Collector(getInvites),
+    staleTime: 1000 * 30,
+  });
+}
+
+export function useStorageHealth() {
+  return useQuery({
+    queryKey: ['storage', 'health'],
+    queryFn: Collector(getStorageHealth),
+    staleTime: 1000 * 60 * 4, // 4 min — abaixo do TTL 300s do cache backend
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useDeleteInvite() {
+  const queryClient = useQueryClient();
+  const { emulateError } = useApp();
+  return useMutation({
+    mutationFn: (id: string) => {
+      EmulateMutationError(emulateError, 'Emulated error from useDeleteInvite');
+      return Alive(() => deleteInvite(id))();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invites'] });
     },
   });
 }

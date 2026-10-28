@@ -1,0 +1,6 @@
+{
+  "title": { "en": "Title", "pt": "Título" },
+  "slug": { "en": "Slug", "pt": "Slug" },
+  "content": { "en": "Content", "pt": "Conteúdo" },
+  "published": { "en": "Published", "pt": "Publicado" }
+}

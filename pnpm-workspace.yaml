@@ -1,0 +1,14 @@
+packages:
+  - 'backend-nest'
+  - 'frontend-next'
+
+onlyBuiltDependencies:
+  - '@prisma/client'
+  - '@prisma/engines'
+  - prisma
+  - '@swc/core'
+  - bcrypt
+  - esbuild
+  - msw
+  - sharp
+  - unrs-resolver

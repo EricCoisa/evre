@@ -1,30 +1,28 @@
 "use client";
 
 import type { ColumnDef } from '@tanstack/react-table';
-import { Badge } from '@/components/ui/badge';
 import { RoleUser } from '@/lib/actions/access/roleRouteAccess/types';
 import { Button } from '@/components/ui/button';
 import { Route } from 'lucide-react';
 import { DataCell, TableHead } from '@/components/table-utils';
-import { userRoleColors } from '@/lib/actions/userConfiguration/types';
+import { RoleBadge } from '@/components/role-badge';
+import type { TFunc } from '@/hooks/use-translation';
 
 interface GetUserRoleProps {
-  t: (key: string) => string;
+  t: TFunc;
   onViewRoutes: (user: RoleUser) => void;
 }
 
 export function getUserRoleColumns({ t, onViewRoutes }: GetUserRoleProps): ColumnDef<RoleUser>[] {
   return [
     {
-      accessorKey: 'roleId',
-      header: () => <TableHead>{t('user') ?? 'User'}</TableHead>,
+      accessorKey: 'roleName',
+      header: () => <TableHead>{t('role') ?? 'Role'}</TableHead>,
       cell: ({ row }) => {
-        const roleId = row.original.roleId;
+        const roleName = row.original.roleName;
         return (
           <DataCell>
-            <Badge variant="outline" style={userRoleColors[roleId]}>
-              {t(roleId)}
-            </Badge>
+            <RoleBadge role={roleName}>{t(roleName)}</RoleBadge>
           </DataCell>
         );
       },
@@ -41,12 +39,13 @@ export function getUserRoleColumns({ t, onViewRoutes }: GetUserRoleProps): Colum
         return (
           <DataCell>
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={() => onViewRoutes(user)}
-              title={t('viewRoutesTooltip') || 'Ver rotas'}
+              className="gap-2"
             >
               <Route className="h-4 w-4" />
+              <span>{t('manageRoutes')}</span>
             </Button>
           </DataCell>
         );

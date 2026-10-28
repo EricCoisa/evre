@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { useTranslation } from '@/hooks/use-translation';
 import { useBread } from '@/contexts/bread-context';
 import { useMe } from '@/lib/actions/auth/queries';
+import { matchRoute } from '@/lib/route-tree';
 
 export function PageTitle() {
   const { data: user  } = useMe();
@@ -19,7 +20,7 @@ export function PageTitle() {
   // Pega o último segmento ou 'home' como padrão
   const lastSegment = segments[segments.length - 1] || 'home';
 
-  const name = routes.find(route => route.path === `/${lastSegment}`)?.labelKey; //busca da rota o labelKey
+  const name = matchRoute(routes, pathname)?.labelKey;
   const title = items ?? t(name || lastSegment);
 
   return (

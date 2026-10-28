@@ -1,30 +1,19 @@
-/**
- * Tipos relacionados à autenticação
- */
+/** Tipos relacionados à autenticação. */
 
-import { Role } from "@/types/roles";
+import type { MeResponseDto } from '@/lib/generated/schemas/meResponseDto';
+import type { RouteItemDto } from '@/lib/generated/schemas/routeItemDto';
+import type { UserProfileResponseDto } from '@/lib/generated/schemas/userProfileResponseDto';
 
-export interface UserRoute {
-  id: string;
-  path: string;
-  labelKey: string;
-  icon?: string | null;
-  parentId: string | null;
-  ordem: number;
-  isHome: boolean;
-  isActive: boolean;
-  showSideBar: boolean;
-}
+/** Item de menu — `GetUserRoutesUseCase` no backend. */
+export type UserRoute = RouteItemDto;
 
-export interface AuthUser {
-  id: string;
-  email: string;
-  role: Role;
-  name?: string | null;
-  image?: string | null; //Não implementado no backend ainda
-  companyId?: string | null;
-  routes: UserRoute[];
-}
+/** `GET /auth/me` — sessão + menu, sem ir ao banco buscar o perfil. */
+export type AuthUser = MeResponseDto;
+
+/** `GET /auth/user` — perfil completo + menu. */
+export type UserProfile = UserProfileResponseDto & {
+  image?: string | null;
+};
 
 export interface LoginRequest {
   email: string;
@@ -44,19 +33,14 @@ export interface AuthTokens {
   refreshToken: string;
 }
 
-/**
- * Tipo padrão de erro retornado pela API NestJS
- */
+/** Envelope de erro da API, montado pelo `AllExceptionsFilter`; `message` já vem pronto para exibir. */
 export interface ApiErrorResponse {
   statusCode: number;
   timestamp?: string;
   path?: string;
-  message: string | string[] | {
-    message: string | string[];
-    error: string;
-    statusCode: number;
-  };
-  error?: string;
+  message: string;
+  /** Um item por campo — só presente em falha de validação. */
+  errors?: { path: (string | number)[]; message: string }[];
 }
 
 export interface ForgotPasswordDto {
@@ -70,4 +54,19 @@ export interface ResetPasswordDto {
 
 export interface ResetPasswordResponse {
  message: string;
+}
+
+/** Provider OAuth/OIDC registrado no backend — ver docs/backend/oauth.md. */
+export interface OAuthProvider {
+  id: string;
+  label: string;
+  configured: boolean;
+  enabled: boolean;
+}
+
+/** Corpo de `PUT /auth/oauth/:provider/config`. Secret vazio = manter o gravado. */
+export interface SaveOAuthConfigPayload {
+  issuer: string;
+  clientId: string;
+  clientSecret?: string;
 }

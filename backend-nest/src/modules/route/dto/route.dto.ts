@@ -8,10 +8,10 @@ export const RouteSchema = z.object({
   icon: z.string().optional().nullable(),
   parentId: z.string().uuid().optional().nullable(),
   ordem: z.number().int(),
-  isHome: z.boolean(),
   isActive: z.boolean(),
-  showSideBar: z.boolean().nullable(),
-  isClientHome: z.boolean().nullable(),
+  // Não-nulos no banco (`Boolean @default(...)` em route.prisma). Declará-los nullable
+  // aqui obrigava todo consumidor a tratar um null que nunca chega.
+  showSideBar: z.boolean(),
 });
 
 export class RouteDto extends createZodDto(RouteSchema) {}

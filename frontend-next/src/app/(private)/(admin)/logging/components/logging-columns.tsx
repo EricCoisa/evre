@@ -5,8 +5,9 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { DataCell, DataCellModal, TableHead } from '@/components/table-utils';
 import { Tree } from '@/components/tree';
 import { formatDate } from '@/lib/utils';
+import type { TFunc } from '@/hooks/use-translation';
 
-export function getLoggingColumns(t: (key: string) => string): ColumnDef<Logging>[] {
+export function getLoggingColumns(t: TFunc): ColumnDef<Logging>[] {
   return [
     {
       accessorKey: 'module',
@@ -60,15 +61,14 @@ export function getLoggingColumns(t: (key: string) => string): ColumnDef<Logging
       accessorKey: 'metadata',
       header: () => <TableHead>{t('metadata')}</TableHead>,
        cell: ({ row }) => {
-        const metadata = row.getValue("metadata");
-        const parsedMetadata = metadata ? JSON.parse(String(metadata)) : {};
+        const metadata = (row.getValue("metadata") ?? {}) as Record<string, unknown>;
         return (
           <DataCellModal
             title={t('metadata')}
-            cellChildren={<Tree data={parsedMetadata} maxLines={2}/>}
+            cellChildren={<Tree data={metadata} maxLines={2}/>}
             maxWidth={200}
           >
-            <Tree data={parsedMetadata}/>
+            <Tree data={metadata}/>
           </DataCellModal>
         );
        },

@@ -1,158 +1,31 @@
-import { Controller, Query, Param, Body } from '@nestjs/common';
+import { Controller, Param, Body } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { UserConfigurationService } from './user-configuration.service';
 import {
   GetApi,
   PostApi,
-  PatchApi,
   DeleteApi,
 } from '../../common/decorators/api-method.decorator';
-import { ZodValidationPipe } from 'nestjs-zod';
-import {
-  PaginationQuerySchema,
-  type PaginationQuery,
-} from '../../common/schemas/pagination.schema';
-import { commonPaginationQueries } from '../../common/swagger/pagination-queries';
-import { CreateUserConfigurationDefinitionDto } from './dto/create-user-configuration-definition.dto';
-import { UpdateUserConfigurationDefinitionDto } from './dto/update-user-configuration-definition.dto';
 import { SetUserConfigurationDto } from './dto/set-user-configuration.dto';
-import type { PaginatedResponse } from '../../common/types/pagination.types';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../../common/types/auth.types';
-import { UserConfigurationDefinition } from '@prisma/client';
 import { UserConfigurationDto } from './dto/user-configuration.dto';
+import { GetUserConfigurationsUseCase } from './use-cases/get-user-configurations.use-case';
+import { GetUserConfigurationByKeyUseCase } from './use-cases/get-by-key.use-case';
+import { SetUserConfigurationUseCase } from './use-cases/set-user-configuration.use-case';
+import { ResetUserConfigurationUseCase } from './use-cases/reset-user-configuration.use-case';
+import { ResetAllUserConfigurationsUseCase } from './use-cases/reset-all.use-case';
 
 @ApiTags('user-configuration')
 @Controller('user-configuration')
 export class UserConfigurationController {
-  constructor(private readonly service: UserConfigurationService) {}
+  constructor(
+    private readonly getUserConfigurationsUseCase: GetUserConfigurationsUseCase,
+    private readonly getUserConfigurationByKeyUseCase: GetUserConfigurationByKeyUseCase,
+    private readonly setUserConfigurationUseCase: SetUserConfigurationUseCase,
+    private readonly resetUserConfigurationUseCase: ResetUserConfigurationUseCase,
+    private readonly resetAllUserConfigurationsUseCase: ResetAllUserConfigurationsUseCase,
+  ) {}
 
-  // ===== DEFINITIONS (Admin only) =====
-  @PostApi({
-    path: 'definitions',
-    summary: 'Cria definição de configuração de usuário',
-    description: `Cria uma nova definição de configuração disponível para usuários`,
-    status: 'CREATED',
-    authenticated: true,
-    roles: ['ADMIN'],
-    response: {
-      success: [
-        {
-          status: 'CREATED',
-          description: 'Definição criada com sucesso',
-          schema: { dto: CreateUserConfigurationDefinitionDto },
-        },
-      ],
-    },
-  })
-  async createDefinition(
-    @Body() dto: CreateUserConfigurationDefinitionDto,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
-    return await this.service.createDefinition(dto, user.id);
-  }
-
-  @GetApi({
-    path: 'definitions',
-    summary: 'Lista definições de configurações de usuário',
-    description: 'Retorna uma lista de definições de configurações disponíveis',
-    status: 'OK',
-    authenticated: true,
-    roles: ['ADMIN'],
-    queries: commonPaginationQueries,
-    response: {
-      success: [
-        {
-          status: 'OK',
-          description: 'Resposta paginada',
-          schema: {
-            dto: UserConfigurationDto,
-            isArray: true,
-            isPagination: true,
-          },
-        },
-      ],
-    },
-  })
-  async findAllDefinitions(
-    @Query(new ZodValidationPipe(PaginationQuerySchema)) query: PaginationQuery,
-  ): Promise<
-    | PaginatedResponse<UserConfigurationDefinition>
-    | UserConfigurationDefinition[]
-  > {
-    return await this.service.findAllDefinitions(query);
-  }
-
-  @GetApi({
-    path: 'definitions/:id',
-    summary: 'Busca definição por ID',
-    description: 'Retorna uma definição de configuração pelo ID',
-    status: 'OK',
-    authenticated: true,
-    roles: ['ADMIN'],
-    response: {
-      success: [
-        {
-          status: 'OK',
-          description: 'Definição encontrada',
-          schema: { dto: CreateUserConfigurationDefinitionDto },
-        },
-      ],
-    },
-  })
-  async findOneDefinition(@Param('id') id: string) {
-    return await this.service.findOneDefinition(id);
-  }
-
-  @PatchApi({
-    path: 'definitions/:id',
-    summary: 'Atualiza definição de configuração',
-    description: 'Atualiza uma definição de configuração existente',
-    status: 'OK',
-    authenticated: true,
-    roles: ['ADMIN'],
-    response: {
-      success: [
-        {
-          status: 'OK',
-          description: 'Definição atualizada com sucesso',
-          schema: { dto: CreateUserConfigurationDefinitionDto },
-        },
-      ],
-    },
-  })
-  async updateDefinition(
-    @Param('id') id: string,
-    @Body() dto: UpdateUserConfigurationDefinitionDto,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
-    return await this.service.updateDefinition(id, dto, user.id);
-  }
-
-  @DeleteApi({
-    path: 'definitions/:id',
-    summary: 'Remove definição de configuração',
-    description: 'Remove uma definição de configuração',
-    status: 'OK',
-    authenticated: true,
-    roles: ['ADMIN'],
-    response: {
-      success: [
-        {
-          status: 'OK',
-          description: 'Definição removida com sucesso',
-        },
-      ],
-    },
-  })
-  async removeDefinition(
-    @Param('id') id: string,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
-    return await this.service.removeDefinition(id, user.id);
-  }
-
-  // ===== USER CONFIGURATIONS =====
   @GetApi({
     path: 'me',
     summary: 'Obtém configurações do usuário logado',
@@ -174,7 +47,7 @@ export class UserConfigurationController {
     },
   })
   async getUserConfigurations(@CurrentUser() user: AuthenticatedUser) {
-    return await this.service.getUserConfigurations(user.id);
+    return await this.getUserConfigurationsUseCase.execute(user.id);
   }
 
   @GetApi({
@@ -197,8 +70,11 @@ export class UserConfigurationController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('labelKey') labelKey: string,
   ) {
-    const x = await this.service.getUserConfigurationsKey(user.id, labelKey);
-    return x;
+    return await this.getUserConfigurationByKeyUseCase.execute(
+      user.id,
+      labelKey,
+      { roleName: user.roleName },
+    );
   }
 
   @PostApi({
@@ -220,19 +96,19 @@ export class UserConfigurationController {
     @Body() dto: SetUserConfigurationDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return await this.service.setUserConfiguration(user.id, dto);
+    return await this.setUserConfigurationUseCase.execute(user.id, dto);
   }
 
   @DeleteApi({
     path: 'me/:definitionId',
     summary: 'Reseta configuração específica',
     description: 'Remove a customização e volta para o valor padrão',
-    status: 'OK',
+    status: 'NO_CONTENT',
     authenticated: true,
     response: {
       success: [
         {
-          status: 'OK',
+          status: 'NO_CONTENT',
           description: 'Configuração resetada com sucesso',
         },
       ],
@@ -242,25 +118,28 @@ export class UserConfigurationController {
     @Param('definitionId') definitionId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return await this.service.resetUserConfiguration(user.id, definitionId);
+    return await this.resetUserConfigurationUseCase.execute(
+      user.id,
+      definitionId,
+    );
   }
 
   @DeleteApi({
     path: 'me',
     summary: 'Reseta todas as configurações',
     description: 'Remove todas as customizações do usuário',
-    status: 'OK',
+    status: 'NO_CONTENT',
     authenticated: true,
     response: {
       success: [
         {
-          status: 'OK',
+          status: 'NO_CONTENT',
           description: 'Todas as configurações resetadas com sucesso',
         },
       ],
     },
   })
   async resetAllUserConfigurations(@CurrentUser() user: AuthenticatedUser) {
-    return await this.service.resetAllUserConfigurations(user.id);
+    return await this.resetAllUserConfigurationsUseCase.execute(user.id);
   }
 }

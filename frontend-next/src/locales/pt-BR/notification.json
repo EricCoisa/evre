@@ -1,0 +1,33 @@
+{
+  "bell_label": "Notificações",
+  "mark_all_read": "Marcar tudo como lido",
+  "empty": "Nenhuma notificação",
+  "preferences_title": "Notificações",
+  "preferences_channel_email": "Email",
+  "preferences_channel_email_desc": "Receber notificações por email",
+  "preferences_channel_whatsapp": "WhatsApp",
+  "preferences_channel_whatsapp_desc": "Receber notificações por WhatsApp",
+  "preferences_types_title": "Tipos de notificação habilitados",
+  "preferences_types_desc": "Notificações dos tipos selecionados podem ser enviadas pelos canais habilitados",
+  "channel_controls_title": "Controles de canal",
+  "channel_controls_desc": "Controla quais canais podem ser usados para enviar notificações",
+  "channel_toggle_email": "Permitir envio por email",
+  "channel_toggle_email_disabled_hint": "Requer um provedor de email configurado e operacional",
+  "channel_toggle_whatsapp": "Permitir envio por WhatsApp",
+  "channel_toggle_whatsapp_disabled_hint": "Requer uma conexão de WhatsApp ativa e autenticada",
+  "send_broadcast_action": "Enviar notificação",
+  "send_broadcast_title": "Enviar notificação",
+  "send_broadcast_description": "Envia um aviso para todos os usuários ou para roles específicas.",
+  "field_title": "Título",
+  "field_message": "Mensagem",
+  "field_action_url": "Link (opcional)",
+  "field_action_url_placeholder": "/settings",
+  "audience_label": "Público",
+  "audience_all": "Todos os usuários",
+  "audience_roles": "Roles específicas",
+  "audience_roles_required": "Selecione ao menos uma role",
+  "no_roles": "Nenhuma role disponível",
+  "types": {
+    "SYSTEM_ANNOUNCEMENT": "Aviso do sistema"
+  }
+}

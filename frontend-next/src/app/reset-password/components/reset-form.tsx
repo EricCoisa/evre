@@ -1,145 +1,106 @@
-"use client"
-import { Button } from "@/components/ui/button"
+"use client";
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card"
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Check } from "lucide-react";
 import { z } from "zod";
 import { resetPassword } from "@/lib/actions/auth/api";
-import { Input } from "@/components/ui/input";
-import { useRouter } from 'next/navigation';
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { useRouter } from "next/navigation";
 import { useTranslation } from "@/hooks/use-translation";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Check, TriangleAlert } from "lucide-react";
 import { Alive } from "@/lib/api/collector";
+import { FormBuilder } from "@/components/form/form-builder";
+import { useCaptcha } from "@/hooks/use-captcha";
+import type { CaptchaConfigDto } from "@/lib/generated/schemas";
 
-export function ResetPasswordForm({ token }: { token: string }) {
-    const { t } = useTranslation("resetPassword");
-    
-    const router = useRouter();
-    const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState<boolean>(false);
+export function ResetPasswordForm({
+  token,
+  captcha,
+}: {
+  token: string;
+  captcha?: CaptchaConfigDto | null;
+}) {
+  const { t } = useTranslation("resetPassword");
+  const router = useRouter();
+  const { containerRef, getToken, enabled } = useCaptcha(captcha);
 
-    // Define schema after t() is available for translations
-    const resetPasswordSchema = z.object({
-        password: z.string()
-            .min(8, t('passwordMin'))
-            .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]/, 
-                t('passwordRequirements')),
-        confirmPassword: z.string().min(8, t('confirmPasswordMin')),
-    }).refine((data) => data.password === data.confirmPassword, {
-        message: t('passwordsDoNotMatch'),
-        path: ['confirmPassword'],
+  const schema = z
+    .object({
+      password: z
+        .string()
+        .min(8, t("passwordMin"))
+        .regex(
+          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]/,
+          t("passwordRequirements"),
+        ),
+      confirmPassword: z.string().min(8, t("confirmPasswordMin")),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: t("passwordsDoNotMatch"),
+      path: ["confirmPassword"],
     });
 
-    type ResetPasswordFormType = z.infer<typeof resetPasswordSchema>;
-
-    const form = useForm<ResetPasswordFormType>({
-        resolver: zodResolver(resetPasswordSchema),
-        defaultValues: {
-            password: '',
-            confirmPassword: '',
-        },
-    });
-
-    const { handleSubmit, reset } = form;
-    const { errors, isSubmitting } = form.formState;
-
-    const onSubmit = async (values: ResetPasswordFormType) => {
-        setError(null);
-        try {
-            const result = await Alive(() => resetPassword({
-                token,
-                password: values.password,
-            }))();
-            
-            if (result.message) {
-                setSuccess(true);
-                reset();
-                // Redireciona após 2 segundos
-                setTimeout(() => {
-                    router.push('/login');
-                }, 2000);
-            }
-        } catch (err) {
-            if (err && typeof err === "object" && "message" in err) {
-                setError((err as { message: string }).message);
-            } else {
-                setError(t('errorResettingPassword'));
-            }
-        }
-    };
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>{t('resetPassword')}</CardTitle>
-                <CardDescription>
-                    {t('enterInfo')}
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                {success ? (
-                    <div className="space-y-4">
-                        <Alert className="border-green-500 bg-green-50 dark:bg-green-950">
-                            <Check className="h-4 w-4 text-green-600" />
-                            <AlertDescription className="text-green-800 dark:text-green-200">
-                                {t('successMessage')}
-                                <br />
-                                <span className="text-sm">{t('redirecting')}</span>
-                            </AlertDescription>
-                        </Alert>
-                    </div>
-                ) : (
-                    <Form {...form}>
-                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                            <FormField
-                                control={form.control}
-                                name="password"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>{t('password')}</FormLabel>
-                                        <FormControl>
-                                            <Input id="password" type="password" {...field} />
-                                        </FormControl>
-                                        <div className="text-xs text-muted-foreground">{t('passwordRequirements')}</div>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="confirmPassword"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>{t('confirmPassword')}</FormLabel>
-                                        <FormControl>
-                                            <Input id="confirm-password" type="password" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            {error && (
-                                <Alert variant="destructive">
-                                    <TriangleAlert className="h-4 w-4" />
-                                    <AlertDescription>{error}</AlertDescription>
-                                </Alert>
-                            )}
-                            <Button type="submit" className="w-full" disabled={isSubmitting}>
-                                {isSubmitting ? t('redirecting') : t('resetButton')}
-                            </Button>
-                        </form>
-                    </Form>
-                )}
-            </CardContent>
-        </Card>
-    );
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("resetPassword")}</CardTitle>
+        <CardDescription>{t("enterInfo")}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <FormBuilder
+          schema={schema}
+          fields={[
+            {
+              name: "password",
+              label: t("password"),
+              type: "password",
+              description: t("passwordRequirements"),
+            },
+            {
+              name: "confirmPassword",
+              label: t("confirmPassword"),
+              type: "password",
+            },
+            {
+              name: "captcha",
+              label: "",
+              type: "custom" as const,
+              render: () => (
+                <div ref={containerRef} className="flex justify-center" />
+              ),
+            },
+          ]}
+          onSubmit={async (values) => {
+            const captchaToken = await getToken();
+            if (enabled && !captchaToken)
+              throw new Error(t("common:captchaRequired"));
+            await Alive(() =>
+              resetPassword({ token, password: values.password }, captchaToken),
+            )();
+          }}
+          onSuccess={() => {
+            setTimeout(() => router.push("/login"), 2000);
+          }}
+          submitLabel={t("resetButton")}
+          actions={{ mode: "submit-only" }}
+          successView={
+            <Alert>
+              <Check className="h-4 w-4" />
+              <AlertDescription>
+                {t("successMessage")}
+                <br />
+                <span className="text-sm text-muted-foreground">
+                  {t("redirecting")}
+                </span>
+              </AlertDescription>
+            </Alert>
+          }
+        />
+      </CardContent>
+    </Card>
+  );
 }

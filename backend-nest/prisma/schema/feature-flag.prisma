@@ -1,0 +1,31 @@
+model FeatureFlag {
+  id          String              @id @default(uuid())
+  key         String              @unique
+  description String?
+  category    FeatureFlagCategory @default(GENERAL)
+  isSystem    Boolean             @default(false)
+  enabled     Boolean             @default(false)
+  parentId    String?
+  parent      FeatureFlag?        @relation("FeatureFlagParent", fields: [parentId], references: [id], onDelete: SetNull)
+  children    FeatureFlag[]       @relation("FeatureFlagParent")
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  roles       FeatureFlagRole[]
+
+  @@index([parentId])
+  @@index([category])
+  @@map("feature_flags")
+  @@schema("public")
+}
+
+model FeatureFlagRole {
+  id            String      @id @default(uuid())
+  featureFlagId String
+  roleId        String
+  featureFlag   FeatureFlag @relation(fields: [featureFlagId], references: [id], onDelete: Cascade)
+  role          Role        @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([featureFlagId, roleId])
+  @@map("feature_flag_roles")
+  @@schema("public")
+}

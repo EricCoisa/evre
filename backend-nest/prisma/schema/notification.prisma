@@ -1,0 +1,46 @@
+/// Evento, sem duplicar payload por destinatário — estado de leitura vive em NotificationRecipient.
+model Notification {
+  id          String   @id @default(uuid())
+  /// Chave do catálogo TS por módulo (ver domain/notification/notification-type.const.ts), não um enum do banco.
+  type        String
+  titleKey    String?
+  title       String?
+  messageKey  String?
+  message     String?
+  /// Variáveis para interpolação de titleKey/messageKey e dados para o componente customizado no frontend.
+  payload     Json?
+  actionUrl   String?
+  createdById String?
+  createdBy   User?    @relation("NotificationCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+
+  /// Broadcast ("todos"): audiência fica aqui, sem NotificationRecipient criado no envio (ver [[notifications]]).
+  audienceAll       Boolean  @default(false)
+  /// Broadcast por role (Role.name). Resolução para NotificationRecipient é lazy, por usuário, no primeiro acesso.
+  audienceRoleNames String[] @default([])
+
+  recipients NotificationRecipient[]
+
+  @@index([type])
+  @@index([audienceAll])
+  @@map("notifications")
+  @@schema("public")
+}
+
+/// Estado por usuário (lido/dispensado) do mesmo evento. Para envio direto (userIds), materializado
+/// no envio; para broadcast (roleNames/all), materializado lazy por usuário (ver Notification.audience*).
+model NotificationRecipient {
+  id             String       @id @default(uuid())
+  notificationId String
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readAt         DateTime?
+  dismissedAt    DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@unique([notificationId, userId])
+  @@index([userId, readAt])
+  @@map("notification_recipients")
+  @@schema("public")
+}

@@ -1,5 +1,8 @@
-import { useTranslation as useTranslationI18n } from 'next-i18next';
+// De `react-i18next`, não `next-i18next`: o provider é o <I18nextProvider> do react-i18next.
+import { useTranslation as useTranslationI18n } from 'react-i18next';
 import { isLabelKey, applyParams } from '../lib/translation-utils';
+
+export type TFunc = (key: string, params?: Record<string, string | number>) => string;
 
 export const useTranslation = (namespace = "common") => {
 	// Hook simplificado usando next-intl

@@ -10,6 +10,9 @@ const RegisterSchema = z.object({
   password: z.string().min(6, 'validation.password.min_length'),
   name: z.string().optional(),
   role: z.enum(ROLES).optional().default('USER'),
+  // Internal-only fields set by service layer, not exposed in admin API
+  termsAcceptedAt: z.date().optional(),
+  termsVersion: z.string().optional(),
 });
 
 export class RegisterDto extends createZodDto(RegisterSchema) {}

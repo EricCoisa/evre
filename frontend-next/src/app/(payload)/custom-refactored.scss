@@ -1,0 +1,658 @@
+@use './design-tokens' as *;
+
+/**
+ * ============================
+ * PAYLOAD CMS - CUSTOM STYLING
+ * ============================
+ * Estilos do Payload CMS alinhados ao design system pai.
+ *
+ * ARQUITETURA:
+ * globals.css → CSS vars → design-tokens.scss → custom-refactored.scss
+ *
+ * REGRAS:
+ * - Usar tokens de design-tokens.scss para TODOS os valores reutilizáveis
+ * - Valores únicos do Payload (layout hacks, resets) ficam inline
+ * - Cores via CSS custom properties = dark mode automático
+ */
+
+/**
+ * FONT FAMILY GLOBAL
+ */
+body,
+* {
+  font-family: #{$font-family-base} !important;
+}
+
+/**
+ * LAYOUT FLEX - Container principal
+ * Permite que sidebar e conteúdo se ajustem dinamicamente
+ */
+.template-default {
+  display: flex !important;
+  flex-direction: row !important;
+  width: 100% !important;
+  min-height: 100vh !important;
+}
+
+/**
+ * MAIN CONTENT WRAPPER
+ * Ocupa o espaço restante automaticamente (flex: 1)
+ */
+.template-default__wrap {
+  flex: 1 !important;
+  min-width: 0 !important;
+  /* Permite shrink abaixo do conteúdo */
+  width: 100% !important;
+  transition: margin-left $transition-base !important;
+}
+
+/**
+ * SIDEBAR CONTAINER
+ * width dinâmica com transição para collapse/expand suave
+ */
+aside.nav {
+  width: $sidebar-width !important;
+  flex-shrink: 0 !important;
+  background-color: #{$sidebar-background} !important;
+  border-right: 1px solid #{$sidebar-border} !important;
+  box-shadow: $sidebar-inset-shadow !important;
+  overflow: hidden !important;
+}
+
+/**
+ * A transição só entra depois que o estado inicial assentou — `html.nav-ready` é posto pelo
+ * script do layout.tsx no frame seguinte à reabertura automática da nav. Sem esse recorte
+ * a nav apareceria deslizando toda vez que o /cms carrega; o toggle do usuário, que vem
+ * sempre depois, continua animando normalmente.
+ */
+html.nav-ready aside.nav {
+  transition: width $transition-base !important;
+}
+
+/* Estado FECHADO - sidebar colapsada */
+aside.nav:not(.nav--nav-open) {
+  width: 0 !important;
+  border-right: none !important;
+}
+
+.nav__scroll {
+  padding: 0 !important;
+  padding-top: $spacing-4 !important;
+  width: $sidebar-width !important;
+  min-width: $sidebar-width !important;
+}
+
+.nav__wrap {
+  padding: 0 !important;
+  width: $sidebar-width !important;
+  min-width: $sidebar-width !important;
+}
+
+/**
+ * NAV GROUP - Collections container
+ */
+.nav-group,
+.nav-group.Collections {
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+}
+
+.nav__header {
+  display: none !important;
+}
+
+.template-default__nav-toggler-wrapper {
+  margin: 0px;
+  padding: 0px !important;
+  height: 0px;
+  width: 0px;
+}
+
+/**
+ * BOTÃO DE TOGGLE DO GRUPO
+ */
+button.nav-group__toggle {
+  all: unset !important;
+  display: none !important;
+  width: 100% !important;
+  cursor: default !important;
+  margin-bottom: $spacing-3 !important;
+  padding: 0 !important;
+  pointer-events: none !important;
+  background-color: unset !important;
+}
+
+button.nav-group__toggle:hover,
+button.nav-group__toggle:focus,
+button.nav-group__toggle:active {
+  background: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/**
+ * NAV GROUP LABEL - "Collections" = "NAVEGAÇÃO"
+ * Mesma tipografia e estilo do sistema pai
+ * px-3 py-1 = 12px horizontal, 4px vertical
+ */
+.nav-group__label {
+  /* Tipografia */
+  font-size: calc(#{$text-xs} + 2px) !important;
+  font-weight: $font-bold !important;
+  text-transform: uppercase !important;
+  letter-spacing: $label-spacing !important;
+  line-height: 1rem !important;
+
+  /* Spacing - IGUAL sistema pai: px-3 py-1 */
+  padding: $spacing-1 $spacing-3 !important;
+  margin: 0 !important;
+  margin-bottom: $label-margin-bottom !important;
+  padding-left: $spacing-5 !important;
+  /* Visual */
+  border-radius: $radius-sm !important;
+  display: inline-block !important;
+  width: auto !important;
+
+  /* Cores - herda do design system */
+  color: #{$sidebar-foreground} !important;
+
+
+  /* Reset */
+  border: none !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+  filter: none !important;
+  -webkit-font-smoothing: antialiased !important;
+}
+
+/* Dark Mode - label com fundo sutil (payload-specific) */
+.dark .nav-group__label,
+html.dark .nav-group__label {
+  color: #{$muted-foreground} !important;
+  background-color: color-mix(in oklch, #{$sidebar-accent} 30%, transparent) !important;
+}
+
+/**
+ * INDICADOR DE SETA - OCULTAR
+ */
+.nav-group__indicator {
+  display: none !important;
+}
+
+/**
+ * NAV GROUP CONTENT - Container dos links
+ * Sistema pai: gap-1 space-y-1 (gap de 4px)
+ */
+.nav-group__content {
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: $nav-group-gap !important;
+  margin-top: 0 !important;
+}
+
+
+/**
+ * NAV LINKS - Items de menu (Posts, Homes, Users)
+ * Sistema pai: gap-3 py-3 (SEM px)
+ * gap-3 = 12px, py-3 = 12px vertical, SEM padding horizontal
+ */
+
+a.nav__link,
+div.nav__link {
+  display: flex !important;
+  align-items: center !important;
+  height: $nav-item-height !important;
+  min-height: $nav-link-min-height !important;
+  width: 100% !important;
+  gap: $nav-item-gap !important;
+  padding: $nav-item-padding-y 0 !important;
+  margin: 0 !important;
+  font-size: calc(#{$text-sm} + 2px) !important;
+  line-height: $leading-tight !important;
+  font-weight: $font-medium !important;
+  letter-spacing: 0 !important;
+  color: #{$sidebar-foreground} !important;
+  background-color: transparent !important;
+  border: 1px solid transparent !important;
+  text-decoration: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+  opacity: 1 !important;
+  cursor: pointer !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  transition: all $transition-base !important;
+}
+
+/**
+ * NAV LINKS - ESTADO HOVER
+ * sidebar-accent com opacidade via color-mix
+ */
+a.nav__link:hover {
+  background-color: color-mix(in srgb, #{$sidebar-accent} 50%, transparent) !important;
+  color: #{$sidebar-accent-foreground} !important;
+  border-color: transparent !important;
+}
+
+/**
+ * NAV LINKS - ESTADO ATIVO
+ * sidebar-accent com borda sutil
+ */
+a.nav__link.active,
+a.nav__link[aria-current="page"] {
+  background-color: #{$sidebar-accent} !important;
+  color: #{$sidebar-accent-foreground} !important;
+  font-weight: $font-semibold !important;
+  border-color: color-mix(in srgb, #{$sidebar-accent} 30%, transparent) !important;
+}
+
+/**
+ * NAV LINK LABEL - Texto dos items
+ */
+span.nav__link-label {
+  /* Tipografia */
+  font-size: calc(#{$text-sm} + 2px) !important;
+  line-height: $leading-tight !important;
+  font-weight: inherit !important;
+  color: inherit !important;
+  letter-spacing: 0 !important;
+  padding-left: $spacing-5;
+
+  /* Layout */
+  display: inline-block !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+
+  /* Reset */
+  opacity: 1 !important;
+  filter: none !important;
+  -webkit-font-smoothing: antialiased !important;
+}
+
+/**
+ * REMOVE EFEITOS QUE DEIXAM TEXTO FRACO
+ */
+.nav-group__label,
+.nav-group__label *,
+a.nav__link,
+a.nav__link *,
+div.nav__link,
+div.nav__link *,
+span.nav__link-label {
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  opacity: 1 !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  backdrop-filter: none !important;
+  text-shadow: none !important;
+  -webkit-text-fill-color: unset !important;
+  -webkit-text-stroke: unset !important;
+}
+
+/**
+ * TOGGLE BUTTON - MOVER PARA DIREITA
+ */
+
+
+// Toggler usa largura relativa da sidebar
+.nav-toggler {
+  animation: 1s;
+  transform: translateX(calc($sidebar-collapsed-width - 5px));
+}
+
+.nav-toggler--is-open {
+  transform: translateX(calc($sidebar-width - 30px)); // 10px de gap visual
+
+}
+
+.template-default__nav-toggler-container {
+  display: flex !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  padding: $spacing-4 !important;
+}
+
+button.nav-toggler,
+.nav-toggler {
+  margin-left: auto !important;
+}
+
+/**
+ * ÍCONES SVG - Sistema pai: h-4 w-4
+ * Cores via CSS custom properties = dark mode automático
+ */
+a.nav__link svg,
+.nav__link svg {
+  width: $icon-size !important;
+  height: $icon-size !important;
+  flex-shrink: 0 !important;
+  transition: color $transition-base !important;
+  color: color-mix(in srgb, #{$sidebar-foreground} 70%, transparent) !important;
+}
+
+a.nav__link:hover svg {
+  color: #{$sidebar-accent-foreground} !important;
+}
+
+a.nav__link.active svg,
+a.nav__link[aria-current="page"] svg {
+  color: #{$sidebar-accent-foreground} !important;
+}
+
+/**
+ * AJUSTES FINAIS
+ */
+
+/* Container de animação */
+.rah-static,
+.rah-static--height-auto {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Força rendering limpo */
+* {
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+/**
+ * ============================================
+ * RESPONSIVIDADE - MOBILE
+ * ============================================
+ */
+@media (max-width: 768px) {
+
+  /**
+   * SIDEBAR MOBILE - Completamente oculta
+   * A navegação no mobile é feita via step-nav__home (breadcrumb)
+   * que já cumpre a mesma função da sidebar (voltar ao dashboard)
+   */
+  aside.nav {
+    display: none !important;
+  }
+
+  /* Oculta o toggle da sidebar no mobile */
+  .nav-toggler,
+  button.nav-toggler,
+  .template-default__nav-toggler-container {
+    display: none !important;
+  }
+
+  /* Layout principal ocupa 100% no mobile */
+  .template-default {
+    flex-direction: column !important;
+  }
+
+  .template-default__wrap {
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+
+  /**
+   * ============================================
+   * TABELAS MOBILE - Layout tipo card profissional
+   * Inspirado no data-table.tsx do sistema pai
+   * ============================================
+   */
+
+  /* Container da collection list */
+  .collection-list {
+    padding: $spacing-3 !important;
+  }
+
+  .list-controls {
+    padding: $spacing-2 $spacing-3 !important;
+  }
+
+  /* Controles da lista (busca, filtros, colunas) */
+  .list-controls {
+    flex-direction: column !important;
+    gap: $spacing-2 !important;
+  }
+
+  .list-controls .search-filter {
+    width: 100% !important;
+  }
+
+  .list-controls .list-controls__buttons {
+    width: 100% !important;
+    display: flex !important;
+    gap: $spacing-2 !important;
+  }
+
+  .list-controls .list-controls__buttons>* {
+    flex: 1 !important;
+  }
+
+  /* ======================
+   * TABELA → LAYOUT CARD
+   * ====================== */
+
+  /* Container da tabela */
+  .table {
+    overflow: visible !important;
+  }
+
+  /* Ocultar cabeçalho da tabela no mobile */
+  .table thead,
+  table thead {
+    display: none !important;
+  }
+
+  /* Ocultar checkbox de seleção (economiza espaço) */
+  .table .cell-_select,
+  .table th.cell-_select {
+    display: none !important;
+  }
+
+  /* Tbody vira lista de cards */
+  .table tbody,
+  table tbody {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: $spacing-3 !important;
+  }
+
+  /* Cada linha da tabela vira um card */
+  .table tbody tr,
+  table tbody tr {
+    display: flex !important;
+    flex-direction: column !important;
+    background: #{$background} !important;
+    border: 1px solid #{$border} !important;
+    border-radius: $radius-base !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    overflow: hidden !important;
+    transition: box-shadow $transition-base, border-color $transition-base !important;
+  }
+
+  .table tbody tr:hover,
+  table tbody tr:hover {
+    border-color: #{$primary} !important;
+    box-shadow: 0 2px 8px color-mix(in srgb, #{$primary} 15%, transparent) !important;
+  }
+
+  /* === CÉLULAS BASE === */
+  .table tbody td,
+  table tbody td {
+    max-width: none !important;
+    display: flex !important;
+    align-items: center !important;
+    padding: $spacing-2 $spacing-3 !important;
+    border: none !important;
+    border-bottom: 1px solid color-mix(in srgb, #{$border} 30%, transparent) !important;
+    font-size: $text-sm !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: unset !important;
+    color: #{$muted-foreground} !important;
+    line-height: $leading-normal !important;
+  }
+
+  .table tbody td:last-child,
+  table tbody td:last-child {
+    border-bottom: none !important;
+  }
+
+  /* === COLUNA TITLE (segunda coluna) - Em evidência ===
+   * Esta é a coluna principal clicável que leva ao registro.
+   * Recebe destaque visual: maior, bold, cor primária.
+   */
+  .table tbody td:nth-child(2),
+  table tbody td:nth-child(2) {
+    padding: $spacing-3 !important;
+    font-size: calc(#{$text-base}) !important;
+    font-weight: $font-semibold !important;
+    color: #{$foreground} !important;
+    background: color-mix(in srgb, #{$primary} 3%, transparent) !important;
+    border-bottom: 1px solid color-mix(in srgb, #{$border} 50%, transparent) !important;
+    order: -1 !important;
+    /* Move para o topo do card */
+  }
+
+  .table tbody td:nth-child(2) a,
+  table tbody td:nth-child(2) a {
+    color: #{$primary} !important;
+    font-weight: $font-semibold !important;
+    text-decoration: none !important;
+    font-size: calc(#{$text-base}) !important;
+    display: block !important;
+    width: 100% !important;
+    word-break: break-word !important;
+    transition: color $transition-fast !important;
+  }
+
+  .table tbody td:nth-child(2) a:hover,
+  table tbody td:nth-child(2) a:hover {
+    text-decoration: underline !important;
+    color: color-mix(in srgb, #{$primary} 80%, #{$foreground}) !important;
+  }
+
+  /* Demais colunas: texto menor, label-like */
+  .table tbody td:nth-child(n+3),
+  table tbody td:nth-child(n+3) {
+    font-size: $text-sm !important;
+    color: #{$muted-foreground} !important;
+    padding: $spacing-1 $spacing-3 !important;
+  }
+
+  /* Links nas demais colunas */
+  .table tbody td a,
+  table tbody td a {
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    color: inherit !important;
+  }
+
+  /* =====================
+   * PAYLOAD LIST TABLE (classes específicas do Payload)
+   * ===================== */
+
+  /* Paginação mobile */
+  .collection-list__page-info,
+  .collection-list__page-controls {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: $spacing-2 !important;
+    text-align: center !important;
+  }
+
+  .collection-list__page-controls .paginator {
+    justify-content: center !important;
+  }
+
+  /* Per page selector */
+  .per-page {
+    justify-content: center !important;
+  }
+
+  /* Botão "Criar Novo" responsivo */
+  .collection-list__header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: $spacing-2 !important;
+  }
+
+  .collection-list__header .btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* Dashboard cards no mobile */
+  .dashboard__card-list {
+    grid-template-columns: 1fr !important;
+    gap: $spacing-3 !important;
+  }
+
+  /* Formulários no mobile */
+  .field-type {
+    padding: $spacing-2 0 !important;
+  }
+
+  .render-fields {
+    padding: $spacing-2 !important;
+  }
+}
+
+
+
+.nav__log-out {
+  display: none !important;
+}
+
+.app-header__account {
+  display: none !important;
+}
+
+/**
+ * OVERRIDE FINAL - Máxima prioridade
+ * Garante aplicação dos estilos críticos
+ */
+
+/* Força dimensões e espaçamento nos links */
+aside.nav .nav-group a[class*="nav__link"]:not(.nav__link-indicator),
+aside.nav .nav-group div[class*="nav__link"]:not(.nav__link-indicator),
+aside.nav a[href][class*="nav__link"]:not(.nav__link-indicator),
+aside.nav div[href][class*="nav__link"]:not(.nav__link-indicator) {
+  padding: $nav-item-padding-y 0 !important;
+  min-height: $nav-link-min-height !important;
+  font-size: calc(#{$text-sm} + 2px) !important;
+  line-height: $leading-tight !important;
+  gap: $nav-item-gap !important;
+}
+
+/* Força fonte do design system */
+aside.nav .nav-group *,
+aside.nav a *,
+aside.nav span {
+  font-family: #{$font-family-base} !important;
+}
+
+/* Força reset de opacidade */
+aside.nav * {
+  opacity: 1 !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+}
+
+.nav__link-indicator {
+  position: static !important;
+}
+
+#nav-users {
+  display: none !important;
+}
+
+/* Oculta o <li> pai de #card-users */
+li:has(#card-users) {
+  display: none !important;
+}

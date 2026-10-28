@@ -1,0 +1,8 @@
+{
+  "not_found": "Short link not found",
+  "disabled": "This link has been disabled",
+  "expired": "This link has expired",
+  "max_clicks_reached": "This link has reached its maximum click limit",
+  "slug_generation_failed": "Could not generate a unique short link code"
+}
+

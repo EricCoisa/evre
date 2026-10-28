@@ -9,10 +9,16 @@ import {
   PostApi,
 } from '../../common/decorators/api-method.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { {{pascalCase name}}Service } from './{{kebabCase name}}.service';
+// ponytail: se a rota for por dono, use assertOwnershipOrRole
+// import { assertOwnershipOrRole } from 'src/common/utils/ownership.util';
 import { Create{{pascalCase name}}Dto } from './dto/create-{{kebabCase name}}.dto';
 import { Update{{pascalCase name}}Dto } from './dto/update-{{kebabCase name}}.dto';
 import { {{pascalCase name}}Dto } from './dto/{{kebabCase name}}.dto';
+import { FindAll{{pascalCase name}}UseCase } from './use-cases/find-all.use-case';
+import { FindOne{{pascalCase name}}UseCase } from './use-cases/find-one.use-case';
+import { Create{{pascalCase name}}UseCase } from './use-cases/create.use-case';
+import { Update{{pascalCase name}}UseCase } from './use-cases/update.use-case';
+import { Remove{{pascalCase name}}UseCase } from './use-cases/remove.use-case';
 import { commonPaginationQueries } from '../../common/swagger/pagination-queries';
 import type { AuthenticatedUser } from '../../common/types/auth.types';
 import {
@@ -24,7 +30,13 @@ import { PaginatedResponse } from 'src/common/types/pagination.types';
 @ApiTags('{{kebabCase name}}')
 @Controller('{{kebabCase name}}')
 export class {{pascalCase name}}Controller {
-  constructor(private readonly {{camelCase name}}Service: {{pascalCase name}}Service) {}
+  constructor(
+    private readonly findAll{{pascalCase name}}: FindAll{{pascalCase name}}UseCase,
+    private readonly findOne{{pascalCase name}}: FindOne{{pascalCase name}}UseCase,
+    private readonly create{{pascalCase name}}: Create{{pascalCase name}}UseCase,
+    private readonly update{{pascalCase name}}: Update{{pascalCase name}}UseCase,
+    private readonly remove{{pascalCase name}}: Remove{{pascalCase name}}UseCase,
+  ) {}
 
   @PostApi({
     summary: '{{snakeCase name}}.create.title',
@@ -38,7 +50,7 @@ export class {{pascalCase name}}Controller {
     @Body() dto: Create{{pascalCase name}}Dto,
     @CurrentUser() currentUser: AuthenticatedUser,
   ) {
-    return this.{{camelCase name}}Service.create(dto, currentUser.id);
+    return this.create{{pascalCase name}}.execute(dto, currentUser.id);
   }
 
   @GetApi({
@@ -60,7 +72,7 @@ export class {{pascalCase name}}Controller {
   async findAll(
     @Query(new ZodValidationPipe(PaginationQuerySchema)) query: PaginationQuery,
   ): Promise<PaginatedResponse<{{pascalCase name}}Dto> | {{pascalCase name}}Dto[]> {
-    const result = await this.{{camelCase name}}Service.findAll(query);
+    const result = await this.findAll{{pascalCase name}}.execute(query);
 
     if (Array.isArray(result)) {
       return plainToInstance({{pascalCase name}}Dto, result);
@@ -81,7 +93,7 @@ export class {{pascalCase name}}Controller {
     roles: ['ADMIN'],
   })
   async findOne(@Param('id') id: string) {
-    return this.{{camelCase name}}Service.findOne(id);
+    return this.findOne{{pascalCase name}}.execute(id);
   }
 
   @PatchApi({
@@ -97,7 +109,7 @@ export class {{pascalCase name}}Controller {
     @Body() dto: Update{{pascalCase name}}Dto,
     @CurrentUser() currentUser: AuthenticatedUser,
   ) {
-    return this.{{camelCase name}}Service.update(id, dto, currentUser.id);
+    return this.update{{pascalCase name}}.execute(id, dto, currentUser.id);
   }
 
   @DeleteApi({
@@ -111,6 +123,6 @@ export class {{pascalCase name}}Controller {
     @Param('id') id: string,
     @CurrentUser() currentUser: AuthenticatedUser,
   ) {
-    return this.{{camelCase name}}Service.remove(currentUser.id, id);
+    return this.remove{{pascalCase name}}.execute(id, currentUser.id);
   }
 }

@@ -19,6 +19,8 @@ export default async function {{pascalCase name}}DetailPage({ params }: { params
   }
 
   return (
+    <Container border={false}>
       <{{pascalCase name}}Edit {{lowerCase name}}={data} />
+    </Container>
   );
 }

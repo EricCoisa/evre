@@ -6,6 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { memo } from 'react';
 import { getIcon } from '@/lib/utils';
 import { DataCell, TableHead } from '@/components/table-utils';
+import type { TFunc } from '@/hooks/use-translation';
 
 interface AccessToggleProps {
     routeAccess: RoleUserAccess;
@@ -26,7 +27,7 @@ const AccessToggle = memo(function AccessToggle({ routeAccess, onToggle, isLoadi
 });
 
 interface GetRoleRouteManagementColumnsProps {
-    t: (key: string) => string;
+    t: TFunc;
     onToggleAccess: (routeId: string, hasAccess: boolean) => Promise<void>;
     isLoading: boolean;
 }

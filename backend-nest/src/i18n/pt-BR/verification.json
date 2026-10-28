@@ -1,0 +1,16 @@
+{
+  "required": "Esta ação precisa de um código de confirmação antes de continuar.",
+  "channel_not_implemented": "Canal de verificação ainda não implementado.",
+  "no_target": "Usuário não tem um destino válido para este canal.",
+  "cooldown": "Aguarde antes de solicitar um novo código.",
+  "email_unavailable": "Serviço de email indisponível ou inoperante.",
+  "whatsapp_unavailable": "Serviço de mensageria indisponível ou sem conexão ativa.",
+  "template_unavailable": "Template de verificação por WhatsApp não configurado.",
+  "channel_unavailable": "O canal de verificação necessário está indisponível no momento.",
+  "send_failed": "Não foi possível enviar o código. Tente novamente.",
+  "email_subject": "Seu código de verificação",
+  "no_pending": "Nenhuma verificação pendente para este propósito.",
+  "expired": "Código expirado. Solicite um novo.",
+  "too_many_attempts": "Número de tentativas excedido. Solicite um novo código.",
+  "invalid_code": "Código inválido."
+}

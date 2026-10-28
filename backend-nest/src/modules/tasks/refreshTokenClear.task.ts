@@ -8,9 +8,7 @@ export class RefreshTokenClearTask {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  /**
-   * Executa diariamente à meia-noite
-   */
+  /** Executa diariamente à meia-noite. */
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async handleRefreshTokenCleanup() {
     try {
@@ -21,9 +19,7 @@ export class RefreshTokenClearTask {
     }
   }
 
-  /**
-   * Lógica de limpeza dos tokens expirados
-   */
+  /** Remove os refresh tokens já expirados. */
   private async clearExpiredRefreshTokens(): Promise<number> {
     const now = new Date();
 

@@ -3,46 +3,42 @@ import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
 export const UpdateUserConfigurationDefinitionsSchema = z.object({
-  labelKey: z
-    .string()
-    .min(1, 'labelKey é obrigatório')
-    .max(255, 'labelKey deve ter no máximo 255 caracteres')
-    .optional(),
+  labelKey: z.string().min(1).max(255).optional(),
   valueType: z
-    .string()
-    .min(1, 'valueType é obrigatório')
-    .max(50, 'valueType deve ter no máximo 50 caracteres')
+    .enum(['STRING', 'NUMBER', 'BOOLEAN', 'JSON', 'DATE', 'ENUM'])
     .optional(),
-  defaultValue: z.string().min(1, 'defaultValue é obrigatório').optional(),
+  options: z.array(z.string()).optional(),
+  defaultValue: z.string().min(1).optional(),
+  isRequired: z.boolean().optional(),
+  secret: z.boolean().optional(),
 });
 
 export class UpdateUserConfigurationDefinitionsDto extends createZodDto(
   UpdateUserConfigurationDefinitionsSchema,
 ) {
-  @ApiProperty({
-    description: 'Chave de identificação da configuração',
-    example: 'system.maintenance.mode',
-    required: false,
-  })
+  @ApiProperty({ example: 'system.maintenance.mode', required: false })
   labelKey?: string;
 
   @ApiProperty({
-    description: 'Tipo do valor (string, number, boolean, json)',
-    example: 'boolean',
+    enum: ['STRING', 'NUMBER', 'BOOLEAN', 'JSON', 'DATE', 'ENUM'],
     required: false,
   })
-  valueType?: string;
+  valueType?: 'STRING' | 'NUMBER' | 'BOOLEAN' | 'JSON' | 'DATE' | 'ENUM';
 
-  @ApiProperty({
-    description: 'Valor da configuração',
-    example: 'false',
-    required: false,
-  })
+  @ApiProperty({ isArray: true, required: false })
+  options?: string[];
+
+  @ApiProperty({ example: 'false', required: false })
   defaultValue?: string;
 
-  @ApiProperty({
-    description: 'Indica se a configuração é obrigatória',
-    example: true,
-  })
+  @ApiProperty({ example: true, required: false })
   isRequired?: boolean;
+
+  @ApiProperty({
+    description: 'Indica se o valor é secreto e deve ser criptografado',
+    example: false,
+    required: false,
+    default: false,
+  })
+  secret?: boolean;
 }

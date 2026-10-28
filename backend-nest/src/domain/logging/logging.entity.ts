@@ -1,5 +1,28 @@
 import { ApiProperty } from '@nestjs/swagger';
+import type { Prisma } from '@prisma/client';
 import { LogModuleConst } from './logModule.const';
+
+export class LoggingPerformedBy {
+  @ApiProperty({
+    description: 'ID do usuário',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  id: string;
+
+  @ApiProperty({
+    description: 'Nome do usuário',
+    example: 'João Silva',
+    nullable: true,
+    type: String,
+  })
+  name: string | null;
+
+  @ApiProperty({
+    description: 'Email do usuário',
+    example: 'user@example.com',
+  })
+  email: string;
+}
 
 export class Logging {
   @ApiProperty({
@@ -29,15 +52,17 @@ export class Logging {
 
   @ApiProperty({
     description: 'Metadados adicionais em formato JSON',
-    example: '{"userId": "123", "ip": "192.168.1.1"}',
+    example: { userId: '123', ip: '192.168.1.1' },
     required: false,
   })
-  metadata?: string | null;
+  metadata?: Prisma.JsonValue | null;
 
   @ApiProperty({
     description: 'ID do usuário que executou a ação',
     example: '123e4567-e89b-12d3-a456-426614174000',
     required: false,
+    type: String,
+    nullable: true,
   })
   performedById?: string | null;
 
@@ -50,15 +75,8 @@ export class Logging {
   @ApiProperty({
     description: 'Dados do usuário que executou a ação',
     required: false,
-    example: {
-      id: '123e4567-e89b-12d3-a456-426614174000',
-      name: 'João Silva',
-      email: 'user@example.com',
-    },
+    nullable: true,
+    type: LoggingPerformedBy,
   })
-  performedBy?: {
-    id: string;
-    name: string | null;
-    email: string;
-  } | null;
+  performedBy?: LoggingPerformedBy | null;
 }

@@ -1,0 +1,286 @@
+enum MessagingProvider {
+  EVOLUTION_API
+  EVOLUTION_GO
+  META
+
+  @@schema("public")
+}
+
+enum MessagingDirection {
+  INBOUND
+  OUTBOUND
+
+  @@schema("public")
+}
+
+enum MessagingStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  READ
+  FAILED
+
+  @@schema("public")
+}
+
+enum MessagingTemplateCategory {
+  AUTHENTICATION
+  UTILITY
+  MARKETING
+
+  @@schema("public")
+}
+
+enum MessagingButtonEventStatus {
+  PENDING
+  PROCESSED
+  FAILED
+  IGNORED
+
+  @@schema("public")
+}
+
+enum MessagingTemplateApproval {
+  PENDING
+  APPROVED
+  REJECTED
+  PAUSED
+  DISABLED
+
+  @@schema("public")
+}
+
+// Uma conexão é um número de WhatsApp acessado por um provider. As credenciais ficam em `config`,
+// uma estrutura própria de cada provider (os segredos vão cifrados). Mensagens e conversas pertencem
+// a uma conexão. Por ora cada provider tem no máximo uma — regra do use-case, não do banco, para
+// liberar mais de uma por provider depois sem migração.
+model MessagingConnection {
+  id         String            @id @default(uuid())
+  provider   MessagingProvider
+  // Número da conta (só dígitos). Nulo até o primeiro pareamento/validação; depois é fixo:
+  // reconectar exige o mesmo número. Garantido por índice único parcial na migration
+  // (messaging_connections_active_phone_key, apenas conexões ativas).
+  phone      String?
+  config     Json              @default("{}")
+  // Conexão usada quando quem envia (outro módulo, tool de IA) não informa qual. No máximo uma:
+  // garantido por índice único parcial na migration (o Prisma não modela índice parcial).
+  isDefault  Boolean           @default(false)
+  // Arquivada: sai de uso (não envia, não aparece nas telas), mas o histórico continua legível —
+  // por isso não é DELETE, que o `onDelete: Restrict` de mensagens e conversas barraria. Mantém o
+  // `phone` original para permitir que a conexão seja restaurada no futuro.
+  archivedAt DateTime?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  messages            MessagingMessage[]
+  conversations       MessagingConversation[]
+  templateSubmissions MessagingTemplateSubmission[]
+
+  @@index([provider])
+  @@index([phone])
+  @@map("messaging_connections")
+  @@schema("public")
+}
+
+// A PESSOA: telefone é identidade global, a mesma independente de para qual dos nossos números ela
+// escreveu. O que é por conexão é a conversa (`MessagingConversation`), não o contato.
+model MessagingContact {
+  id                String    @id @default(uuid())
+  phone             String    @unique
+  // Editável pelo operador; `pushName` é o que o contato controla no WhatsApp.
+  name              String?
+  pushName          String?
+  // URL assinada do CDN do WhatsApp: expira. A tela usa GET /messaging/contacts/:id/photo, que renova.
+  profilePictureUrl String?
+  // Última tentativa de buscar nome e foto no provider; limita a frequência (ver MessagingService).
+  profileSyncedAt   DateTime?
+  optOut            Boolean   @default(false)
+  optOutAt          DateTime?
+  // Última atividade em QUALQUER conversa do contato (a maior `lastMessageAt` delas), mantida junto
+  // com a conversa em `upsertContact`. Existe para a inbox ordenar e paginar no banco: o Prisma não
+  // ordena por agregado de relação, e carregar todos os contatos para ordenar em memória não escala.
+  lastMessageAt     DateTime?
+  metadata          Json?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  conversations MessagingConversation[]
+  messages      MessagingMessage[]
+
+  @@index([optOut])
+  @@index([lastMessageAt])
+  @@map("messaging_contacts")
+  @@schema("public")
+}
+
+// A THREAD: um contato numa conexão. Duas conexões com a mesma pessoa são duas conversas — juntar
+// interleavaria os dois contextos e responderia pelo número usado por último.
+model MessagingConversation {
+  id            String    @id @default(uuid())
+  connectionId  String
+  contactId     String
+  lastMessageAt DateTime?
+  // Última mensagem RECEBIDA (não enviada) — a janela de 24h de atendimento da Meta conta a partir daqui.
+  lastInboundAt DateTime?
+
+  connection MessagingConnection @relation(fields: [connectionId], references: [id], onDelete: Restrict)
+  contact    MessagingContact    @relation(fields: [contactId], references: [id], onDelete: Restrict)
+
+  @@unique([connectionId, contactId])
+  @@index([lastMessageAt])
+  @@map("messaging_conversations")
+  @@schema("public")
+}
+
+// Histórico completo: inbound e outbound na mesma tabela.
+model MessagingMessage {
+  id                       String             @id @default(uuid())
+  connectionId             String
+  contactId                String
+  direction                MessagingDirection
+  status                   MessagingStatus    @default(QUEUED)
+  // Dedupe de inbound e correlação de status; nulo enquanto o outbound está QUEUED.
+  providerMessageId        String?
+  type                     String             @default("TEXT")
+  text                     String?
+  // Só quando enviamos por link; arquivo recebido ou enviado por upload não é guardado — ver docs/backend/messaging.md.
+  mediaUrl                 String?
+  mimeType                 String?
+  fileName                 String?
+  error                    String?
+  // Payload cru do provider, para reprocessar evento de tipo não suportado.
+  raw                      Json?
+  // Quem disparou; nulo = sistema ou inbound.
+  sentById                 String?
+  // Outbound de template: de qual template saiu (liga o toque de um botão ao tipo e ao handler).
+  templateId               String?
+  // Referência de negócio informada por quem enviou ({ type, id }); devolvida ao handler do botão.
+  correlation              Json?
+  // Inbound: id (no provider) da mensagem que o cliente respondeu — `context.id` na Meta.
+  replyToProviderMessageId String?
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+
+  connection  MessagingConnection   @relation(fields: [connectionId], references: [id], onDelete: Restrict)
+  contact     MessagingContact      @relation(fields: [contactId], references: [id], onDelete: Restrict)
+  sentBy      User?                 @relation(fields: [sentById], references: [id], onDelete: SetNull)
+  template    MessagingTemplate?    @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  buttonEvent MessagingButtonEvent?
+
+  // O id do provider só é único dentro da conexão que o gerou. Sustenta o dedupe de inbound e o
+  // updateMany de status — nenhum dos dois conhece o contato, só connectionId + providerMessageId.
+  @@unique([connectionId, providerMessageId])
+  @@index([connectionId, contactId, createdAt])
+  @@index([contactId, createdAt])
+  @@index([status])
+  @@index([sentById])
+  @@map("messaging_messages")
+  @@schema("public")
+}
+
+// O vocabulário: quais variáveis existem e como se comportam. Compartilhado por todas as
+// linguagens do mesmo template — é o que impede pt_BR e en_US declararem variáveis diferentes.
+model MessagingTemplateType {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  name      String
+  // [{ name, type: STRING|NUMBER|DATE, required, default?, format? }] — Zod valida, com .max()
+  variables Json     @default("[]")
+  // [{ key, kind: QUICK_REPLY|URL, reserved?, required?, urlBase?, sensitive? }] — botões tipados do tipo.
+  buttons   Json     @default("[]")
+  isSystem  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  templates MessagingTemplate[]
+
+  @@map("messaging_template_types")
+  @@schema("public")
+}
+
+// Uma linha = um objeto no catálogo do provider: a chave real da Meta é (name, language).
+model MessagingTemplate {
+  id                String                     @id @default(uuid())
+  key               String
+  language          String
+  category          MessagingTemplateCategory
+  typeId            String
+  header            Json?
+  body              String
+  footer            String?
+  buttons           Json?
+  bypassOptOut      Boolean                    @default(false)
+  isSystem          Boolean                    @default(false)
+  // A Meta pode reclassificar o template (ex.: UTILITY -> MARKETING). Guarda a categoria anterior
+  // até o operador dar ciente; `category` já reflete a decisão da Meta.
+  previousCategory  MessagingTemplateCategory?
+  categoryChangedAt DateTime?
+  // O tipo mudou e este template deixou de se adequar a ele: não envia nem submete até ser ajustado
+  // (salvar o template revalida e limpa). Ver UpdateTemplateTypeUseCase.
+  invalidatedAt     DateTime?
+  invalidReason     String?
+  createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
+
+  type         MessagingTemplateType         @relation(fields: [typeId], references: [id], onDelete: Restrict)
+  submissions  MessagingTemplateSubmission[]
+  messages     MessagingMessage[]
+  buttonEvents MessagingButtonEvent[]
+
+  @@unique([key, language])
+  @@index([typeId])
+  @@map("messaging_templates")
+  @@schema("public")
+}
+
+// Aprovação é estado de (template × conexão). Conexão sem fluxo de aprovação (Evolution) não tem
+// linha — ausência é o encoding de "não se aplica", melhor que um valor extra no enum.
+model MessagingTemplateSubmission {
+  id                 String                    @id @default(uuid())
+  templateId         String
+  connectionId       String
+  providerTemplateId String?
+  status             MessagingTemplateApproval
+  reason             String?
+  submittedAt        DateTime                  @default(now())
+  reviewedAt         DateTime?
+  // O conteúdo local mudou depois do último envio à Meta: lá continua a versão anterior.
+  outOfSync          Boolean                   @default(false)
+
+  template   MessagingTemplate   @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  connection MessagingConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, connectionId])
+  @@index([connectionId])
+  @@map("messaging_template_submissions")
+  @@schema("public")
+}
+
+// Toque do cliente num botão com chave (payload `chave[:dado]`). Uma linha por mensagem de entrada
+// (`messageId` único): o webhook reentregue nunca dispara o handler duas vezes. O processamento é
+// assíncrono (fila `messaging-buttons`), com status e erro para auditoria.
+model MessagingButtonEvent {
+  id                String                     @id @default(uuid())
+  messageId         String                     @unique
+  connectionId      String
+  contactId         String
+  templateId        String?
+  originalMessageId String?
+  typeKey           String?
+  buttonKey         String
+  data              String?
+  correlation       Json?
+  status            MessagingButtonEventStatus @default(PENDING)
+  error             String?
+  attempts          Int                        @default(0)
+  createdAt         DateTime                   @default(now())
+  processedAt       DateTime?
+
+  message  MessagingMessage   @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  template MessagingTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+  @@index([connectionId])
+  @@index([status, createdAt])
+  @@map("messaging_button_events")
+  @@schema("public")
+}

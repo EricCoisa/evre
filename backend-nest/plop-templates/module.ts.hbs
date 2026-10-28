@@ -1,13 +1,27 @@
 import { Module } from '@nestjs/common';
 import { {{pascalCase name}}Controller } from './{{kebabCase name}}.controller';
-import { {{pascalCase name}}Service } from './{{kebabCase name}}.service';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { LoggingModule } from '../logging/logging.module';
+import { FindAll{{pascalCase name}}UseCase } from './use-cases/find-all.use-case';
+import { FindOne{{pascalCase name}}UseCase } from './use-cases/find-one.use-case';
+import { Create{{pascalCase name}}UseCase } from './use-cases/create.use-case';
+import { Update{{pascalCase name}}UseCase } from './use-cases/update.use-case';
+import { Remove{{pascalCase name}}UseCase } from './use-cases/remove.use-case';
+import { {{pascalCase name}}RouteCeiling } from './{{kebabCase name}}.route-ceiling';
+
+const USE_CASES = [
+  FindAll{{pascalCase name}}UseCase,
+  FindOne{{pascalCase name}}UseCase,
+  Create{{pascalCase name}}UseCase,
+  Update{{pascalCase name}}UseCase,
+  Remove{{pascalCase name}}UseCase,
+];
 
 @Module({
   imports: [PrismaModule, LoggingModule],
   controllers: [{{pascalCase name}}Controller],
-  providers: [{{pascalCase name}}Service],
-  exports: [{{pascalCase name}}Service],
+  providers: [...USE_CASES, {{pascalCase name}}RouteCeiling],
+  // Exporte só o que outro módulo injetar.
+  exports: [FindOne{{pascalCase name}}UseCase],
 })
 export class {{pascalCase name}}Module {}

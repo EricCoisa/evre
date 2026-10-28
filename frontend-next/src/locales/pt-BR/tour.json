@@ -1,0 +1,10 @@
+{
+  "welcomeTitle": "Bem-vindo ao Tour",
+  "welcomeDescription": "Faça um tour rápido para conhecer os recursos e funcionalidades desta tela.",
+  "startTour": "Iniciar Tour",
+  "skipTour": "Pular Tour",
+  "previous": "Anterior",
+  "next": "Próximo",
+  "finish": "Concluir",
+  "helpButtonLabel": "Abrir tour de ajuda"
+}

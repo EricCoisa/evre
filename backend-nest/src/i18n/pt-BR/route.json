@@ -25,5 +25,6 @@
   "cannot_be_parent_of_itself": "Uma rota não pode ser pai de si mesma",
   "has_children": "Não é possível excluir rota com rotas filhas",
   "deleted_successfully": "Rota excluída com sucesso",
-  "some_not_found": "Algumas rotas não foram encontradas"
+  "some_not_found": "Algumas rotas não foram encontradas",
+  "role_not_allowed": "A rota {path} só pode ser concedida aos papéis: {roles}"
 }

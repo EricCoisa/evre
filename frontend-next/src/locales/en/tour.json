@@ -1,0 +1,10 @@
+{
+  "welcomeTitle": "Welcome to the Tour",
+  "welcomeDescription": "Take a quick tour to learn about the key features and functionality of this screen.",
+  "startTour": "Start Tour",
+  "skipTour": "Skip Tour",
+  "previous": "Previous",
+  "next": "Next",
+  "finish": "Finish",
+  "helpButtonLabel": "Open help tour"
+}

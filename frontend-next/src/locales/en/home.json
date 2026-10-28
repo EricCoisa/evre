@@ -11,5 +11,6 @@
   "routeStructureDesc": "Private pages are in the group",
   "thisPage": "This page",
   "adminPanel": "Administrative panel",
-  "sharedLayout": "All share the same layout and header"
+  "sharedLayout": "All share the same layout and header",
+  "featuresCardDesc": "Main features implemented in this template"
 }

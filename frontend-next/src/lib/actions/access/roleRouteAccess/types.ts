@@ -1,7 +1,12 @@
-import { Role } from "@/types/roles";
+// Re-export from generated schemas; local aliases for backward compat
+import type { Role } from '@/types/roles';
 
+export type { RoleRouteAccessDto as RoleRouteAccess } from '@/lib/generated/schemas';
+
+// RoleUser and RoleUserAccess kept as-is (use local Role type not in openapi)
 export interface RoleUser {
-  roleId: Role;
+  roleId: string;
+  roleName: Role;
 }
 
 export interface Route {
@@ -13,7 +18,7 @@ export interface Route {
 
 export interface RoleUserAccess {
   id: string;
-  roleId: Role;
+  roleId: string;
   routeId: string;
   path: string;
   labelKey: string;

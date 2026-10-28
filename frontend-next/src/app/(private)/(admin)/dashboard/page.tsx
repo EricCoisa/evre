@@ -1,41 +1,26 @@
-'use client';
-
+import { PageRenderer } from "@/lib/page-builder/renderer";
 import { ChartAreaInteractive } from "@/components/chart-area-interactive";
 import { Container } from "@/components/container";
-import { useTranslation } from "@/hooks/use-translation";
+import { serverFeatureFlag } from "@/lib/server-context";
 
-export default function DashboardPage() {
+/** Server Component que avalia a flag BETA_DASHBOARD e monta o fallback do PageRenderer. */
+export default async function DashboardPage() {
+  const showBetaDashboard = await serverFeatureFlag('BETA_DASHBOARD');
 
-  const { t } = useTranslation('dashboard');
-
+  // Opt-in por página: o PageRenderer só assume se o usuário tiver um layout salvo E a flag
+  // PAGE_BUILDER estiver ligada. Qualquer outro caso renderiza o dashboard em código.
   return (
-    <div className="sm:px-6 px-0 grid grid-cols-1 lg:grid-cols-2 gap-6 auto-rows-fr">
-      {/* Container de Estatísticas */}
-      <Container  className="lg:col-span-2">
-        <ChartAreaInteractive />
-      </Container>
-
-      {/* Container de Atividades Recentes */}
-      <Container padding variant="default" title={t('recentActivities')} className="lg:col-span-2">
-        <div className="space-y-4 pt-4">
-          <div className="flex items-start gap-4">
-            <div className="h-2 w-2 mt-2 rounded-full bg-primary" />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-foreground">{t('loginPerformed')}</p>
-              <p className="text-xs text-muted-foreground">{t('adminLoggedIn')}</p>
-              <p className="text-xs text-muted-foreground/60 mt-1">{t('minutesAgo', { '0': '2' })}</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-4">
-            <div className="h-2 w-2 mt-2 rounded-full bg-primary" />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-foreground">{t('systemStarted')}</p>
-              <p className="text-xs text-muted-foreground">{t('backendFrontendOperational')}</p>
-              <p className="text-xs text-muted-foreground/60 mt-1">{t('minutesAgo', { '0': '10' })}</p>
-            </div>
-          </div>
+    <PageRenderer
+      pageKey="/dashboard"
+      fallback={
+        <div className="sm:px-6 px-0 grid grid-cols-1 lg:grid-cols-2 gap-6 auto-rows-fr">
+          {showBetaDashboard && (
+            <Container className="lg:col-span-2">
+              <ChartAreaInteractive />
+            </Container>
+          )}
         </div>
-      </Container>
-    </div>
+      }
+    />
   );
 }

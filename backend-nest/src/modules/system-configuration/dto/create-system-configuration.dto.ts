@@ -7,11 +7,10 @@ export const CreateSystemConfigurationSchema = z.object({
     .string()
     .min(1, 'labelKey é obrigatório')
     .max(255, 'labelKey deve ter no máximo 255 caracteres'),
-  valueType: z
-    .string()
-    .min(1, 'valueType é obrigatório')
-    .max(50, 'valueType deve ter no máximo 50 caracteres'),
+  valueType: z.enum(['STRING', 'NUMBER', 'BOOLEAN', 'JSON', 'DATE', 'ENUM']),
+  options: z.array(z.string()).default([]),
   value: z.string().min(1, 'value é obrigatório'),
+  secret: z.boolean().default(false),
 });
 
 export class CreateSystemConfigurationDto extends createZodDto(
@@ -24,14 +23,31 @@ export class CreateSystemConfigurationDto extends createZodDto(
   labelKey: string;
 
   @ApiProperty({
-    description: 'Tipo do valor (string, number, boolean, json)',
-    example: 'boolean',
+    description: 'Tipo do valor',
+    enum: ['STRING', 'NUMBER', 'BOOLEAN', 'JSON', 'DATE', 'ENUM'],
+    example: 'BOOLEAN',
   })
-  valueType: string;
+  valueType: 'STRING' | 'NUMBER' | 'BOOLEAN' | 'JSON' | 'DATE' | 'ENUM';
+
+  @ApiProperty({
+    description: 'Opções para valueType ENUM',
+    isArray: true,
+    required: false,
+    default: [],
+  })
+  options: string[];
 
   @ApiProperty({
     description: 'Valor da configuração',
     example: 'false',
   })
   value: string;
+
+  @ApiProperty({
+    description: 'Indica se o valor é secreto e deve ser criptografado',
+    example: false,
+    required: false,
+    default: false,
+  })
+  secret: boolean;
 }

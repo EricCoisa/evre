@@ -1,0 +1,46 @@
+// Metadata da conversa (dono, título); histórico e approvedScopes vivem no checkpointer LangGraph.
+model AiConversation {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("ai_conversations")
+  @@schema("public")
+}
+
+model ApiKey {
+  id         String    @id @default(uuid())
+  name       String
+  keyHash    String    @unique
+  keyPrefix  String
+  scopes     String[]  @default([])
+  userId     String
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("api_keys")
+  @@schema("public")
+}
+
+// Presença de linha = usuário revogou o acesso do próprio agente à tool. Ausência = permitido
+// (segue o filtro de roles normal) — inverso de UserRouteAccess, que é default-deny.
+model UserToolAccess {
+  id        String   @id @default(uuid())
+  userId    String
+  toolName  String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, toolName])
+  @@index([userId])
+  @@map("user_tool_accesses")
+  @@schema("public")
+}

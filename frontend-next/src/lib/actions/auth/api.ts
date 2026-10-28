@@ -1,56 +1,81 @@
 "use server";
-import { GET, ApiResponse, POST, GET_BLOB } from '../../api/api';
-import type { AuthUser, ForgotPasswordDto, ResetPasswordDto, ResetPasswordResponse } from '@/lib/actions/auth/types';
+import { getAuth } from "@/lib/generated/auth/auth";
+import type { SaveOauthConfigDto } from "@/lib/generated/schemas";
+import { wrapAs } from "../wrap";
+import type { ApiResponse } from "../../api/api";
+import { captchaHeader } from "../../api/captcha-header";
+import type {
+  AuthUser,
+  ForgotPasswordDto,
+  OAuthProvider,
+  ResetPasswordDto,
+  ResetPasswordResponse,
+  SaveOAuthConfigPayload,
+  UserProfile,
+} from "@/lib/actions/auth/types";
+
+/** Sessão + menu. Não traz name/status/imageUrl — para isso use getProfile(). */
+const api = getAuth();
 
 export async function getCurrentUser(): Promise<ApiResponse<AuthUser>> {
-    return await GET<AuthUser>('/auth/me');
+  return wrapAs(() => api.authControllerGetMe());
 }
 
-export async function getProfile(): Promise<ApiResponse<AuthUser>> {
-    const user = await GET<AuthUser>('/auth/user');
-    
-    // Busca a imagem e converte para data URL
-    try {
-        const imageDataUrl = await getUserImageById(user.data.id);
-        user.data.image = imageDataUrl;
-    } catch (error) {
-        console.error('Erro ao carregar imagem do usuário:', error);
-        user.data.image = null;
-    }
-    
-    return user;
+export async function getProfile(): Promise<ApiResponse<UserProfile>> {
+  const user = await wrapAs<UserProfile>(() => api.authControllerGetUser());
+  if (!user.success) return user;
+  // imageUrl is now returned directly from the API
+  user.data.image = user.data.imageUrl ?? null;
+  return user;
 }
 
-export async function getUserImageById(id: string): Promise<string | null> {
-  try {
-    const response = await GET_BLOB(`/user/${id}/get-user-image`);
-    
-    if (!response.success || !response.data) {
-      return null;
-    }
-    
-    // Converte Blob/ArrayBuffer para Buffer e então para base64
-    const arrayBuffer = await response.data.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const base64 = buffer.toString('base64');
-
-    return `data:image/jpeg;base64,${base64}`;
-  } catch (error) {
-    console.error('Erro ao buscar imagem:', error);
-    return null;
-  }
+export async function forgotPassword(
+  data: ForgotPasswordDto,
+  captchaToken?: string | null,
+): Promise<ApiResponse<true>> {
+  return wrapAs(() =>
+    api.authControllerForgotPassword(data, {
+      headers: captchaHeader(captchaToken),
+    }),
+  );
 }
 
-export async function forgotPassword(data: ForgotPasswordDto): Promise<ApiResponse<true>> {
-  return await POST<true>('/auth/forgot-password', data);
+export async function resetPassword(
+  data: ResetPasswordDto,
+  captchaToken?: string | null,
+): Promise<ApiResponse<ResetPasswordResponse>> {
+  return wrapAs(() =>
+    api.authControllerResetPassword(data, {
+      headers: captchaHeader(captchaToken),
+    }),
+  );
 }
 
-
-
-export async function resetPassword(data: ResetPasswordDto): Promise<ApiResponse<ResetPasswordResponse>> {
-  return await POST<ResetPasswordResponse>('/auth/reset-password', data);
+export async function checkResetToken(
+  token: string,
+): Promise<ApiResponse<{ valid: boolean }>> {
+  return wrapAs(() => api.authControllerCheckResetToken({ token }));
 }
 
-export async function checkResetToken(token: string): Promise<ApiResponse<{ valid: boolean }>> {
-  return await GET<{ valid: boolean }>(`/auth/check-reset-token?token=${token}`);
+/** Providers OAuth registrados, cada um com `configured`; 404 quando `OAUTH_LOGIN` está desligada. */
+export async function getOAuthProviders(): Promise<
+  ApiResponse<OAuthProvider[]>
+> {
+  return wrapAs(() => api.authControllerOauthProviders());
+}
+
+/** Credenciais de um provider, validadas por OIDC Discovery antes de gravar; secret vazio mantém o gravado. */
+export async function saveOAuthConfig(
+  provider: string,
+  payload: SaveOAuthConfigPayload,
+): Promise<ApiResponse<{ status: boolean; data: string }>> {
+  return wrapAs(() =>
+    api.authControllerSaveOauthConfig(provider, payload as SaveOauthConfigDto),
+  );
+}
+
+export async function getForgotPasswordStatus(): Promise<
+  ApiResponse<{ available: boolean }>
+> {
+  return wrapAs(() => api.authControllerForgotPasswordStatus());
 }

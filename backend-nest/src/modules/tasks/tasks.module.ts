@@ -1,20 +1,21 @@
 import { Module, forwardRef } from '@nestjs/common';
-import { ScheduleModule } from '@nestjs/schedule';
 
 import { RefreshTokenClearTask } from './refreshTokenClear.task';
 
-import { PrismaService } from '../../prisma/prisma.service';
+import { PrismaModule } from '../../prisma/prisma.module';
 import { SystemConfigurationModule } from '../system-configuration/system-configuration.module';
 import { LoggingModule } from '../logging/logging.module';
 import { LogClearTask } from './logClear.task';
+import { SignupIntentClearTask } from './signup-intent-clear.task';
 
+// forwardRef: dependência circular LoggingModule ↔ TasksModule.
 @Module({
   imports: [
-    ScheduleModule.forRoot(),
+    PrismaModule,
     forwardRef(() => SystemConfigurationModule),
-    LoggingModule,
+    forwardRef(() => LoggingModule),
   ],
-  providers: [LogClearTask, RefreshTokenClearTask, PrismaService],
+  providers: [LogClearTask, RefreshTokenClearTask, SignupIntentClearTask],
   exports: [LogClearTask],
 })
 export class TasksModule {}

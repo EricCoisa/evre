@@ -1,112 +1,64 @@
 "use client"
-import { Button } from "@/components/ui/button"
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+    Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from "@/components/ui/card"
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Input } from "@/components/ui/input";
-import { useRouter } from 'next/navigation';
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { useTranslation } from "@/hooks/use-translation";
-import Link from "next/link";
-import { forgotPassword } from "@/lib/actions/auth/api";
+import { Button } from "@/components/ui/button"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import Link from "next/link"
+import { z } from "zod"
+import { forgotPassword } from "@/lib/actions/auth/api"
+import { useTranslation } from "@/hooks/use-translation"
+import { FormBuilder } from "@/components/form/form-builder"
+import { useCaptcha } from "@/hooks/use-captcha"
+import type { CaptchaConfigDto } from "@/lib/generated/schemas"
 
-export function ForgotPasswordForm() {
-    const { t } = useTranslation("forgotPassword");
-    
-    const router = useRouter();
-    const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState<boolean>(false);
+export function ForgotPasswordForm({ captcha }: { captcha?: CaptchaConfigDto | null }) {
+    const { t } = useTranslation("forgotPassword")
+    const { containerRef, getToken, enabled: captchaEnabled } = useCaptcha(captcha)
 
-    // Define schema after t() is available for translations
-    const forgotPasswordSchema = z.object({
+    const schema = z.object({
         email: z.string().email(t('invalidEmail')),
     })
-
-    type ForgotPasswordFormType = z.infer<typeof forgotPasswordSchema>;
-
-    const form = useForm<ForgotPasswordFormType>({
-        resolver: zodResolver(forgotPasswordSchema),
-        defaultValues: {
-            email: '',
-        },
-    });
-
-    const { handleSubmit, reset } = form;
-    const { errors, isSubmitting } = form.formState;
-
-    const onSubmit = async (values: ForgotPasswordFormType) => {
-        setError(null);
-        setSuccess(false);
-        try {
-            await forgotPassword({
-                email: values.email,
-            });
-            reset();
-            setSuccess(true);
-        } catch (err) {
-            if (err && typeof err === "object" && "message" in err) {
-                setError((err as { message: string }).message);
-            } else {
-                setError(t('errorSendingResetEmail'));
-            }
-        }
-    };
 
     return (
         <Card>
             <CardHeader>
                 <CardTitle>{t('forgotPassword')}</CardTitle>
-                <CardDescription>
-                    {t('enterInfo')}
-                </CardDescription>
+                <CardDescription>{t('enterInfo')}</CardDescription>
             </CardHeader>
             <CardContent>
-                {success ? (
-                    <div className="space-y-4">
-                        <div className="p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-md">
-                            <p className="text-green-800 dark:text-green-200 text-sm">
-                                {t('successMessage')}
-                            </p>
+                <FormBuilder
+                    schema={schema}
+                    fields={[
+                        { name: 'email', label: t('email'), type: 'email', placeholder: t('emailPlaceholder') },
+                        // Último campo: o widget nasce logo acima do botão de envio.
+                        { name: 'captcha', label: '', type: 'custom', render: () => <div ref={containerRef} className="flex justify-center" /> },
+                    ]}
+                    onSubmit={async (values) => {
+                        const captchaToken = await getToken()
+                        // FormBuilder transforma este throw em toast de erro.
+                        if (captchaEnabled && !captchaToken) throw new Error(t('common:captchaRequired'))
+
+                        const res = await forgotPassword({ email: values.email }, captchaToken)
+                        if (!res.success) throw new Error(res.message ?? t('common:errorMessage'))
+                    }}
+                    submitLabel={t('sendResetEmailButton')}
+                    actions={{
+                        mode: 'submit+link',
+                        link: { label: t('backToLogin'), href: '/login' },
+                    }}
+                    successView={
+                        <div className="space-y-4">
+                            <Alert>
+                                <AlertDescription>{t('successMessage')}</AlertDescription>
+                            </Alert>
+                            <Button asChild className="w-full">
+                                <Link href="/login">{t('backToLogin')}</Link>
+                            </Button>
                         </div>
-                        <Button asChild className="w-full">
-                            <Link href="/login">{t('backToLogin')}</Link>
-                        </Button>
-                    </div>
-                ) : (
-                    <Form {...form}>
-                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                            <FormField
-                                control={form.control}
-                                name="email"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>{t('email')}</FormLabel>
-                                        <FormControl>
-                                            <Input id="email" type="email" placeholder="m@example.com" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            /> 
-                            {error && <div className="text-red-500 text-xs mt-1">{error}</div>}
-                            <div className="flex flex-col gap-2">
-                                <Button type="submit" disabled={isSubmitting}>{t('sendResetEmailButton')}</Button>
-                                <Button asChild variant="outline" type="button">
-                                    <Link href="/login">{t('backToLogin')}</Link>
-                                </Button>
-                            </div>
-                        </form>
-                    </Form>
-                )}
+                    }
+                />
             </CardContent>
         </Card>
-    );
+    )
 }

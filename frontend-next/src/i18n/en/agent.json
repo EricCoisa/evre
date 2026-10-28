@@ -1,0 +1,9 @@
+{
+  "thinking": "Reasoning / activity",
+  "errorGeneric": "Something went wrong. Try again.",
+  "errorNetwork": "Connection to server failed.",
+  "errorUnauthorized": "Session expired. Please log in again.",
+  "errorForbidden": "You don't have permission for this action.",
+  "errorRateLimited": "Too many requests. Please wait a moment.",
+  "errorServer": "AI server error. Please try again."
+}

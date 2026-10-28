@@ -1,24 +1,47 @@
 "use server";
-import {  GET, PATCH, ApiResponse } from '../../api/api';
-import type { SystemConfiguration } from './types';
+// Thin adapter — wraps generated system-configuration functions
+import { getSystemConfiguration as createSysConfigClient } from "@/lib/generated/system-configuration/system-configuration";
+import type { ApiResponse } from "@/lib/api/api";
+import type { SystemConfiguration } from "./types";
+import { wrapAs } from "../wrap";
+
+const api = createSysConfigClient();
 
 export interface RoleOption {
   value: string;
   label: string;
 }
 
-export async function getSystemConfiguration<T>(labelKey: string): Promise<ApiResponse<SystemConfiguration<T>>> {
-  return await GET<SystemConfiguration<T>>(`/system-configuration/key/${labelKey}`);
+export async function getSystemConfiguration<T>(
+  labelKey: string,
+): Promise<ApiResponse<SystemConfiguration<T>>> {
+  return wrapAs(() =>
+    api.systemConfigurationControllerFindByLabelKey(labelKey),
+  );
 }
 
-export async function getSignupConfiguration(): Promise<ApiResponse<SystemConfiguration<boolean>>> {
-  return await GET<SystemConfiguration<boolean>>(`/system-configuration/signup`);
+export async function getSignupConfiguration(): Promise<
+  ApiResponse<SystemConfiguration<boolean>>
+> {
+  return wrapAs(() =>
+    api.systemConfigurationControllerFindSignupConfiguration(),
+  );
 }
 
-export async function getDefaultThemeConfiguration(): Promise<ApiResponse<SystemConfiguration<string>>> {
-  return await GET<SystemConfiguration<string>>(`/system-configuration/default-theme`);
+// customInstance direto (não o client Orval): endpoint novo, gerador ainda não roda neste ambiente.
+export async function getDefaultThemeConfiguration(): Promise<
+  ApiResponse<SystemConfiguration<string>>
+> {
+  return wrapAs(() =>
+    api.systemConfigurationControllerFindDefaultThemeConfiguration(),
+  );
 }
 
-export async function updateSystemConfiguration<T>(id: string, value: T): Promise<ApiResponse<SystemConfiguration<T>>> {
-  return await PATCH<SystemConfiguration<T>>(`/system-configuration/${id}`, { value });
+export async function updateSystemConfiguration<T>(
+  id: string,
+  value: T,
+): Promise<ApiResponse<SystemConfiguration<T>>> {
+  return wrapAs(() =>
+    api.systemConfigurationControllerUpdate(id, { value: value as string }),
+  );
 }

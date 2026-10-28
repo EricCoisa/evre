@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  // `nest build` (tsconfig.build.json) exclui `**/*spec.ts`, e o vitest não faz
+  // typecheck — sem este arquivo, erro de tipo em spec fica invisível até
+  // alguém rodar tsc na mão. `npm run typecheck` cobre esse buraco.
+  //
+  // `test/` está de fora porque as suites e2e de Organization/Membership/User.role
+  // arrastam um schema drift PRÉ-EXISTENTE (13 erros, sem relação com o módulo
+  // ai/). Remover esta exclusão assim que esse schema for reconciliado.
+  "exclude": ["node_modules", "dist", "test"]
+}

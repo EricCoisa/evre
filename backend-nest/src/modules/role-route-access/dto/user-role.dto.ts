@@ -1,9 +1,9 @@
 import { createZodDto } from 'nestjs-zod';
-import { ROLES } from 'src/types/userRole';
 import { z } from 'zod';
 
 export const UserRoleSchema = z.object({
-  roleId: z.enum(ROLES),
+  roleId: z.string(),
+  roleName: z.string(),
 });
 
 export class UserRoleDto extends createZodDto(UserRoleSchema) {}

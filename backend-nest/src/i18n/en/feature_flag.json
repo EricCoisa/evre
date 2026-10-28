@@ -1,0 +1,8 @@
+{
+  "not_found": "Feature flag not found",
+  "key_already_exists": "Feature flag with this key already exists",
+  "self_parent": "A feature flag cannot be its own parent",
+  "parent_not_found": "Parent feature flag not found",
+  "cycle_detected": "This link would create a cycle between feature flags",
+  "max_depth_exceeded": "This feature flag chain would exceed the maximum allowed depth (5)"
+}

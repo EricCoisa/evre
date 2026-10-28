@@ -1,0 +1,143 @@
+model Role {
+  id                String            @id @default(uuid())
+  name              String            @unique
+  isSystem          Boolean           @default(false)
+  createdAt         DateTime          @default(now())
+  users             User[]
+  roleRouteAccesses RoleRouteAccess[]
+  featureFlagRoles  FeatureFlagRole[]
+  invites           Invite[]
+
+  @@map("roles")
+  @@schema("public")
+}
+
+model User {
+  id                     String                  @id @default(uuid())
+  email                  String                  @unique
+  emailVerifiedAt        DateTime?
+  salt                   String?
+  hash                   String?
+  name                   String?
+  /// Usado pelo módulo de notificação para relay de WhatsApp; sem vínculo com MessagingContact.
+  phone                  String?                 @unique
+  image                  Bytes?
+  imageUrl               String?
+  roleId                 String?
+  roleRecord             Role?                   @relation(fields: [roleId], references: [id])
+  status                 UserStatus              @default(ACTIVE)
+  deletedAt              DateTime?
+  loginAttempts          Int                     @default(0)
+  lockUntil              DateTime?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  systemLogs             SystemLog[]
+  refreshTokens          RefreshToken[]
+  passwordResetTokens    PasswordResetToken[]
+  userRouteAccesses      UserRouteAccess[]
+  grantedRouteAccesses   UserRouteAccess[]       @relation("GrantedBy")
+  userConfigurations     UserConfiguration[]
+  aiConversations        AiConversation[]
+  apiKeys                ApiKey[]
+  userToolAccesses       UserToolAccess[]
+  oauthGrants            OAuthGrant[]
+  messagingMessages      MessagingMessage[]
+  termsAcceptedAt        DateTime?
+  termsVersion           String?
+  createdInvites         Invite[]                @relation("InviteCreatedBy")
+  notificationRecipients NotificationRecipient[]
+  notificationsCreated   Notification[]          @relation("NotificationCreatedBy")
+  shortLinks             ShortLink[]
+
+  @@index([deletedAt])
+  @@map("users")
+  @@schema("public")
+}
+
+/// Rotação de refresh token com detecção de reuso (RFC 9700 §4.14.2); `familyId` agrupa a sessão.
+model RefreshToken {
+  id           String    @id @default(uuid())
+  token        String    @unique
+  userId       String
+  /// Sessao logica: todos os tokens descendentes de um mesmo login.
+  familyId     String
+  expiresAt    DateTime
+  /// Preenchido quando este token foi rotacionado. Enquanto dentro da janela de
+  /// graca o token continua aceito, devolvendo `replacedBy`.
+  replacedAt   DateTime?
+  /// Sucessor emitido na rotacao, devolvido a quem perdeu a corrida.
+  replacedById String?
+  createdAt    DateTime  @default(now())
+  /// Hash do IP e do User-Agent de quem emitiu este token; valida a origem do reuso dentro da janela de graca.
+  sourceIpHash String?
+  sourceUaHash String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@index([familyId])
+  @@map("refresh_tokens")
+  @@schema("public")
+}
+
+model Invite {
+  id          String    @id @default(uuid())
+  email       String    @unique
+  roleId      String
+  /// Null quando o convite foi criado por uma integração sem usuário associado.
+  createdById String?
+  expiresAt   DateTime
+  actionUrl   String?
+  tokenHash   String?   @unique
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  role      Role  @relation(fields: [roleId], references: [id])
+  createdBy User? @relation("InviteCreatedBy", fields: [createdById], references: [id])
+
+  @@index([expiresAt])
+  @@map("invites")
+  @@schema("public")
+}
+
+model SignupIntent {
+  id              String    @id @default(uuid())
+  email           String
+  name            String?
+  purpose         String
+  tokenHash       String    @unique
+  providerId      String?
+  inviteId        String?
+  inviteTokenHash String?
+  userId          String?
+  callbackUrl     String?
+  attempts        Int       @default(0)
+  maxAttempts     Int       @default(5)
+  expiresAt       DateTime
+  usedAt          DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@index([email, purpose, usedAt])
+  @@index([expiresAt])
+  @@map("signup_intents")
+  @@schema("public")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  tokenHash String    @unique
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+  @@schema("public")
+}

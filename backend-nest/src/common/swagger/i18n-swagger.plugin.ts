@@ -1,5 +1,5 @@
 import { INestApplication } from '@nestjs/common';
-import { OpenAPIObject } from '@nestjs/swagger/dist/interfaces';
+import { OpenAPIObject } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 
 interface PathItemObject {
@@ -12,16 +12,11 @@ interface OperationObject {
   [key: string]: unknown;
 }
 
-/**
- * Plugin para traduzir a documentação Swagger dinamicamente
- * Suporta múltiplos idiomas através de query parameter (?lang=en)
- */
+/** Traduz a documentação Swagger em runtime; o idioma vem de `?lang=`. */
 export class I18nSwaggerPlugin {
   constructor(private readonly i18n: any) {}
 
-  /**
-   * Traduz o documento Swagger baseado no idioma fornecido
-   */
+  /** Traduz o documento Swagger para o idioma informado. */
   translateDocument(
     document: OpenAPIObject,
     lang: string = 'pt-BR',
@@ -65,17 +60,13 @@ export class I18nSwaggerPlugin {
     return translatedDoc;
   }
 
-  /**
-   * Verifica se a string é uma chave de tradução (formato: x.y.z)
-   */
+  /** Indica se a string tem formato de chave de tradução (`x.y.z`). */
   private isTranslationKey(str: string): boolean {
     return /^[a-z]+(\.[a-z_]+)+$/.test(str);
   }
 }
 
-/**
- * Middleware para servir documentação Swagger traduzida
- */
+/** Registra a rota que serve a documentação Swagger traduzida. */
 export function setupI18nSwagger(
   app: INestApplication,
   path: string,

@@ -1,0 +1,80 @@
+{
+  "restoreDefault": "Restore default",
+  "invalidLayout": "Invalid layout",
+  "invalidLayoutDescription": "The layout saved for this page could not be read. The coded page is being shown — restore the default to clear the customization.",
+  "blockUnavailable": "Block unavailable.",
+  "blockWithoutSource": "This block needs a data source and has no valid one.",
+  "blockDataError": "Could not load this block's data.",
+  "blockForbidden": "You don't have access to this block's data source. It stays hidden for you outside edit mode.",
+  "editor": {
+    "edit": "Edit page",
+    "title": "Edit page",
+    "close": "Close editor",
+    "save": "Save",
+    "saving": "Saving...",
+    "saved": "Layout saved.",
+    "saveAsDefault": "Save as Default",
+    "saveAsDefaultHint": "Publishes this layout as the system default: it applies to every user who has no layout of their own.",
+    "saveAsDefaultConfirm": "Publish this layout as the system default? Every user without their own layout will see it.",
+    "savedAsDefault": "Layout published as the system default.",
+    "cancel": "Cancel",
+    "discardConfirm": "Discard unsaved changes?",
+    "nothingSelected": "Select a block on the page to edit its properties.",
+    "emptyPage": "Empty page. Add a block from the panel on the right.",
+    "emptyContainer": "Select this card and add blocks inside it.",
+    "addBlock": "Add block",
+    "addToContainer": "Add inside the card",
+    "limitReached": "Block limit reached.",
+    "unknownType": "Block type \"{{type}}\" does not exist in the catalog.",
+    "dataSource": "Data source",
+    "pickSource": "Pick a source",
+    "pickSourceFirst": "Pick a source to list its fields",
+    "sourceRequired": "This block needs a source to show data.",
+    "parameters": "Parameters",
+    "width": "Width",
+    "height": "Height (Rows)",
+    "style": "Style",
+    "addClass": "Add style",
+    "removeClass": "Remove {{class}}",
+    "drag": "Drag to reorder",
+    "narrower": "Narrower",
+    "wider": "Wider",
+    "remove": "Remove block",
+    "dropBefore": "Above",
+    "dropInside": "Inside",
+    "dropAfter": "Below",
+    "dropSwap": "Swap position",
+    "dropHere": "Drop in this slot",
+    "addHere": "Add here",
+    "moveLeft": "Move left",
+    "moveRight": "Move right",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "insertVariable": "Variable",
+    "clearSource": "Clear source",
+    "optionalSourceHint": "Optional: pick a source to insert {{var}} variables into the text."
+  },
+  "blocks": {
+    "group": "Group",
+    "table": {
+      "basic": "Table"
+    },
+    "chart": {
+      "area": "Area Chart",
+      "bar": "Bar Chart",
+      "line": "Line Chart"
+    },
+    "alert": {
+      "banner": "Alert"
+    },
+    "text": {
+      "rich": "Text (Rich Text)"
+    },
+    "button": {
+      "action": "Button"
+    },
+    "list": {
+      "feed": "Feed"
+    }
+  }
+}

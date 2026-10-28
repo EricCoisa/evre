@@ -6,5 +6,6 @@
   "all_configurations_reset": "Todas as configurações resetadas para o padrão",
   "value_must_be_number": "O valor deve ser um número válido",
   "value_must_be_boolean": "O valor deve ser true ou false",
-  "value_must_be_json": "O valor deve ser um JSON válido"
+  "value_must_be_json": "O valor deve ser um JSON válido",
+  "value_must_be_one_of": "O valor deve ser um destes: {options}"
 }

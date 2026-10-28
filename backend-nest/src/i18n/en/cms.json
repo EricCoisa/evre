@@ -1,0 +1,5 @@
+{
+  "access_denied": "CMS access denied",
+  "user_inactive": "User is inactive",
+  "user_locked": "User is locked"
+}

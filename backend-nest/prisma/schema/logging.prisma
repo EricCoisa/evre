@@ -1,0 +1,16 @@
+model SystemLog {
+  id            String    @id @default(uuid())
+  module        LogModule
+  action        String
+  message       String
+  metadata      Json?
+  performedById String?
+  createdAt     DateTime  @default(now())
+
+  performedBy User? @relation(fields: [performedById], references: [id])
+
+  @@index([module, createdAt])
+  @@index([performedById])
+  @@map("system_log")
+  @@schema("public")
+}

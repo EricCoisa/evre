@@ -314,4 +314,40 @@ Este template é livre para uso dentro dos projetos internos e de clientes.
 
 ---
 
+## Tenant Data Isolation
+
+Tenant scoping uses two layers: a Prisma `$extends` client that injects `organizationId` filters automatically, and PostgreSQL RLS policies as a safety net.
+
+### Marking a model as tenant-scoped
+
+1. Add the Prisma model name (string) to `PrismaService.TENANT_MODELS` in `src/prisma/prisma.service.ts`.
+2. Add `organizationId String` to the Prisma schema model and run `prisma migrate dev`.
+3. In the same migration file, add the RLS policy:
+   ```sql
+   ALTER TABLE "public"."<table>" ENABLE ROW LEVEL SECURITY;
+   ALTER TABLE "public"."<table>" FORCE ROW LEVEL SECURITY;
+   CREATE POLICY tenant_isolation ON "public"."<table>"
+     USING ("organizationId" = current_setting('app.current_org', true));
+   ```
+
+### Consuming tenant-scoped data in services
+
+Inject `TenantContext` and use `ctx.db` instead of `PrismaService` directly:
+
+```typescript
+constructor(private tenant: TenantContext) {}
+
+findAll() {
+  return this.tenant.db.myModel.findMany(); // automatically scoped to current org
+}
+```
+
+### Plop template
+
+When generating a new module with `npm run plop`, answer **yes** to "É tenant-scoped?" to get:
+- `organizationId String` added to the generated Prisma model
+- A reminder printed to `plop-output.log` to add the model to `TENANT_MODELS` and add the RLS policy
+
+---
+
 **Desenvolvido com ❤️ usando NestJS**

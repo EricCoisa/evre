@@ -1,0 +1,126 @@
+services:
+
+  # ── infrastructure (only Postgres stays local) ───────────────
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB:       ${POSTGRES_DB}
+      POSTGRES_HOST_PORT:     ${POSTGRES_HOST_PORT}
+    ports:
+      - "${POSTGRES_HOST_PORT}:5432"
+    volumes:
+      - postgres_db:/var/lib/postgresql/data
+    networks:
+      default:
+        aliases:
+          - template-postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── application ─────────────────────────────────────────────
+  # Redis e S3 vêm de outro projeto Coolify (ex.: "Template Infra") — REDIS_URL
+  # e S3_* apontam pro hostname interno desses resources. backend/frontend
+  # entram também na rede compartilhada `coolify` pra resolver esse hostname
+  # sem publicar porta nenhuma (Coolify → "Connect to Predefined Network").
+  # Ver docs/guides/deploy.md § "Múltiplos projetos, uma infra compartilhada".
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend-nest/Dockerfile
+    restart: unless-stopped
+    networks:
+      - default
+      - coolify
+    environment:
+      PORT:                   3001
+      APP_NAME:               ${APP_NAME}
+      NODE_ENV:               ${NODE_ENV}
+      NEST_PUBLIC_ENV:        ${NEST_PUBLIC_ENV}
+      DATABASE_URL:           ${DATABASE_URL}
+      REDIS_URL:              ${REDIS_URL}
+      JWT_SECRET:             ${JWT_SECRET}
+      JWT_REFRESH_SECRET:     ${JWT_REFRESH_SECRET}
+      JWT_INVITE_SECRET:      ${JWT_INVITE_SECRET}
+      JWT_EXPIRES_IN:         ${JWT_EXPIRES_IN}
+      PAYLOAD_SECRET:         ${PAYLOAD_SECRET}
+      CRYPTO_SECRET:          ${CRYPTO_SECRET}
+      PAYLOAD_CMS_PASSWORD:   ${PAYLOAD_CMS_PASSWORD}
+      SEED_USER_PASSWORD:     ${SEED_USER_PASSWORD}
+      RUN_SEED:               ${RUN_SEED}
+      RUN_MIGRATIONS:         ${RUN_MIGRATIONS}
+      S3_ENDPOINT:            ${S3_ENDPOINT}
+      S3_BUCKET:              ${S3_BUCKET}
+      S3_ACCESS_KEY:          ${S3_ACCESS_KEY}
+      S3_SECRET_KEY:          ${S3_SECRET_KEY}
+      S3_PUBLIC_URL:          ${S3_PUBLIC_URL}
+      S3_REGION:              ${S3_REGION}
+      PAYLOAD_STORAGE_PROVIDER: ${PAYLOAD_STORAGE_PROVIDER}
+      NEXTAUTH_URL:           ${NEXTAUTH_URL}
+      AGENT_CMS_SECRET:       ${AGENT_CMS_SECRET}
+      SENTRY_DSN:             ${SENTRY_DSN}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend-next/Dockerfile
+    restart: unless-stopped
+    networks:
+      - default
+      - coolify
+    volumes:
+      # persists Payload local media uploads when PAYLOAD_STORAGE_PROVIDER=local
+      - payload_media:/app/frontend-next/public/media
+    environment:
+      APP_NAME:               ${APP_NAME}
+      NODE_ENV:               ${NODE_ENV}
+      NEXT_PUBLIC_ENV:        ${NEXT_PUBLIC_ENV}
+      # ponytail: 127.0.0.1 instead of localhost — Alpine resolves localhost to ::1 (IPv6)
+      # but Next.js listens only on 0.0.0.0 (IPv4), causing ECONNREFUSED on self-calls
+      NEXT_INTERNAL_URL:      http://127.0.0.1:3000
+      DATABASE_URL:           ${DATABASE_URL}
+      PAYLOAD_SECRET:         ${PAYLOAD_SECRET}
+      NEXTAUTH_SECRET:        ${NEXTAUTH_SECRET}
+      NEXTAUTH_URL:           ${NEXTAUTH_URL}
+      NEXT_PUBLIC_API_URL:    ${NEXT_PUBLIC_API_URL}
+      NEXT_PUBLIC_PAYLOAD_URL: ${NEXT_PUBLIC_PAYLOAD_URL}
+      NEXT_PUBLIC_SITE_URL:   ${NEXT_PUBLIC_SITE_URL}
+      NEXT_PUBLIC_SITE_NAME:  ${NEXT_PUBLIC_SITE_NAME}
+      DEFAULT_LOCALE:         ${DEFAULT_LOCALE}
+      S3_ENDPOINT:            ${S3_ENDPOINT}
+      S3_BUCKET:              ${S3_BUCKET}
+      S3_ACCESS_KEY:          ${S3_ACCESS_KEY}
+      S3_SECRET_KEY:          ${S3_SECRET_KEY}
+      S3_PUBLIC_URL:          ${S3_PUBLIC_URL}
+      S3_REGION:              ${S3_REGION}
+      PAYLOAD_STORAGE_PROVIDER: ${PAYLOAD_STORAGE_PROVIDER}
+      AGENT_CMS_SECRET:       ${AGENT_CMS_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+
+volumes:
+  postgres_db:
+  payload_media:
+
+networks:
+  default:
+  coolify:
+    external: true

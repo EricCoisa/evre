@@ -1,14 +1,14 @@
 import { createZodDto } from 'nestjs-zod';
-import { UserRoleConst } from 'src/domain/auth/userRole.const';
 import { UserStatusConst } from 'src/domain/auth/userStatus.const';
 import { z } from 'zod';
 
-const UpdateUserSchema = z
+export const UpdateUserSchema = z
   .object({
     // email: z.string().email('validation.email.invalid').optional(),
     // password: z.string().min(6, 'validation.password.min_length').optional(),
     name: z.string().optional(),
-    role: z.nativeEnum(UserRoleConst).optional(),
+    phone: z.string().trim().min(8).max(20).optional(),
+    role: z.string().optional(),
     status: z.nativeEnum(UserStatusConst).optional(),
   })
   .strict();
@@ -34,9 +34,10 @@ const UpdatePasswordSchema = z
       .string()
       .min(6, 'validation.confirm_new_password.min_length'),
   })
+  .strict()
   .refine((data) => data.newPassword === data.confirmNewPassword, {
     message: 'validation.new_passwords_do_not_match',
-  })
-  .strict();
+  });
 
+export type UpdatePasswordDtoType = z.infer<typeof UpdatePasswordSchema>;
 export class UpdatePasswordDto extends createZodDto(UpdatePasswordSchema) {}

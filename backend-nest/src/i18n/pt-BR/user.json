@@ -5,9 +5,12 @@
   },
   "not_found": "Usuário não encontrado",
   "email_already_exists": "Email já está em uso",
+  "phone_invalid": "Número inválido",
   "current_password_invalid": "Senha atual incorreta",
   "new_password_same_as_current": "A nova senha não pode ser igual à senha atual.",
   "new_passwords_do_not_match": "As novas senhas não coincidem.",
+  "password_changed_title": "Senha alterada",
+  "password_changed_message": "Sua senha foi alterada com sucesso. Se não foi você, contate o suporte.",
   "forbidden": "Você não tem permissão para acessar este recurso",
   "roles": {
     "ADMIN": "Administrador",
@@ -19,24 +22,20 @@
     "INACTIVE": "Inativo",
     "SUSPENDED": "Suspenso"
   },
-  "public_data": {
-    "title": "Endpoint público (sem autenticação)",
-    "message": "Este endpoint é público, qualquer um pode acessar"
-  },
-  "admin_only": {
-    "title": "Apenas ADMINs podem acessar",
-    "message": "Dados exclusivos para administradores",
-    "secret_data": "Informações confidenciais do sistema"
-  },
-  "moderators": {
-    "title": "ADMINs e MODERATORs podem acessar",
-    "message": "Área de moderação"
-  },
-  "all_authenticated": {
-    "title": "Qualquer usuário autenticado pode acessar",
-    "message": "Conteúdo para usuários autenticados"
-  },
+  "account_deleted": "Conta excluída com sucesso.",
+  "cannot_delete_self": "Você não pode excluir sua própria conta por aqui. Use a opção de exclusão de conta.",
   "image_empty": "A imagem está vazia.",
   "image_too_large": "A imagem excede o tamanho máximo de 40MB.",
-  "image_invalid": "Imagem inválida."
+  "image_invalid": "Imagem inválida.",
+  "searchPlaceholder": "Buscar...",
+  "email_confirmation": {
+    "already_confirmed": "Este email já está confirmado."
+  },
+  "phone_confirmation": {
+    "no_phone": "Você precisa cadastrar um telefone antes de confirmá-lo.",
+    "already_confirmed": "Este telefone já está confirmado."
+  },
+  "validation": {
+    "code_invalid": "Código deve ter 6 dígitos numéricos."
+  }
 }

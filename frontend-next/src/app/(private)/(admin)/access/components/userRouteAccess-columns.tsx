@@ -1,5 +1,5 @@
 "use client";
-// TODO:DESATIVADO TEMPORARIAMENTE
+// Coluna desativada.
 import { UserRouteAccess } from '@/lib/actions/access/userRoute/types';
 import type { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';

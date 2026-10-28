@@ -1,5 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { UserRoleConst } from 'src/domain/auth/userRole.const';
 import { UserStatusConst } from 'src/domain/auth/userStatus.const';
 
 export class User {
@@ -26,6 +25,14 @@ export class User {
   name?: string | null;
 
   @ApiProperty({
+    description:
+      'Telefone do usuário (E.164), usado no relay de notificação por WhatsApp',
+    required: false,
+    nullable: true,
+  })
+  phone?: string | null;
+
+  @ApiProperty({
     description: 'Imagem de perfil do usuário em formato binário',
     required: false,
     nullable: true,
@@ -34,8 +41,8 @@ export class User {
   })
   image?: Buffer | null;
 
-  @ApiProperty({ enum: UserRoleConst })
-  role: keyof typeof UserRoleConst;
+  @ApiProperty()
+  role: string;
 
   @ApiProperty({ enum: UserStatusConst })
   status: keyof typeof UserStatusConst;

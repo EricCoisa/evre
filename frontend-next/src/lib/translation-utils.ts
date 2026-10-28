@@ -11,15 +11,12 @@ import ptBRSignup from '../locales/pt-BR/signup.json';
 import ptBRforgotPassword from '../locales/pt-BR/forgotPassword.json';
 import ptBRresetPassword from '../locales/pt-BR/resetPassword.json';
 import ptBRLogin from '../locales/pt-BR/login.json';
-import ptBRCompany from '../locales/pt-BR/company.json';
-import ptBRProposal from '../locales/pt-BR/proposal.json';
-import ptProjects from '../locales/pt-BR/projects.json';
-import ptContact from '../locales/pt-BR/contact.json';
-import ptClientLog from '../locales/pt-BR/clientLog.json';
-import ptContractDocument from '../locales/en/contractDocument.json';
-import ptProjectProposal from '../locales/pt-BR/projectproposal.json';
-import ptProjectContract from '../locales/pt-BR/projectContract.json';
-
+import ptBRFeatureFlags from '../locales/pt-BR/feature-flags.json';
+import ptBRTour from '../locales/pt-BR/tour.json';
+import ptBRAgent from '../locales/pt-BR/agent.json';
+import ptBRPageBuilder from '../locales/pt-BR/page-builder.json';
+import ptBRMessaging from '../locales/pt-BR/messaging.json';
+import ptBRNotification from '../locales/pt-BR/notification.json';
 import enCommon from '../locales/en/common.json';
 import enAccess from '../locales/en/access.json';
 import enDashboard from '../locales/en/dashboard.json';
@@ -33,14 +30,12 @@ import enSignup from '../locales/en/signup.json';
 import enforgotPassword from '../locales/en/forgotPassword.json';
 import enresetPassword from '../locales/en/resetPassword.json';
 import enLogin from '../locales/en/login.json';
-import enCompany from '../locales/en/company.json';
-import enProposal from '../locales/en/proposal.json';
-import enProjects from '../locales/en/projects.json';
-import enContact from '../locales/en/contact.json';
-import enClientLog from '../locales/en/clientLog.json';
-import enContractDocument from '../locales/en/contractDocument.json';
-import enProjectProposal from '../locales/en/projectproposal.json';
-import enProjectContract from '../locales/en/projectContract.json';
+import enFeatureFlags from '../locales/en/feature-flags.json';
+import enTour from '../locales/en/tour.json';
+import enAgent from '../locales/en/agent.json';
+import enPageBuilder from '../locales/en/page-builder.json';
+import enMessaging from '../locales/en/messaging.json';
+import enNotification from '../locales/en/notification.json';
 
 
 export const resources = {
@@ -58,14 +53,12 @@ export const resources = {
     forgotPassword: ptBRforgotPassword,
     resetPassword: ptBRresetPassword,
     login: ptBRLogin,
-    company: ptBRCompany,
-    proposal: ptBRProposal,
-    projects: ptProjects,
-    contact: ptContact,
-    clientLog: ptClientLog,
-    contractDocument: ptContractDocument,
-    projectProposal: ptProjectProposal,
-    projectContract: ptProjectContract,
+    'feature-flags': ptBRFeatureFlags,
+    tour: ptBRTour,
+    agent: ptBRAgent,
+    'page-builder': ptBRPageBuilder,
+    messaging: ptBRMessaging,
+    notification: ptBRNotification,
 	},
 	en: {
 		common: enCommon,
@@ -81,14 +74,12 @@ export const resources = {
     forgotPassword: enforgotPassword,
     resetPassword: enresetPassword,
     login: enLogin,
-    company: enCompany,
-    proposal: enProposal,
-    projects: enProjects,
-    contact: enContact,
-    clientLog: enClientLog,
-    contractDocument: enContractDocument,
-    projectProposal: enProjectProposal,
-    projectContract: enProjectContract,
+    'feature-flags': enFeatureFlags,
+    tour: enTour,
+    agent: enAgent,
+    'page-builder': enPageBuilder,
+    messaging: enMessaging,
+    notification: enNotification,
 	},
 };
 

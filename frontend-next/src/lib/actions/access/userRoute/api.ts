@@ -1,38 +1,37 @@
 "use server";
-import { ApiResponse, GET } from '@/lib/api/api';
-import type { UserRouteAccess } from './types';
-import type { PaginatedResponse, PaginationParams } from '@/lib/types/pagination.types';
-    
+// Thin adapter — wraps generated user-route-access functions
+import { getUserRouteAccess as createUserRouteAccessClient } from '@/lib/generated/user-route-access/user-route-access';
+import type { ApiResponse } from '@/lib/api/api';
+import type { PaginationParams } from '@/lib/types/pagination.types';
+import type { UserRouteAccessControllerFindAll200, UserRouteAccessControllerFindAllParams } from '@/lib/generated/schemas';
+import { normalizePaginationParams } from '../../normalize-pagination-params';
+import { wrap } from '../../wrap';
+
+const api = createUserRouteAccessClient();
 
 export async function getUserRouteAccess(
   params?: PaginationParams,
-): Promise<ApiResponse<PaginatedResponse<UserRouteAccess> | UserRouteAccess[]>> {
-  return await GET<PaginatedResponse<UserRouteAccess> | UserRouteAccess[]>('/user-route-access', { params });
+): Promise<ApiResponse<UserRouteAccessControllerFindAll200>> {
+  return wrap(() => api.userRouteAccessControllerFindAll(normalizePaginationParams<UserRouteAccessControllerFindAllParams>(params)));
 }
 
-export async function getUserRouteAccessByPath(
-  path: string,
-): Promise<ApiResponse<boolean>> {
-  try {
-    // Remove query params e normaliza o path
-    const cleanPath = path.split('?')[0].split('#')[0];
-    
-    // Extrai apenas o segmento base da rota (remove parâmetros dinâmicos)
-    // Ex: /home/uuid -> /home, /projects/123/edit -> /projects
-    const segments = cleanPath.split('/').filter(Boolean);
-    const basePath = segments.length > 0 ? `/${segments[0]}` : '/';
-    
-    // Remove a barra inicial se existir, para evitar problemas com %2F no Linux
-    const pathWithoutLeadingSlash = basePath.startsWith('/') ? basePath.substring(1) : basePath;
+export async function getUserRouteAccessByPath(path: string): Promise<ApiResponse<boolean>> {
+  const cleanPath = path.split('?')[0].split('#')[0];
+  const segments = cleanPath.split('/').filter(Boolean);
+  const basePath = segments.length > 0 ? `/${segments[0]}` : '/';
+  return wrap(() => api.userRouteAccessControllerCheckAccess({ path: basePath }));
+}
 
-    // Encode path para evitar problemas com caracteres especiais
-    const encodedPath = encodeURIComponent(pathWithoutLeadingSlash);
+export async function grantUserRouteAccess(
+  userId: string,
+  routeId: string,
+): Promise<ApiResponse<void>> {
+  return wrap(() => api.userRouteAccessControllerGrant({ userId, routeId }));
+}
 
-    const finalUrl = `/user-route-access/checkAccess/${encodedPath}`;
-    const result = await GET<boolean>(finalUrl);
-  
-    return result;
-  } catch (error) {
-    throw error;
-  }
+export async function revokeUserRouteAccess(
+  userId: string,
+  routeId: string,
+): Promise<ApiResponse<void>> {
+  return wrap(() => api.userRouteAccessControllerRevoke(userId, routeId));
 }

@@ -6,6 +6,7 @@ export const UserRouteAccessSchema = z.object({
   userId: z.string().uuid(),
   routeId: z.string().uuid(),
   grantedBy: z.string().uuid().nullable(),
+  denied: z.boolean(),
   createdAt: z.string().datetime(),
   user: z
     .object({

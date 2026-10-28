@@ -7,6 +7,7 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  SetMetadata,
   applyDecorators,
   Type,
 } from '@nestjs/common';
@@ -17,14 +18,20 @@ import {
   ApiQuery,
   ApiQueryOptions,
   ApiBody,
+  ApiExtension,
   ApiExtraModels,
   getSchemaPath,
 } from '@nestjs/swagger';
 
-import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard';
+import { JwtOrApiKeyAuthGuard } from '../guards/jwt-or-api-key.guard';
 import { RolesGuard } from '../guards/roles.guard';
+import { ScopeGuard, API_SCOPE_KEY } from '../guards/scope.guard';
 import { Roles } from './roles.decorator';
-import { UserRole } from 'src/domain/auth/userRole.const';
+import {
+  PAGE_SOURCE_KEY,
+  type PageSourceEntry,
+  type PageSourceMeta,
+} from '../../domain/page-builder/page-source.types';
 
 interface ApiResponseSchema {
   dto: Type<unknown>;
@@ -51,8 +58,12 @@ interface ApiMethodConfig {
   path?: string;
   summary: string;
   description?: string;
-  roles?: UserRole[];
+  roles?: string[];
   authenticated?: boolean;
+  /** Escopo exigido quando a requisição usa API key (default-deny sem scope). */
+  scope?: string;
+  /** Libera o endpoint como fonte do PageBuilder; exige um dos shapes de `PageSourceKind`. */
+  pageSource?: PageSourceMeta;
   status?: keyof typeof HttpStatus;
   response?: ApiResponseConfig;
   queries?: ApiQueryOptions[];
@@ -87,12 +98,32 @@ const applyMethod = (
   // Authentication & Authorization
   if (config.roles?.length) {
     decorators.push(
-      UseGuards(JwtAuthGuard, RolesGuard),
+      UseGuards(JwtOrApiKeyAuthGuard, ScopeGuard, RolesGuard),
       Roles(...config.roles),
       ApiBearerAuth(),
     );
   } else if (config.authenticated) {
-    decorators.push(UseGuards(JwtAuthGuard), ApiBearerAuth());
+    decorators.push(
+      UseGuards(JwtOrApiKeyAuthGuard, ScopeGuard),
+      ApiBearerAuth(),
+    );
+  }
+
+  // Scope para API keys (default-deny: endpoint sem scope é inalcançável por chave)
+  if (config.scope) {
+    decorators.push(SetMetadata(API_SCOPE_KEY, config.scope));
+  }
+
+  // Registra metadata do PageSource (PageSourceRegistry + extensão OpenAPI) com os roles do endpoint
+  if (config.pageSource) {
+    const entry: PageSourceEntry = {
+      ...config.pageSource,
+      roles: config.roles ?? [],
+    };
+    decorators.push(
+      SetMetadata(PAGE_SOURCE_KEY, entry),
+      ApiExtension('x-page-source', entry),
+    );
   }
 
   // Response Schema
@@ -141,6 +172,15 @@ const applyMethod = (
               }),
             );
           }
+        } else if (item.type) {
+          // Tipo primitivo (ex.: Boolean) declarado via `type`
+          decorators.push(
+            ApiResponse({
+              status: statusCode,
+              description: item.description,
+              type: item.type,
+            }),
+          );
         } else {
           decorators.push(
             ApiResponse({

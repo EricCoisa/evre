@@ -3,22 +3,35 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { UserStatusColors, type User } from '@/lib/actions/user/types';
 import { Button } from '@/components/ui/button';
-import { ArrowDown, ArrowUp, ArrowUpDown, Pencil, Route } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Pencil, Route, Trash2, UserX } from 'lucide-react';
 import { DataCell, TableHead } from '@/components/table-utils';
-import { userRoleColors } from '@/lib/actions/userConfiguration/types';
+import { RoleBadge } from '@/components/role-badge';
+import Link from 'next/link';
+import type { TFunc } from '@/hooks/use-translation';
 
 interface GetUserColumnsProps {
-  t: (key: string) => string;
+  t: TFunc;
   onEdit: (user: User) => void;
   onViewRoutes: (user: User) => void;
+  onDelete: (user: User) => void;
+  onDeactivate: (user: User) => void;
+  currentUserId?: string;
 }
 
-export function getUserColumns({ t, onEdit, onViewRoutes }: GetUserColumnsProps): ColumnDef<User>[] {
+export function getUserColumns({ t, onEdit, onViewRoutes, onDelete, onDeactivate, currentUserId }: GetUserColumnsProps): ColumnDef<User>[] {
   return [
     {
       accessorKey: 'name',
       header: () => <TableHead>{t('name') || 'Nome'}</TableHead>,
-      cell: ({ row }) => <DataCell>{row.getValue('name') || t('noName')}</DataCell>,
+      cell: ({ row }) => (
+        <DataCell>
+          <Link
+            href={`/user/${row.original.id}`}
+          >
+            {row.getValue('name') || t('noName')}
+          </Link>
+        </DataCell>
+      ),
       meta: {
         mobileOrder: 1,
         mobileWidth: 'half',
@@ -39,20 +52,15 @@ export function getUserColumns({ t, onEdit, onViewRoutes }: GetUserColumnsProps)
       cell: ({ row }) => {
         const role = row.getValue('role') as string;
 
-        const getRoleLabel = (role: string) => {
-          const roleLabels = {
-            ADMIN: t('roleAdmin') || 'Administrador',
-            MODERATOR: t('roleModerator') || 'Moderador',
-            USER: t('roleUser') || 'Usuário',
-          };
-          return roleLabels[role as keyof typeof roleLabels] || role;
+        const roleLabels: Record<string, string> = {
+          ADMIN: t('roleAdmin') || 'Administrador',
+          MODERATOR: t('roleModerator') || 'Moderador',
+          USER: t('roleUser') || 'Usuário',
         };
 
         return (
           <DataCell>
-            <span className={`rounded-full px-3 py-1 text-xs font-medium`} style={userRoleColors[role]}>
-              {getRoleLabel(role)}
-            </span>
+            <RoleBadge role={role}>{roleLabels[role] ?? role}</RoleBadge>
           </DataCell>
         );
       },
@@ -132,6 +140,13 @@ export function getUserColumns({ t, onEdit, onViewRoutes }: GetUserColumnsProps)
       header: () => <TableHead>{t('actions') || 'Ações'}</TableHead>,
       cell: ({ row }) => {
         const user = row.original;
+        const isSelfDelete = currentUserId === user.id;
+        const isInactive = user.status === 'INACTIVE';
+        const deactivateTitle = isSelfDelete
+          ? t('cannotDeactivateSelf')
+          : isInactive
+            ? t('deactivateAlreadyInactive')
+            : t('deactivateUserTooltip');
         return (
           <DataCell>
             <div className="flex gap-2 items-center">
@@ -152,6 +167,26 @@ export function getUserColumns({ t, onEdit, onViewRoutes }: GetUserColumnsProps)
                 className="h-6 p-0 min-h-0"
               >
                 <Pencil className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onDeactivate(user)}
+                disabled={isSelfDelete || isInactive}
+                title={deactivateTitle}
+                className="h-6 p-0 min-h-0"
+              >
+                <UserX className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onDelete(user)}
+                disabled={isSelfDelete}
+                title={isSelfDelete ? (t('cannotDeleteSelf') || 'Não pode deletar sua própria conta') : (t('deleteUserTooltip') || 'Remover usuário')}
+                className="h-6 p-0 min-h-0"
+              >
+                <Trash2 className="h-4 w-4" />
               </Button>
             </div>
           </DataCell>

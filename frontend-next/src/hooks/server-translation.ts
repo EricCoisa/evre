@@ -1,6 +1,6 @@
 import { isLabelKey, applyParams, resources } from '../lib/translation-utils';
 import i18next from 'i18next';
-import nextI18NextConfig from '../../next-i18next.config.js';
+import nextI18NextConfig from '../../next-i18next.config.cjs';
 
 
 let i18nInstance: typeof i18next | null = null;

@@ -1,0 +1,35 @@
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../../prisma/prisma.service';
+import { LoggingService } from '../../logging/logging.service';
+import { LogActions } from 'src/domain/logging/log-actions';
+import type { {{pascalCase name}} } from 'src/domain/{{kebabCase name}}/{{kebabCase name}}.entity';
+import type { Create{{pascalCase name}}Dto } from '../dto/create-{{kebabCase name}}.dto';
+
+@Injectable()
+export class Create{{pascalCase name}}UseCase {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly loggingService: LoggingService,
+  ) {}
+
+  async execute(
+    dto: Create{{pascalCase name}}Dto,
+    performedById: string,
+  ): Promise<{{pascalCase name}}> {
+    const created = await this.prisma.{{camelCase name}}.create({
+      data: { ...dto },
+    });
+
+    await this.loggingService.create(
+      {
+        module: '{{constantCase name}}',
+        action: LogActions.CREATE,
+        message: `{{pascalCase name}} criado: ${created.name}`,
+        metadata: { {{camelCase name}}Id: created.id },
+      },
+      performedById,
+    );
+
+    return created;
+  }
+}

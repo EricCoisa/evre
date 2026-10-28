@@ -1,0 +1,5 @@
+{
+  "max_depth": "Este recurso tem uma cadeia de dependências muito longa.",
+  "missing_keys": "Configuração ausente: {keys}.",
+  "channel_off": "Este canal está desligado pelo operador."
+}

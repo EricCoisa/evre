@@ -1,171 +1,85 @@
-import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-  Inject,
-  forwardRef,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { I18nService } from 'nestjs-i18n';
-import type { PaginationQuery } from '../../common/schemas/pagination.schema';
-import type { PaginatedResponse } from '../../common/types/pagination.types';
 import { CreateSystemConfigurationDto } from './dto/create-system-configuration.dto';
 import { UpdateSystemConfigurationDto } from './dto/update-system-configuration.dto';
-import { LoggingService } from '../logging/logging.service';
-import { LogClearTask } from '../tasks/logClear.task';
-import { LogActions } from 'src/common/types/logging.types';
-import { convertValueByType } from 'src/utils/conversor.util';
-import { IBaseService } from 'src/domain/interface/base-service.interface';
+import { convertValueByType } from 'src/common/utils/conversor.util';
+import { CryptoService } from '../../common/infrastructure/crypto/crypto.service';
+import { RedisService } from '../../common/infrastructure/redis/redis.service';
 import { SystemConfiguration } from 'src/domain/system-configuration/system-configuration.entity';
+import type { SystemConfiguration as StoredConfig } from '@prisma/client';
+import {
+  CONFIG_CACHE_MISS,
+  CONFIG_CACHE_TTL,
+  configCacheKey,
+} from 'src/domain/system-configuration/system-configuration.const';
+import { FindOneSystemConfigurationUseCase } from './use-cases/find-one.use-case';
+import { CreateSystemConfigurationUseCase } from './use-cases/create.use-case';
+import { UpdateSystemConfigurationUseCase } from './use-cases/update.use-case';
+import type { CapabilityCheckResult } from 'src/domain/capability/capability.types';
 
+/** Só o que tem chamador interno; o resto delega ao use-case. */
 @Injectable()
-export class SystemConfigurationService implements IBaseService<SystemConfiguration> {
+export class SystemConfigurationService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly i18n: I18nService,
-    private readonly loggingService: LoggingService,
-    @Inject(forwardRef(() => LogClearTask))
-    private readonly LogClearTask: LogClearTask,
+    private readonly cryptoService: CryptoService,
+    private readonly redis: RedisService,
+    private readonly findOne$: FindOneSystemConfigurationUseCase,
+    private readonly create$: CreateSystemConfigurationUseCase,
+    private readonly update$: UpdateSystemConfigurationUseCase,
   ) {}
 
-  //TODO: OK
-  async findAll(
-    query: PaginationQuery,
-  ): Promise<PaginatedResponse<SystemConfiguration> | SystemConfiguration[]> {
-    const { page, limit, pagination, search } = query;
-
-    const where = search
-      ? {
-          OR: [
-            { labelKey: { contains: search } },
-            { valueType: { contains: search } },
-            { value: { contains: search } },
-          ],
-        }
-      : {};
-
-    if (!pagination) {
-      return await this.prisma.systemConfiguration.findMany({
-        where,
-        orderBy: { labelKey: 'asc' },
-      });
+  /** Retorna a linha crua da chave, com cache Redis; null se a chave não existe. */
+  private async findRaw(labelKey: string): Promise<StoredConfig | null> {
+    const key = configCacheKey(labelKey);
+    const cached = await this.redis.get(key);
+    if (cached === CONFIG_CACHE_MISS) return null;
+    if (cached) {
+      try {
+        const row = JSON.parse(cached) as StoredConfig;
+        return { ...row, updatedAt: new Date(row.updatedAt) };
+      } catch {
+        // entrada corrompida — cai no banco
+      }
     }
 
-    const skip = (page - 1) * limit;
-
-    const [data, total] = await Promise.all([
-      this.prisma.systemConfiguration.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { labelKey: 'asc' },
-      }),
-      this.prisma.systemConfiguration.count({ where }),
-    ]);
-
-    const totalPages = Math.ceil(total / limit);
-
-    return {
-      data: data.map((config) => ({
-        ...config,
-        value:
-          convertValueByType(config.value, config.valueType) ?? config.value,
-      })),
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages,
-      },
-    };
-  }
-
-  //TODO: OK
-  async findOne(id: string): Promise<SystemConfiguration> {
-    const config = await this.prisma.systemConfiguration.findUnique({
-      where: { id },
-    });
-
-    if (!config) {
-      throw new NotFoundException(
-        this.i18n.t('system_configuration.not_found'),
-      );
-    }
-
-    return {
-      ...config,
-      value: convertValueByType(config.value, config.valueType) ?? config.value,
-    };
-  }
-
-  //TODO: OK
-  async create(
-    data: CreateSystemConfigurationDto,
-    performedById: string,
-  ): Promise<SystemConfiguration> {
-    const existing = await this.prisma.systemConfiguration.findUnique({
-      where: { labelKey: data.labelKey },
-    });
-
-    if (existing) {
-      throw new ConflictException(
-        this.i18n.t('system_configuration.labelkey_already_exists'),
-      );
-    }
-
-    const config = await this.prisma.systemConfiguration.create({
-      data,
-    });
-
-    // Log da ação
-    await this.loggingService.create(
-      {
-        module: 'SYSTEM_CONFIGURATION',
-        action: LogActions.CREATE,
-        message: `Configuração ${config.labelKey} criada`,
-        metadata: {
-          configId: config.id,
-          labelKey: config.labelKey,
-          valueType: config.valueType,
-          value: config.value,
-        },
-      },
-      performedById,
-    );
-
-    return {
-      ...config,
-      value: convertValueByType(config.value, config.valueType) ?? config.value,
-    };
-  }
-
-  //TODO: OK
-  async findByLabelKey(labelKey: string): Promise<SystemConfiguration> {
     const config = await this.prisma.systemConfiguration.findUnique({
       where: { labelKey },
     });
-
-    if (!config) {
-      throw new NotFoundException(
-        this.i18n.t('system_configuration.not_found'),
-      );
-    }
-
-    return {
-      ...config,
-      value: convertValueByType(config.value, config.valueType) ?? config.value,
-    };
+    await this.redis.set(
+      key,
+      config ? JSON.stringify(config) : CONFIG_CACHE_MISS,
+      CONFIG_CACHE_TTL,
+    );
+    return config;
   }
 
-  //TODO: OK
-  async update(
+  /** Delega ao use-case. */
+  findOne(id: string): Promise<SystemConfiguration> {
+    return this.findOne$.execute(id);
+  }
+
+  /** Delega ao use-case. */
+  create(
+    data: CreateSystemConfigurationDto,
+    performedById: string,
+  ): Promise<SystemConfiguration> {
+    return this.create$.execute(data, performedById);
+  }
+
+  /** Delega ao use-case, com o guard de `blocked`. */
+  update(
     id: string,
     updateDto: UpdateSystemConfigurationDto,
     performedById: string,
   ): Promise<SystemConfiguration> {
-    const config = await this.prisma.systemConfiguration.findUnique({
-      where: { id },
-    });
+    return this.update$.execute(id, updateDto, performedById);
+  }
+
+  async findByLabelKey(labelKey: string): Promise<SystemConfiguration> {
+    const config = await this.findRaw(labelKey);
 
     if (!config) {
       throw new NotFoundException(
@@ -173,90 +87,83 @@ export class SystemConfigurationService implements IBaseService<SystemConfigurat
       );
     }
 
-    if (updateDto.labelKey && updateDto.labelKey !== config.labelKey) {
+    // Retorna valor descriptografado (valor real)
+    const rawValue = config.secret
+      ? this.cryptoService.tryDecrypt(config.value)
+      : config.value;
+    return {
+      ...config,
+      value: convertValueByType(rawValue, config.valueType) ?? rawValue,
+    };
+  }
+
+  /** Retorna o valor descriptografado, ou null quando a chave não existe. */
+  async getValueOrNull(labelKey: string): Promise<string | null> {
+    const config = await this.findRaw(labelKey);
+    if (!config) return null;
+    return config.secret
+      ? this.cryptoService.tryDecrypt(config.value)
+      : config.value;
+  }
+
+  /** Mantém o valor já gravado quando o campo secreto vem vazio do formulário. */
+  async keepStoredWhenBlank(
+    value: string | undefined | null,
+    labelKey: string,
+  ): Promise<string> {
+    const trimmed = value?.trim();
+    if (trimmed) return trimmed;
+    return (await this.getValueOrNull(labelKey)) ?? '';
+  }
+
+  /** "Configurado" para recurso sem o que pingar: todas as chaves não-vazias. */
+  async allFilled(labelKeys: string[]): Promise<CapabilityCheckResult> {
+    const values = await Promise.all(
+      labelKeys.map((k) => this.getValueOrNull(k)),
+    );
+    const missing = labelKeys.filter((_, i) => !values[i]?.trim());
+    if (missing.length === 0) return { operational: true };
+    return {
+      operational: false,
+      reason: this.i18n.t('capability.missing_keys', {
+        args: { keys: missing.join(', ') },
+      }),
+    };
+  }
+
+  /** Grava várias chaves de configuração de uma vez, sequencialmente. */
+  async setManyByLabelKey(
+    entries: Array<{
+      labelKey: string;
+      value: string;
+      valueType?: 'STRING' | 'NUMBER' | 'BOOLEAN' | 'JSON' | 'DATE' | 'ENUM';
+      options?: string[];
+      secret?: boolean;
+    }>,
+    performedById: string,
+  ): Promise<void> {
+    for (const entry of entries) {
       const existing = await this.prisma.systemConfiguration.findUnique({
-        where: { labelKey: updateDto.labelKey },
+        where: { labelKey: entry.labelKey },
       });
 
       if (existing) {
-        throw new ConflictException(
-          this.i18n.t('system_configuration.labelkey_already_exists'),
-        );
+        await this.update(existing.id, { value: entry.value }, performedById);
+        continue;
       }
-    }
 
-    const updatedConfig = await this.prisma.systemConfiguration.update({
-      where: { id },
-      data: updateDto,
-    });
-
-    // Log da ação
-    await this.loggingService.create(
-      {
-        module: 'SYSTEM_CONFIGURATION',
-        action: LogActions.UPDATE,
-        message: `Configuração ${updatedConfig.labelKey} atualizada para ${updatedConfig.value}`,
-        metadata: {
-          configId: updatedConfig.id,
-          labelKey: updatedConfig.labelKey,
-          oldValue: config.value,
-          newValue: updatedConfig.value,
+      // Chave ainda não semeada — acontece ao registrar um provider novo em
+      // OAuthProviders sem rodar o seed. Criar aqui evita 404 no formulário.
+      await this.create(
+        {
+          labelKey: entry.labelKey,
+          value: entry.value,
+          valueType: entry.valueType ?? 'STRING',
+          options: entry.options ?? [],
+          secret: entry.secret ?? false,
         },
-      },
-      performedById,
-    );
-
-    void this.actionFire(updatedConfig);
-
-    return {
-      ...updatedConfig,
-      value:
-        convertValueByType(updatedConfig.value, updatedConfig.valueType) ??
-        updatedConfig.value,
-    };
-  }
-
-  //TODO: OK
-  async remove(performedById: string, id: string) {
-    const config = await this.prisma.systemConfiguration.findUnique({
-      where: { id },
-    });
-
-    if (!config) {
-      throw new NotFoundException(
-        this.i18n.t('system_configuration.not_found'),
+        performedById,
       );
-    }
-
-    await this.prisma.systemConfiguration.delete({
-      where: { id },
-    });
-
-    // Log da ação
-    await this.loggingService.create(
-      {
-        module: 'SYSTEM_CONFIGURATION',
-        action: LogActions.DELETE,
-        message: `Configuração ${config.labelKey} removida`,
-        metadata: {
-          configId: config.id,
-          labelKey: config.labelKey,
-          valueType: config.valueType,
-          value: config.value,
-        },
-      },
-      performedById,
-    );
-
-    return {
-      status: true,
-      message: this.i18n.t('system_configuration.deleted_successfully'),
-    };
-  }
-
-  private async actionFire(updatedConfig: SystemConfiguration) {
-    if (updatedConfig.labelKey === 'SYSTEMCONFIG_LOG_DELETE_DAY') {
-      await this.LogClearTask.updateCronSchedule();
     }
   }
 }

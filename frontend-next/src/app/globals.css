@@ -42,6 +42,32 @@
 
 @import "tailwindcss";
 @import "tw-animate-css";
+@plugin "@tailwindcss/typography";
+
+/* PageBuilder — classes que um bloco pode receber pelo `className` do layout do usuário.
+   O Tailwind v4 só emite o que ele VÊ nos arquivos-fonte, e essas classes vivem no banco,
+   não no código: sem este bloco elas não existiriam no CSS e o `className` seria um no-op.
+   Fonte única: `lib/page-builder/class-names.ts` (ALLOWED_CLASS_NAMES) — `class-names.test.ts`
+   falha se as duas listas divergirem. Ver docs/frontend/page-builder.md. */
+@source inline("{h,w}-full");
+@source inline("flex flex-{col,row,wrap,1}");
+@source inline("items-{start,center,end}");
+@source inline("justify-{start,center,end,between}");
+@source inline("gap-{0,1,2,3,4,6,8}");
+@source inline("{p,px,py}-{0,2,4,6}");
+@source inline("p-{1,3,8}");
+@source inline("{mt,mb}-{0,2,4,6}");
+@source inline("text-{xs,sm,base,lg,xl,2xl,3xl,4xl}");
+@source inline("font-{normal,medium,semibold,bold}");
+@source inline("text-{left,center,right}");
+@source inline("tabular-nums truncate uppercase capitalize leading-{tight,none}");
+@source inline("text-{foreground,muted-foreground,primary,destructive}");
+@source inline("bg-{card,muted,accent}");
+@source inline("bg-primary/5 bg-destructive/10");
+@source inline("border border-{0,t,b,dashed}");
+@source inline("rounded-{md,lg,xl}");
+@source inline("shadow-{sm,none}");
+@source inline("overflow-hidden overflow-x-auto");
 
 @custom-variant dark (&:is(.dark *));
 
@@ -67,6 +93,8 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -415,6 +443,16 @@
 
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-muted-foreground/30;
+  }
+
+  /* Scrollbar hidden until hover — para barras de rolagem secundárias (ex.: tabs) */
+  .scrollbar-fade::-webkit-scrollbar-thumb {
+    opacity: 0;
+    transition: opacity 200ms ease, background-color 200ms ease;
+  }
+
+  .scrollbar-fade:hover::-webkit-scrollbar-thumb {
+    opacity: 1;
   }
 
   /* Selection styles */

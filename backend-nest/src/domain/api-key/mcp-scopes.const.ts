@@ -1,0 +1,22 @@
+export const McpScopes = {
+  USERS_READ: 'users:read',
+  USERS_WRITE: 'users:write',
+  ROUTES_READ: 'routes:read',
+  ROUTES_WRITE: 'routes:write',
+  FEATURE_FLAGS_READ: 'feature-flags:read',
+  FEATURE_FLAGS_WRITE: 'feature-flags:write',
+  INVITES_WRITE: 'invites:write',
+  ROLES_WRITE: 'roles:write',
+  ROLE_ROUTE_ACCESS_WRITE: 'role-route-access:write',
+  SYSTEM_CONFIGURATION_WRITE: 'system-configuration:write',
+  USER_CONFIGURATION_DEFINITIONS_WRITE: 'user-configuration-definitions:write',
+  USER_CONFIGURATION_WRITE: 'user-configuration:write',
+  USER_ROUTE_ACCESS_WRITE: 'user-route-access:write',
+  API_KEYS_WRITE: 'api-keys:write',
+  CMS_WRITE: 'cms:write',
+  AGENT_CHAT: 'agent:chat',
+  MESSAGING_READ: 'messaging:read',
+  MESSAGING_WRITE: 'messaging:write',
+  NOTIFICATION_WRITE: 'notification:write',
+} as const;
+export type McpScope = (typeof McpScopes)[keyof typeof McpScopes];

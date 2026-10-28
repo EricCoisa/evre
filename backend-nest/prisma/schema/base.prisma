@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["public"]
+}
+
+enum ConfigValueType {
+  STRING
+  NUMBER
+  BOOLEAN
+  JSON
+  DATE
+  ENUM
+
+  @@schema("public")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+
+  @@schema("public")
+}
+
+enum LogModule {
+  USER
+  AUTH
+  SYSTEM
+  HEALTH
+  USER_ROUTE_ACCESS
+  SYSTEM_CONFIGURATION
+  ROUTE
+  ROLE_ROUTE_ACCESS
+  USER_CONFIGURATION
+  USER_CONFIGURATION_DEFINITION
+  CMS
+  FEATURE_FLAG
+  AI
+  API_KEY
+  MCP
+  MESSAGING
+  NOTIFICATION
+  VERIFICATION
+
+  @@schema("public")
+}
+
+enum FeatureFlagCategory {
+  GENERAL
+  AI
+  CONNECTORS
+  MESSAGING
+  SYSTEM
+  AUTH
+  DASHBOARD
+  REPORTS
+  NOTIFICATIONS
+
+  @@schema("public")
+}

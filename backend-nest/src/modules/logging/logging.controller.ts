@@ -4,28 +4,35 @@ import { GetApi } from '../../common/decorators/api-method.decorator';
 import { I18nService } from 'nestjs-i18n';
 import { ZodValidationPipe } from 'nestjs-zod';
 import {
+  PAGINATION_PAGE_SOURCE_PARAMS,
   PaginationQuerySchema,
   type PaginationQuery,
 } from '../../common/schemas/pagination.schema';
 import { commonPaginationQueries } from '../../common/swagger/pagination-queries';
 import type { PaginatedResponse } from '../../common/types/pagination.types';
-import { LoggingService } from './logging.service';
+import { FindAllLogsUseCase } from './use-cases/find-all.use-case';
 import { Logging } from 'src/domain/logging/logging.entity';
 
 @ApiTags('logging')
 @Controller('logging')
 export class LoggingController {
   constructor(
-    private readonly loggingService: LoggingService,
+    private readonly findAllLogs: FindAllLogsUseCase,
     private readonly i18n: I18nService,
   ) {}
 
   @GetApi({
     summary: 'Lista logs',
     status: 'OK',
-    authenticated: true,
-    roles: ['ADMIN'],
+    roles: ['ADMIN', 'MODERATOR'],
     queries: commonPaginationQueries,
+    pageSource: {
+      key: 'logs.list',
+      kind: 'list',
+      description: 'Logs de auditoria do sistema.',
+      fields: ['module', 'action', 'message', 'createdAt'],
+      params: PAGINATION_PAGE_SOURCE_PARAMS,
+    },
     response: {
       success: [
         {
@@ -39,6 +46,6 @@ export class LoggingController {
   async findAll(
     @Query(new ZodValidationPipe(PaginationQuerySchema)) query: PaginationQuery,
   ): Promise<PaginatedResponse<Logging> | Logging[]> {
-    return await this.loggingService.findAll(query);
+    return await this.findAllLogs.execute(query);
   }
 }

@@ -1,257 +1,157 @@
-'use client';
-
 import { Container } from "@/components/container";
-import { useTranslation } from 'next-i18next';
-import { UserConfiguration } from '@/components/user-configuration';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { GenericCreateFormModal } from "@/components/generic-create-form";
-import z from "zod";
-import { FieldConfig } from "@/lib/form/field-config";
-import { useMemo, useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Edit } from "lucide-react";
-import { updatePassword, updateProfile } from "@/lib/actions/user/api";
-import { toast } from "sonner";
-import { useMe } from "@/lib/actions/auth/queries";
-import { useQueryClient } from "@tanstack/react-query";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { UpdateProfileDto } from "@/lib/actions/user/types";
-import { Upload } from "@/components/upload";
-import { Title } from "@/components/ui/label";
-import { Alive } from "@/lib/api/collector";
+import { PageHeader } from "@/components/page-header";
+import { AsyncBoundary } from "@/components/async-boundary";
+import { SubNavLayout, type SubNavSection, TabsContent } from "@/components/sub-nav-layout";
+import LangLabel from "@/components/ui/langLabel";
+import CompositeLangLabel from "@/components/ui/compositeLangLabel";
+import { serverAiHealth, serverFeatureFlags } from "@/lib/server-context";
+import { ProfileInfoTab } from "./components/profile-info-tab";
+import { SecurityTab } from "./components/security-tab";
+import { PreferencesTab } from "./components/preferences-tab";
+import { NotificationPreferencesTab } from "./components/notification-preferences-tab";
+import { AccountTab } from "./components/account-tab";
+import { AgentConfigTab } from "./components/agent-config-tab";
+import { AgentPermissionsTab } from "./components/agent-permissions-tab";
+import { ApiKeysTab } from "./components/api-keys-tab";
+import { ConnectorsTab } from "./components/connectors-tab";
+import {
+  User,
+  Shield,
+  Sliders,
+  Bell,
+  Settings,
+  KeyRound,
+  Plug,
+  Bot,
+  ShieldCheck,
+} from "lucide-react";
 
-export default function ProfilePage() {
-  const { t } = useTranslation('profile');
-  const { data: user } = useMe();
-  const queryClient = useQueryClient();
-  const [imageTemp, setImageTemp] = useState<string | null>(null);
+interface ProfileFlags {
+  mcpApiKeys: boolean;
+  mcpConnectors: boolean;
+  aiAgent: boolean;
+  notifications: boolean;
+  byokRequired: boolean;
+  messaging: boolean;
+}
 
-  const updatePasswordSchema = z.object({
-    currentPassword: z.string().min(1, t('currentPasswordRequired')),
-    newPassword: z.string()
-      .min(8, t('passwordMin'))
-      .regex(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]/,
-        t('passwordRequirements')
-      ),
-    confirmNewPassword: z.string().min(8, t('confirmPasswordMin')),
-  }).refine(
-    (data) => data.newPassword === data.confirmNewPassword,
+function getProfileSections(flags: ProfileFlags): SubNavSection[] {
+  return [
     {
-      message: t('passwordsDoNotMatch'),
-      path: ['confirmNewPassword'],
-    }
+      title: <LangLabel text="profile_section_account" langJson="profile" />,
+      items: [
+        {
+          id: 'profile',
+          label: <LangLabel text="tab_profile" langJson="profile" />,
+          icon: <User className="size-4" />,
+        },
+        {
+          id: 'security',
+          label: <LangLabel text="tab_security" langJson="profile" />,
+          icon: <Shield className="size-4" />,
+        },
+        {
+          id: 'preferences',
+          label: <LangLabel text="tab_preferences" langJson="profile" />,
+          icon: <Sliders className="size-4" />,
+        },
+        {
+          id: 'notifications',
+          label: <LangLabel text="tab_notifications" langJson="profile" />,
+          icon: <Bell className="size-4" />,
+          hidden: !flags.notifications,
+        },
+        {
+          id: 'account',
+          label: <LangLabel text="tab_account" langJson="profile" />,
+          icon: <Settings className="size-4" />,
+        },
+      ],
+    },
+    {
+      title: (
+        <CompositeLangLabel
+          langJson="profile"
+          compoundKey="profile_section_ai_connections"
+          parts={[
+            { text: 'profile_section_ai', active: flags.byokRequired || flags.aiAgent },
+            { text: 'profile_section_connections', active: flags.mcpApiKeys || flags.mcpConnectors },
+          ]}
+        />
+      ),
+      items: [
+        {
+          id: 'apiKeys',
+          label: <LangLabel text="tab_apiKeys" langJson="profile" />,
+          icon: <KeyRound className="size-4" />,
+          hidden: !flags.mcpApiKeys,
+        },
+        {
+          id: 'connectors',
+          label: <LangLabel text="tab_connectors" langJson="profile" />,
+          icon: <Plug className="size-4" />,
+          hidden: !flags.mcpConnectors,
+        },
+        {
+          id: 'agenteConfig',
+          label: <LangLabel text="tab_agentConfig" langJson="profile" />,
+          icon: <Bot className="size-4" />,
+          hidden: !flags.byokRequired,
+        },
+        {
+          id: 'agentPermissions',
+          label: <LangLabel text="tab_agentPermissions" langJson="profile" />,
+          icon: <ShieldCheck className="size-4" />,
+          hidden: !flags.aiAgent,
+        },
+      ],
+    },
+  ];
+}
+
+function ProfileTabsContent({ flags }: { flags: ProfileFlags }) {
+  return (
+    <AsyncBoundary>
+      <TabsContent value="profile"><ProfileInfoTab messagingEnabled={flags.messaging} /></TabsContent>
+      <TabsContent value="security"><SecurityTab /></TabsContent>
+      <TabsContent value="preferences"><PreferencesTab /></TabsContent>
+      {flags.notifications && <TabsContent value="notifications"><NotificationPreferencesTab /></TabsContent>}
+      {flags.mcpApiKeys && <TabsContent value="apiKeys"><ApiKeysTab /></TabsContent>}
+      {flags.mcpConnectors && <TabsContent value="connectors"><ConnectorsTab /></TabsContent>}
+      {flags.byokRequired && <TabsContent value="agenteConfig"><AgentConfigTab /></TabsContent>}
+      {flags.aiAgent && <TabsContent value="agentPermissions"><AgentPermissionsTab /></TabsContent>}
+      <TabsContent value="account"><AccountTab /></TabsContent>
+    </AsyncBoundary>
   );
+}
 
-  const updatePasswordFieldConfig = useMemo(() => ({
-    currentPassword: {
-      label: 'Senha Atual',
-      type: 'password' as const,
-      placeholder: 'Senha atual',
-      description: 'Senha atual do usuário',
-    },
-    newPassword: {
-      label: 'Nova Senha',
-      type: 'password' as const,
-      placeholder: 'Nova senha',
-      description: 'Nova senha do usuário',
-    },
-    confirmNewPassword: {
-      label: 'Confirme a Nova Senha',
-      type: 'password' as const,
-      placeholder: 'Confirme a nova senha',
-      description: 'Confirmação da nova senha do usuário',
-    }
-  } satisfies FieldConfig<typeof updatePasswordSchema>), [user]);
+/** Server Component: flags decidem aqui quais abas chegam ao browser. */
+export default async function ProfilePage() {
+  const [flags, health] = await Promise.all([
+    serverFeatureFlags(),
+    serverAiHealth(),
+  ]);
 
-  const updateProfileSchema = z.object({ //TODO: traduzir
-    // email: z.string().min(1, 'Email é obrigatório').email('Email inválido').optional(),
-    name: z.string().optional(),
-    image: z.instanceof(File).optional(), // para arquivo de imagem
-  });
-
-  const form = useForm<UpdateProfileDto & { image?: File }>({
-    resolver: zodResolver(updateProfileSchema),
-    defaultValues: {
-      // email: user?.email || "",
-      name: user?.name || "",
-      image: undefined,
-    },
-  });
-
-  // Atualiza o formulário quando os dados do usuário mudarem
-  useEffect(() => {
-    if (user) {
-      form.reset({
-        // email: user.email || "",
-        name: user.name || "",
-        image: undefined,
-      });
-    }
-  }, [user, form]);
-
-  if (!user) {
-    return <div>{t('loading')}...</div>;
-  }
-
-
-  const onSubmit = async (data: UpdateProfileDto): Promise<unknown> => {
-    // Verifica se houve alteração
-    const isUnchanged =
-      // data.email === user?.email &&
-      data.name === user?.name &&
-      (!('image' in data) || !data.image);
-    if (isUnchanged) {
-      toast.info(t('noChanges'));
-      return;
-    }
-    try {
-      const result = await updateProfile(user.id, data);
-      queryClient.invalidateQueries({ queryKey: ['me'] });
-      toast.success(t('common:updatedSuccessfully'));
-      return result;
-    } catch (err) {
-      toast.error(t('common:errorMessage'));
-      throw err;
-    }
+  const profileFlags: ProfileFlags = {
+    mcpApiKeys: Boolean(flags['MCP_API_KEYS']),
+    mcpConnectors: Boolean(flags['MCP_CONNECTORS']),
+    aiAgent: Boolean(flags['AI_AGENT']),
+    notifications: Boolean(flags['NOTIFICATION']),
+    byokRequired: Boolean(health?.byokRequired),
+    messaging: Boolean(flags['MESSAGING']),
   };
 
-
+  const sections = getProfileSections(profileFlags);
 
   return (
-    <Container border={false}>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-fr">
-        {/* Container de Informações do Perfil */}
-        <Container variant="default" padding>
-          <div className="flex items-center gap-2 mb-4">
-            <Title className="flex-1 truncate min-w-0">{user.name}</Title>
-            <GenericCreateFormModal
-              trigger={
-                <Button>
-                  <Edit /> {t('updatePassword')}
-                </Button>
-              }
-              schema={updatePasswordSchema}
-              fieldConfig={updatePasswordFieldConfig}
-              title={t('updatePassword')}
-              description={t('updatePassword')}
-              onSubmit={async (data) => {
-                const result = await Alive(() => updatePassword(user.id, data))();
-                return result;
-              }}
-              onSuccess={() => {
-                // Invalida a query para recarregar a lista
-                queryClient.invalidateQueries({ queryKey: ['me'] });
-              }}
-              onError={(error) => {
-                console.error('Erro ao alterar a senha:', error);
-              }}
-              submitLabel={t('updatePassword')}
-            />
-          </div>
-
-
-
-          <Form {...form}>
-            <div className="flex flex-col md:flex-row items-center md:items-center gap-6">
-              {/* Avatar à esquerda */}
-              <div className="shrink-0 flex items-center justify-center w-full md:w-[110px] mb-4 md:mb-0">
-                <FormField
-                  control={form.control}
-                  name="image"
-                  render={({ field }) => (
-                    <FormItem>
-                     <Upload 
-                        {...field} 
-                        accept="image/*" 
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            field.onChange(file); // Atualiza o formulário
-                            setImageTemp(URL.createObjectURL(file)); // Atualiza o preview
-                          }
-                        }}
-                      >
-                        <Avatar className="h-30 w-30 bg">
-                          <AvatarImage src={imageTemp ?? (user.image ?? undefined)} />
-                          <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                      </Upload>
-                    </FormItem>
-                  )}
-                />
-
-              </div>
-              {/* Dados à direita */}
-              <div className="space-y-4 w-full">
-
-                {/* Formulário de atualização do perfil */}
-
-
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-   
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input type="email" placeholder={user.email || "usuario@exemplo.com"} disabled />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                  
-          
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nome</FormLabel>
-                        <FormControl>
-                          <Input placeholder={user.name || "Nome completo"} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit">{t('updateProfileButton')}</Button>
-                </form>
-
-
-
-              </div>
-            </div>
-          </Form>
-        </Container>
-
-        {/* Container de Preferências */}
-        <Container variant="default" padding title={t('preferencesTitle')}>
-          <div className="space-y-4">
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium">{t('userconfig_theme')}</h3>
-                  <p className="text-muted-foreground text-sm">
-                    {t('userconfig_desc_theme')}
-                  </p>
-                </div>
-                <UserConfiguration disableLabel={true} labelKey="USERCONFIG_THEME" />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium">{t('usertour')}</h3>
-                  <p className="text-muted-foreground text-sm">
-                    {t('userconfig_desc_tour')}
-                  </p>
-                </div>
-                <UserConfiguration showMessage={false} disableLabel={true} forceType="button" labelKey="USERTOUR" />
-              </div>
-            </div>
-          </div>
-        </Container>
-      </div>
+    <Container variant="dataTable" border={false}>
+      <PageHeader
+        title={<LangLabel text="title" langJson="profile" />}
+        description={<LangLabel text="description" langJson="profile" />}
+      />
+      <SubNavLayout sections={sections} defaultTab="profile">
+        <ProfileTabsContent flags={profileFlags} />
+      </SubNavLayout>
     </Container>
   );
 }

@@ -5,23 +5,22 @@ import { Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { useUserConfiguration, useSetUserConfiguration } from '@/lib/actions/userConfiguration/queries';
+import { USER_CONFIG_KEYS } from '@/types/user-config-keys';
+import { useHasMounted } from '@/hooks/use-has-mounted';
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = React.useState(false);
-  const { data: themeConfig, isFetched, isError } = useUserConfiguration<string>('USERCONFIG_THEME');
+  const mounted = useHasMounted();
+  const { data: themeConfig } = useUserConfiguration<string>(USER_CONFIG_KEYS.theme);
   const updateUserConfig = useSetUserConfiguration();
-
-  // Necessário para prevenir hydration mismatch
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
+  const seededRef = React.useRef(false);
 
   React.useEffect(() => {
-    if (mounted) {
+    if (mounted && !seededRef.current) {
+      seededRef.current = true;
       setTheme(themeConfig?.value as string || 'light');
     }
-  }, [themeConfig]);
+  }, [themeConfig, mounted, setTheme]);
 
   const handleToggle = async () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';

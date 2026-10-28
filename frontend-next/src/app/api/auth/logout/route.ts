@@ -1,12 +1,11 @@
-import { deleteServerAccessToken, deleteServerRefreshToken, getServerAccessToken, getServerRefreshToken } from '@/lib/actions/auth/server-auth';
-import { NextRequest, NextResponse } from 'next/server';
+import { deleteServerAccessToken, deleteServerRefreshToken, getServerAccessToken, getServerLang, getServerRefreshToken } from '@/lib/actions/auth/server-auth';
+import { NextResponse } from 'next/server';
 import axios from 'axios';
+import { clientIpHeader } from '@/lib/api/client-ip';
+import { API_PATHS } from '@/lib/generated/paths';
 
-/**
- * API Route para logout
- * Chama o backend para revogar o refresh token e limpa cookies
- */
-export async function POST(request: NextRequest) {
+/** Revoga o refresh token no backend e limpa os cookies. */
+export async function POST() {
 
   try {
     // Pega os cookies para enviar ao backend
@@ -16,7 +15,7 @@ export async function POST(request: NextRequest) {
     // Chama o backend para revogar o refresh token no banco
     if (accessToken || refreshToken) {
       const backendResponse = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/logout`,
+        `${process.env.NEXT_PUBLIC_API_URL}${API_PATHS.AUTH_LOGOUT}`,
         {},
         {
           withCredentials: true,
@@ -24,6 +23,8 @@ export async function POST(request: NextRequest) {
             'Content-Type': 'application/json',
             ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
             'Cookie': `access_token=${accessToken}; refresh_token=${refreshToken}`,
+            ...(await clientIpHeader()),
+            'Accept-Language': (await getServerLang()) ?? 'pt-BR',
           },
         }
       );

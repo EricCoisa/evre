@@ -5,6 +5,7 @@
     "unauthorized": "Unauthorized",
     "forbidden": "Access denied. Required roles: {roles}",
     "not_found": "Resource not found",
+    "self_only": "This operation can only be performed by the user themselves",
     "conflict": "Resource already exists"
   },
   "success": {

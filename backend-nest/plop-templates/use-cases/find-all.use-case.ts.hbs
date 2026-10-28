@@ -1,0 +1,48 @@
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../../prisma/prisma.service';
+import type { PaginationQuery } from '../../../common/schemas/pagination.schema';
+import type { PaginatedResponse } from '../../../common/types/pagination.types';
+import { paginate } from '../../../common/utils/paginate.util';
+import type { {{pascalCase name}} } from 'src/domain/{{kebabCase name}}/{{kebabCase name}}.entity';
+import { IsActiveStatusConst } from 'src/domain/{{kebabCase name}}/isActiveStatus.const';
+
+@Injectable()
+export class FindAll{{pascalCase name}}UseCase {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async execute(
+    query: PaginationQuery,
+  ): Promise<PaginatedResponse<{{pascalCase name}}> | {{pascalCase name}}[]> {
+    const { search, filter } = query;
+
+    const where: {
+      OR?: Array<{
+        name?: { contains: string; mode: 'insensitive' };
+        description?: { contains: string; mode: 'insensitive' };
+      }>;
+      isActive?: boolean;
+    } = {};
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    if (filter?.isActive !== undefined) {
+      where.isActive = String(filter.isActive) === 'true';
+    }
+
+    return paginate(query, {
+      findMany: (p) =>
+        this.prisma.{{camelCase name}}.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          ...p,
+        }),
+      count: () => this.prisma.{{camelCase name}}.count({ where }),
+      extra: { filter: { isActive: Object.values(IsActiveStatusConst) } },
+    });
+  }
+}

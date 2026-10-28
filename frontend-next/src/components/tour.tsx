@@ -7,6 +7,7 @@ import {
 	useCallback,
 	useContext,
 	useEffect,
+	useRef,
 	useState,
 } from "react";
 
@@ -18,17 +19,134 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/cn";
 
-import { Torus } from "lucide-react";
+import { CircleHelp, Torus } from "lucide-react";
+import { useTranslation } from "@/hooks/use-translation";
+import { useCapabilities } from "@/lib/actions/capability/queries";
+import type { SubNavSection } from "@/components/sub-nav-layout";
 
 export interface TourStep {
 	content: React.ReactNode;
 	selectorId: string;
+	mobileSelectorId?: string;
 	width?: number;
 	height?: number;
 	onClickWithinArea?: () => void;
 	position?: "top" | "bottom" | "left" | "right";
+	onEnter?: () => void;
+	/**
+	 * Se true, o passo é ocultado do tour.
+	 */
+	hidden?: boolean;
+	/**
+	 * Capability do sistema exigida para exibir o passo (ex: CAPABILITIES.messaging).
+	 * Se capabilities[capability]?.available === false, o passo é ocultado automaticamente.
+	 */
+	capability?: string;
+	/**
+	 * Múltiplas capabilities exigidas. Se alguma estiver com available === false, o passo é ocultado.
+	 */
+	capabilities?: string[];
+	/**
+	 * Condição personalizada (booleana ou função) para exibição do passo.
+	 */
+	condition?: boolean | (() => boolean);
+	/**
+	 * ID da aba correspondente (quando usado em conjunto com SubNavLayout).
+	 */
+	tabId?: string;
+}
+
+/**
+ * Determina se um passo do tour deve ser exibido com base em:
+ * 1. Propriedade `hidden`
+ * 2. Condição `condition` (booleana ou função)
+ * 3. Status da capability no backend (`available !== false`)
+ * 4. Pertença a abas visíveis no layout (`visibleTabIds`)
+ */
+function isStepConditionActive(condition?: boolean | (() => boolean)): boolean {
+	if (typeof condition === "function") return condition();
+	if (typeof condition === "boolean") return condition;
+	return true;
+}
+
+function areCapabilitiesAvailable(
+	capabilities: Record<string, { available?: boolean }> | null | undefined,
+	capability?: string,
+	capabilityList?: string[]
+): boolean {
+	if (!capabilities) return true;
+	if (capability && capabilities[capability]?.available === false) {
+		return false;
+	}
+	if (capabilityList && capabilityList.some((cap) => capabilities[cap]?.available === false)) {
+		return false;
+	}
+	return true;
+}
+
+export function isTourStepVisible(
+	step: TourStep,
+	capabilities?: Record<string, { available?: boolean }> | null,
+	visibleTabIds?: Set<string> | null
+): boolean {
+	if (step.hidden) return false;
+	if (!isStepConditionActive(step.condition)) return false;
+	if (visibleTabIds && step.tabId && !visibleTabIds.has(step.tabId)) return false;
+	return areCapabilitiesAvailable(capabilities, step.capability, step.capabilities);
+}
+
+/**
+ * Filtra uma lista de passos de tour preservando apenas os que estão ativos/visíveis.
+ */
+export function filterTourSteps(
+	steps: TourStep[],
+	capabilities?: Record<string, { available?: boolean }> | null,
+	visibleTabIds?: Set<string> | null
+): TourStep[] {
+	return steps.filter((step) => isTourStepVisible(step, capabilities, visibleTabIds));
+}
+
+/**
+ * Utilitário agnóstico para sincronizar passos do tour com as seções do SubNavLayout.
+ * Oculta passos de abas marcadas com `hidden: true` em `sections`.
+ */
+export function filterStepsBySubNavSections(
+	steps: TourStep[],
+	sections: SubNavSection[],
+	capabilities?: Record<string, { available?: boolean }> | null
+): TourStep[] {
+	const visibleTabs = new Set<string>();
+	const visibleIdAttrs = new Set<string>();
+
+	for (const section of sections) {
+		for (const item of section.items) {
+			if (!item.hidden) {
+				visibleTabs.add(item.id);
+				if (item.idAttr) {
+					visibleIdAttrs.add(item.idAttr);
+				}
+			}
+		}
+	}
+
+	return steps.filter((step) => {
+		if (step.tabId && !visibleTabs.has(step.tabId)) {
+			return false;
+		}
+		const isSubNavTarget = sections.some((s) =>
+			s.items.some((i) => i.id === step.selectorId || i.idAttr === step.selectorId)
+		);
+		if (
+			isSubNavTarget &&
+			!visibleTabs.has(step.selectorId) &&
+			!visibleIdAttrs.has(step.selectorId)
+		) {
+			return false;
+		}
+		return isTourStepVisible(step, capabilities, visibleTabs);
+	});
 }
 
 interface TourContextType {
@@ -38,44 +156,58 @@ interface TourContextType {
 	previousStep: () => void;
 	endTour: () => void;
 	isActive: boolean;
-	startTour: () => void;
-	setSteps: (steps: TourStep[]) => void;
+	/** Start a named tour. If tourId is omitted, starts the last registered tour. */
+	startTour: (tourId?: string) => void;
+	registerTour: (tourId: string, steps: TourStep[]) => void;
 	steps: TourStep[];
-	isTourCompleted: boolean;
-	setIsTourCompleted: (completed: boolean) => void;
 }
 
 interface TourProviderProps {
 	children: React.ReactNode;
-	onComplete?: () => void;
 	className?: string;
-	isTourCompleted?: boolean;
 }
 
 const TourContext = createContext<TourContextType | null>(null);
 
 const PADDING = 16;
-const CONTENT_WIDTH = 300;
-const CONTENT_HEIGHT = 200;
+const CONTENT_WIDTH = 320;
+const CONTENT_HEIGHT = 180;
 
-function getElementPosition(id: string) {
+interface ElementPosition {
+	top: number;
+	left: number;
+	width: number;
+	height: number;
+	isVisible: boolean;
+}
+
+function getElementPosition(id: string): ElementPosition | null {
+	if (!id || typeof document === "undefined") return null;
 	const element = document.getElementById(id);
 	if (!element) return null;
 	const rect = element.getBoundingClientRect();
+	const style = typeof window !== "undefined" ? window.getComputedStyle(element) : null;
+	const isVisible =
+		rect.width > 0 &&
+		rect.height > 0 &&
+		style?.display !== "none" &&
+		style?.visibility !== "hidden";
+
 	return {
-		top: rect.top + window.scrollY,
-		left: rect.left + window.scrollX,
+		top: rect.top,
+		left: rect.left,
 		width: rect.width,
 		height: rect.height,
+		isVisible,
 	};
 }
 
 function calculateContentPosition(
-	elementPos: { top: number; left: number; width: number; height: number },
+	elementPos: ElementPosition,
 	position: "top" | "bottom" | "left" | "right" = "bottom",
 ) {
-	const viewportWidth = window.innerWidth;
-	const viewportHeight = window.innerHeight;
+	const viewportWidth = typeof window !== "undefined" ? window.innerWidth : 1024;
+	const viewportHeight = typeof window !== "undefined" ? window.innerHeight : 768;
 
 	let left = elementPos.left;
 	let top = elementPos.top;
@@ -108,61 +240,419 @@ function calculateContentPosition(
 			PADDING,
 			Math.min(left, viewportWidth - CONTENT_WIDTH - PADDING),
 		),
-		width: CONTENT_WIDTH,
+		width: Math.min(CONTENT_WIDTH, viewportWidth - PADDING * 2),
 		height: CONTENT_HEIGHT,
 	};
 }
 
-export function TourProvider({
-	children,
-	onComplete,
+function isClickWithinBounds(
+	e: MouseEvent,
+	elementPosition: ElementPosition,
+	step?: TourStep,
+): boolean {
+	const clickX = e.clientX;
+	const clickY = e.clientY;
+	const targetWidth = step?.width || elementPosition.width;
+	const targetHeight = step?.height || elementPosition.height;
+
+	return (
+		clickX >= elementPosition.left &&
+		clickX <= elementPosition.left + targetWidth &&
+		clickY >= elementPosition.top &&
+		clickY <= elementPosition.top + targetHeight
+	);
+}
+
+interface TourOverlayProps {
+	currentStep: number;
+	steps: TourStep[];
+	elementPosition: ElementPosition | null;
+	isMobile: boolean;
+	className?: string;
+	previousStep: () => void;
+	nextStep: () => void;
+	t: (key: string) => string;
+}
+
+interface TourBackdropProps {
+	hasTarget: boolean;
+	elementPosition: ElementPosition | null;
+	stepWidth: number;
+	stepHeight: number;
+	className?: string;
+}
+
+function TourBackdrop({
+	hasTarget,
+	elementPosition,
+	stepWidth,
+	stepHeight,
 	className,
-	isTourCompleted = false,
-}: TourProviderProps) {
+}: TourBackdropProps) {
+	if (!hasTarget || !elementPosition) {
+		return (
+			<motion.div
+				initial={{ opacity: 0 }}
+				animate={{ opacity: 1 }}
+				exit={{ opacity: 0 }}
+				className="fixed inset-0 z-50 bg-black/50"
+			/>
+		);
+	}
+
+	return (
+		<>
+			<motion.div
+				initial={{ opacity: 0 }}
+				animate={{ opacity: 1 }}
+				exit={{ opacity: 0 }}
+				className="fixed inset-0 z-50 overflow-hidden bg-black/50"
+				style={{
+					clipPath: `polygon(
+            0% 0%,
+            0% 100%,
+            100% 100%,
+            100% 0%,
+            ${elementPosition.left}px 0%,
+            ${elementPosition.left}px ${elementPosition.top}px,
+            ${elementPosition.left + stepWidth}px ${elementPosition.top}px,
+            ${elementPosition.left + stepWidth}px ${elementPosition.top + stepHeight}px,
+            ${elementPosition.left}px ${elementPosition.top + stepHeight}px,
+            ${elementPosition.left}px 0%
+          )`,
+				}}
+			/>
+			<motion.div
+				initial={{ opacity: 0, scale: 0.95 }}
+				animate={{ opacity: 1, scale: 1 }}
+				exit={{ opacity: 0, scale: 0.95 }}
+				style={{
+					position: "fixed",
+					top: elementPosition.top,
+					left: elementPosition.left,
+					width: stepWidth,
+					height: stepHeight,
+				}}
+				className={cn("z-[100] pointer-events-none rounded-md border-2 border-primary/70 shadow-sm", className)}
+			/>
+		</>
+	);
+}
+
+interface TourCardProps {
+	isMobile: boolean;
+	hasTarget: boolean;
+	contentPosition: ReturnType<typeof calculateContentPosition> | null;
+	children: React.ReactNode;
+}
+
+function TourCard({ isMobile, hasTarget, contentPosition, children }: TourCardProps) {
+	if (isMobile) {
+		return (
+			<motion.div
+				initial={{ opacity: 0, y: 20 }}
+				animate={{ opacity: 1, y: 0 }}
+				exit={{ opacity: 0, y: 20 }}
+				transition={{ duration: 0.3 }}
+				data-tour-ui
+				className="bg-background pointer-events-auto fixed bottom-4 left-4 right-4 z-[100] max-w-lg mx-auto rounded-xl border p-4 shadow-xl"
+			>
+				{children}
+			</motion.div>
+		);
+	}
+
+	if (hasTarget && contentPosition) {
+		return (
+			<motion.div
+				initial={{ opacity: 0, y: 10 }}
+				animate={{
+					opacity: 1,
+					y: 0,
+					top: contentPosition.top,
+					left: contentPosition.left,
+				}}
+				transition={{
+					duration: 0.4,
+					ease: [0.16, 1, 0.3, 1],
+					opacity: { duration: 0.2 },
+				}}
+				exit={{ opacity: 0, y: 10 }}
+				style={{
+					position: "fixed",
+					width: contentPosition.width,
+				}}
+				data-tour-ui
+				className="bg-background pointer-events-auto fixed z-[100] rounded-lg border p-4 shadow-lg"
+			>
+				{children}
+			</motion.div>
+		);
+	}
+
+	return (
+		<motion.div
+			initial={{ opacity: 0, scale: 0.95 }}
+			animate={{ opacity: 1, scale: 1 }}
+			exit={{ opacity: 0, scale: 0.95 }}
+			data-tour-ui
+			className="bg-background pointer-events-auto fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[100] w-[340px] max-w-[90vw] rounded-lg border p-4 shadow-xl"
+		>
+			{children}
+		</motion.div>
+	);
+}
+
+interface TourCardContentProps {
+	currentStep: number;
+	totalSteps: number;
+	content: React.ReactNode;
+	previousStep: () => void;
+	nextStep: () => void;
+	t: (key: string) => string;
+}
+
+function TourCardContent({
+	currentStep,
+	totalSteps,
+	content,
+	previousStep,
+	nextStep,
+	t,
+}: TourCardContentProps) {
+	const isLastStep = currentStep === totalSteps - 1;
+	return (
+		<>
+			<div className="text-muted-foreground absolute right-4 top-4 text-xs font-medium">
+				{currentStep + 1} / {totalSteps}
+			</div>
+			<AnimatePresence mode="wait">
+				<div>
+					<motion.div
+						key={`tour-content-${currentStep}`}
+						initial={{ opacity: 0, scale: 0.95, filter: "blur(4px)" }}
+						animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+						exit={{ opacity: 0, scale: 0.95, filter: "blur(4px)" }}
+						className="overflow-hidden pr-6"
+						transition={{
+							duration: 0.2,
+							height: { duration: 0.4 },
+						}}
+					>
+						{content}
+					</motion.div>
+					<div className="mt-4 flex justify-between">
+						{currentStep > 0 && (
+							<button
+								onClick={previousStep}
+								className="text-sm text-muted-foreground hover:text-foreground"
+							>
+								{t("previous")}
+							</button>
+						)}
+						<button
+							onClick={nextStep}
+							className="ml-auto text-sm font-medium text-primary hover:text-primary/90"
+						>
+							{isLastStep ? t("finish") : t("next")}
+						</button>
+					</div>
+				</div>
+			</AnimatePresence>
+		</>
+	);
+}
+
+function resolveStepDimensions(
+	step: TourStep | undefined,
+	elementPosition: ElementPosition | null
+) {
+	let width = 0;
+	let height = 0;
+	if (step && step.width) {
+		width = step.width;
+	} else if (elementPosition) {
+		width = elementPosition.width;
+	}
+
+	if (step && step.height) {
+		height = step.height;
+	} else if (elementPosition) {
+		height = elementPosition.height;
+	}
+
+	return { width, height };
+}
+
+function resolveContentPosition(
+	step: TourStep | undefined,
+	elementPosition: ElementPosition | null,
+	hasTarget: boolean
+) {
+	if (!hasTarget || !elementPosition) return null;
+	return calculateContentPosition(elementPosition, step ? step.position : undefined);
+}
+
+function TourOverlay({
+	currentStep,
+	steps,
+	elementPosition,
+	isMobile,
+	className,
+	previousStep,
+	nextStep,
+	t,
+}: TourOverlayProps) {
+	const step = steps[currentStep];
+	const hasTarget = Boolean(elementPosition && elementPosition.isVisible);
+	const { width: stepWidth, height: stepHeight } = resolveStepDimensions(step, elementPosition);
+	const contentPosition = resolveContentPosition(step, elementPosition, hasTarget);
+
+	return (
+		<>
+			<TourBackdrop
+				hasTarget={hasTarget}
+				elementPosition={elementPosition}
+				stepWidth={stepWidth}
+				stepHeight={stepHeight}
+				className={className}
+			/>
+			<TourCard
+				isMobile={isMobile}
+				hasTarget={hasTarget}
+				contentPosition={contentPosition}
+			>
+				<TourCardContent
+					currentStep={currentStep}
+					totalSteps={steps.length}
+					content={step ? step.content : null}
+					previousStep={previousStep}
+					nextStep={nextStep}
+					t={t}
+				/>
+			</TourCard>
+		</>
+	);
+}
+
+export function TourProvider({ children, className }: TourProviderProps) {
+	const registry = useRef<Record<string, TourStep[]>>({});
 	const [steps, setSteps] = useState<TourStep[]>([]);
 	const [currentStep, setCurrentStep] = useState(-1);
-	const [elementPosition, setElementPosition] = useState<{
-		top: number;
-		left: number;
-		width: number;
-		height: number;
-	} | null>(null);
-	const [isCompleted, setIsCompleted] = useState(isTourCompleted);
+	const [isMobile, setIsMobile] = useState(false);
+	const [elementPosition, setElementPosition] = useState<ElementPosition | null>(null);
+
+	const { data: capabilities } = useCapabilities();
+
+	useEffect(() => {
+		const checkMobile = () => {
+			setIsMobile(window.innerWidth < 768);
+		};
+		checkMobile();
+		window.addEventListener("resize", checkMobile);
+		return () => window.removeEventListener("resize", checkMobile);
+	}, []);
+
+	const registerTour = useCallback((tourId: string, tourSteps: TourStep[]) => {
+		registry.current[tourId] = tourSteps;
+	}, []);
+
+	const startTour = useCallback((tourId?: string) => {
+		const key = tourId ?? Object.keys(registry.current)[0];
+		const rawSteps = key ? registry.current[key] : undefined;
+		if (!rawSteps || rawSteps.length === 0) return;
+
+		const visibleSteps = filterTourSteps(rawSteps, capabilities);
+		if (visibleSteps.length === 0) return;
+
+		setSteps(visibleSteps);
+		setCurrentStep(0);
+	}, [capabilities]);
 
 	const updateElementPosition = useCallback(() => {
 		if (currentStep >= 0 && currentStep < steps.length) {
-			const position = getElementPosition(steps[currentStep]?.selectorId ?? "");
-			if (position) {
-				setElementPosition(position);
-			}
+			const step = steps[currentStep];
+			const targetId =
+				isMobile && step?.mobileSelectorId
+					? step.mobileSelectorId
+					: step?.selectorId ?? "";
+			const position = getElementPosition(targetId);
+			setElementPosition(position);
+		} else {
+			setElementPosition(null);
 		}
-	}, [currentStep, steps]);
+	}, [currentStep, isMobile, steps]);
+
+	// Dispara o callback onEnter do passo (ex: troca de aba ou carregamento de estado)
+	useEffect(() => {
+		if (currentStep >= 0 && currentStep < steps.length) {
+			const step = steps[currentStep];
+			step?.onEnter?.();
+
+			// Recalcula posição nos próximos ticks para acomodar transições/renderizações de abas
+			const frameId = window.requestAnimationFrame(updateElementPosition);
+			const t1 = setTimeout(updateElementPosition, 50);
+			const t2 = setTimeout(updateElementPosition, 150);
+			const t3 = setTimeout(updateElementPosition, 300);
+
+			return () => {
+				window.cancelAnimationFrame(frameId);
+				clearTimeout(t1);
+				clearTimeout(t2);
+				clearTimeout(t3);
+			};
+		}
+	}, [currentStep, steps, updateElementPosition]);
+
+	// Auto-scroll suave até o elemento alvo quando mudar de passo
+	useEffect(() => {
+		if (currentStep >= 0 && currentStep < steps.length) {
+			const step = steps[currentStep];
+			const targetId =
+				isMobile && step?.mobileSelectorId
+					? step.mobileSelectorId
+					: step?.selectorId ?? "";
+			if (!targetId || typeof document === "undefined") return;
+
+			const scrollToTarget = () => {
+				const element = document.getElementById(targetId);
+				if (element && typeof element.scrollIntoView === "function") {
+					const rect = element.getBoundingClientRect();
+					if (rect.width > 0 || rect.height > 0) {
+						element.scrollIntoView({
+							behavior: "smooth",
+							block: isMobile ? "start" : "center",
+							inline: "nearest",
+						});
+					}
+				}
+			};
+
+			scrollToTarget();
+			const timeout = setTimeout(scrollToTarget, 100);
+			return () => clearTimeout(timeout);
+		}
+	}, [currentStep, isMobile, steps]);
 
 	useEffect(() => {
-		updateElementPosition();
+		const frameId = window.requestAnimationFrame(updateElementPosition);
 		window.addEventListener("resize", updateElementPosition);
-		window.addEventListener("scroll", updateElementPosition);
+		// capture: true permite detectar scroll dentro de modals e containers com overflow-y-auto
+		window.addEventListener("scroll", updateElementPosition, true);
 
 		return () => {
+			window.cancelAnimationFrame(frameId);
 			window.removeEventListener("resize", updateElementPosition);
-			window.removeEventListener("scroll", updateElementPosition);
+			window.removeEventListener("scroll", updateElementPosition, true);
 		};
 	}, [updateElementPosition]);
 
-	const nextStep = useCallback(async () => {
+	const nextStep = useCallback(() => {
 		setCurrentStep((prev) => {
-			if (prev >= steps.length - 1) {
-				return -1;
-			}
+			if (prev >= steps.length - 1) return -1;
 			return prev + 1;
 		});
-
-		if (currentStep === steps.length - 1) {
-			// eslint-disable-next-line react-hooks/immutability
-			setIsTourCompleted(true);
-			onComplete?.();
-		}
-	}, [steps.length, onComplete, currentStep]);
+	}, [steps.length]);
 
 	const previousStep = useCallback(() => {
 		setCurrentStep((prev) => (prev > 0 ? prev - 1 : prev));
@@ -172,36 +662,14 @@ export function TourProvider({
 		setCurrentStep(-1);
 	}, []);
 
-	const startTour = useCallback(() => {
-		if (isTourCompleted) {
-			return;
-		}
-		setCurrentStep(0);
-	}, [isTourCompleted]);
-
 	const handleClick = useCallback(
 		(e: MouseEvent) => {
-			if (
-				currentStep >= 0 &&
-				elementPosition &&
-				steps[currentStep]?.onClickWithinArea
-			) {
-				const clickX = e.clientX + window.scrollX;
-				const clickY = e.clientY + window.scrollY;
+			if (currentStep < 0 || !elementPosition || !elementPosition.isVisible) return;
+			const step = steps[currentStep];
+			if (!step?.onClickWithinArea) return;
 
-				const isWithinBounds =
-					clickX >= elementPosition.left &&
-					clickX <=
-						elementPosition.left +
-							(steps[currentStep]?.width || elementPosition.width) &&
-					clickY >= elementPosition.top &&
-					clickY <=
-						elementPosition.top +
-							(steps[currentStep]?.height || elementPosition.height);
-
-				if (isWithinBounds) {
-					steps[currentStep].onClickWithinArea?.();
-				}
+			if (isClickWithinBounds(e, elementPosition, step)) {
+				step.onClickWithinArea();
 			}
 		},
 		[currentStep, elementPosition, steps],
@@ -214,9 +682,7 @@ export function TourProvider({
 		};
 	}, [handleClick]);
 
-	const setIsTourCompleted = useCallback((completed: boolean) => {
-		setIsCompleted(completed);
-	}, []);
+	const { t } = useTranslation("tour");
 
 	return (
 		<TourContext.Provider
@@ -228,125 +694,23 @@ export function TourProvider({
 				endTour,
 				isActive: currentStep >= 0,
 				startTour,
-				setSteps,
+				registerTour,
 				steps,
-				isTourCompleted: isCompleted,
-				setIsTourCompleted,
 			}}
 		>
 			{children}
 			<AnimatePresence>
-				{currentStep >= 0 && elementPosition && (
-					<>
-						<motion.div
-							initial={{ opacity: 0 }}
-							animate={{ opacity: 1 }}
-							exit={{ opacity: 0 }}
-							className="absolute inset-0 z-50 overflow-hidden bg-black/50"
-							style={{
-								clipPath: `polygon(
-                  0% 0%,                                                                          /* top-left */
-                  0% 100%,                                                                        /* bottom-left */
-                  100% 100%,                                                                      /* bottom-right */
-                  100% 0%,                                                                        /* top-right */
-                  
-                  /* Create rectangular hole */
-                  ${elementPosition.left}px 0%,                                                   /* top edge start */
-                  ${elementPosition.left}px ${elementPosition.top}px,                             /* hole top-left */
-                  ${elementPosition.left + (steps[currentStep]?.width || elementPosition.width)}px ${elementPosition.top}px,  /* hole top-right */
-                  ${elementPosition.left + (steps[currentStep]?.width || elementPosition.width)}px ${elementPosition.top + (steps[currentStep]?.height || elementPosition.height)}px,  /* hole bottom-right */
-                  ${elementPosition.left}px ${elementPosition.top + (steps[currentStep]?.height || elementPosition.height)}px,  /* hole bottom-left */
-                  ${elementPosition.left}px 0%                                                    /* back to top edge */
-                )`,
-							}}
-						/>
-						<motion.div
-							initial={{ opacity: 0, scale: 0.95 }}
-							animate={{ opacity: 1, scale: 1 }}
-							exit={{ opacity: 0, scale: 0.95 }}
-							style={{
-								position: "absolute",
-								top: elementPosition.top,
-								left: elementPosition.left,
-								width: steps[currentStep]?.width || elementPosition.width,
-								height: steps[currentStep]?.height || elementPosition.height,
-							}}
-							className={cn(
-								"z-[100] border-2 border-muted-foreground",
-								className,
-							)}
-						/>
-
-						<motion.div
-							initial={{ opacity: 0, y: 10, top: 50, right: 50 }}
-							animate={{
-								opacity: 1,
-								y: 0,
-								top: calculateContentPosition(
-									elementPosition,
-									steps[currentStep]?.position,
-								).top,
-								left: calculateContentPosition(
-									elementPosition,
-									steps[currentStep]?.position,
-								).left,
-							}}
-							transition={{
-								duration: 0.8,
-								ease: [0.16, 1, 0.3, 1],
-								opacity: { duration: 0.4 },
-							}}
-							exit={{ opacity: 0, y: 10 }}
-							style={{
-								position: "absolute",
-								width: calculateContentPosition(
-									elementPosition,
-									steps[currentStep]?.position,
-								).width,
-							}}
-							className="bg-background relative z-[100] rounded-lg border p-4 shadow-lg"
-						>
-							<div className="text-muted-foreground absolute right-4 top-4 text-xs">
-								{currentStep + 1} / {steps.length}
-							</div>
-							<AnimatePresence mode="wait">
-								<div>
-									<motion.div
-										key={`tour-content-${currentStep}`}
-										initial={{ opacity: 0, scale: 0.95, filter: "blur(4px)" }}
-										animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-										exit={{ opacity: 0, scale: 0.95, filter: "blur(4px)" }}
-										className="overflow-hidden"
-										transition={{
-											duration: 0.2,
-											height: {
-												duration: 0.4,
-											},
-										}}
-									>
-										{steps[currentStep]?.content}
-									</motion.div>
-									<div className="mt-4 flex justify-between">
-										{currentStep > 0 && (
-											<button
-												onClick={previousStep}
-												disabled={currentStep === 0}
-												className="text-sm text-muted-foreground hover:text-foreground"
-											>
-												Previous
-											</button>
-										)}
-										<button
-											onClick={nextStep}
-											className="ml-auto text-sm font-medium text-primary hover:text-primary/90"
-										>
-											{currentStep === steps.length - 1 ? "Finish" : "Next"}
-										</button>
-									</div>
-								</div>
-							</AnimatePresence>
-						</motion.div>
-					</>
+				{currentStep >= 0 && (
+					<TourOverlay
+						currentStep={currentStep}
+						steps={steps}
+						elementPosition={elementPosition}
+						isMobile={isMobile}
+						className={className}
+						previousStep={previousStep}
+						nextStep={nextStep}
+						t={t}
+					/>
 				)}
 			</AnimatePresence>
 		</TourContext.Provider>
@@ -361,17 +725,32 @@ export function useTour() {
 	return context;
 }
 
+/** Ignora o "clique fora" do Radix Dialog quando o alvo é a UI do tour; use em `onInteractOutside`. */
+export function ignoreTourInteraction(event: Event): void {
+	const target = event.target;
+	if (target instanceof Element && target.closest("[data-tour-ui]")) {
+		event.preventDefault();
+	}
+}
+
+/** Dialog shown by HelpButton before starting the tour. */
 export function TourAlertDialog({
+	tourId,
 	isOpen,
 	setIsOpen,
-}: { isOpen: boolean; setIsOpen: (isOpen: boolean) => void }) {
-	const { startTour, steps, isTourCompleted, currentStep } = useTour();
+}: {
+	tourId: string;
+	isOpen: boolean;
+	setIsOpen: (isOpen: boolean) => void;
+}) {
+	const { startTour, currentStep } = useTour();
+	const { t } = useTranslation("tour");
 
-	if (isTourCompleted || steps.length === 0 || currentStep > -1) {
-		return null;
-	}
-	const handleSkip = async () => {
+	if (currentStep > -1) return null;
+
+	const handleStart = () => {
 		setIsOpen(false);
+		startTour(tourId);
 	};
 
 	return (
@@ -406,22 +785,73 @@ export function TourAlertDialog({
 						</motion.div>
 					</div>
 					<AlertDialogTitle className="text-center text-xl font-medium">
-						Welcome to the Tour
+						{t("welcomeTitle")}
 					</AlertDialogTitle>
 					<AlertDialogDescription className="text-muted-foreground mt-2 text-center text-sm">
-						Take a quick tour to learn about the key features and functionality
-						of this application.
+						{t("welcomeDescription")}
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 				<div className="mt-6 space-y-3">
-					<Button onClick={startTour} className="w-full">
-						Start Tour
+					<Button onClick={handleStart} className="w-full">
+						{t("startTour")}
 					</Button>
-					<Button onClick={handleSkip} variant="ghost" className="w-full">
-						Skip Tour
+					<Button
+						onClick={() => setIsOpen(false)}
+						variant="ghost"
+						className="w-full"
+					>
+						{t("skipTour")}
 					</Button>
 				</div>
 			</AlertDialogContent>
 		</AlertDialog>
+	);
+}
+
+/** Drop-in "?" button that opens a named tour. Place next to page titles. */
+export function HelpButton({
+	tourId,
+	className,
+	startDirect = false,
+}: {
+	tourId: string;
+	className?: string;
+	startDirect?: boolean;
+}) {
+	const [open, setOpen] = useState(false);
+	const { startTour } = useTour();
+	const { t } = useTranslation("tour");
+
+	if (startDirect) {
+		return (
+			<button
+				type="button"
+				onClick={() => startTour(tourId)}
+				aria-label={t("helpButtonLabel")}
+				className={cn(
+					"inline-flex items-center justify-center rounded-full p-1 text-muted-foreground hover:text-foreground transition-colors",
+					className,
+				)}
+			>
+				<CircleHelp className="size-5" />
+			</button>
+		);
+	}
+
+	return (
+		<>
+			<button
+				type="button"
+				onClick={() => setOpen(true)}
+				aria-label={t("helpButtonLabel")}
+				className={cn(
+					"inline-flex items-center justify-center rounded-full p-1 text-muted-foreground hover:text-foreground transition-colors",
+					className,
+				)}
+			>
+				<CircleHelp className="size-5" />
+			</button>
+			<TourAlertDialog tourId={tourId} isOpen={open} setIsOpen={setOpen} />
+		</>
 	);
 }

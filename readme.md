@@ -1,164 +1,111 @@
-# Template Base — Monorepo de Templates
+# Template Monorepo
 
-Este repositório contém **todos os templates oficiais** utilizados como ponto de partida para novos projetos. Ele funciona como uma **base padronizada**, garantindo consistência entre equipes, velocidade na criação de novos sistemas e facilidade de manutenção.
+Monorepo com backend NestJS e frontend Next.js como base para novos projetos.
 
-Quando um novo projeto é iniciado para um cliente, uma cópia do(s) template(s) necessário(s) é criada em um repositório separado, permitindo que o desenvolvimento siga sua própria linha evolutiva sem afetar a base.
-
----
-
-## 📦 Estrutura Geral do Repositório
+## Estrutura
 
 ```
 template/
-├── backend-nest/        → API base com NestJS
-├── frontend-next/       → Front-end com Next.js (SSR + áreas administrativas)
-├── frontend-vite/       → Front-end com React + Vite (SPA leve, sem admin)
-├── ui-components/       → Biblioteca compartilhada de componentes React
-├── .gitignore           → Configuração global do monorepo
-└── readme.md            → Este arquivo
+├── backend-nest/    # API NestJS 11 + Prisma 6
+├── frontend-next/   # Next.js 16 + Payload CMS 3
+├── docker-compose.yml
+├── .env.example
+├── pnpm-workspace.yaml
+└── turbo.json
 ```
 
-Cada template é totalmente **independente** e **não há referências cruzadas** entre eles. A única exceção planejada é o pacote `ui-components`, cujo objetivo é ser consumido tanto pelo template Next quanto pelo template Vite.
+## Stack
 
----
+| Camada | Tecnologia |
+|--------|-----------|
+| Backend | NestJS 11, Prisma 6.19, BullMQ 5, Passport JWT, nestjs-i18n |
+| Frontend | Next.js 16.2.10, React 19, Payload CMS 3.86, shadcn/ui, TanStack Query 5 |
+| Infra | PostgreSQL 16, Redis 7, MinIO (S3-compatible) |
+| Orquestração | Turborepo 2, pnpm workspaces |
 
-## 🧱 Objetivo de Cada Template
+## Rodar localmente
 
-### 1️⃣ Backend NestJS
+```bash
+# 1. Configurar variáveis
+cp .env.example .env
+# Edite .env — substitua os REPLACE_WITH_* por valores reais
 
-API base seguindo arquitetura modular simplificada do NestJS com:
+# 2. Subir infra + apps
+docker compose up -d
 
-**Estrutura:**
-```
-src/
-├── modules/
-│   └── users/
-│       ├── users.module.ts
-│       ├── users.controller.ts
-│       ├── users.service.ts
-│       ├── entities/
-│       │   └── user.entity.ts
-│       └── dto/
-│           ├── create-user.dto.ts
-│           └── update-user.dto.ts
-├── common/
-│   ├── decorators/
-│   ├── filters/
-│   ├── guards/
-│   ├── interceptors/
-│   └── pipes/
-└── config/
+# RUN_MIGRATIONS=true e RUN_SEED=true no .env aplicam migrations e seed automaticamente
 ```
 
-**Funcionalidades incluídas:**
-- Login (JWT access + refresh)
-- Gestão de usuários
-- Padrão de DTOs com validação
-- Prisma ORM configurado
-- Tratamento global de erros
-- Documentação Swagger
-- Estrutura modular clara e simples
+| Serviço | URL |
+|---------|-----|
+| Backend API | http://localhost:3001/api/v1 |
+| Swagger | http://localhost:3001/api/docs |
+| Frontend | http://localhost:3000 |
+| Payload CMS admin | http://localhost:3000/admin |
+| MinIO console | http://localhost:9001 |
 
-**Convenções:**
-- Sem complexidade DDD desnecessária
-- Controllers finos (apenas recebem requisições)
-- Services contêm a lógica de negócio
-- Entities representam modelos de dados
-- DTOs obrigatórios para validação
-- Repositories apenas quando necessário abstrair persistência
+```bash
+# Reset total (apaga volumes)
+docker compose down -v
+```
 
-Serve como back-end oficial para ambos os templates de front.
+## Desenvolvimento (sem Docker)
 
----
+```bash
+pnpm install
+pnpm dev      # roda backend + frontend via turbo
+pnpm test
+pnpm build
+```
 
-### 2️⃣ FrontEnd Next.js
+## Backend — arquitetura
 
-Ideal para produtos que exigem:
+```
+backend-nest/src/
+├── domain/         # tipos e regras de domínio (sem framework)
+├── common/         # infraestrutura transversal: guards, decorators, crypto, redis, storage, throttler
+├── modules/        # feature modules (controller → use-case → Prisma)
+├── i18n/           # traduções en / pt-BR
+└── prisma/         # schema Prisma
+```
 
-* Áreas administrativas
-* Dashboards
-* Rotas públicas com SEO
-* SSR/SSG
+**Padrão:** cada endpoint vive num use-case dedicado (`*.use-case.ts`). Controllers só recebem a requisição e delegam.
 
-Inclui:
+**Módulos disponíveis:** `auth`, `user`, `role`, `route`, `role-route-access`, `user-route-access`, `system-configuration`, `user-configuration`, `user-configuration-definition`, `email`, `cms`, `logging`, `clientLog`, `health`, `tasks`.
 
-* Fluxo de login completo
-* Proteção de rotas via middleware
-* Layout administrativo base
-* Gestão de usuários
-* React Query configurado
+**Auth:** JWT access token (15 min por padrão) + refresh token + invite token. RBAC via roles e route-access — cada rota pode ter permissões por role.
 
----
+## Frontend — arquitetura
 
-## 3️⃣ FrontEnd Vite (React)
+```
+frontend-next/src/app/
+├── (payload)/      # rotas do Payload CMS admin (/admin e /api)
+├── (private)/
+│   ├── (admin)/    # área administrativa protegida
+│   └── (client)/   # área de cliente protegida
+└── api/auth/       # handlers NextAuth
+```
 
-Indicado para:
+Payload CMS roda embedded no mesmo processo Next.js, conectado a um schema separado no mesmo banco PostgreSQL.
 
-* Aplicações sem parte administrativa
-* SPAs rápidas e leves
-* Sistemas internos simples
+## Variáveis de ambiente obrigatórias
 
-Inclui:
+Ver `.env.example`. Variáveis marcadas com `REPLACE_WITH_*` não têm valor padrão seguro e devem ser definidas antes de subir qualquer ambiente.
 
-* Login básico
-* Proteção de rotas
-* React Query + Axios configurados
-* Estrutura de pastas minimalista
+## Banco de dados — conexões
 
----
+PostgreSQL tem `max_connections=100` por padrão.
 
-## 4️⃣ Biblioteca de Componentes (UI Kit)
+**Fórmula:**
+```
+total = backend_replicas × connection_limit + frontend_replicas × pool_payload + margem
+```
 
-Biblioteca React compartilhada entre os dois templates front-end.
+**Valores recomendados:**
+- Backend: `connection_limit=10` na `DATABASE_URL`
+- Frontend/Payload: `pool.max=5`
+- Margem: ~10 (migrations, Prisma Studio)
 
-Contém apenas **componentes visuais genéricos**, como:
+**Exemplo com 3 réplicas de cada:** `3×10 + 3×5 + 10 = 55` — dentro do limite de 100.
 
-* Botões
-* Inputs
-* Modais
-* Tabelas
-* Skeletons
-
-Não inclui lógica de negócio nem dependências específicas do ambiente (Next, server components, etc.).
-
----
-
-# 🚀 Como Usar Este Repositório
-
-## 1. Criando um novo projeto para cliente
-
-1. Escolha os templates necessários (backend + algum front).
-2. Copie as pastas para um novo repositório separado.
-3. Ajuste o nome do projeto, environemnts e configurações.
-4. O projeto agora segue sua própria evolução.
-
----
-
-# 🔄 Mantendo os Templates Alinhados
-
-Toda evolução na base deve ser sincronizada entre:
-
-* backend-nest
-* frontend-next
-* frontend-vite
-* ui-components
-
-Isso garante consistência e acelera o desenvolvimento de todos os futuros projetos.
-
----
-
-# 📜 Convenções Gerais (Resumo)
-
-* Uso de TypeScript em todos os templates.
-* Padrão unificado de tratamento de erros.
-* Fluxo de autenticação idêntico entre os front-ends.
-* Estrutura de pastas consistente.
-* Componentes visuais centralizados no UI Kit.
-
----
-
-# 📌 Status
-
-Este repositório está em fase de definição da estrutura base.
-
-A próxima etapa é iniciar a implementação dos templates seguindo este documento.
+Quando `backend_replicas > 3`, ative PgBouncer em transaction mode e adicione `pgbouncer=true` à `DATABASE_URL`.

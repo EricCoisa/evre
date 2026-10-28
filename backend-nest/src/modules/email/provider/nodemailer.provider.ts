@@ -1,121 +1,89 @@
-import {
+import { Injectable } from '@nestjs/common';
+import nodemailer, { Transporter } from 'nodemailer';
+import type {
+  IEmailService,
   IEmailProvider,
   SendEmailParams,
 } from 'src/domain/interface/email-provider.interface';
-import nodemailer, { Transporter } from 'nodemailer';
-import { SystemConfigurationService } from 'src/modules/system-configuration/system-configuration.service';
-import {
-  EmailProviderResponse,
-  EmailResponse,
-} from 'src/domain/interface/email.response';
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import type { ProviderResult } from 'src/domain/interface/provider-result';
+import type { SmtpConfigDto } from '../dto/smtp-config.dto';
+
+interface NodemailerSendResult {
+  messageId?: string;
+  accepted?: string[];
+  rejected?: string[];
+}
 
 @Injectable()
-export class NodemailerProvider implements IEmailProvider, OnModuleInit {
-  private transporter!: Transporter<unknown>;
-
-  constructor(
-    private readonly systemConfigurationService: SystemConfigurationService,
-  ) {}
-
-  async onModuleInit(): Promise<void> {
-    if (this.transporter) return;
-
-    const [hostObj, portObj, userObj, passObj, secureObj] = await Promise.all([
-      this.systemConfigurationService.findByLabelKey('SYSTEM_EMAIL_SMTP_HOST'),
-      this.systemConfigurationService.findByLabelKey('SYSTEM_EMAIL_SMTP_PORT'),
-      this.systemConfigurationService.findByLabelKey('SYSTEM_EMAIL_SMTP_USER'),
-      this.systemConfigurationService.findByLabelKey('SYSTEM_EMAIL_SMTP_PASS'),
-      this.systemConfigurationService.findByLabelKey(
-        'SYSTEM_EMAIL_SMTP_SECURE',
-      ),
-    ]);
-
-    if (
-      !hostObj?.value ||
-      !portObj?.value ||
-      !userObj?.value ||
-      !passObj?.value
-    ) {
-      throw new Error('SMTP configuration is incomplete');
-    }
-
-    const port = Number(portObj.value);
-    const secure = String(secureObj?.value as string).toLowerCase() === 'true';
-
-    if (Number.isNaN(port)) {
-      throw new Error('SMTP port must be a valid number');
-    }
-
-    this.transporter = nodemailer.createTransport({
-      host: String(hostObj.value as string),
-      port,
-      secure,
-      auth: {
-        user: String(userObj.value as string),
-        pass: String(passObj.value as string),
-      },
+export class NodemailerEmailService implements IEmailService<SmtpConfigDto> {
+  use(cfg: SmtpConfigDto): IEmailProvider {
+    const transporter = nodemailer.createTransport({
+      host: cfg.host,
+      port: cfg.port,
+      secure: cfg.secure,
+      auth: { user: cfg.user, pass: cfg.pass },
     });
-
-    await this.transporter.verify();
+    return {
+      send: (params) => this._send(transporter, params),
+      validateConfiguration: () => this._validate(transporter),
+    };
   }
 
-  async send(params: SendEmailParams): Promise<EmailResponse> {
-    if (!this.transporter) {
-      throw new Error('Email transporter not initialized');
-    }
-
+  private async _send(
+    transporter: Transporter,
+    params: SendEmailParams,
+  ): Promise<ProviderResult> {
     const { to, subject, text, html, from } = params;
 
     if (!text && !html) {
-      return {
-        status: false,
-        data: 'Email must have text or html content',
-      };
+      return { status: false, data: 'Email must have text or html content' };
     }
 
     try {
       const sendTo: string = Array.isArray(to) ? to.join(', ') : String(to);
 
-      const info = await this.transporter.sendMail({
+      const info = (await transporter.sendMail({
         from: from ?? 'no-reply@system.local',
         to: sendTo,
         subject,
         text: text ?? undefined,
         html: html ?? undefined,
-      });
+      })) as NodemailerSendResult;
 
-      // Type guards para garantir acesso seguro
-      const messageId =
-        typeof (info as { messageId?: unknown }).messageId === 'string'
-          ? (info as { messageId: string }).messageId
-          : '';
-      const accepted = Array.isArray((info as { accepted?: unknown }).accepted)
-        ? (info as { accepted: unknown[] }).accepted.map(String)
+      const messageId = info.messageId ?? '';
+      const accepted = Array.isArray(info.accepted)
+        ? info.accepted.map(String)
         : [];
-      const rejected = Array.isArray((info as { rejected?: unknown }).rejected)
-        ? (info as { rejected: unknown[] }).rejected.map(String)
+      const rejected = Array.isArray(info.rejected)
+        ? info.rejected.map(String)
         : [];
 
       return {
         status: true,
-        data: JSON.stringify({
-          messageId,
-          accepted,
-          rejected,
-        }),
+        data: JSON.stringify({ messageId, accepted, rejected }),
       };
     } catch (err) {
       const error = err instanceof Error ? err.message : 'Unknown email error';
-      return {
-        status: false,
-        data: error,
-      };
+      return { status: false, data: error };
     }
   }
 
-  async validateConfiguration(): Promise<EmailProviderResponse> {
-    const result = await this.transporter.verify();
-    return { status: true, data: JSON.stringify(result) };
+  private async _validate(transporter: Transporter): Promise<ProviderResult> {
+    try {
+      await transporter.verify();
+      return { status: true, data: 'SMTP OK' };
+    } catch (err) {
+      const msg = String((err as Error)?.message ?? err);
+      if (
+        msg.includes('wrong version number') ||
+        msg.includes('WRONG_VERSION_NUMBER')
+      ) {
+        return {
+          status: false,
+          data: 'Erro de TLS: porta 587 usa STARTTLS — mantenha "SMTP Seguro" como false. Para TLS implícito, use porta 465 com "SMTP Seguro" true.',
+        };
+      }
+      return { status: false, data: msg };
+    }
   }
 }

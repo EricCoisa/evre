@@ -1,20 +1,11 @@
 "use client"
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
 import { QUERY_CONFIG } from './config/performance.config'
 import { LucideIcon } from "lucide-react"
 import * as LucideIcons from 'lucide-react';
 import i18n from '../../i18n';
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
-}
 
-/**
- * Configurações padrão para React Query com base no tipo de cache
- * @param cacheType - Tipo de cache definido em QUERY_CONFIG.CACHE_TIMES
- * @param gcType - Tipo de garbage collection (opcional, usa DEFAULT se não especificado)
- */
+/** Configurações padrão de cache para React Query, com base no tipo informado. */
 export function getQueryConfig<T extends keyof typeof QUERY_CONFIG.CACHE_TIMES>(
   cacheType: T,
   gcType?: keyof typeof QUERY_CONFIG.GC_TIMES

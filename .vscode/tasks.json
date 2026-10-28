@@ -66,6 +66,35 @@
                 "reveal": "always"
             }
         }
+        ,
+        {
+            "label": "Start Docker Compose (Debug)",
+            "type": "shell",
+            "command": "docker compose -f docker-compose.yml -f docker-compose.debug.yml up --build -d",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "isBackground": false,
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Stop Docker Compose (Debug)",
+            "type": "shell",
+            "command": "docker compose -f docker-compose.yml -f docker-compose.debug.yml down",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "isBackground": false,
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        }
     ]
 }
 

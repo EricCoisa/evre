@@ -1,38 +1,34 @@
-import { cn } from "@/lib/utils";
+"use client";
+
+import { cn } from "@/lib/cn";
 import { useState } from "react";
-import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 export type ContainerVariant = 'default' | 'dataTable' | 'sortableTable' | 'form' | 'config' | 'configGroup' | 'dashboard' | 'stats' | 'compact' | 'notification';
 
-// Propriedades básicas do container
+// 10 variant names kept for semantics; only 2 actual heights
+const AUTO_HEIGHT_VARIANTS: ContainerVariant[] = ['config', 'configGroup', 'stats', 'compact', 'notification'];
+
 interface ContainerBaseProps {
     children: React.ReactNode;
     className?: string;
     variant?: ContainerVariant;
-    title?: string;
-    widthClass?: string; // Classe Tailwind para controlar largura horizontal
+    widthClass?: string;
 }
 
-// Propriedades relacionadas a espaçamento
 interface ContainerSpacingProps {
-    noSpacing?: boolean; // Remove a margem externa space-y-6
-    noTitleSpacing?: boolean; // Remove a margem inferior do título
-    padding?: boolean; // Controla se deve exibir padding (padrão: true)
+    noSpacing?: boolean;
+    padding?: boolean;
 }
 
-// Propriedades relacionadas a borda/estilo
 interface ContainerBorderProps {
-    border?: boolean; // Controla se deve exibir o contorno (padrão: true)
+    border?: boolean;
 }
 
-// Propriedades relacionadas ao comportamento colapsável
 interface ContainerCollapsibleProps {
-    collapsible?: boolean; // Torna o container colapsável
-    defaultExpanded?: boolean; // Estado inicial quando colapsável (padrão: true)
+    collapsible?: boolean;
+    defaultExpanded?: boolean;
 }
 
-// Propriedades de posicionamento quando usado dentro de um grid pai
 interface ContainerGridItemProps {
     gridItem?: {
         colStart?: number;
@@ -43,29 +39,15 @@ interface ContainerGridItemProps {
     };
 }
 
-// Combina todas as propriedades em um único tipo usado pelo componente
 export type ContainerProps =
     & ContainerBaseProps
     & Partial<ContainerSpacingProps & ContainerBorderProps & ContainerCollapsibleProps & ContainerGridItemProps>;
-
-const containerVariants = {
-  default: 'h-full min-h-[50px]',
-  dataTable: 'h-full min-h-[50px]', // Para tabelas com paginação e muitos dados
-  sortableTable: 'h-full min-h-[50px]', // Para tabelas ordenáveis com menos dados
-  form: 'h-full min-h-[50px]', // Para formulários padrão
-  config: 'h-auto min-h-[50px]', // Para uma única configuração
-  configGroup: 'h-auto min-h-[50px]', // Para grupo de configurações (2-3 itens)
-  dashboard: 'h-full min-h-[50px]', // Para widgets de dashboard
-  stats: 'h-auto min-h-[50px]', // Para estatísticas e métricas
-  compact: 'h-auto min-h-[50px]', // Para notificações e alertas pequenos
-  notification: 'h-auto min-h-[50px]' // Para avisos e mensagens rápidas
-};
 
 type ContainerGridProps = {
     children: React.ReactNode;
     columns?: number | string;
     rows?: string;
-    gap?: string; // CSS gap value, ex: '1rem' or '0.75rem'
+    gap?: string;
     className?: string;
     style?: React.CSSProperties;
 }
@@ -79,7 +61,6 @@ export function ContainerGrid({ children, columns = 3, rows = 'auto', gap = '1re
         width: '100%',
         ...style
     };
-
     return (
         <div className={cn('w-full', className)} style={gridStyle}>
             {children}
@@ -87,104 +68,55 @@ export function ContainerGrid({ children, columns = 3, rows = 'auto', gap = '1re
     );
 }
 
-export function Container({
-    children,
-    className,
-    variant = 'default',
-    title,
-    noSpacing = false,
-    noTitleSpacing = false,
-    border = true,
-    collapsible = false,
-    defaultExpanded = true,
-    widthClass = 'w-full',
-    gridItem,
-    padding,
-}: ContainerProps) {
-    const [isExpanded, setIsExpanded] = useState<boolean>(!!defaultExpanded);
-    const isMobile = useIsMobile()
-    padding = padding == undefined ? (isMobile ? false : true) : padding;
-    // Se apenas children foi fornecido (sem outras props customizadas), retorna children diretamente
-    const isSimpleContainer = !className && 
-        variant === 'default' && 
-        !title && 
-        !noSpacing && 
-        !noTitleSpacing && 
-        border === true && 
-        !collapsible && 
-        defaultExpanded === true && 
-        widthClass === 'w-full' && 
-        !gridItem;
+function resolveGridItemStyle(gridItem?: ContainerProps['gridItem']): React.CSSProperties {
+    if (!gridItem) return {};
+    const style: React.CSSProperties = {};
+    if (gridItem.colStart) style.gridColumnStart = gridItem.colStart;
+    if (gridItem.colEnd) style.gridColumnEnd = gridItem.colEnd;
+    if (gridItem.rowStart) style.gridRowStart = gridItem.rowStart;
+    if (gridItem.rowEnd) style.gridRowEnd = gridItem.rowEnd;
+    if (gridItem.area) style.gridArea = gridItem.area;
+    return style;
+}
 
-    if (isSimpleContainer) {
-        return <div className="space-y-6">
-       <div className="rounded-lg border border-border bg-card-foreground/1">
-           <div className={padding ? "sm:p-6 p-4" : ""}>
-               {children}
-           </div>
-       </div>
-   </div>;
-    }
+function getContainerInnerClass(border: boolean, heightClass: string, widthClass: string, isExpanded: boolean): string {
+    return cn(
+        'rounded-lg flex flex-col transition-shadow duration-300',
+        border && 'border border-border bg-card',
+        heightClass,
+        widthClass,
+        !isExpanded && 'min-h-0 h-auto max-h-20 overflow-hidden'
+    );
+}
 
-    const toggleExpanded = () => {
-        if (collapsible) {
-            setIsExpanded(!isExpanded);
-        }
-    };
+function resolveContainerHeight(variant?: ContainerVariant) {
+    return variant && AUTO_HEIGHT_VARIANTS.includes(variant) ? 'h-auto min-h-[50px]' : 'h-full min-h-[50px]';
+}
+
+export function Container(props: ContainerProps) {
+    const {
+        children,
+        className,
+        variant = 'default',
+        noSpacing,
+        border = true,
+        defaultExpanded = true,
+        widthClass = 'w-full',
+        gridItem,
+        padding = true,
+    } = props;
+    const [isExpanded] = useState<boolean>(Boolean(defaultExpanded));
+    const heightClass = resolveContainerHeight(variant);
+    const outerClass = cn(!noSpacing && 'space-y-2 sm:space-y-4 md:space-y-6', 'flex flex-col rounded-xl', className);
+    const innerPaddingClass = cn('flex flex-col', padding ? (variant === 'dataTable' ? 'p-0 sm:p-6' : 'p-3 sm:p-6 pt-2') : '');
 
     return (
-        <div className={cn(!noSpacing && 'space-y-6', 'flex flex-col', 'rounded-xl', className)}>
+        <div className={outerClass}>
             <div
-                className={cn(
-                    'rounded-lg flex flex-col transition-shadow duration-300',
-                    border &&
-                        'border-primary-200 dark:border-primary-700 from-card via-card/98 to-primary-50/20 dark:to-primary-950/10 shadow-lg hover:shadow-xl',
-                    containerVariants[variant],
-                    widthClass,
-                    !isExpanded && 'min-h-0 h-auto max-h-20 overflow-hidden'
-                )}
-                style={{
-                    ...(gridItem?.colStart ? { gridColumnStart: gridItem.colStart } : {}),
-                    ...(gridItem?.colEnd ? { gridColumnEnd: gridItem.colEnd } : {}),
-                    ...(gridItem?.rowStart ? { gridRowStart: gridItem.rowStart } : {}),
-                    ...(gridItem?.rowEnd ? { gridRowEnd: gridItem.rowEnd } : {}),
-                    ...(gridItem?.area ? { gridArea: gridItem.area } : {}),
-                }}
+                className={getContainerInnerClass(border, heightClass, widthClass, isExpanded)}
+                style={resolveGridItemStyle(gridItem)}
             >
-                <div
-                    className={cn(
-                        'flex flex-col',
-                        // padding igual ao isSimpleContainer: sm:p-6 p-4
-                        padding == true ? 'sm:p-6 p-4' : ''
-                    )}
-                >
-                    {title && (
-                        <div
-                            className={cn(
-                                'flex items-center justify-between',
-                                border && isExpanded && 'border-b border-primary-200 dark:border-primary-700 pb-2',
-                                !noTitleSpacing && isExpanded && 'mb-4'
-                            )}
-                        >
-                            <h2 className="text-xl font-semibold text-primary-700 dark:text-primary-300">{title}</h2>
-                            {collapsible && (
-                                <button
-                                    onClick={toggleExpanded}
-                                    className="p-2 rounded-lg border border-primary-200/60 dark:border-primary-700/60
-                                             transition-all duration-200 ease-in-out"
-                                    aria-label={isExpanded ? 'Colapsar container' : 'Expandir container'}
-                                >
-                                    {isExpanded ? (
-                                        <ChevronUpIcon className="h-5 w-5 text-primary-700 dark:text-primary-300 
-                                                                 transition-colors duration-200" />
-                                    ) : (
-                                        <ChevronDownIcon className="h-5 w-5 text-primary-700 dark:text-primary-300 
-                                                                  transition-colors duration-200" />
-                                    )}
-                                </button>
-                            )}
-                        </div>
-                    )}
+                <div className={innerPaddingClass}>
                     {isExpanded && <div className="flex-1 flex flex-col">{children}</div>}
                 </div>
             </div>

@@ -14,5 +14,15 @@
   },
   "role": {
     "invalid": "Invalid role"
-  }
+  },
+  "current_password": {
+    "required": "Current password is required"
+  },
+  "new_password": {
+    "min_length": "New password must be at least {min} characters"
+  },
+  "confirm_new_password": {
+    "min_length": "Confirmation must be at least {min} characters"
+  },
+  "new_passwords_do_not_match": "New password and confirmation do not match"
 }

@@ -4,15 +4,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { useUserRoleAccess, useGrantRoleRouteAccess, useRevokeRoleRouteAccess } from '@/lib/actions/access/roleRouteAccess/queries';
 import { DataTable } from '@/components/data-table';
 import { getRoleRouteManagementColumns } from './role-route-management-columns';
-
-
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import Modal from '@/components/modal';
 import { useTranslation } from '@/hooks/use-translation';
 import { RoleUser } from '@/lib/actions/access/roleRouteAccess/types';
 
@@ -49,7 +41,7 @@ export default function UserRoleAccess({ role, open = false, onOpenChange }: Use
   }, [role.roleId, grantAccess, revokeAccess]);
 
   const isLoading = grantAccess.isPending || revokeAccess.isPending;
-  
+
   const columns = useMemo(() => getRoleRouteManagementColumns({
     t,
     onToggleAccess: handleToggleAccess,
@@ -57,29 +49,24 @@ export default function UserRoleAccess({ role, open = false, onOpenChange }: Use
   }), [handleToggleAccess, isLoading, t]);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Gerenciar Rotas do Perfil {role.roleId}</DialogTitle>
-          <DialogDescription>
-            Gerencie as rotas de acesso para o perfil {role.roleId}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4">
-          <DataTable
-            columns={columns}
-            data={data}
-            error={error}
-            queryKey={['roleRouteAccess', role.roleId, queryParams]}
-            pagination={pagination}
-            onPaginationChange={setPagination}
-            loadingMessage="Carregando rotas..."
-            emptyMessage="Nenhuma rota encontrada no sistema"
-            entityName="rota"
-            entityNamePlural="rotas"
-          />
-        </div>
-      </DialogContent>
-    </Dialog>
+    <Modal
+      open={open}
+      onOpenChange={onOpenChange ?? (() => {})}
+      title={t('manageRoleRoutes', { role: role.roleName })}
+      description={t('manageRoleRoutesDesc', { role: role.roleName })}
+      size="2xl"
+    >
+      <DataTable
+        columns={columns}
+        data={data}
+        error={error}
+        queryKey={['roleRouteAccess', role.roleId, queryParams]}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        emptyMessage={t('noRoleRoutes')}
+        entityName={t('roleRouteEntity')}
+        entityNamePlural={t('roleRouteEntityPlural')}
+      />
+    </Modal>
   );
 }

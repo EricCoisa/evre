@@ -4,7 +4,6 @@ import { DevTools } from '@/components/devTools';
 import { ReactScan } from '@/components/ui/reactScan';
 import { isDevelopment } from '@/lib/utils';
 import React, { createContext, useContext, useState } from 'react';
-import { Toaster } from 'sonner';
 
 
 interface AppContextData {

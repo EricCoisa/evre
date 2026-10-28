@@ -1,0 +1,5 @@
+{
+  "max_depth": "This resource has too long a dependency chain.",
+  "missing_keys": "Missing configuration: {keys}.",
+  "channel_off": "This channel is turned off by the operator."
+}

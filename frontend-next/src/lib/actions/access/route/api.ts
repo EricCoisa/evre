@@ -1,42 +1,45 @@
-
-import { DELETE, GET, PATCH, POST, ApiResponse } from '@/lib/api/api';
+"use server";
+// Thin adapter — wraps generated route functions, preserves ApiResponse<T> shape
+import { getRoute } from '@/lib/generated/route/route';
+import type { ApiResponse } from '@/lib/api/api';
 import type { Routes, CreateRouteDto, UpdateRouteDto } from './types';
-import type { PaginatedResponse, PaginationParams } from '@/lib/types/pagination.types';
-    
+import type { PaginationParams } from '@/lib/types/pagination.types';
+import type { RouteControllerFindAll200, RouteControllerFindAllParams } from '@/lib/generated/schemas';
+import { normalizePaginationParams } from '../../normalize-pagination-params';
+import { wrap, wrapAs } from '../../wrap';
 
-export async function getRoutes(
-  params?: PaginationParams,
-): Promise<ApiResponse<PaginatedResponse<Routes> | Routes[]>> {
-  return await GET<PaginatedResponse<Routes> | Routes[]>('/route', { params });
+const api = getRoute();
+
+export async function getRoutes(params?: PaginationParams): Promise<ApiResponse<RouteControllerFindAll200>> {
+  return wrap(() => api.routeControllerFindAll(normalizePaginationParams<RouteControllerFindAllParams>(params)));
 }
 
-
 export async function createRoute(data: CreateRouteDto): Promise<ApiResponse<Routes>> {
-  return await POST<Routes>('/route', data);
+  return wrap(() => api.routeControllerCreate(data) as unknown as Promise<Routes>);
 }
 
 export async function getHomeRoute(): Promise<ApiResponse<Routes>> {
-  return await GET<Routes>(`/route/home-route`);
+  return wrap(() => api.routeControllerGetHomeRoute() as unknown as Promise<Routes>);
 }
 
 export async function getRouteByPath(path: string): Promise<ApiResponse<Routes>> {
-  return await GET<Routes>(`/route/path/${path}`);
+  return wrap(() => api.routeControllerGetRouteByPath(path) as unknown as Promise<Routes>);
 }
 
 export async function updateRoute(id: string, data: UpdateRouteDto): Promise<ApiResponse<Routes>> {
-  return await PATCH<Routes>(`/route/${id}`, data);
+  return wrap(() => api.routeControllerUpdate(id, data) as unknown as Promise<Routes>);
 }
 
-
-
-// export async function updateRoutesOrder(updates: Array<{ id: string; ordem: number }>): Promise<void> {
-//   // Como não temos endpoint batch, fazemos chamadas individuais
-//   await Promise.all(
-//     updates.map(({ id, ordem }) => updateRoute(id, { ordem }))
-//   );
-// }
-
-
 export async function deleteRoute(id: string): Promise<ApiResponse<void>> {
-  return await DELETE<void>(`/route/${id}`);
+  return wrap(() => api.routeControllerRemove(id));
+}
+
+export async function getRoleHomes(): Promise<ApiResponse<Record<string, string>>> {
+  return wrapAs(() => api.routeControllerGetRoleHomes());
+}
+
+export async function saveRoleHomes(
+  homes: Record<string, string>,
+): Promise<ApiResponse<Record<string, string>>> {
+  return wrapAs(() => api.routeControllerSaveRoleHomes({ homes }));
 }

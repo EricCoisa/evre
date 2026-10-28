@@ -1,12 +1,7 @@
-export interface UserConfigurationsDefinitions<T>{
-  id: string;
-  labelKey: string;
-  valueType: string;
-  defaultValue: T;
-  isRequired: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import type { UserConfigurationDefinitionsDto } from '@/lib/generated/schemas';
+
+// Só o genérico em `defaultValue` é local; `options` vem do schema gerado.
+export type UserConfigurationsDefinitions<T = unknown> = Omit<UserConfigurationDefinitionsDto, 'defaultValue'> & { defaultValue: T };
 
 export interface UpdateUserConfigurationsDefinitionsDto<T> {
   labelKey: string;

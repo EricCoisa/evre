@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/cn";
 import {
   Dialog,
   DialogContent,
@@ -32,21 +32,21 @@ export interface DataCellProps extends React.ComponentProps<"div"> {
 
 export function DataCell({ className, children, maxWidth, pointer, ...props }: DataCellProps) {
   return (
-        <div
-          className={cn(
-            "table-cell align-middle isolate",
-            "px-1 md:py-1 py-0 overflow-hidden whitespace-nowrap text-ellipsis",
-             pointer ? "cursor-pointer" : "cursor-default",
-            className
-          )}
-          style={{
-            maxWidth: maxWidth || 'auto',
-          }}
-          {...props}
-        >
-          {children || "-"}
-        </div>
-  )
+    <div
+      className={cn(
+        "table-cell align-middle isolate max-w-full min-w-0",
+        "px-1 md:py-1 py-0 overflow-hidden text-ellipsis md:whitespace-nowrap break-all sm:break-normal",
+        pointer ? "cursor-pointer" : "cursor-default",
+        className
+      )}
+      style={{
+        maxWidth: maxWidth || 'auto',
+      }}
+      {...props}
+    >
+      {children || "-"}
+    </div>
+  );
 }
 
 export function DataCellModal({

@@ -1,0 +1,57 @@
+model Route {
+  id          String   @id @default(uuid())
+  path        String   @unique
+  labelKey    String
+  icon        String?
+  parentId    String?
+  ordem       Int      @default(0)
+  isActive    Boolean  @default(true)
+  showSideBar Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  parent            Route?            @relation("RouteHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children          Route[]           @relation("RouteHierarchy")
+  userRouteAccesses UserRouteAccess[]
+  roleRouteAccesses RoleRouteAccess[]
+
+  @@index([parentId])
+  @@index([isActive])
+  @@index([ordem])
+  @@map("routes")
+  @@schema("public")
+}
+
+model UserRouteAccess {
+  id        String   @id @default(uuid())
+  userId    String
+  routeId   String
+  grantedBy String?
+  denied    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user          User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  route         Route @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  grantedByUser User? @relation("GrantedBy", fields: [grantedBy], references: [id], onDelete: SetNull)
+
+  @@unique([userId, routeId])
+  @@index([userId])
+  @@index([routeId])
+  @@index([grantedBy])
+  @@map("user_route_accesses")
+  @@schema("public")
+}
+
+model RoleRouteAccess {
+  roleId  String
+  routeId String
+
+  role  Role  @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  route Route @relation(fields: [routeId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, routeId])
+  @@index([roleId])
+  @@index([routeId])
+  @@map("role_route_accesses")
+  @@schema("public")
+}

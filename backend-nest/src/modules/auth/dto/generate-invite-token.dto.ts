@@ -1,13 +1,12 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { ROLES } from 'src/types/userRole';
 
-const GenerateInviteTokenSchema = z.object({
+export const GenerateInviteTokenSchema = z.object({
   email: z
     .string()
     .min(1, 'validation.email.required')
     .email('validation.email.invalid'),
-  role: z.enum(ROLES).optional().default('USER'),
+  roleId: z.string().uuid('validation.role.invalid'),
 });
 
 export class GenerateInviteTokenDto extends createZodDto(
@@ -22,17 +21,8 @@ export class ValidateInviteTokenDto extends createZodDto(
   ValidateInviteTokenSchema,
 ) {}
 
-//
-
-const GenerateCompanyInviteTokenSchema = z.object({
-  email: z
-    .string()
-    .min(1, 'validation.email.required')
-    .email('validation.email.invalid'),
-  name: z.string().optional(),
-  companyId: z.string().min(1, 'validation.companyId.required'),
+const AcceptInviteSchema = z.object({
+  token: z.string(),
 });
 
-export class GenerateCompanyInviteTokenDto extends createZodDto(
-  GenerateCompanyInviteTokenSchema,
-) {}
+export class AcceptInviteDto extends createZodDto(AcceptInviteSchema) {}

@@ -1,339 +1,77 @@
-import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { I18nService } from 'nestjs-i18n';
-import { CreateUserConfigurationDefinitionDto } from './dto/create-user-configuration-definition.dto';
-import { UpdateUserConfigurationDefinitionDto } from './dto/update-user-configuration-definition.dto';
-import { SetUserConfigurationDto } from './dto/set-user-configuration.dto';
-import { LoggingService } from '../logging/logging.service';
-import type { PaginationQuery } from '../../common/schemas/pagination.schema';
-import type { PaginatedResponse } from '../../common/types/pagination.types';
-import { UserConfigurationDefinition } from '@prisma/client';
-import { LogActions } from 'src/common/types/logging.types';
-import {
-  convertValueByType,
-  validateValueType,
-} from 'src/utils/conversor.util';
-import { UserConfigurationDto } from './dto/user-configuration.dto';
+import { convertValueByType } from 'src/common/utils/conversor.util';
+import { CryptoService } from '../../common/infrastructure/crypto/crypto.service';
+import { SetUserConfigurationUseCase } from './use-cases/set-user-configuration.use-case';
 
+/** Métodos de configuração de usuário com chamador interno (módulo de IA / BYOK). */
 @Injectable()
 export class UserConfigurationService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly i18n: I18nService,
-    private readonly loggingService: LoggingService,
+    private readonly cryptoService: CryptoService,
+    private readonly setUserConfiguration: SetUserConfigurationUseCase,
   ) {}
 
-  // ===== DEFINITIONS =====
-  async createDefinition(
-    dto: CreateUserConfigurationDefinitionDto,
-    performedById: string,
-  ) {
-    const existing = await this.prisma.userConfigurationDefinition.findUnique({
-      where: { labelKey: dto.labelKey },
-    });
-
-    if (existing) {
-      throw new ConflictException(
-        this.i18n.t('user_configuration.definition_already_exists'),
-      );
-    }
-
-    const definition = await this.prisma.userConfigurationDefinition.create({
-      data: dto,
-    });
-
-    await this.loggingService.create(
-      {
-        module: 'USER_CONFIGURATION',
-        action: LogActions.CREATE_DEFINITION,
-        message: `Definição de configuração criada: ${definition.labelKey}`,
-        metadata: { definitionId: definition.id, ...dto },
-      },
-      performedById,
-    );
-
-    return definition;
+  /** Mantém o valor já gravado quando o campo secreto vem vazio do formulário. */
+  async keepStoredWhenBlank(
+    userId: string,
+    value: string | undefined | null,
+    labelKey: string,
+  ): Promise<string> {
+    const trimmed = value?.trim();
+    if (trimmed) return trimmed;
+    const stored = (await this.getDecryptedValueForUser(userId, labelKey)) as
+      string | null;
+    return stored ?? '';
   }
 
-  async findAllDefinitions(
-    query: PaginationQuery,
-  ): Promise<
-    | PaginatedResponse<UserConfigurationDefinition>
-    | UserConfigurationDefinition[]
-  > {
-    const { page, limit, pagination, search } = query;
-
-    const where = search
-      ? {
-          OR: [
-            { labelKey: { contains: search } },
-            { valueType: { contains: search } },
-          ],
-        }
-      : {};
-
-    if (!pagination) {
-      return await this.prisma.userConfigurationDefinition.findMany({
-        where,
-        orderBy: { labelKey: 'asc' },
-      });
-    }
-
-    const skip = (page - 1) * limit;
-
-    const [data, total] = await Promise.all([
-      this.prisma.userConfigurationDefinition.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { labelKey: 'asc' },
-      }),
-      this.prisma.userConfigurationDefinition.count({ where }),
-    ]);
-
-    const totalPages = Math.ceil(total / limit);
-
-    return {
-      data,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages,
-      },
-    };
-  }
-
-  async findOneDefinition(id: string) {
-    const definition = await this.prisma.userConfigurationDefinition.findUnique(
-      {
-        where: { id },
-      },
-    );
-
-    if (!definition) {
-      throw new NotFoundException(
-        this.i18n.t('user_configuration.definition_not_found'),
-      );
-    }
-
-    return definition;
-  }
-
-  async updateDefinition(
-    id: string,
-    dto: UpdateUserConfigurationDefinitionDto,
-    performedById: string,
-  ) {
-    await this.findOneDefinition(id);
-
-    if (dto.labelKey) {
-      const existing = await this.prisma.userConfigurationDefinition.findUnique(
-        {
-          where: { labelKey: dto.labelKey },
-        },
-      );
-
-      if (existing && existing.id !== id) {
-        throw new ConflictException(
-          this.i18n.t('user_configuration.definition_already_exists'),
+  /** Grava várias chaves de configuração do usuário de uma vez, sequencialmente. */
+  async setManyByLabelKey(
+    userId: string,
+    entries: Array<{ labelKey: string; value: string }>,
+    performedById?: string,
+  ): Promise<void> {
+    for (const entry of entries) {
+      const definition =
+        await this.prisma.userConfigurationDefinition.findFirst({
+          where: { labelKey: entry.labelKey },
+        });
+      if (!definition) {
+        throw new NotFoundException(
+          this.i18n.t('user_configuration.definition_not_found'),
         );
       }
+      await this.setUserConfiguration.execute(
+        userId,
+        { definitionId: definition.id, value: entry.value },
+        performedById,
+      );
     }
-
-    const definition = await this.prisma.userConfigurationDefinition.update({
-      where: { id },
-      data: dto,
-    });
-
-    await this.loggingService.create(
-      {
-        module: 'USER_CONFIGURATION',
-        action: LogActions.UPDATE_DEFINITION,
-        message: `Definição de configuração atualizada: ${definition.labelKey}`,
-        metadata: { definitionId: id, ...dto },
-      },
-      performedById,
-    );
-
-    return definition;
   }
 
-  async removeDefinition(id: string, performedById: string) {
-    const definition = await this.findOneDefinition(id);
-
-    await this.prisma.userConfigurationDefinition.delete({
-      where: { id },
-    });
-
-    await this.loggingService.create(
-      {
-        module: 'USER_CONFIGURATION',
-        action: LogActions.DELETE_DEFINITION,
-        message: `Definição de configuração removida: ${definition.labelKey}`,
-        metadata: { definitionId: id },
-      },
-      performedById,
-    );
-
-    return { message: this.i18n.t('user_configuration.definition_deleted') };
-  }
-
-  // ===== USER CONFIGURATIONS =====
-  async getUserConfigurations(userId: string): Promise<UserConfigurationDto[]> {
-    const definitions =
-      await this.prisma.userConfigurationDefinition.findMany();
-    const userConfigs = await this.prisma.userConfiguration.findMany({
-      where: { userId },
-      include: { definition: true },
-    });
-
-    // Mescla definições com valores customizados do usuário
-    return definitions.map((def) => {
-      const userConfig = userConfigs.find((uc) => uc.definitionId === def.id);
-      const rawValue = userConfig ? userConfig.value : def.defaultValue;
-      const value: string | number | boolean | object | null =
-        convertValueByType(rawValue, def.valueType);
-      return {
-        id: def.id,
-        labelKey: def.labelKey,
-        valueType: def.valueType,
-        value,
-        isCustomized: !!userConfig,
-        isRequired: def.isRequired,
-      };
-    });
-  }
-
-  async getUserConfigurationsKey(
+  /** Retorna o valor descriptografado de uma configuração do usuário, ou null se não personalizada. */
+  async getDecryptedValueForUser(
     userId: string,
     labelKey: string,
-  ): Promise<UserConfigurationDto | null> {
+  ): Promise<unknown> {
     const definition = await this.prisma.userConfigurationDefinition.findFirst({
       where: { labelKey },
     });
     if (!definition) return null;
+
     const userConfig = await this.prisma.userConfiguration.findFirst({
       where: { userId, definitionId: definition.id },
-      include: { definition: true },
-    });
-    const rawValue = userConfig ? userConfig.value : definition.defaultValue;
-    return {
-      id: definition.id,
-      labelKey: definition.labelKey,
-      valueType: definition.valueType,
-      value: convertValueByType(rawValue, definition.valueType),
-      isCustomized: !!userConfig,
-      isRequired: definition.isRequired,
-    };
-  }
-
-  async setUserConfiguration(
-    userId: string,
-    dto: SetUserConfigurationDto,
-    performedById?: string,
-  ) {
-    const definition = await this.prisma.userConfigurationDefinition.findUnique(
-      {
-        where: { id: dto.definitionId },
-      },
-    );
-
-    if (!definition) {
-      throw new NotFoundException(
-        this.i18n.t('user_configuration.definition_not_found'),
-      );
-    }
-
-    // Validação básica de tipo
-    validateValueType(dto.value, definition.valueType, this.i18n);
-
-    const config = await this.prisma.userConfiguration.upsert({
-      where: {
-        userId_definitionId: {
-          userId,
-          definitionId: dto.definitionId,
-        },
-      },
-      create: {
-        userId,
-        definitionId: dto.definitionId,
-        value: dto.value,
-      },
-      update: {
-        value: dto.value,
-      },
-      include: { definition: true },
     });
 
-    await this.loggingService.create(
-      {
-        module: 'USER_CONFIGURATION',
-        action: LogActions.SET_CONFIGURATION,
-        message: `Configuração definida: ${definition.labelKey}`,
-        metadata: { userId, definitionId: dto.definitionId, value: dto.value },
-      },
-      performedById || userId,
-    );
+    if (!userConfig) return null;
 
-    return config;
-  }
+    const rawValue = definition.secret
+      ? this.cryptoService.tryDecrypt(userConfig.value)
+      : userConfig.value;
 
-  async resetUserConfiguration(
-    userId: string,
-    definitionId: string,
-    performedById?: string,
-  ) {
-    const definition = await this.findOneDefinition(definitionId);
-
-    const existing = await this.prisma.userConfiguration.findUnique({
-      where: {
-        userId_definitionId: { userId, definitionId },
-      },
-    });
-
-    if (existing) {
-      await this.prisma.userConfiguration.delete({
-        where: { id: existing.id },
-      });
-
-      await this.loggingService.create(
-        {
-          module: 'USER_CONFIGURATION',
-          action: LogActions.RESET_CONFIGURATION,
-          message: `Configuração resetada: ${definition.labelKey}`,
-          metadata: { userId, definitionId },
-        },
-        performedById || userId,
-      );
-    }
-
-    return {
-      message: this.i18n.t('user_configuration.configuration_reset'),
-    };
-  }
-
-  async resetAllUserConfigurations(userId: string, performedById?: string) {
-    await this.prisma.userConfiguration.deleteMany({
-      where: { userId },
-    });
-
-    await this.loggingService.create(
-      {
-        module: 'USER_CONFIGURATION',
-        action: LogActions.RESET_ALL_CONFIGURATIONS,
-        message: 'Todas as configurações foram resetadas',
-        metadata: { userId },
-      },
-      performedById || userId,
-    );
-
-    return {
-      message: this.i18n.t('user_configuration.all_configurations_reset'),
-    };
+    return convertValueByType(rawValue, definition.valueType) ?? rawValue;
   }
 }

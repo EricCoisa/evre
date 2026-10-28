@@ -5,6 +5,7 @@
     "unauthorized": "Não autorizado",
     "forbidden": "Acesso negado. Roles necessárias: {roles}",
     "not_found": "Recurso não encontrado",
+    "self_only": "Esta operação só pode ser feita pelo próprio usuário",
     "conflict": "Recurso já existe"
   },
   "success": {

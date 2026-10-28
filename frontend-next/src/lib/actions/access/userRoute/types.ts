@@ -1,31 +1,7 @@
-export interface UserRouteAccess {
-  id: string;
-  userId: string;
-  routeId: string;
-  grantedBy: string | null;
-  createdAt: string;
-  user?: {
-    id: string;
-    email: string;
-    name: string | null;
-  };
-  route?: {
-    id: string;
-    path: string;
-    labelKey: string;
-  };
-  grantedByUser?: {
-    id: string;
-    email: string;
-    name: string | null;
-  } | null;
-}
+// Re-export from generated schemas; local-only types preserved below
+export type { UserRouteAccessDto as UserRouteAccess, GrantUserRouteAccessDto } from '@/lib/generated/schemas';
 
-export interface GrantUserRouteAccessDto {
-  userId: string;
-  routeId: string;
-}
-
+// Not in openapi spec — kept locally
 export interface BulkGrantUserRouteAccessDto {
   userId: string;
   routeIds: string[];

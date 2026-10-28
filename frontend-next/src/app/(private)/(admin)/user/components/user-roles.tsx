@@ -54,11 +54,9 @@ export default function UsersRolesPage({ user }: UsersRolesPageProps) {
             queryKey={['users', user, 'routes-management', queryParams]}
             pagination={pagination}
             onPaginationChange={setPagination}
-            loadingMessage="Carregando rotas..."
             emptyMessage="Nenhuma rota encontrada no sistema"
             entityName="rota"
             entityNamePlural="rotas"
-            variant='default'
           />
 
   );

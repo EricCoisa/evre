@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useSuspenseQueries, useSuspenseQuery } from '@tanstack/react-query';
 
 
 import { getSystemConfiguration, updateSystemConfiguration } from './api';
@@ -7,10 +7,30 @@ import { Alive, Collector, EmulateMutationError } from '@/lib/api/collector';
 import { useApp } from '@/contexts/appProvider';
 
 export function useConfiguration<T>(labelKey: string) {
-  return useQuery({
+  const collect = Collector((key: string) => getSystemConfiguration<T>(key));
+  return useSuspenseQuery({
     queryKey: ['system-configuration', labelKey],
-    queryFn: Collector(() => getSystemConfiguration<T>(labelKey)),
+    queryFn: () => collect(labelKey),
   });
+}
+
+/** Busca várias chaves de configuração de uma vez, para hidratar um formulário de provider. */
+export function useConfigurationValues(labelKeys: string[]) {
+  // Collector() fora do map de propósito: ele chama useApp() por dentro, e uma chamada
+  // por chave faria a contagem de hooks variar junto com a lista de chaves do provider.
+  const collect = Collector((key: string) => getSystemConfiguration<unknown>(key));
+  const results = useSuspenseQueries({
+    queries: labelKeys.map((labelKey) => ({
+      queryKey: ['system-configuration', labelKey],
+      queryFn: () => collect(labelKey),
+    })),
+  });
+
+  return {
+    values: Object.fromEntries(
+      labelKeys.map((labelKey, index) => [labelKey, results[index]?.data?.value]),
+    ) as Record<string, unknown>,
+  };
 }
 
 export function useUpdateConfiguration<T>() {

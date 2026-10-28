@@ -1,7 +1,6 @@
 "use client"
 
 import {
-  IconCreditCard,
   IconDotsVertical,
   IconLogout,
   IconNotification,
@@ -30,9 +29,9 @@ import {
 } from "@/components/ui/sidebar"
 
 export function NavUser({
-  user,
+  user = { name: '', email: '', avatar: '' },
 }: {
-  user: {
+  user?: {
     name: string
     email: string
     avatar: string
@@ -88,11 +87,7 @@ export function NavUser({
                 <IconUserCircle />
                 Account
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <IconCreditCard />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
+<DropdownMenuItem>
                 <IconNotification />
                 Notifications
               </DropdownMenuItem>

@@ -24,10 +24,13 @@ export function ThemeProvider({ children, defaultTheme }: { children: React.Reac
 
 function DefaultTheme({ children, defaultTheme }: { children: React.ReactNode, defaultTheme?: string  | undefined }) {
   const { setTheme } = useTheme();
+  const seededRef = React.useRef(false);
   React.useEffect(() => {
-    if (defaultTheme) {
-      setTheme(defaultTheme || 'light');
+    // Aplica o tema padrão do servidor uma única vez, na primeira montagem.
+    if (defaultTheme && !seededRef.current) {
+      seededRef.current = true;
+      setTheme(defaultTheme);
     }
-  }, []);
+  }, [defaultTheme, setTheme]);
   return <>{children}</>;
 }

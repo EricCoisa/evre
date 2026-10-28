@@ -1,4 +1,4 @@
-import { LogActions } from 'src/common/types/logging.types';
+﻿import { LogActions } from 'src/domain/logging/log-actions';
 import { LogModule } from 'src/domain/logging/logModule.const';
 
 export interface CreateLogParams {

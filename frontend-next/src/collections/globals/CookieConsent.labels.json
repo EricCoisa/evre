@@ -1,0 +1,8 @@
+{
+  "label": { "en": "Cookie Consent Banner", "pt": "Banner de Consentimento de Cookies" },
+  "message": { "en": "Banner Message", "pt": "Mensagem do Banner" },
+  "acceptButtonText": { "en": "Accept Button Text", "pt": "Texto do Botão Aceitar" },
+  "declineButtonText": { "en": "Decline Button Text", "pt": "Texto do Botão Recusar" },
+  "policyLinkSlug": { "en": "Cookie Policy Slug (legal-pages)", "pt": "Slug da Política de Cookies (legal-pages)" },
+  "policyLinkText": { "en": "Policy Link Text", "pt": "Texto do Link da Política" }
+}

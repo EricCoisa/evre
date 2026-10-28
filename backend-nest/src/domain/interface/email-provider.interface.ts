@@ -1,9 +1,12 @@
-import { EmailProviderResponse, EmailResponse } from './email.response';
+import type { ProviderResult } from 'src/domain/interface/provider-result';
 
 export interface IEmailProvider {
-  onModuleInit(): Promise<void>;
-  send(params: SendEmailParams): Promise<EmailResponse>;
-  validateConfiguration(): Promise<EmailProviderResponse>;
+  send(params: SendEmailParams): Promise<ProviderResult>;
+  validateConfiguration(from?: string): Promise<ProviderResult>;
+}
+
+export interface IEmailService<IConfig> {
+  use(config: IConfig): IEmailProvider;
 }
 
 export type SendEmailParams = {

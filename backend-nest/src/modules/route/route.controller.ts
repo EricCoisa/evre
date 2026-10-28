@@ -1,11 +1,13 @@
 import { Controller, Body, Param, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { RouteService } from './route.service';
 import { CreateRouteDto } from './dto/create-route.dto';
 import { UpdateRouteDto } from './dto/update-route.dto';
 import { RouteDto } from './dto/route.dto';
+import { SaveRoleHomeDto } from './dto/role-home.dto';
+import { RoleHomeService } from './role-home.service';
 import {
   GetApi,
+  PutApi,
   PostApi,
   PatchApi,
   DeleteApi,
@@ -19,42 +21,56 @@ import { commonPaginationQueries } from '../../common/swagger/pagination-queries
 import type { PaginatedResponse } from '../../common/types/pagination.types';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../../common/types/auth.types';
+import { FindAllRoutesUseCase } from './use-cases/find-all.use-case';
+import { FindOneRouteUseCase } from './use-cases/find-one.use-case';
+import { FindHomeRouteUseCase } from './use-cases/find-home.use-case';
+import { FindByPathUseCase } from './use-cases/find-by-path.use-case';
+import { CreateRouteUseCase } from './use-cases/create.use-case';
+import { UpdateRouteUseCase } from './use-cases/update.use-case';
+import { RemoveRouteUseCase } from './use-cases/remove.use-case';
 
 @ApiTags('route')
 @Controller('route')
 export class RouteController {
-  constructor(private readonly routeService: RouteService) {}
-
-  @GetApi({
-    path: 'test-log/:msg',
-    summary: 'Rota home do usuário',
-    description: 'Retorna a rota home do usuário autenticado',
-  })
-  testLog(@Param('msg') msg: string) {
-    console.warn('TEST LOG', msg);
-    return { success: true, msg };
-  }
+  constructor(
+    private readonly findAllRoutes: FindAllRoutesUseCase,
+    private readonly findOneRoute: FindOneRouteUseCase,
+    private readonly findHomeRoute: FindHomeRouteUseCase,
+    private readonly roleHome: RoleHomeService,
+    private readonly findByPath: FindByPathUseCase,
+    private readonly createRoute: CreateRouteUseCase,
+    private readonly updateRoute: UpdateRouteUseCase,
+    private readonly removeRoute: RemoveRouteUseCase,
+  ) {}
 
   @PostApi({
     summary: 'route.create.title',
     description: 'route.create.description',
     body: CreateRouteDto,
     status: 'CREATED',
-    authenticated: true,
     roles: ['ADMIN'],
+    response: {
+      success: [
+        {
+          status: 'CREATED',
+          description: 'Rota criada',
+          schema: { dto: RouteDto },
+        },
+      ],
+    },
   })
   async create(
     @Body() dto: CreateRouteDto,
     @CurrentUser() currentUser: AuthenticatedUser,
   ) {
-    return await this.routeService.create(dto, currentUser.id);
+    return await this.createRoute.execute(dto, currentUser.id);
   }
 
   @GetApi({
     summary: 'route.list.title',
     status: 'OK',
-    authenticated: true,
     roles: ['ADMIN'],
+    scope: 'routes:read',
     queries: commonPaginationQueries,
     response: {
       success: [
@@ -69,7 +85,7 @@ export class RouteController {
   async findAll(
     @Query(new ZodValidationPipe(PaginationQuerySchema)) query: PaginationQuery,
   ): Promise<PaginatedResponse<RouteDto> | RouteDto[]> {
-    return await this.routeService.findAll(query);
+    return await this.findAllRoutes.execute(query);
   }
 
   @GetApi({
@@ -77,10 +93,42 @@ export class RouteController {
     summary: 'Rota home do usuário',
     description: 'Retorna a rota home do usuário autenticado',
     authenticated: true,
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Rota',
+          schema: { dto: RouteDto },
+        },
+      ],
+    },
   })
   async getHomeRoute(@CurrentUser() user: AuthenticatedUser) {
-    const result = await this.routeService.findHome(user);
-    return this.removeSensitiveInfo(result);
+    const result = await this.findHomeRoute.execute(user);
+    return result;
+  }
+
+  @GetApi({
+    path: 'role-home',
+    summary: 'Home configurada de cada role',
+    roles: ['ADMIN'],
+    status: 'OK',
+  })
+  async getRoleHomes(): Promise<Record<string, string>> {
+    return this.roleHome.map();
+  }
+
+  @PutApi({
+    path: 'role-home',
+    summary: 'Define a home de cada role',
+    roles: ['ADMIN'],
+    status: 'OK',
+  })
+  async saveRoleHomes(
+    @Body() dto: SaveRoleHomeDto,
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ): Promise<Record<string, string>> {
+    return this.roleHome.save(dto.homes, currentUser.id);
   }
 
   @GetApi({
@@ -88,21 +136,38 @@ export class RouteController {
     summary: 'Rota pelo caminho',
     description: 'Retorna a rota pelo caminho especificado',
     authenticated: true,
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Rota',
+          schema: { dto: RouteDto },
+        },
+      ],
+    },
   })
   async getRouteByPath(@Param('path') path: string) {
-    const result = await this.routeService.findByPath(path);
-    return this.removeSensitiveInfo(result);
+    const result = await this.findByPath.execute(path);
+    return result;
   }
 
   @GetApi({
     path: ':id',
     summary: 'route.find.title',
     status: 'OK',
-    authenticated: true,
     roles: ['ADMIN'],
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Rota',
+          schema: { dto: RouteDto },
+        },
+      ],
+    },
   })
   async findOne(@Param('id') id: string) {
-    return await this.routeService.findOne(id);
+    return await this.findOneRoute.execute(id);
   }
 
   @PatchApi({
@@ -110,44 +175,35 @@ export class RouteController {
     summary: 'route.update.title',
     body: UpdateRouteDto,
     status: 'OK',
-    authenticated: true,
     roles: ['ADMIN'],
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Rota atualizada',
+          schema: { dto: RouteDto },
+        },
+      ],
+    },
   })
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateRouteDto,
     @CurrentUser() currentUser: AuthenticatedUser,
   ) {
-    return await this.routeService.update(id, dto, currentUser.id);
+    return await this.updateRoute.execute(id, dto, currentUser.id);
   }
 
   @DeleteApi({
     path: ':id',
     summary: 'route.delete.title',
-    status: 'OK',
-    authenticated: true,
+    status: 'NO_CONTENT',
     roles: ['ADMIN'],
   })
   async remove(
     @Param('id') id: string,
     @CurrentUser() currentUser: AuthenticatedUser,
   ) {
-    return await this.routeService.remove(id, currentUser.id);
-  }
-
-  private removeSensitiveInfo(route: RouteDto): RouteDto {
-    if (
-      'isClientHome' in route &&
-      typeof route.isClientHome !== 'undefined' &&
-      route.isClientHome !== null
-    ) {
-      const { isClientHome, ...rest } = route;
-      return {
-        ...rest,
-        isHome: isClientHome,
-        // isClientHome não é retornado
-      } as RouteDto;
-    }
-    return route;
+    return await this.removeRoute.execute(id, currentUser.id);
   }
 }

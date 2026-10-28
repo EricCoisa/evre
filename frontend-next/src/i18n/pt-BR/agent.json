@@ -1,0 +1,9 @@
+{
+  "thinking": "Raciocínio / atividade",
+  "errorGeneric": "Ocorreu um erro. Tente novamente.",
+  "errorNetwork": "Falha de conexão com o servidor.",
+  "errorUnauthorized": "Sessão expirada. Faça login novamente.",
+  "errorForbidden": "Sem permissão para esta ação.",
+  "errorRateLimited": "Muitas requisições. Aguarde um momento.",
+  "errorServer": "Erro no servidor de IA. Tente novamente."
+}

@@ -20,16 +20,11 @@ export class Route {
   ordem: number;
 
   @ApiProperty()
-  isHome: boolean;
-
-  @ApiProperty()
-  isClientHome: boolean;
-
-  @ApiProperty()
   isActive: boolean;
 
+  // Não-nulo no banco (`Boolean @default(true)` em route.prisma).
   @ApiProperty()
-  showSideBar: boolean | null;
+  showSideBar: boolean;
 
   @ApiProperty()
   createdAt: Date;

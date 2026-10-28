@@ -1,0 +1,40 @@
+import { Injectable } from '@nestjs/common';
+import { I18nService } from 'nestjs-i18n';
+import { PrismaService } from '../../../prisma/prisma.service';
+import { LoggingService } from '../../logging/logging.service';
+import { LogActions } from 'src/domain/logging/log-actions';
+import { FindOne{{pascalCase name}}UseCase } from './find-one.use-case';
+
+@Injectable()
+export class Remove{{pascalCase name}}UseCase {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly i18n: I18nService,
+    private readonly loggingService: LoggingService,
+    private readonly findOne: FindOne{{pascalCase name}}UseCase,
+  ) {}
+
+  async execute(
+    id: string,
+    performedById: string,
+  ): Promise<{ status: boolean; message: string }> {
+    const found = await this.findOne.execute(id);
+
+    await this.prisma.{{camelCase name}}.delete({ where: { id } });
+
+    await this.loggingService.create(
+      {
+        module: '{{constantCase name}}',
+        action: LogActions.DELETE,
+        message: `{{pascalCase name}} removido: ${found.name}`,
+        metadata: { {{camelCase name}}Id: id },
+      },
+      performedById,
+    );
+
+    return {
+      status: true,
+      message: this.i18n.t('{{snakeCase name}}.deleted_successfully'),
+    };
+  }
+}

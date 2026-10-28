@@ -1,0 +1,2 @@
+# This file ensures the media directory structure exists in git
+# Actual uploaded files should not be committed

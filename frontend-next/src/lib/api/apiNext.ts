@@ -1,93 +1,77 @@
 // APINEXT: universal API handle using fetch, connecting to Next.js API routes
 
+// Server-side: aponta pro próprio Next; client-side: caminho relativo basta.
+function resolveBaseUrl(): string {
+    if (typeof window !== 'undefined') return '';
+    return process.env.NEXT_INTERNAL_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000';
+}
+
+// Combina o AbortSignal do chamador (se houver) com um timeout próprio de 30s.
+function buildSignal(callerSignal?: AbortSignal): AbortSignal {
+    const timeoutSignal = AbortSignal.timeout(30_000);
+    return callerSignal ? AbortSignal.any([callerSignal, timeoutSignal]) : timeoutSignal;
+}
+
+function isJsonBody(response: Response): boolean {
+    const contentType = response.headers.get('content-type');
+    return !!contentType && contentType.includes('application/json') && response.status !== 204;
+}
+
+// Single request() centralises URL, credentials, timeout, and error — methods are thin wrappers
+async function request<T>(
+    method: string,
+    url: string,
+    init?: RequestInit,
+): Promise<T | null> {
+    const fullUrl = `${resolveBaseUrl()}/api${url}`;
+    const signal = buildSignal(init?.signal ?? undefined);
+
+    const response = await fetch(fullUrl, {
+        method,
+        credentials: 'include',
+        ...init,
+        signal,
+    });
+
+    if (!response.ok) {
+        const errorData = isJsonBody(response) ? await response.json() : {};
+        handleErrorNext(response, errorData, `${method} request failed`);
+    }
+
+    return isJsonBody(response) ? await response.json() : null;
+}
+
 export const APINEXT = {
-    async GET<T>(url: string, config?: RequestInit): Promise<T | null> {
-        const siteUrl = process.env.NEXTAUTH_URL || 'http://localhost:3002';
-        const response = await fetch(`${siteUrl}/api${url}`, {
-            method: 'GET',
-            credentials: 'include',
-            ...(config || {}),
-        });
-        if (!response.ok) {
-            let errorData = null;
-            const contentType = response.headers.get('content-type');
-            if (contentType && contentType.includes('application/json') && response.status !== 204) {
-                errorData = await response.json();
-            }
-            handleErrorNext(response, errorData, 'GET request failed');
-        }
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json') && response.status !== 204) {
-            return await response.json();
-        }
-        return null;
+    GET<T>(url: string, config?: RequestInit): Promise<T | null> {
+        return request<T>('GET', url, config);
     },
 
-    async POST<T>(url: string, data?: unknown, config?: RequestInit): Promise<T> {
-        const response = await fetch(`/api${url}`, {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-                ...(config?.headers || {}),
-            },
-            body: data ? JSON.stringify(data) : undefined,
+    POST<T>(url: string, data?: unknown, config?: RequestInit): Promise<T> {
+        return request<T>('POST', url, {
             ...config,
-        });
-        if (!response.ok) {
-            const errorData = await response.json();
-            handleErrorNext(response, errorData, 'POST request failed');
-        }
-        return await response.json();
+            headers: { 'Content-Type': 'application/json', ...(config?.headers || {}) },
+            body: data !== undefined ? JSON.stringify(data) : undefined,
+        }) as Promise<T>;
     },
 
-    async PATCH<T>(url: string, data?: unknown, config?: RequestInit): Promise<T> {
-        const response = await fetch(`/api${url}`, {
-            method: 'PATCH',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-                ...(config?.headers || {}),
-            },
-            body: data ? JSON.stringify(data) : undefined,
+    PATCH<T>(url: string, data?: unknown, config?: RequestInit): Promise<T> {
+        return request<T>('PATCH', url, {
             ...config,
-        });
-        if (!response.ok) {
-            const errorData = await response.json();
-            handleErrorNext(response, errorData, 'PATCH request failed');
-        }
-        return await response.json();
+            headers: { 'Content-Type': 'application/json', ...(config?.headers || {}) },
+            body: data !== undefined ? JSON.stringify(data) : undefined,
+        }) as Promise<T>;
     },
 
-    async PUT<T>(url: string, data?: unknown, config?: RequestInit): Promise<T> {
-        const response = await fetch(`/api${url}`, {
-            method: 'PUT',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-                ...(config?.headers || {}),
-            },
-            body: data ? JSON.stringify(data) : undefined,
+    PUT<T>(url: string, data?: unknown, config?: RequestInit): Promise<T> {
+        return request<T>('PUT', url, {
             ...config,
-        });
-        if (!response.ok) {
-            const errorData = await response.json();
-            handleErrorNext(response, errorData, 'PUT request failed');
-        }
-        return await response.json();
+            headers: { 'Content-Type': 'application/json', ...(config?.headers || {}) },
+            body: data !== undefined ? JSON.stringify(data) : undefined,
+        }) as Promise<T>;
     },
 
-    async DELETE<T>(url: string, config?: RequestInit): Promise<T> {
-        const response = await fetch(`/api${url}`, {
-            method: 'DELETE',
-            credentials: 'include',
-            ...(config || {}),
-        });
-        if (!response.ok) {
-            const errorData = await response.json();
-            handleErrorNext(response, errorData, 'DELETE request failed');
-        }
-        return await response.json();
+    DELETE<T>(url: string, config?: RequestInit): Promise<T> {
+        return request<T>('DELETE', url, config) as Promise<T>;
     },
 };
 
@@ -102,26 +86,8 @@ export class ApiNextError extends Error {
     }
 }
 
+// As route handlers do Next respondem no mesmo envelope do backend: { message }.
 function handleErrorNext(response: Response, errorData: Record<string, unknown>, fallback: string): never {
-    let message: string = fallback;
-    const statusCode = response.status;
-    if (errorData) {
-        if (typeof errorData.message === 'string') {
-            message = errorData.message;
-        } else if (Array.isArray(errorData.message)) {
-            message = errorData.message.join(', ');
-        } else if (
-            errorData.message &&
-            typeof errorData.message === 'object' &&
-            'message' in errorData.message &&
-            typeof (errorData.message as { message?: unknown }).message === 'string'
-        ) {
-            message = (errorData.message as { message?: string }).message || fallback;
-        } else if (
-            typeof errorData.error === 'string'
-        ) {
-            message = errorData.error;
-        }
-    }
-    throw new ApiNextError(statusCode, message, errorData);
+    const message = typeof errorData?.message === 'string' ? errorData.message : fallback;
+    throw new ApiNextError(response.status, message, errorData);
 }

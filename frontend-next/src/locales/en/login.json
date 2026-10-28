@@ -4,5 +4,14 @@
 	"forgotPassword": "Forgot your password?",
 	"noAccount": "Don't have an account?",
 	"createAccount": "Create account",
-	"backToHome": "← Back to home page"
+	"backToHome": "← Back to home page",
+	"email": "Email",
+	"emailPlaceholder": "your@email.com",
+	"password": "Password",
+	"submitting": "Signing in...",
+	"orContinueWith": "or continue with",
+	"continueWith": "Continue with {{provider}}",
+	"oauthError": "Could not complete sign-in with the provider. Please try again.",
+	"oauthStartFailed": "Could not start authentication. Please try again.",
+	"sessionExpired": "Your session has expired. Please sign in again."
 }

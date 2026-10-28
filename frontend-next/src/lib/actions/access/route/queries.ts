@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getHomeRoute, getRouteByPath, getRoutes, updateRoute } from "./api";
+import { getHomeRoute, getRoleHomes, getRouteByPath, getRoutes, saveRoleHomes, updateRoute } from "./api";
 import { PaginationParams } from "../../../types/pagination.types";
 import { QUERY_CONFIG } from '../../../config/performance.config';
 import type { UpdateRouteDto } from "./types";
@@ -47,5 +47,23 @@ export function useUpdateRoute() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['routes'] });
     }
+  });
+}
+
+export function useRoleHomes() {
+  return useQuery({
+    queryKey: ['routes', 'role-home'],
+    queryFn: Collector(() => getRoleHomes()),
+  });
+}
+
+export function useSaveRoleHomes() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (homes: Record<string, string>) => Alive(saveRoleHomes)(homes),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['routes', 'role-home'] });
+      void queryClient.invalidateQueries({ queryKey: ['me'] });
+    },
   });
 }

@@ -1,0 +1,180 @@
+services:
+
+  # ── infrastructure ──────────────────────────────────────────
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB:       ${POSTGRES_DB}
+      POSTGRES_HOST_PORT:     ${POSTGRES_HOST_PORT}
+    ports:
+      - "${POSTGRES_HOST_PORT}:5432"
+    volumes:
+      - postgres_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # RustFS runs as uid/gid 10001, but Docker creates named volumes as
+  # root — chown once before the real service starts.
+  s3-perms:
+    image: busybox:latest
+    restart: "no"
+    user: "0:0"
+    volumes:
+      - s3_data:/data
+    entrypoint: ["chown", "-R", "10001:10001", "/data"]
+
+  # S3-compatible object storage. minio/minio was pulled from Docker Hub
+  # (see https://github.com/minio/minio removal, 2026-09) — RustFS is a
+  # drop-in S3 API replacement, still on Docker Hub.
+  s3:
+    image: rustfs/rustfs:latest
+    restart: unless-stopped
+    command: ["/data"]
+    depends_on:
+      s3-perms:
+        condition: service_completed_successfully
+    environment:
+      RUSTFS_ACCESS_KEY:      ${S3_ACCESS_KEY}
+      RUSTFS_SECRET_KEY:      ${S3_SECRET_KEY}
+      RUSTFS_ADDRESS:         ":8333"
+      RUSTFS_CONSOLE_ADDRESS: ":9001"
+      RUSTFS_CONSOLE_ENABLE:  "true"
+    ports:
+      - "8333:8333"
+      - "9001:9001"
+    volumes:
+      - s3_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8333/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # one-shot: create the S3 bucket if it doesn't exist yet.
+  # minio/mc is gone from Docker Hub, and MinIO locked down its quay.io
+  # mirror behind auth too (2026-09-24) — aws-cli is S3-compatible and
+  # has no ties to MinIO's distribution.
+  s3-init:
+    image: amazon/aws-cli:latest
+    restart: on-failure
+    depends_on:
+      s3:
+        condition: service_healthy
+    environment:
+      AWS_ACCESS_KEY_ID:     ${S3_ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY}
+      AWS_DEFAULT_REGION:    ${S3_REGION}
+    entrypoint: >
+      /bin/sh -c "
+      aws --endpoint-url http://s3:8333 s3 mb s3://${S3_BUCKET} || true
+      "
+
+  # ── application ─────────────────────────────────────────────
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend-nest/Dockerfile
+    restart: unless-stopped
+    environment:
+      PORT:                   3001
+      APP_NAME:               ${APP_NAME}
+      NODE_ENV:               ${NODE_ENV}
+      NEST_PUBLIC_ENV:        ${NEST_PUBLIC_ENV}
+      DATABASE_URL:           ${DATABASE_URL}
+      REDIS_URL:              ${REDIS_URL}
+      JWT_SECRET:             ${JWT_SECRET}
+      JWT_REFRESH_SECRET:     ${JWT_REFRESH_SECRET}
+      JWT_INVITE_SECRET:      ${JWT_INVITE_SECRET}
+      JWT_EXPIRES_IN:         ${JWT_EXPIRES_IN}
+      PAYLOAD_SECRET:         ${PAYLOAD_SECRET}
+      CRYPTO_SECRET:          ${CRYPTO_SECRET}
+      PAYLOAD_CMS_PASSWORD:   ${PAYLOAD_CMS_PASSWORD}
+      SEED_USER_PASSWORD:     ${SEED_USER_PASSWORD}
+      RUN_SEED:               ${RUN_SEED}
+      RUN_MIGRATIONS:         ${RUN_MIGRATIONS}
+      S3_ENDPOINT:            ${S3_ENDPOINT}
+      S3_BUCKET:              ${S3_BUCKET}
+      S3_ACCESS_KEY:          ${S3_ACCESS_KEY}
+      S3_SECRET_KEY:          ${S3_SECRET_KEY}
+      S3_PUBLIC_URL:          ${S3_PUBLIC_URL}
+      S3_REGION:              ${S3_REGION}
+      PAYLOAD_STORAGE_PROVIDER: ${PAYLOAD_STORAGE_PROVIDER}
+      NEXTAUTH_URL:           ${NEXTAUTH_URL}
+      AGENT_CMS_SECRET:       ${AGENT_CMS_SECRET}
+      SENTRY_DSN:             ${SENTRY_DSN}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      s3-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend-next/Dockerfile
+    restart: unless-stopped
+    volumes:
+      # persists Payload local media uploads when PAYLOAD_STORAGE_PROVIDER=local
+      - payload_media:/app/frontend-next/public/media
+    environment:
+      APP_NAME:               ${APP_NAME}
+      NODE_ENV:               ${NODE_ENV}
+      NEXT_PUBLIC_ENV:        ${NEXT_PUBLIC_ENV}
+      # ponytail: 127.0.0.1 instead of localhost — Alpine resolves localhost to ::1 (IPv6)
+      # but Next.js listens only on 0.0.0.0 (IPv4), causing ECONNREFUSED on self-calls
+      NEXT_INTERNAL_URL:      http://127.0.0.1:3000
+      DATABASE_URL:           ${DATABASE_URL}
+      PAYLOAD_SECRET:         ${PAYLOAD_SECRET}
+      NEXTAUTH_SECRET:        ${NEXTAUTH_SECRET}
+      NEXTAUTH_URL:           ${NEXTAUTH_URL}
+      NEXT_PUBLIC_API_URL:    ${NEXT_PUBLIC_API_URL}
+      NEXT_PUBLIC_PAYLOAD_URL: ${NEXT_PUBLIC_PAYLOAD_URL}
+      NEXT_PUBLIC_SITE_URL:   ${NEXT_PUBLIC_SITE_URL}
+      NEXT_PUBLIC_SITE_NAME:  ${NEXT_PUBLIC_SITE_NAME}
+      DEFAULT_LOCALE:         ${DEFAULT_LOCALE}
+      S3_ENDPOINT:            ${S3_ENDPOINT}
+      S3_BUCKET:              ${S3_BUCKET}
+      S3_ACCESS_KEY:          ${S3_ACCESS_KEY}
+      S3_SECRET_KEY:          ${S3_SECRET_KEY}
+      S3_PUBLIC_URL:          ${S3_PUBLIC_URL}
+      S3_REGION:              ${S3_REGION}
+      PAYLOAD_STORAGE_PROVIDER: ${PAYLOAD_STORAGE_PROVIDER}
+      AGENT_CMS_SECRET:       ${AGENT_CMS_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+
+volumes:
+  postgres_db:
+  redis_data:
+  s3_data:
+  payload_media:

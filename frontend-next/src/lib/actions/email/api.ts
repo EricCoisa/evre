@@ -1,8 +1,22 @@
 "use server";
-import { GET, ApiResponse } from '../../api/api';
-import { EmailProviderResponse } from './types';
+import type { ApiResponse } from '../../api/api';
+import { getEmail } from '@/lib/generated/email/email';
+import type { EmailProviderResponse, EmailHealthStatus, EmailTemplateInfo, SaveEmailConfigPayload } from './types';
+import { wrapAs } from '../wrap';
 
-export async function validateConfiguration(): Promise<ApiResponse<EmailProviderResponse>> {
-    return await GET<EmailProviderResponse>('/email/validate');
+const api = getEmail();
+
+/** Valida contra o provider e salva num passo só. */
+export async function saveEmailConfiguration(
+  payload: SaveEmailConfigPayload,
+): Promise<ApiResponse<EmailProviderResponse>> {
+  return wrapAs(() => api.emailControllerSaveConfiguration(payload));
 }
 
+export async function getEmailHealth(): Promise<ApiResponse<EmailHealthStatus>> {
+  return wrapAs(() => api.emailControllerHealth());
+}
+
+export async function getEmailTemplates(): Promise<ApiResponse<EmailTemplateInfo[]>> {
+  return wrapAs(() => api.emailControllerTemplates());
+}

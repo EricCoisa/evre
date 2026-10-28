@@ -1,0 +1,8 @@
+{
+  "not_found": "Feature flag não encontrada",
+  "key_already_exists": "Feature flag com esta key já existe",
+  "self_parent": "Uma feature flag não pode ser pai dela mesma",
+  "parent_not_found": "Feature flag pai não encontrada",
+  "cycle_detected": "Esse vínculo criaria um ciclo entre feature flags",
+  "max_depth_exceeded": "A cadeia de feature flags ultrapassaria a profundidade máxima permitida (5)"
+}

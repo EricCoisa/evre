@@ -1,0 +1,48 @@
+/// Cliente OAuth de um conector MCP, registrado por Dynamic Client Registration (RFC 7591).
+model OAuthClient {
+  id           String   @id @default(uuid())
+  /// `client_name` enviado no registro — é o nome que o usuário lê na tela de consentimento.
+  name         String
+  redirectUris String[] @default([])
+  createdAt    DateTime @default(now())
+
+  grants OAuthGrant[]
+
+  @@map("oauth_clients")
+  @@schema("public")
+}
+
+/// Conexão usuário-cliente MCP; code e tokens vivem na mesma linha, todos como hash opaco (nunca JWT).
+model OAuthGrant {
+  id       String   @id @default(uuid())
+  clientId String
+  userId   String
+  /// Scopes que o usuário aprovou (vocabulário de McpScopes).
+  scopes   String[] @default([])
+
+  /// Authorization code (SHA-256). Zerado no resgate — code é single-use.
+  codeHash      String?   @unique
+  /// PKCE S256 (RFC 7636). Obrigatório: não emitimos code sem challenge.
+  codeChallenge String?
+  /// Guardado para conferir com o `redirect_uri` repetido no /token.
+  redirectUri   String?
+  codeExpiresAt DateTime?
+
+  accessHash       String?   @unique
+  accessExpiresAt  DateTime?
+  refreshHash      String?   @unique
+  refreshExpiresAt DateTime?
+
+  revokedAt  DateTime?
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  client OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([clientId])
+  @@index([codeExpiresAt])
+  @@map("oauth_grants")
+  @@schema("public")
+}

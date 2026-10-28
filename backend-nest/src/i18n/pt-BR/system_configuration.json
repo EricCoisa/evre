@@ -1,4 +1,6 @@
 {
   "not_found": "Configuração não encontrada",
-  "labelkey_already_exists": "Já existe uma configuração com esta chave (labelKey)"
+  "labelkey_already_exists": "Já existe uma configuração com esta chave",
+  "blocked": "Esta configuração está bloqueada e não pode ser alterada ou removida",
+  "deleted_successfully": "Configuração removida com sucesso"
 }

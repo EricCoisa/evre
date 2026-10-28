@@ -1,0 +1,8 @@
+{
+  "not_found": "Link curto não encontrado",
+  "disabled": "Este link foi desativado",
+  "expired": "Este link expirou",
+  "max_clicks_reached": "O limite de acessos deste link foi atingido",
+  "slug_generation_failed": "Não foi possível gerar um código único para o link curto"
+}
+

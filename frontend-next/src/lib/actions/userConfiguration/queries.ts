@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useSuspenseQueries, useSuspenseQuery } from '@tanstack/react-query';
 import {
   getUserConfigurations,
   setUserConfiguration,
@@ -11,19 +11,37 @@ import { useApp } from '@/contexts/appProvider';
 
 // Hook para obter todas as configurações do usuário
 export function useUserConfigurations() {
-  return useQuery({
+  return useSuspenseQuery({
     queryKey: ['user-configurations'],
     queryFn: Collector(getUserConfigurations),
   });
 }
 
 // Hook para obter configuração específica por labelKey
-export function useUserConfiguration<T>(labelKey: string, options?: { enabled?: boolean }) {
-  return useQuery({
+export function useUserConfiguration<T>(labelKey: string) {
+  return useSuspenseQuery({
     queryKey: ['user-configuration', labelKey],
     queryFn: Collector(() => getUserConfigurationByKey<T>(labelKey)),
-    enabled: options?.enabled ?? true, // Por padrão está habilitado
   });
+}
+
+/** Busca várias chaves de configuração do usuário de uma vez, para hidratar um formulário. */
+export function useUserConfigurationValues(labelKeys: string[]) {
+  // Collector() fora do map: ele chama useApp() por dentro, e uma chamada por chave
+  // faria a contagem de hooks variar junto com a lista de chaves do provider.
+  const collect = Collector((key: string) => getUserConfigurationByKey<unknown>(key));
+  const results = useSuspenseQueries({
+    queries: labelKeys.map((labelKey) => ({
+      queryKey: ['user-configuration', labelKey],
+      queryFn: () => collect(labelKey),
+    })),
+  });
+
+  return {
+    values: Object.fromEntries(
+      labelKeys.map((labelKey, index) => [labelKey, results[index]?.data?.value]),
+    ) as Record<string, unknown>,
+  };
 }
 
 // Hook para definir/atualizar configuração

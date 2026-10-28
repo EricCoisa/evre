@@ -1,8 +1,6 @@
 import { z } from 'zod';
 
-/**
- * Schema de validação para o formulário de login
- */
+/** Schema de validação do formulário de login. */
 export const loginSchema = z.object({
   email: z
     .string()

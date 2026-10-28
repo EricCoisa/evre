@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -22,91 +22,119 @@ import { CSS } from '@dnd-kit/utilities';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { GripVertical, Home } from 'lucide-react';
+import { ChevronDown, ChevronRight, GripVertical } from 'lucide-react';
+import { cn } from '@/lib/cn';
 import type { Routes } from '@/lib/actions/access/route/types';
 import { useUpdateRoute } from '@/lib/actions/access/route/queries';
+import type { TFunc } from '@/hooks/use-translation';
+import { buildRouteRows, reorderSiblings, type RouteRow } from './routes-tree';
 
 interface SortableRoutesTableProps {
   routes: Routes[];
-  t: (key: string) => string;
+  t: TFunc;
 }
 
-function SortableRow({ route, t, onToggleHome, onToggleShowSideBar, onToggleClientHome }: { route: Routes; t: (key: string) => string; onToggleHome: (id: string, isHome: boolean) => void; onToggleShowSideBar: (id: string, showSideBar: boolean) => void; onToggleClientHome: (id: string, isClientHome: boolean) => void }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: route.id });
+function CollapseButton({
+  collapsed,
+  onClick,
+  ariaLabel,
+  className,
+}: {
+  collapsed: boolean;
+  onClick: () => void;
+  ariaLabel: string;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={ariaLabel}
+      className={cn('hover:bg-muted shrink-0 rounded p-0.5', className)}
+    >
+      {collapsed ? <ChevronRight className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+    </button>
+  );
+}
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
+function SortableRow({
+  row,
+  t,
+  collapsed,
+  onToggleCollapsed,
+  onToggleShowSideBar,
+}: {
+  row: RouteRow;
+  t: (key: string) => string;
+  collapsed: boolean;
+  onToggleCollapsed: (id: string) => void;
+  onToggleShowSideBar: (id: string, showSideBar: boolean) => void;
+}) {
+  const { route, depth, hasChildren } = row;
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: route.id });
 
   return (
-    <TableRow ref={setNodeRef} style={style} className={isDragging ? 'z-50' : ''}>
-      <TableCell className="w-10">
+    <TableRow
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }}
+      className={isDragging ? 'z-50' : ''}
+    >
+      <TableCell className="w-8 sm:w-12 px-2 sm:px-4">
         <button
-          className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded touch-none"
+          className="hover:bg-muted cursor-grab touch-none rounded p-1.5 sm:p-2 size-7 sm:size-9 flex items-center justify-center active:cursor-grabbing"
           {...attributes}
           {...listeners}
         >
-          <GripVertical className="h-4 w-4 text-muted-foreground" />
+          <GripVertical className="text-muted-foreground h-4 w-4" />
         </button>
       </TableCell>
-      <TableCell className="w-20">
-        <Switch
-          checked={route.isHome}
-          onCheckedChange={(checked) => onToggleHome(route.id, checked)}
-          aria-label="Definir como página inicial"
-          disabled={route.isHome === true}
-          className="data-[state=checked]:opacity-100 data-[state=unchecked]:opacity-50"
-        />
-      </TableCell>
-        <TableCell className="w-20">
-        <Switch
-          checked={route.isClientHome}
-          onCheckedChange={(checked) => onToggleClientHome(route.id, checked)}
-          aria-label="Definir como página inicial do cliente"
-          disabled={route.isClientHome === true}
-          className="data-[state=checked]:opacity-100 data-[state=unchecked]:opacity-50"
-        />
-      </TableCell>
-      <TableCell className="w-20">
+      <TableCell className="w-14 sm:w-20 px-2 sm:px-4">
         <Switch
           checked={route.showSideBar}
           onCheckedChange={(checked) => onToggleShowSideBar(route.id, checked)}
-          aria-label="Definir como página inicial"
-          disabled={route.isHome === true}
+          aria-label={t('ariaSetSideBar')}
           className="data-[state=checked]:opacity-100 data-[state=unchecked]:opacity-50"
         />
       </TableCell>
-      <TableCell className="w-16">
-        <span className="font-medium text-muted-foreground">{route.ordem}</span>
+      <TableCell className="w-16 hidden md:table-cell">
+        <span className="text-muted-foreground font-medium">{route.ordem}</span>
       </TableCell>
-      <TableCell>
-        <Badge variant="outline" className="font-mono">
-          {route.path}
-        </Badge>
-      </TableCell>
-      <TableCell>
-        <div className="flex items-center gap-2">
-          <span className="font-medium">{t(route.labelKey)}</span>
-          {route.isHome && (
-            <Badge variant="default" className="gap-1">
-              <Home className="h-3 w-3" />
-              Home
-            </Badge>
+      <TableCell className="hidden md:table-cell">
+        <div className="flex items-center gap-1" style={{ paddingLeft: depth * 20 }}>
+          {hasChildren ? (
+            <CollapseButton
+              collapsed={collapsed}
+              onClick={() => onToggleCollapsed(route.id)}
+              ariaLabel={collapsed ? t('expand') : t('collapse')}
+            />
+          ) : (
+            <span className="inline-block size-3.5 shrink-0" />
           )}
+          <Badge variant="outline" className="font-mono">{route.path}</Badge>
         </div>
       </TableCell>
-      <TableCell>
+      <TableCell className="px-2 sm:px-4">
+        <div className="flex flex-col gap-0.5" style={{ paddingLeft: depth * 14 }}>
+          <div className="flex items-center gap-1">
+            {hasChildren && (
+              <CollapseButton
+                collapsed={collapsed}
+                onClick={() => onToggleCollapsed(route.id)}
+                ariaLabel={collapsed ? t('expand') : t('collapse')}
+                className="md:hidden"
+              />
+            )}
+            <span className="font-medium text-foreground text-sm">{t(route.labelKey)}</span>
+          </div>
+          <span className="text-xs text-muted-foreground font-mono md:hidden">
+            {route.path}
+          </span>
+        </div>
+      </TableCell>
+      <TableCell className="hidden md:table-cell">
         <Badge variant={route.isActive ? 'default' : 'secondary'}>
-          {route.isActive ? 'Ativa' : 'Inativa'}
+          {route.isActive ? t('routeActive') : t('routeInactive')}
         </Badge>
       </TableCell>
     </TableRow>
@@ -115,73 +143,67 @@ function SortableRow({ route, t, onToggleHome, onToggleShowSideBar, onToggleClie
 
 export function SortableRoutesTable({ routes: initialRoutes, t }: SortableRoutesTableProps) {
   const [routes, setRoutes] = useState(initialRoutes);
+  const [prevInitialRoutes, setPrevInitialRoutes] = useState(initialRoutes);
+  // Sincroniza `routes` quando `initialRoutes` mudar — ajuste de estado durante o render
+  // (não em effect) evita o commit extra: https://react.dev/learn/you-might-not-need-an-effect
+  if (initialRoutes !== prevInitialRoutes) {
+    setPrevInitialRoutes(initialRoutes);
+    setRoutes(initialRoutes);
+  }
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const updateRoute = useUpdateRoute();
 
+  const rows = useMemo(() => buildRouteRows(routes, collapsed), [routes, collapsed]);
+
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 100,
-        tolerance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 100, tolerance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
-  const handleDragEnd = useCallback((event: DragEndEvent) => {
-    const { active, over } = event;
+  const toggleCollapsed = useCallback((id: string) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
 
-    if (over && active.id !== over.id) {
-      setRoutes((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over.id);
-        
-        const newItems = arrayMove(items, oldIndex, newIndex);
-        
-        // Atualizar apenas as rotas que mudaram de posição
-        const updates: Array<{ id: string; ordem: number }> = [];
-        
-        newItems.forEach((item, index) => {
-          const newOrdem = index + 1;
-          if (item.ordem !== newOrdem) {
-            updates.push({ id: item.id, ordem: newOrdem });
-          }
-        });
+  const handleReorder = useCallback(
+    (dragId: string, overId: string) => {
+      if (dragId === overId) return;
+      const dragged = routes.find((r) => r.id === dragId);
+      const target = routes.find((r) => r.id === overId);
+      if (!dragged || !target || (dragged.parentId ?? null) !== (target.parentId ?? null)) return;
 
-        // Executar todas as atualizações
-        if (updates.length > 0) {
-          updates.forEach(({ id, ordem }) => {
-            updateRoute.mutate({ id, data: { ordem } });
-          });
-        }
+      const visible = rows.map((r) => r.route.id);
+      const moved = arrayMove(visible, visible.indexOf(dragId), visible.indexOf(overId));
+      const updates = reorderSiblings(routes, dragged.parentId ?? null, moved);
+      updates.forEach(({ id, ordem }) => updateRoute.mutate({ id, data: { ordem } }));
+      setRoutes((items) =>
+        items.map((item) => {
+          const update = updates.find((u) => u.id === item.id);
+          return update ? { ...item, ordem: update.ordem } : item;
+        }),
+      );
+    },
+    [routes, rows, updateRoute],
+  );
 
-        return newItems;
-      });
-    }
-  }, [updateRoute]);
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over) return;
+      handleReorder(String(active.id), String(over.id));
+    },
+    [handleReorder],
+  );
 
-  const handleToggleHome = useCallback((id: string, isHome: boolean) => {
-    updateRoute.mutate({ id, data: { isHome } });
-  }, [updateRoute]);
-
-  const handleToggleShowSideBar = useCallback((id: string, showSideBar: boolean) => {
-    updateRoute.mutate({ id, data: { showSideBar } });
-  }, [updateRoute]);
-
-  const handleToggleClientHome = useCallback((id: string, isClientHome: boolean) => {
-    updateRoute.mutate({ id, data: { isClientHome } });
-  }, [updateRoute]);
-
-  // Atualizar rotas quando initialRoutes mudar
-  useEffect(() => {
-    setRoutes(initialRoutes);
-  }, [initialRoutes]);
+  const handleToggleShowSideBar = useCallback(
+    (id: string, showSideBar: boolean) => updateRoute.mutate({ id, data: { showSideBar } }),
+    [updateRoute],
+  );
 
   return (
     <DndContext
@@ -189,37 +211,35 @@ export function SortableRoutesTable({ routes: initialRoutes, t }: SortableRoutes
       collisionDetection={closestCenter}
       onDragEnd={handleDragEnd}
     >
-      <div className="rounded-md border backdrop-blur-sm shadow-lg">
-        <Table>
+      <div className="rounded-md border overflow-x-auto">
+        <Table className="w-full md:min-w-[620px]">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-10"></TableHead>
-              <TableHead className="w-20">{'Home'}</TableHead>
-              <TableHead className="w-20">{t('IsClientHome')}</TableHead>
-              <TableHead className="w-20">{t('showSideBar') ?? 'Mostrar na Barra Lateral'}</TableHead>
-              <TableHead className="w-16">{t('order') ?? 'Ordem'}</TableHead>
-              <TableHead>{t('path') ?? 'Path'}</TableHead>
-              <TableHead>{t('label') ?? 'Label'}</TableHead>
-              <TableHead>{t('status') ?? 'Status'}</TableHead>
+              <TableHead className="w-8 sm:w-10 px-2 sm:px-4" />
+              <TableHead className="w-14 sm:w-20 px-2 sm:px-4">{t('showSideBar')}</TableHead>
+              <TableHead className="w-16 hidden md:table-cell">{t('order')}</TableHead>
+              <TableHead className="hidden md:table-cell">{t('path')}</TableHead>
+              <TableHead className="px-2 sm:px-4">{t('label')}</TableHead>
+              <TableHead className="hidden md:table-cell">{t('status')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            <SortableContext items={routes.map(r => r.id)} strategy={verticalListSortingStrategy}>
-              {routes.length === 0 ? (
+            <SortableContext items={rows.map((r) => r.route.id)} strategy={verticalListSortingStrategy}>
+              {rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                    {t('noRoutes') ?? 'Nenhuma rota encontrada'}
+                  <TableCell colSpan={6} className="text-muted-foreground py-8 text-center">
+                    {t('noRoutes')}
                   </TableCell>
                 </TableRow>
               ) : (
-                routes.map((route) => (
+                rows.map((row) => (
                   <SortableRow
-                    key={route.id}
-                    route={route}
+                    key={row.route.id}
+                    row={row}
                     t={t}
-                    onToggleHome={handleToggleHome}
+                    collapsed={collapsed.has(row.route.id)}
+                    onToggleCollapsed={toggleCollapsed}
                     onToggleShowSideBar={handleToggleShowSideBar}
-                    onToggleClientHome={handleToggleClientHome} 
                   />
                 ))
               )}

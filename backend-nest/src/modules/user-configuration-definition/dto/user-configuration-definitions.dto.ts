@@ -14,10 +14,18 @@ export class UserConfigurationDefinitionsDto {
   labelKey: string;
 
   @ApiProperty({
-    description: 'Tipo do valor (string, number, boolean, json)',
-    example: 'boolean',
+    description: 'Tipo do valor (STRING, NUMBER, BOOLEAN, JSON, DATE, ENUM)',
+    example: 'BOOLEAN',
   })
   valueType: string;
+
+  @ApiProperty({
+    description: 'Opções disponíveis para valueType ENUM',
+    example: ['light', 'dark'],
+    isArray: true,
+    required: false,
+  })
+  options?: string[];
 
   @ApiProperty({
     description: 'Valor da configuração',
@@ -30,6 +38,14 @@ export class UserConfigurationDefinitionsDto {
     example: true,
   })
   isRequired?: boolean;
+
+  @ApiProperty({
+    description: 'Indica se o valor é secreto e deve ser criptografado',
+    example: false,
+    required: false,
+    default: false,
+  })
+  secret?: boolean;
 
   @ApiProperty({
     description: 'Data da última atualização',

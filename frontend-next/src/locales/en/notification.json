@@ -1,0 +1,33 @@
+{
+  "bell_label": "Notifications",
+  "mark_all_read": "Mark all as read",
+  "empty": "No notifications",
+  "preferences_title": "Notifications",
+  "preferences_channel_email": "Email",
+  "preferences_channel_email_desc": "Receive notifications by email",
+  "preferences_channel_whatsapp": "WhatsApp",
+  "preferences_channel_whatsapp_desc": "Receive notifications by WhatsApp",
+  "preferences_types_title": "Enabled notification types",
+  "preferences_types_desc": "Notifications for selected types may be sent through enabled channels",
+  "channel_controls_title": "Channel controls",
+  "channel_controls_desc": "Controls which channels can be used to send notifications",
+  "channel_toggle_email": "Allow sending by email",
+  "channel_toggle_email_disabled_hint": "Requires a configured and operational email provider",
+  "channel_toggle_whatsapp": "Allow sending by WhatsApp",
+  "channel_toggle_whatsapp_disabled_hint": "Requires an active and authenticated WhatsApp connection",
+  "send_broadcast_action": "Send notification",
+  "send_broadcast_title": "Send notification",
+  "send_broadcast_description": "Sends a notice to all users or to specific roles.",
+  "field_title": "Title",
+  "field_message": "Message",
+  "field_action_url": "Link (optional)",
+  "field_action_url_placeholder": "/settings",
+  "audience_label": "Audience",
+  "audience_all": "All users",
+  "audience_roles": "Specific roles",
+  "audience_roles_required": "Select at least one role",
+  "no_roles": "No roles available",
+  "types": {
+    "SYSTEM_ANNOUNCEMENT": "System announcement"
+  }
+}

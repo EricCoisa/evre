@@ -25,5 +25,6 @@
   "cannot_be_parent_of_itself": "A route cannot be its own parent",
   "has_children": "Cannot delete route with child routes",
   "deleted_successfully": "Route deleted successfully",
-  "some_not_found": "Some routes were not found"
+  "some_not_found": "Some routes were not found",
+  "role_not_allowed": "Route {path} can only be granted to roles: {roles}"
 }

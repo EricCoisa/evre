@@ -26,9 +26,9 @@ import {
 } from "@/components/ui/sidebar"
 
 export function NavDocuments({
-  items,
+  items = [],
 }: {
-  items: {
+  items?: {
     name: string
     url: string
     icon: Icon

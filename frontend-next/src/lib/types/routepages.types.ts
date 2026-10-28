@@ -1,8 +1,4 @@
 
-import { getCompany } from "../actions/company/api";
-import { getContractDocument } from "../actions/contract-document/api";
-import { getProject } from "../actions/project/api";
-import { getProposal, getProposalByProject } from "../actions/proposal/api";
 import { getUser } from "../actions/user/api";
 
 export interface RoutePageQuery<T> {
@@ -11,68 +7,12 @@ export interface RoutePageQuery<T> {
 }
 
 export const RoutePagesList: RoutePage<unknown>[] = [
-    {
+       {
         path: '/user',
         key: 'data.name',
         getBreadName: (id?: string) => ({
             queryKey: () => ["user", id],
             queryFn: (id?: string) => getUser(id as string),
-        }),
-    },
-    {
-        path: '/company',
-        key: 'data.name',
-        getBreadName: (id?: string) => ({
-            queryKey: () => ["company", id],
-            queryFn: (id?: string) => getCompany(id as string),
-        }),
-    },
-    {
-        path: '/proposal',
-        key: 'data.name',
-        getBreadName: (id?: string) => ({
-            queryKey: () => ["proposal", id],
-            queryFn: (id?: string) => getProposal(id as string),
-        }),
-    },
-    {
-        path: '/project',
-        key: 'data.name',
-        getBreadName: (id?: string) => ({
-            queryKey: () => ["project", id],
-            queryFn: (id?: string) => getProject(id as string),
-        }),
-    },
-    {
-        path: '/contract-document',
-        key: 'data.name',
-        getBreadName: (id?: string) => ({
-            queryKey: () => ["contract-document", id],
-            queryFn: (id?: string) => getContractDocument(id as string),
-        }),
-    },
-    {
-        path: '/home',
-        key: 'data.name',
-        getBreadName: (id?: string) => ({
-            queryKey: () => ["project", id],
-            queryFn: (id?: string) => getProject(id as string),
-        }),
-    },
-    {
-        path: '/project-proposal',
-        key: 'data.name',
-        getBreadName: (id?: string) => ({
-            queryKey: () => ["proposal", id],
-            queryFn: (id?: string) => getProposalByProject(id as string),
-        }),
-    },
-    {
-        path: '/project-contract',
-        key: 'data.name',
-        getBreadName: (id?: string) => ({
-            queryKey: () => ["proposal", id],
-            queryFn: (id?: string) => getContractDocument(id as string),
         }),
     },
 ]
@@ -83,6 +23,6 @@ export interface RoutePage<T> {
     getBreadName: (id?: string) => RoutePageQuery<T>;
 }
 
-export async function nullFunction<T>(): Promise<T> {
+export async function nullFunction<T>() : Promise<T> {
     return null as unknown as T;
 }

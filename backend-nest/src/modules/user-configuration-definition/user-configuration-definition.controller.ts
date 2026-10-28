@@ -1,6 +1,5 @@
 import { Controller, Query, Param, Body } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { UserConfigurationDefinitionService } from './user-configuration-definition.service';
 import {
   GetApi,
   PostApi,
@@ -14,20 +13,37 @@ import {
 } from '../../common/schemas/pagination.schema';
 import { commonPaginationQueries } from '../../common/swagger/pagination-queries';
 import { UserConfigurationDefinitionsDto } from './dto/user-configuration-definitions.dto';
-import { CreateSystemConfigurationDto } from './dto/create-system-configuration.dto';
+import { CreateUserConfigurationDefinitionCreateDto } from './dto/create-system-configuration.dto';
 
 import type { PaginatedResponse } from '../../common/types/pagination.types';
+import {
+  maskSecretValue,
+  maskSecretValues,
+} from '../../common/utils/mask-secret-value.util';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../../common/types/auth.types';
 
-import { SetSystemConfigurationDto } from './dto/set-user-configuration-definition.dto';
+import { SetDefinitionDefaultDto } from './dto/set-definition-default.dto';
 import { UpdateUserConfigurationDefinitionsDto } from './dto/update-user-configuration-definition.dto';
+import { FindAllUserConfigDefinitionsUseCase } from './use-cases/find-all.use-case';
+import { FindOneUserConfigDefinitionUseCase } from './use-cases/find-one.use-case';
+import { CreateUserConfigDefinitionUseCase } from './use-cases/create.use-case';
+import { UpdateUserConfigDefinitionUseCase } from './use-cases/update.use-case';
+import { RemoveUserConfigDefinitionUseCase } from './use-cases/remove.use-case';
+import { FindUserConfigDefinitionByLabelKeyUseCase } from './use-cases/find-by-label-key.use-case';
+import { SetDefinitionDefaultUseCase } from './use-cases/set-definition-default.use-case';
 
 @ApiTags('user-configuration-definitions')
 @Controller('user-configuration-definitions')
 export class UserConfigurationDefinitionController {
   constructor(
-    private readonly userConfigurationDefinitionsService: UserConfigurationDefinitionService,
+    private readonly findAllUseCase: FindAllUserConfigDefinitionsUseCase,
+    private readonly findOneUseCase: FindOneUserConfigDefinitionUseCase,
+    private readonly createUseCase: CreateUserConfigDefinitionUseCase,
+    private readonly updateUseCase: UpdateUserConfigDefinitionUseCase,
+    private readonly removeUseCase: RemoveUserConfigDefinitionUseCase,
+    private readonly findByLabelKeyUseCase: FindUserConfigDefinitionByLabelKeyUseCase,
+    private readonly setDefinitionDefaultUseCase: SetDefinitionDefaultUseCase,
   ) {}
 
   @GetApi({
@@ -57,7 +73,10 @@ export class UserConfigurationDefinitionController {
     | PaginatedResponse<UserConfigurationDefinitionsDto>
     | UserConfigurationDefinitionsDto[]
   > {
-    return await this.userConfigurationDefinitionsService.findAll(query);
+    return maskSecretValues(
+      await this.findAllUseCase.execute(query),
+      'defaultValue',
+    );
   }
 
   @GetApi({
@@ -80,7 +99,10 @@ export class UserConfigurationDefinitionController {
   async findById(
     @Param('id') id: string,
   ): Promise<UserConfigurationDefinitionsDto> {
-    return await this.userConfigurationDefinitionsService.findOne(id);
+    return maskSecretValue(
+      await this.findOneUseCase.execute(id),
+      'defaultValue',
+    );
   }
 
   @GetApi({
@@ -103,8 +125,9 @@ export class UserConfigurationDefinitionController {
   async findByLabelKey(
     @Param('labelKey') labelKey: string,
   ): Promise<UserConfigurationDefinitionsDto> {
-    return await this.userConfigurationDefinitionsService.findByLabelKey(
-      labelKey,
+    return maskSecretValue(
+      await this.findByLabelKeyUseCase.execute(labelKey),
+      'defaultValue',
     );
   }
 
@@ -125,39 +148,41 @@ export class UserConfigurationDefinitionController {
     },
   })
   async create(
-    @Body() createDto: CreateSystemConfigurationDto,
+    @Body() createDto: CreateUserConfigurationDefinitionCreateDto,
     @CurrentUser() currentUser: AuthenticatedUser,
   ): Promise<UserConfigurationDefinitionsDto> {
-    return await this.userConfigurationDefinitionsService.create(
-      createDto,
-      currentUser.id,
+    return maskSecretValue(
+      await this.createUseCase.execute(createDto, currentUser.id),
+      'defaultValue',
     );
   }
 
+  /** Default herdado por quem não personalizou a chave. */
   @PatchApi({
-    path: 'set/:definitionId',
-    summary: 'Define configuração do usuário',
-    description: 'Define ou atualiza uma configuração para o usuário logado',
+    path: ':id/default',
+    summary: 'Altera o default global de uma definição',
+    description:
+      'Altera o valor padrão herdado por todos os usuários que não personalizaram esta chave',
     status: 'OK',
     authenticated: true,
+    roles: ['ADMIN'],
     response: {
       success: [
         {
           status: 'OK',
-          description: 'Configuração definida com sucesso',
+          description: 'Default alterado com sucesso',
         },
       ],
     },
   })
-  async setUserConfiguration(
-    @Param('definitionId') definitionId: string,
-    @Body() dto: SetSystemConfigurationDto,
+  async setDefinitionDefault(
+    @Param('id') id: string,
+    @Body() dto: SetDefinitionDefaultDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return await this.userConfigurationDefinitionsService.setUserConfiguration(
-      definitionId,
-      dto,
-      user.id,
+    return maskSecretValue(
+      await this.setDefinitionDefaultUseCase.execute(id, dto, user.id),
+      'defaultValue',
     );
   }
 
@@ -183,10 +208,9 @@ export class UserConfigurationDefinitionController {
     @Body() updateDto: UpdateUserConfigurationDefinitionsDto,
     @CurrentUser() currentUser: AuthenticatedUser,
   ): Promise<UserConfigurationDefinitionsDto> {
-    return await this.userConfigurationDefinitionsService.update(
-      id,
-      updateDto,
-      currentUser.id,
+    return maskSecretValue(
+      await this.updateUseCase.execute(id, updateDto, currentUser.id),
+      'defaultValue',
     );
   }
 
@@ -202,6 +226,6 @@ export class UserConfigurationDefinitionController {
     @Param('id') id: string,
     @CurrentUser() currentUser: AuthenticatedUser,
   ): Promise<void> {
-    await this.userConfigurationDefinitionsService.remove(id, currentUser.id);
+    await this.removeUseCase.execute(id, currentUser.id);
   }
 }

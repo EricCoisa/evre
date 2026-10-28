@@ -1,94 +1,55 @@
-import { Role } from "@/types/roles";
-import { UserStatus } from "@/types/status";
+// Re-export generated schemas so screens get stable import paths
+export type { UserDto as User, UpdateUserDto } from "@/lib/generated/schemas";
 
-export interface User {
-  id: string;
-  email: string;
-  name: string | null;
-  role: Role;
-  status: UserStatus;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateInviteDto {
-  email: string;
-  role?: Role;
-}
-
-export interface CreateCompanyInviteDto {
-  companyId: string;
-  email: string;
+// Profile/password DTOs not fully covered by generated schema (image field is File)
+export interface UpdateProfileDto {
   name?: string;
+  phone?: string;
+  image?: File;
 }
 
-export interface ValidateInviteResponse {
- valid: boolean ; token: string; email: string
+export interface UpdatePasswordDto {
+  currentPassword: string;
+  newPassword: string;
+  confirmNewPassword: string;
 }
 
-
-export interface SignUpDto {
+export type SignUpDto = {
   email: string;
-  password: string;
   name?: string;
   inviteToken?: string;
+  /** Exigido só quando a conta é criada de fato — passo 1 do signup orgânico não envia isto. */
+  password?: string;
+  acceptTerms?: boolean;
+};
+
+// Auth types not covered by generated user schema
+export interface ValidateInviteResponse {
+  valid: boolean;
+  token: string;
+  email: string;
+  /** Convidado já tem conta: a tela oferece aceitar o convite, não cadastrar. */
+  userExists: boolean;
+  /** Nome opcional informado ao gerar o convite. */
+  name?: string;
 }
 
 export interface CreateUserDto {
   email: string;
   password: string;
   name?: string;
-  role?: Role;
-  status?: UserStatus;
 }
 
-export interface UpdateUserDto {
-  email?: string;
-  password?: string;
-  name?: string;
-  role?: Role;
-  status?: UserStatus;
+export interface CreateInviteDto {
+  email: string;
+  roleId?: string;
 }
 
-export type UpdateProfileDto = Omit<UpdateUserDto, 'email' | 'role' | 'status'> & {
-  image?: File;
-};
-
-export type UpdatePasswordDto = {
-  currentPassword: string;
-  newPassword: string;
-  confirmNewPassword: string;
-};
-
-export interface UserRouteAccess {
-  id: string;
-  userId: string;
-  routeId: string;
-  grantedBy: string | null;
-  createdAt: string;
-  route: {
-    id: string;
-    path: string;
-    labelKey: string;
-    isActive: boolean;
-  };
-}
-
-export interface RouteWithUserAccess {
-  id: string;
-  path: string;
-  labelKey: string;
-  icon: string | null;
-  isActive: boolean;
-  hasAccess: boolean;
-  accessInfo: {
-    id: string;
-    grantedBy: string | null;
-    createdAt: string;
-  } | null;
-  createdAt: string;
-  updatedAt: string;
-}
+export const UserStatusColors = {
+  ACTIVE: "bg-green-100 text-green-800",
+  INACTIVE: "bg-gray-100 text-gray-800",
+  SUSPENDED: "bg-red-100 text-red-800",
+} as const;
 
 export interface GrantUserRouteAccessResponse {
   id: string;
@@ -96,29 +57,34 @@ export interface GrantUserRouteAccessResponse {
   routeId: string;
   grantedBy: string | null;
   createdAt: string;
-  user: {
-    id: string;
-    email: string;
-    name: string | null;
-  };
-  route: {
-    id: string;
-    path: string;
-    labelKey: string;
-  };
-  grantedByUser: {
-    id: string;
-    email: string;
-    name: string | null;
-  } | null;
+  user: { id: string; email: string; name: string | null };
+  route: { id: string; path: string; labelKey: string };
+  grantedByUser: { id: string; email: string; name: string | null } | null;
 }
 
 export interface RevokeUserRouteAccessResponse {
   message: string;
 }
 
-export const UserStatusColors = {
-  ACTIVE: 'bg-green-100 text-green-800',
-  INACTIVE: 'bg-gray-100 text-gray-800',
-  SUSPENDED: 'bg-red-100 text-red-800',
-};
+export interface Invite {
+  id: string;
+  email: string;
+  roleId: string;
+  roleName: string;
+  /** Null quando o convite nasceu do signup orgânico (sem admin por trás). */
+  createdById: string | null;
+  expiresAt: string;
+  actionUrl: string | null;
+  usedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RouteWithUserAccess {
+  id: string;
+  path: string;
+  labelKey: string;
+  isActive: boolean;
+  hasAccess: boolean;
+  accessInfo?: { createdAt: string; grantedBy: string | null } | null;
+}

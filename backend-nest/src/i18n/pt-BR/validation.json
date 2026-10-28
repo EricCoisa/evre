@@ -14,5 +14,15 @@
   },
   "role": {
     "invalid": "Role inválida"
-  }
+  },
+  "current_password": {
+    "required": "Senha atual é obrigatória"
+  },
+  "new_password": {
+    "min_length": "A nova senha deve ter no mínimo {min} caracteres"
+  },
+  "confirm_new_password": {
+    "min_length": "A confirmação deve ter no mínimo {min} caracteres"
+  },
+  "new_passwords_do_not_match": "A nova senha e a confirmação não coincidem"
 }

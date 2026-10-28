@@ -1,31 +1,29 @@
 "use server";
-import { DELETE, GET, POST, ApiResponse } from '../../api/api';
-import type { 
-  UserConfiguration,
-} from './types';
+// Thin adapter — wraps generated user-configuration functions
+import { getUserConfiguration as createUserConfigClient } from '@/lib/generated/user-configuration/user-configuration';
+import type { ApiResponse } from '@/lib/api/api';
+import type { UserConfiguration } from './types';
+import { wrap, wrapAs } from '../wrap';
 
-// Obter todas as configurações do usuário logado
+const api = createUserConfigClient();
+
 export async function getUserConfigurations(): Promise<ApiResponse<UserConfiguration[]>> {
-  return await GET<UserConfiguration[]>('/user-configuration/me');
+  return wrap(() => api.userConfigurationControllerGetUserConfigurations() as Promise<UserConfiguration[]>);
 }
 
-// Obter configuração específica por labelKey
 export async function getUserConfigurationByLabelKey<T>(labelKey: string): Promise<ApiResponse<UserConfiguration<T> | null>> {
-  return await GET<UserConfiguration<T>>(`/user-configuration/key/${labelKey}`);
+  return wrapAs(() => api.userConfigurationControllerGetUserConfigurationsKey(labelKey));
 }
 
-// Definir/atualizar configuração do usuário
 export async function setUserConfiguration<T>(
-  definitionId: string, 
+  definitionId: string,
   value: T
 ): Promise<ApiResponse<UserConfiguration<T>>> {
-  return await POST<UserConfiguration<T>>('/user-configuration/me', {
-    definitionId,
-    value: String(value), // Backend espera string
-  });
+  return wrapAs(() =>
+    api.userConfigurationControllerSetUserConfiguration({ definitionId, value: String(value) })
+  );
 }
 
-// Resetar configuração específica (volta ao padrão)
 export async function resetUserConfiguration(definitionId: string): Promise<ApiResponse<void>> {
-  return await DELETE(`/user-configuration/me/${definitionId}`);
+  return wrap(() => api.userConfigurationControllerResetUserConfiguration(definitionId));
 }

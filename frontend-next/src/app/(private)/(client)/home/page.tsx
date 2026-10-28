@@ -1,98 +1,99 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useProjects } from '@/lib/actions/project/queries';
+import { useTranslation } from '@/hooks/use-translation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Shield, Zap, Layout, RefreshCw, Cookie, Globe } from 'lucide-react';
 import { Container } from '@/components/container';
-import { Loader2, Folder, Calendar } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { ProjectStatusColors } from '@/lib/actions/project/types';
-import { StateMaster } from '@/components/state-master';
 
-export default function ProjectsOverviewPage() {
-    const { t } = useTranslation('projectProposal');
-    const router = useRouter();
-    const { data, isLoading, error } = useProjects({ pagination: false });
+export default function HomePage() {
+  const { t } = useTranslation('home');
 
-    if (error) {
-        return (
-            <Container>
-                <div className="flex items-center justify-center min-h-[400px]">
-                    <div className="text-center">
-                        <p className="text-destructive">{t('projects_error_loading')}</p>
-                    </div>
+  const features = [
+    { icon: Shield, title: t('authJWT') },
+    { icon: Layout, title: t('protectedPage') },
+    { icon: Cookie, title: t('httpOnlyCookies') },
+    { icon: RefreshCw, title: t('autoRefresh') },
+    { icon: Globe, title: t('sharedHeader') },
+  ];
+
+  const routes = [
+    { path: '/home', description: t('thisPage') },
+    { path: '/dashboard', description: t('adminPanel') },
+    { path: '/*', description: t('sharedLayout') },
+  ];
+
+  return (
+    <Container border={false}>
+      <div className="space-y-8">
+        {/* Hero Section */}
+        <div className="text-center space-y-4 py-8">
+          <h1 className="text-4xl font-bold tracking-tight">
+            {t('title')}
+          </h1>
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+            {t('description')}
+          </p>
+        </div>
+
+        {/* Features Grid */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <Card className="col-span-full">
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+                  <Zap className="h-4 w-4 text-primary" />
                 </div>
-            </Container>
-        );
-    }
-
-    const projects = Array.isArray(data) ? data : [];
-
-    return (
-        <Container>
-            <StateMaster
-                queryKey={['projects']}
-                isLoading={isLoading}
-                loadingMessage={t('projects_loading')}
-                useTableSkeleton={true}
-            >
-
-            <div className="space-y-6">
-                {/* Header */}
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">{t('projects_title')}</h1>
-                    <p className="text-muted-foreground mt-2">
-                        {t('projects_description')}
-                    </p>
+                  <CardTitle className="text-lg">{t('informationTitle')}</CardTitle>
+                  <CardDescription className="text-sm">
+                    {t('featuresCardDesc')}
+                  </CardDescription>
                 </div>
-
-                {/* Projects Grid */}
-                {projects && (
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {projects.map((project) => (
-                            <Card
-                                key={project.id}
-                                className="cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
-                                onClick={() => router.push(`/home/${project.id}`)}
-                            >
-                                <CardHeader>
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <Folder className="h-5 w-5 text-primary" />
-                                            <CardTitle className="text-lg line-clamp-1">
-                                                {project.name}
-                                            </CardTitle>
-                                        </div>
-                                        <Badge
-                                            variant="secondary"
-                                            className={ProjectStatusColors[project.status as keyof typeof ProjectStatusColors] || ''}
-                                        >
-                                            {project.status}
-                                        </Badge>
-                                    </div>
-                                    {project.description && (
-                                        <CardDescription className="line-clamp-2 mt-2">
-                                            {project.description}
-                                        </CardDescription>
-                                    )}
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="space-y-2 text-sm text-muted-foreground">
-                                        <div className="flex items-center gap-2">
-                                            <Calendar className="h-4 w-4" />
-                                            <span>
-                                                {new Date(project.createdAt).toLocaleDateString('pt-BR')}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {features.map((feature, index) => (
+                  <div key={index} className="flex items-center gap-3 p-3 rounded-lg bg-card border border-border">
+                    <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-muted text-muted-foreground">
+                      <feature.icon className="h-4 w-4" />
                     </div>
-                )}
-            </div>
-            </StateMaster>
-        </Container>
-    );
+                    <span className="text-sm font-medium text-foreground">{feature.title}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Route Structure */}
+         <Card className="col-span-full">
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+                  <Layout className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">{t('routeStructureTitle')}</CardTitle>
+                  <CardDescription className="text-sm">
+                    {t('routeStructureDesc')} <code className="text-xs bg-muted px-1.5 py-0.5 rounded">(dashboard)</code>
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3 pt-0">
+              {routes.map((route, index) => (
+                <div key={index} className="flex items-center gap-2.5 p-2.5 rounded-lg border border-border bg-muted/30">
+                  <code className="text-sm bg-card px-2.5 py-1 rounded border border-border font-mono">
+                    {route.path}
+                  </code>
+                  <span className="text-sm text-muted-foreground">-</span>
+                  <span className="text-sm text-foreground">{route.description}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </Container>
+  );
 }

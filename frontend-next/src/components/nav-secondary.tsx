@@ -12,10 +12,10 @@ import {
 } from "@/components/ui/sidebar"
 
 export function NavSecondary({
-  items,
+  items = [],
   ...props
 }: {
-  items: {
+  items?: {
     title: string
     url: string
     icon: Icon

@@ -27,5 +27,6 @@
   "bulk_granted_success": "Route accesses granted successfully",
   "access_not_found": "Route access not found",
   "revoked_successfully": "Route access revoked successfully",
-  "all_revoked_successfully": "All route accesses revoked successfully"
+  "all_revoked_successfully": "All route accesses revoked successfully",
+  "already_denied": "Access to this route is already denied for this user"
 }

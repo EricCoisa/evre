@@ -5,10 +5,8 @@ export const RouteSelect = {
   icon: true,
   parentId: true,
   ordem: true,
-  isHome: true,
   isActive: true,
   createdAt: true,
   updatedAt: true,
   showSideBar: true,
-  isClientHome: true,
 };

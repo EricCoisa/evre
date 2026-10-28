@@ -1,0 +1,24 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { I18nService } from 'nestjs-i18n';
+import { PrismaService } from '../../../prisma/prisma.service';
+import type { {{pascalCase name}} } from 'src/domain/{{kebabCase name}}/{{kebabCase name}}.entity';
+
+@Injectable()
+export class FindOne{{pascalCase name}}UseCase {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly i18n: I18nService,
+  ) {}
+
+  async execute(id: string): Promise<{{pascalCase name}}> {
+    const found = await this.prisma.{{camelCase name}}.findUnique({
+      where: { id },
+    });
+
+    if (!found) {
+      throw new NotFoundException(this.i18n.t('{{snakeCase name}}.not_found'));
+    }
+
+    return found;
+  }
+}

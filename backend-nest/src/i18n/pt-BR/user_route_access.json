@@ -27,5 +27,6 @@
   "bulk_granted_success": "Acessos às rotas concedidos com sucesso",
   "access_not_found": "Acesso à rota não encontrado",
   "revoked_successfully": "Acesso à rota revogado com sucesso",
-  "all_revoked_successfully": "Todos os acessos às rotas foram revogados com sucesso"
+  "all_revoked_successfully": "Todos os acessos às rotas foram revogados com sucesso",
+  "already_denied": "Acesso a esta rota já está negado para este usuário"
 }

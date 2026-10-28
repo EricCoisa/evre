@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 
 
 import { getUserConfigurationsDefinitions, updateUserConfigurationsDefinitions } from './api';
@@ -8,7 +8,7 @@ import { useApp } from '@/contexts/appProvider';
 import { UserConfigurationsDefinitions } from './types';
 
 export function useUserConfigurationsDefinitions<T>(labelKey: string) {
-  return useQuery({
+  return useSuspenseQuery({
     queryKey: ['user-configurations-definitions', labelKey],
     queryFn: Collector(() => getUserConfigurationsDefinitions<T>(labelKey)),
   });

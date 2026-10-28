@@ -1,0 +1,20 @@
+model ShortLink {
+  id          String    @id @default(uuid())
+  code        String    @unique
+  targetUrl   String    @db.Text
+  purpose     String?
+  createdById String?
+  clicksCount Int       @default(0)
+  maxClicks   Int?
+  expiresAt   DateTime?
+  disabledAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  createdBy   User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([code])
+  @@index([expiresAt])
+  @@map("short_links")
+  @@schema("public")
+}

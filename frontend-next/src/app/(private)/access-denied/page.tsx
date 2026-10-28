@@ -1,5 +1,3 @@
-import { Banner } from "@/components/banner";
-
 export default function AcessoNegadoPage() {
   return (
     <div className="min-h-screen flex">

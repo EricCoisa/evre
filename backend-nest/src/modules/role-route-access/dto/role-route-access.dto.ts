@@ -1,9 +1,8 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { ROLES } from 'src/types/userRole';
 
 export const RoleRouteAccessSchema = z.object({
-  roleId: z.enum(ROLES),
+  roleId: z.string(),
   routeId: z.string().uuid(),
   route: z
     .object({

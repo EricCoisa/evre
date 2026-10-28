@@ -12,9 +12,9 @@ import {
 } from "@/components/ui/sidebar"
 
 export function NavMain({
-  items,
+  items = [],
 }: {
-  items: {
+  items?: {
     title: string
     url: string
     icon?: Icon

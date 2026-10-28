@@ -1,4 +1,6 @@
 "use client";
+
+import * as React from "react";
 import {
   Dialog,
   DialogContent,
@@ -6,40 +8,51 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { cn } from '@/lib/cn';
 
-interface ModalProps {
-    title?: string | null;
-    description?: string | null;
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-    children: React.ReactNode;
-    className?: string;
-    maxWidth?: string;
-    width?: string;
-    height?: string;
+export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
+
+const modalSizeClasses: Record<ModalSize, string> = {
+  sm: 'sm:max-w-md',
+  md: 'sm:max-w-lg',
+  lg: 'sm:max-w-2xl',
+  xl: 'sm:max-w-4xl',
+  '2xl': 'sm:max-w-5xl',
+  full: 'sm:max-w-[92vw] sm:max-h-[90vh]',
+};
+
+export interface ModalProps {
+  title: React.ReactNode;
+  description?: React.ReactNode;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  children: React.ReactNode;
+  size?: ModalSize;
+  className?: string;
 }
 
-export default function Modal({ title, description, open, onOpenChange, children, className, maxWidth, width, height }: ModalProps) {
-    
-  const style: React.CSSProperties = {
-    maxWidth: maxWidth || '98vw',
-    width: width || '98vw',
-    height: height,
-  };
+export default function Modal({
+  title,
+  description,
+  open,
+  onOpenChange,
+  children,
+  size = 'md',
+  className,
+}: ModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className={`overflow-y-auto max-h-[95vh] w-full p-0 ${className || ''}`}
-        style={style}
+        className={cn(
+          'w-full max-h-[88dvh] overflow-y-auto',
+          modalSizeClasses[size],
+          className
+        )}
       >
-        {title || description ? (
-          <DialogHeader className="px-6 pt-6 pb-0">
-            {title && <DialogTitle>{title}</DialogTitle>}
-            {description && <DialogDescription>
-              {description}
-            </DialogDescription>}
-          </DialogHeader>
-        ) : null}
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          {description && <DialogDescription>{description}</DialogDescription>}
+        </DialogHeader>
 
         {children}
       </DialogContent>

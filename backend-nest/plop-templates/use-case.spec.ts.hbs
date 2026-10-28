@@ -1,0 +1,25 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { {{pascalCase name}}UseCase } from './{{kebabCase name}}.use-case';
+import { PrismaService } from '../../../prisma/prisma.service';
+
+const mockPrisma = {};
+
+describe('{{pascalCase name}}UseCase', () => {
+  let useCase: {{pascalCase name}}UseCase;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        {{pascalCase name}}UseCase,
+        { provide: PrismaService, useValue: mockPrisma },
+      ],
+    }).compile();
+    useCase = module.get<{{pascalCase name}}UseCase>({{pascalCase name}}UseCase);
+  });
+
+  afterEach(() => vi.clearAllMocks());
+
+  it('should be defined', () => {
+    expect(useCase).toBeDefined();
+  });
+});

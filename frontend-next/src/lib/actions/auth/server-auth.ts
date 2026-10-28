@@ -10,53 +10,43 @@ type RouteContext = 'admin' | 'client';
 
 const ACCESS_TOKEN_COOKIE = process.env.ACCESS_TOKEN_COOKIE_NAME || 'access_token';
 const REFRESH_TOKEN_COOKIE = process.env.REFRESH_TOKEN_COOKIE_NAME || 'refresh_token';
-/**
- * Salva access_token no cookie
- */
+/** Salva o access_token no cookie HttpOnly. */
 export async function setServerAccessToken(token: string) {
   const cookieStore = await cookies();
   cookieStore.set(ACCESS_TOKEN_COOKIE, token, {
     httpOnly: true,
     secure: true,
-    sameSite: 'none',
+    sameSite: 'lax',
     path: '/',
     maxAge: 15 * 60, // 15 minutos em segundos
   });
 }
 
-/**
- * Salva refresh_token no cookie
- */
+/** Salva o refresh_token no cookie HttpOnly. */
 export async function setServerRefreshToken(token: string) {
   const cookieStore = await cookies();
   cookieStore.set(REFRESH_TOKEN_COOKIE, token, {
     httpOnly: true,
     secure: true,
-    sameSite: 'none',
+    sameSite: 'lax',
     path: '/',
     maxAge: 7 * 24 * 60 * 60, // 7 dias em segundos
   });
 }
 
-/**
- * Obtém refresh_token do cookie (Server-Side)
- */
+/** Obtém o refresh_token do cookie. */
 export async function getServerRefreshToken(): Promise<string | undefined> {
   const cookieStore = await cookies();
   return cookieStore.get(REFRESH_TOKEN_COOKIE)?.value;
 }
 
-/**
- * Remove access_token do cookie
- */
+/** Remove o access_token do cookie. */
 export async function deleteServerAccessToken() {
   const cookieStore = await cookies();
   cookieStore.delete(ACCESS_TOKEN_COOKIE);
 }
 
-/**
- * Remove refresh_token do cookie
- */
+/** Remove o refresh_token do cookie. */
 export async function deleteServerRefreshToken() {
   const cookieStore = await cookies();
   cookieStore.delete(REFRESH_TOKEN_COOKIE);
@@ -70,9 +60,7 @@ export async function getAuthHeaders(): Promise<{ Authorization?: string } | nul
 }
 
 
-/**
- * Obtém access_token do cookie (Server-Side)
- */
+/** Obtém o access_token do cookie. */
 export async function getServerAccessToken(): Promise<string | undefined> {
   const cookieStore = await cookies();
   return cookieStore.get(ACCESS_TOKEN_COOKIE)?.value;
@@ -83,71 +71,16 @@ export async function getServerLang(): Promise<string | undefined> {
   return cookieStore.get("i18nextLng")?.value;
 }
 
-// Rotas públicas que não precisam de validação de acesso
-const PUBLIC_ROUTES = ['/login', '/register', '/forgot-password'];
-
-// Rotas que não verificam permissão específica (apenas autenticação)
-const AUTH_ONLY_ROUTES = ['/', '/redirect', '/access-denied'];
-
-/**
- * Valida se usuário está autenticado e tem acesso à rota
- * Se não estiver logado, redireciona para /login
- * Se não tiver acesso, redireciona para /access-denied
- * 
- * NOTA: Cache removido pois não funciona em ambientes serverless (Vercel, AWS Lambda, etc)
- * onde cada invocação de função é stateless.
- */
-export async function validateServerAuth(pathname: string): Promise<void> {
-  // 1. Ignora rotas públicas
-  if (PUBLIC_ROUTES.includes(pathname)) {
-    return;
-  }
-
-  // 2. Verifica se está logado
-  const accessToken = await getServerAccessToken();
-  if (!accessToken) {
-    redirect('/login');
-  }
-
-  // 3. Rotas que só precisam de autenticação (não verificam permissão específica)
-  if (AUTH_ONLY_ROUTES.includes(pathname)) {
-    return;
-  }
-
-  // 4. Verifica se tem acesso à rota na API
-  let hasAccess = false;
-  try {
-    const response = await getUserRouteAccessByPath(pathname);
-    hasAccess = response.data === true;
-  } catch (error) {
-    console.error('Error validating route access:', error);
-    // Em caso de erro na API, redireciona para /redirect
-    redirect('/redirect');
-  }
-  
-  // 5. Redireciona se não tiver acesso (FORA do try/catch para não capturar NEXT_REDIRECT)
-  if (!hasAccess) {
-    redirect('/redirect');
-  }
-}
-
-/**
- * Verifica se usuário está autenticado (sem redirect)
- */
+/** Indica se há sessão, sem redirecionar. */
 export async function isServerAuthenticated(): Promise<boolean> {
   const accessToken = await getServerAccessToken();
   return !!accessToken;
 }
 
-/**
- * Valida se usuário tem acesso à rota no contexto especificado
- * @param pathname - Caminho da rota a ser validada
- * @param context - Contexto da rota ('admin' | 'client')
- * @returns Promise<{ user: AuthUser; hasAccess: boolean }>
- */
+/** Valida se o usuário tem acesso à rota no contexto especificado. */
 export async function validateRouteAccess(
   pathname: string,
-  context: RouteContext
+  _context: RouteContext
 ): Promise<{ user: AuthUser; hasAccess: boolean }> {
   // 1. Verifica se está autenticado
   const accessToken = await getServerAccessToken();
@@ -168,12 +101,9 @@ export async function validateRouteAccess(
   }
 
   // 3. Valida contexto específico
-  if (context === 'client') {
-    // Cliente precisa ter companyId
-    if (!user.companyId) {
-      return { user, hasAccess: false };
-    }
-  }
+  // if (context === 'client') {
+
+  // }
 
   let hasAccess = false;
   
@@ -185,7 +115,7 @@ export async function validateRouteAccess(
     } else {
       hasAccess = response.data === true;
     }
-  } catch (error) {
+  } catch {
     hasAccess = false;
   }
   return { user, hasAccess };

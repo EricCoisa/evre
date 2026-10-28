@@ -4,5 +4,14 @@
 	"forgotPassword": "Esqueceu a senha?",
 	"noAccount": "Não tem uma conta?",
 	"createAccount": "Criar conta",
-	"backToHome": "← Voltar para a página inicial"
+	"backToHome": "← Voltar para a página inicial",
+	"email": "Email",
+	"emailPlaceholder": "seu@email.com",
+	"password": "Senha",
+	"submitting": "Entrando...",
+	"orContinueWith": "ou continue com",
+	"continueWith": "Continuar com {{provider}}",
+	"oauthError": "Não foi possível concluir o login com o provedor. Tente novamente.",
+	"oauthStartFailed": "Não foi possível iniciar a autenticação. Tente novamente.",
+	"sessionExpired": "Sua sessão expirou. Faça login novamente."
 }

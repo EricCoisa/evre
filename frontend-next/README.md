@@ -112,7 +112,7 @@ npx shadcn@latest add [component-name]
 Crie o arquivo `.env.local`:
 
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:3002
+NEXT_PUBLIC_API_URL=http://localhost:3001
 ```
 
 ### **2. Instalação**
@@ -127,14 +127,24 @@ npm install
 npm run dev
 ```
 
-Aplicação rodará em: `http://localhost:3002`
+Aplicação rodará em: `http://localhost:3000`
 
 ### **4. Build de Produção**
 
 ```bash
 npm run build
-npm run start
 ```
+
+Para **rodar** o build, use o stack Docker — é o mesmo caminho da produção:
+
+```bash
+docker compose up -d --build   # na raiz do monorepo
+```
+
+Não existe `npm start` aqui de propósito. O `next.config.ts` usa `output: 'standalone'`,
+que gera um pacote em `.next/standalone/` incompleto por natureza (sem `.next/static`,
+sem `public` inteiro e sem variáveis de ambiente). Quem o completa é o `Dockerfile`, e
+duplicar isso num script local daria duas receitas para manter em sincronia.
 
 ---
 
@@ -144,7 +154,6 @@ npm run start
 # Desenvolvimento
 npm run dev              # Inicia servidor de desenvolvimento
 npm run build            # Build de produção
-npm run start            # Inicia servidor de produção
 npm run lint             # Executa ESLint
 
 # Componentes UI
@@ -197,7 +206,7 @@ Verifique se o backend está configurado com:
 ```typescript
 // backend: main.ts
 app.enableCors({
-  origin: process.env.FRONTEND_URL,
+  origin: process.env.NEXTAUTH_URL,
   credentials: true,
 });
 ```
@@ -207,6 +216,45 @@ app.enableCors({
 ## 📝 Licença
 
 Este é um template privado para uso interno.
+
+---
+
+## API Code Generation (Orval)
+
+The API client code in `src/lib/generated/` is auto-generated from `backend-nest/openapi.json` using [Orval](https://orval.dev/).
+
+### Regenerating after backend changes
+
+```bash
+cd frontend-next
+npm run generate:api
+```
+
+### Source and output
+
+- **Spec**: `backend-nest/openapi.json` (OpenAPI 3.0.3, maintained manually)
+- **Generated output**: `src/lib/generated/` (one directory per API tag)
+- **Schemas barrel**: `src/lib/generated/index.schemas.ts/index.ts`
+- **Config**: `frontend-next/orval.config.ts`
+
+### Adapter pattern
+
+Each module's `api.ts` is a thin adapter over the generated functions. It:
+1. Calls the generated factory (e.g. `getRoute()`) to get typed methods
+2. Wraps every call in `ApiResponse<T>` — the shape used by all queries and screens
+3. Preserves the same exported function names screens already use
+
+```typescript
+// Example: src/lib/actions/access/route/api.ts
+import { getRoute } from '@/lib/generated/route/route';
+const api = getRoute();
+
+export async function getRoutes(params?: PaginationParams) {
+  return wrap(() => api.routeFindAll(params));
+}
+```
+
+The `wrap()` helper converts resolved promises into `{ success, data, message, status }` and catches axios errors uniformly. Screens and `queries.ts` files never need to change unless a function is renamed.
 
 ---
 

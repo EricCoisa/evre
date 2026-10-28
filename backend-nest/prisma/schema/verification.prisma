@@ -1,0 +1,37 @@
+enum VerificationChannel {
+  EMAIL
+  WHATSAPP
+  /// Reservado para TOTP futuro — RequestVerificationUseCase lança "não implementado" se usado.
+  AUTHENTICATOR
+
+  @@schema("public")
+}
+
+/// Código OTP de propósito específico (ex. confirmar email, confirmar telefone), não é 2FA de
+/// login. `purpose` é a chave TS do módulo chamador (ver Notification.type), não um enum daqui.
+/// `userId` é um id opaco — sem `@relation` para User de propósito: este módulo não pode exigir
+/// que quem o usa tenha uma tabela/coluna dedicada. `consumedAt != null` É o fato "confirmado";
+/// nenhum outro módulo deve espelhar esse estado em coluna própria — consulte via VerificationService.
+model VerificationCode {
+  id          String              @id @default(uuid())
+  userId      String
+  purpose     String
+  channel     VerificationChannel
+  /// Snapshot do email/telefone no momento do envio — auditoria e chave de lookup de "confirmado".
+  target      String
+  /// sha256 do código — nunca @unique: colisão entre usuários/propósitos é esperada.
+  codeHash    String
+  attempts    Int                 @default(0)
+  maxAttempts Int                 @default(5)
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  /// Consumo de uso único (method: ONCE do @RequireVerification) — distinto de `consumedAt`
+  /// (confirmação do OTP em si). Nunca lido fora do método ONCE.
+  usedAt      DateTime?
+  createdAt   DateTime            @default(now())
+
+  @@index([userId, purpose])
+  @@index([expiresAt])
+  @@map("verification_codes")
+  @@schema("public")
+}

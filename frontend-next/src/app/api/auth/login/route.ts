@@ -1,50 +1,46 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
+import { getServerLang } from '@/lib/actions/auth/server-auth';
+import { clientIpHeader } from '@/lib/api/client-ip';
+import { CAPTCHA_TOKEN_HEADER, captchaHeader } from '@/lib/api/captcha-header';
+import { API_PATHS } from '@/lib/generated/paths';
 
-/**
- * API Route para login
- * Realiza login no backend e define cookies HttpOnly
- */
+import { forwardSetCookies } from '@/lib/api/cookie-forward';
+
+function getLoginErrorMessage(error: unknown): string {
+  if (axios.isAxiosError(error)) {
+    console.error('Login error response:', error.response?.data);
+    return error.response?.data?.message ?? '';
+  }
+  console.error('Login error:', error);
+  return '';
+}
+
+/** Faz login no backend e repassa os cookies HttpOnly ao browser. */
 export async function POST(request: Request) {
   const body = await request.json();
+  const captchaToken = request.headers.get(CAPTCHA_TOKEN_HEADER);
 
   try {
-    // Chama endpoint de login no backend
     const backendResponse = await axios.post(
-      `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
+      `${process.env.NEXT_PUBLIC_API_URL}${API_PATHS.AUTH_LOGIN}`,
       body,
       {
         withCredentials: true,
+        headers: {
+          ...(await clientIpHeader()),
+          ...captchaHeader(captchaToken),
+          'Accept-Language': (await getServerLang()) ?? 'pt-BR',
+        },
       }
     );
 
-    // Extrai cookies setados pelo backend
-    const setCookie = backendResponse.headers['set-cookie'];
-    const { user } = backendResponse.data;
-
-    // Cria resposta para o frontend
-    const response = NextResponse.json({ user });
-    // Repassa os cookies do backend para o cliente
-    if (setCookie) {
-      if (Array.isArray(setCookie)) {
-        for (const cookie of setCookie) {
-          response.headers.append('set-cookie', cookie);
-        }
-      } else {
-        response.headers.set('set-cookie', setCookie);
-      }
-    }
+    const response = NextResponse.json({ user: backendResponse.data.user });
+    forwardSetCookies(response, backendResponse.headers['set-cookie']);
     return response;
   } catch (error) {
-    let message = 'Login failed';
-    if (axios.isAxiosError(error)) {
-      console.error('Login error response:', error.response?.data);
-      message = error.response?.data?.message.message || message;
-    } else if (error instanceof Error) {
-      message = error.message;
-    }
     return NextResponse.json(
-      { error: message },
+      { message: getLoginErrorMessage(error) },
       { status: 401 }
     );
   }

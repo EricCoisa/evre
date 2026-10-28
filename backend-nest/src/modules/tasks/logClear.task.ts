@@ -1,4 +1,4 @@
-import {
+﻿import {
   Injectable,
   Logger,
   OnModuleInit,
@@ -10,7 +10,7 @@ import { CronJob } from 'cron';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SystemConfigurationService } from '../system-configuration/system-configuration.service';
 import { LoggingService } from '../logging/logging.service';
-import { LogActions } from 'src/common/types/logging.types';
+import { LogActions } from 'src/domain/logging/log-actions';
 
 @Injectable()
 export class LogClearTask implements OnModuleInit {
@@ -23,19 +23,16 @@ export class LogClearTask implements OnModuleInit {
     @Inject(forwardRef(() => SystemConfigurationService))
     private readonly systemConfigurationService: SystemConfigurationService,
     private readonly schedulerRegistry: SchedulerRegistry,
+    @Inject(forwardRef(() => LoggingService))
     private readonly loggingService: LoggingService,
   ) {}
 
-  /**
-   * Inicializa o cron job baseado nas configurações
-   */
+  /** Inicializa o cron a partir da configuração. */
   async onModuleInit() {
     await this.updateCronSchedule();
   }
 
-  /**
-   * Lógica principal para limpeza dos logs
-   */
+  /** Limpa os logs mais antigos que a retenção configurada. */
   async handleLogCleanup() {
     try {
       // Intervalo de limpeza (dias)
@@ -134,10 +131,7 @@ export class LogClearTask implements OnModuleInit {
     }
   }
 
-  /**
-   * Cria ou recria o cron job diariamente às 00:00,
-   * e a lógica interna decide se deve ou não limpar.
-   */
+  /** Cria ou recria o cron diário de meia-noite; a limpeza decide sozinha se roda. */
   async updateCronSchedule() {
     try {
       let deleteIntervalDays = 7;
@@ -187,9 +181,7 @@ export class LogClearTask implements OnModuleInit {
     }
   }
 
-  /**
-   * Execução manual (para testes ou painel admin)
-   */
+  /** Execução manual da limpeza, para teste ou painel admin. */
   async executeLogCleanupManually() {
     this.logger.log('Execução manual solicitada...');
     await this.handleLogCleanup();

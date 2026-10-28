@@ -1,6 +1,4 @@
-/**
- * Configurações globais de performance para o projeto
- */
+/** Tempos de cache, GC e retry usados pelo TanStack Query. */
 
 // React Query Configurations
 export const QUERY_CONFIG = {
@@ -12,23 +10,7 @@ export const QUERY_CONFIG = {
     USER_ROUTE_ACCESS: 5 * 60 * 1000,  // 5 minutos - acessos de usuário
     LOGGING: 2 * 60 * 1000,            // 2 minutos - logs (mudam frequentemente)
     USER: 10 * 60 * 1000,              // 5 minutos - usuário
-    ME: 10 * 60 * 1000,                // 5 minutos - usuário
-    COMPANIES: 5 * 60 * 1000,          // 5 minutos - lista de empresas
-    COMPANY: 10 * 60 * 1000,           // 10 minutos - empresa individual
-    PROPOSALS: 5 * 60 * 1000,          // 5 minutos - lista de propostas
-    PROJECTS: 5 * 60 * 1000,           // 5 minutos - lista de projetos
-    PROJECT: 10 * 60 * 1000,           // 10 minutos - projeto individual
-    STAGES: 5 * 60 * 1000,             // 5 minutos - lista de stages
-    ACTIVITIES: 2 * 60 * 1000,         // 2 minutos - lista de atividades
-    COMMENTS: 2 * 60 * 1000,           // 2 minutos - lista de comentários
-    APPROVALS: 5 * 60 * 1000,          // 5 minutos - lista de aprovações
-    HISTORY: 1 * 60 * 1000,            // 1 minuto - histórico de ações
-    CONTACTS: 5 * 60 * 1000,           // 5 minutos - lista de contatos
-    CLIENT_LOG: 2 * 60 * 1000,         // 2 minutos - lista de client logs
-    CONTRACT_DOCUMENTS: 5 * 60 * 1000,   // 5 minutos - lista de documentos contratuais
-    APPROVAL_REQUEST: 5 * 60 * 1000, // 5 minutos - ApprovalRequest
-    APPROVAL_REQUESTS: 5 * 60 * 1000, // 5 minutos - ApprovalRequests
-
+    ME: 10 * 60 * 1000,              // 5 minutos - usuário
   },
   
   // Garbage Collection Times (tempo que dados ficam no cache após stale)
@@ -38,23 +20,7 @@ export const QUERY_CONFIG = {
     ROUTES: 20 * 60 * 1000,            // 20 minutos - rotas mudam raramente
     LOGGING: 5 * 60 * 1000,            // 5 minutos - logs podem ser removidos rapidamente
     USER: 15 * 60 * 1000,              // 15 minutos - usuário
-    ME: 15 * 60 * 1000,                // 15 minutos - usuário
-    COMPANIES: 10 * 60 * 1000,         // 10 minutos - lista de empresas
-    COMPANY: 15 * 60 * 1000,           // 15 minutos - empresa individual
-    PROPOSALS: 10 * 60 * 1000,         // 10 minutos - lista de propostas
-    PROJECTS: 10 * 60 * 1000,          // 10 minutos - lista de projetos
-    PROJECT: 15 * 60 * 1000,           // 15 minutos - projeto individual
-    STAGES: 10 * 60 * 1000,            // 10 minutos - lista de stages
-    ACTIVITIES: 5 * 60 * 1000,          // 5 minutos - lista de atividades
-    COMMENTS: 5 * 60 * 1000,           // 5 minutos - lista de comentários
-    APPROVALS: 10 * 60 * 1000,          // 10 minutos - lista de aprovações
-    HISTORY: 2 * 60 * 1000,            // 2 minutos - histórico de ações
-    CONTACTS: 10 * 60 * 1000,          // 10 minutos - lista de contatos
-    CLIENT_LOG: 5 * 60 * 1000,         // 5 minutos - lista de client logs
-    CONTRACT_DOCUMENTS: 10 * 60 * 1000,   // 10 minutos - lista de documentos contratuais
-    APPROVAL_REQUEST: 10 * 60 * 1000, // 10 minutos - ApprovalRequest
-    APPROVAL_REQUESTS: 10 * 60 * 1000, // 10 minutos - ApprovalRequests
-
+    ME: 15 * 60 * 1000,              // 15 minutos - usuário
   },
   
   // Configurações de retry

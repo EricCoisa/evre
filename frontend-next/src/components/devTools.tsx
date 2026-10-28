@@ -4,19 +4,17 @@ import { useApp } from '@/contexts/appProvider';
 import { useQueryClient } from '@tanstack/react-query';
 import { Switch } from './ui/switch';
 import { Button } from './ui/button';
-import * as React from 'react';
 import { Window } from './window';
 import { Tree } from './tree';
 import { Label } from './ui/label';
+import { useHasMounted } from '@/hooks/use-has-mounted';
 
 
 export function DevTools() {
     const { devTools ,reactScan, setReactScan, setDevTools, emulateError, setEmulateError  } = useApp();
     const queryClient = useQueryClient();
-    // O cache de queries é estado vivo que difere entre SSR e cliente → hydration mismatch.
-    // Só lê o cache depois do mount, no cliente.
-    const [mounted, setMounted] = React.useState(false);
-    React.useEffect(() => setMounted(true), []);
+    // Lê o cache de queries só depois do mount, no cliente
+    const mounted = useHasMounted();
     const queries = mounted ? queryClient.getQueryCache().findAll() : [];
 
     return (

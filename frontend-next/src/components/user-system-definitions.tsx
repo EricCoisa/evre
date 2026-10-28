@@ -2,13 +2,15 @@
 
 import { BaseConfiguration, OtherConfigurationProps } from './base-configuration';
 import { useTranslation } from '@/hooks/use-translation';
+import { useScreenItem } from '@/components/agent/screen-registry';
 import { useSetUserConfigurationDefinitions, useUserConfigurationsDefinitions } from '@/lib/actions/userConfigurationDefinition/queries';
 
 import { toast } from 'sonner';
 
 export function UserSystemDefinitions(props: OtherConfigurationProps) {
   const { t } = useTranslation();
-  const { data, error, isLoading} = useUserConfigurationsDefinitions(props.labelKey);
+  useScreenItem('config', 'user-configurations-definitions', props.labelKey);
+  const { data } = useUserConfigurationsDefinitions(props.labelKey);
   const updateValue = useSetUserConfigurationDefinitions();
 
   const handleUpdate = async (newValue: unknown) => {
@@ -36,12 +38,11 @@ export function UserSystemDefinitions(props: OtherConfigurationProps) {
               id: data.id,
               labelKey: data.labelKey,
               valueType: data.valueType,
+              options: data.options,
               value: data.defaultValue
             }
           : undefined
       }
-      error={error}
-      isLoading={isLoading}
       isPending={updateValue.isPending}
       onUpdate={handleUpdate}
       forceType={props.forceType}

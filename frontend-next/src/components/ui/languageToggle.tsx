@@ -8,11 +8,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useSetUserConfiguration, useUserConfiguration } from '@/lib/actions/userConfiguration/queries';
+import { USER_CONFIG_KEYS } from '@/types/user-config-keys';
 import i18n from '../../../i18n';
 import { setLang } from '@/lib/utils';
 
 export function LanguageToggle() {
-  const { data: languageConfig} = useUserConfiguration<string>('USERCONFIG_LANGUAGE');
+  const { data: languageConfig} = useUserConfiguration<string>(USER_CONFIG_KEYS.language);
   const updateUserConfig = useSetUserConfiguration();
 
   const onValueChange = async (value: string) => {

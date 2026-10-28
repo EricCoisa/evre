@@ -1,6 +1,5 @@
 import { Controller, Query, Param, Body } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { SystemConfigurationService } from './system-configuration.service';
 import {
   GetApi,
   PostApi,
@@ -19,19 +18,33 @@ import { UpdateSystemConfigurationDto } from './dto/update-system-configuration.
 import type { PaginatedResponse } from '../../common/types/pagination.types';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../../common/types/auth.types';
+import { FindAllSystemConfigurationUseCase } from './use-cases/find-all.use-case';
+import { FindOneSystemConfigurationUseCase } from './use-cases/find-one.use-case';
+import { FindSystemConfigByLabelKeyUseCase } from './use-cases/find-by-label-key.use-case';
+import { CreateSystemConfigurationUseCase } from './use-cases/create.use-case';
+import { UpdateSystemConfigurationUseCase } from './use-cases/update.use-case';
+import { RemoveSystemConfigurationUseCase } from './use-cases/remove.use-case';
+import {
+  maskSecretValue,
+  maskSecretValues,
+} from '../../common/utils/mask-secret-value.util';
 
 @ApiTags('system-configuration')
 @Controller('system-configuration')
 export class SystemConfigurationController {
   constructor(
-    private readonly systemConfigurationService: SystemConfigurationService,
+    private readonly findAll$: FindAllSystemConfigurationUseCase,
+    private readonly findOne$: FindOneSystemConfigurationUseCase,
+    private readonly findByLabelKey$: FindSystemConfigByLabelKeyUseCase,
+    private readonly create$: CreateSystemConfigurationUseCase,
+    private readonly update$: UpdateSystemConfigurationUseCase,
+    private readonly remove$: RemoveSystemConfigurationUseCase,
   ) {}
 
   @GetApi({
     summary: 'Lista configurações do sistema',
     description: 'Retorna uma lista paginada de configurações do sistema',
     status: 'OK',
-    authenticated: true,
     roles: ['ADMIN'],
     queries: commonPaginationQueries,
     response: {
@@ -50,10 +63,14 @@ export class SystemConfigurationController {
   })
   async findAll(
     @Query(new ZodValidationPipe(PaginationQuerySchema)) query: PaginationQuery,
+    @CurrentUser() currentUser: AuthenticatedUser,
   ): Promise<
     PaginatedResponse<SystemConfigurationDto> | SystemConfigurationDto[]
   > {
-    return await this.systemConfigurationService.findAll(query);
+    const result = await this.findAll$.execute(query, {
+      roleName: currentUser.roleName,
+    });
+    return maskSecretValues(result, 'value');
   }
 
   @GetApi({
@@ -73,9 +90,8 @@ export class SystemConfigurationController {
     },
   })
   async findSignupConfiguration() {
-    return await this.systemConfigurationService.findByLabelKey(
-      'SYSTEM_USER_CREATE',
-    );
+    const result = await this.findByLabelKey$.execute('SYSTEM_USER_CREATE');
+    return maskSecretValue(result, 'value');
   }
 
   @GetApi({
@@ -95,9 +111,8 @@ export class SystemConfigurationController {
     },
   })
   async findDefaultThemeConfiguration() {
-    return await this.systemConfigurationService.findByLabelKey(
-      'SYSTEMCONFIG_THEME',
-    );
+    const result = await this.findByLabelKey$.execute('SYSTEMCONFIG_THEME');
+    return maskSecretValue(result, 'value');
   }
 
   @GetApi({
@@ -105,7 +120,6 @@ export class SystemConfigurationController {
     summary: 'Busca configuração por ID',
     description: 'Retorna uma configuração do sistema pelo ID',
     status: 'OK',
-    authenticated: true,
     roles: ['ADMIN'],
     response: {
       success: [
@@ -118,7 +132,8 @@ export class SystemConfigurationController {
     },
   })
   async findById(@Param('id') id: string): Promise<SystemConfigurationDto> {
-    return await this.systemConfigurationService.findOne(id);
+    const result = await this.findOne$.execute(id);
+    return maskSecretValue(result, 'value');
   }
 
   @GetApi({
@@ -126,7 +141,6 @@ export class SystemConfigurationController {
     summary: 'Busca configuração por chave',
     description: 'Retorna uma configuração do sistema pela chave (labelKey)',
     status: 'OK',
-    authenticated: true,
     roles: ['ADMIN'],
     response: {
       success: [
@@ -138,15 +152,20 @@ export class SystemConfigurationController {
       ],
     },
   })
-  async findByLabelKey(@Param('labelKey') labelKey: string) {
-    return await this.systemConfigurationService.findByLabelKey(labelKey);
+  async findByLabelKey(
+    @Param('labelKey') labelKey: string,
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ) {
+    const result = await this.findByLabelKey$.execute(labelKey, {
+      roleName: currentUser.roleName,
+    });
+    return maskSecretValue(result, 'value');
   }
 
   @PostApi({
     summary: 'Cria configuração do sistema',
     description: 'Cria uma nova configuração do sistema',
     status: 'CREATED',
-    authenticated: true,
     roles: ['ADMIN'],
     response: {
       success: [
@@ -162,10 +181,8 @@ export class SystemConfigurationController {
     @Body() createDto: CreateSystemConfigurationDto,
     @CurrentUser() currentUser: AuthenticatedUser,
   ): Promise<SystemConfigurationDto> {
-    return await this.systemConfigurationService.create(
-      createDto,
-      currentUser.id,
-    );
+    const result = await this.create$.execute(createDto, currentUser.id);
+    return maskSecretValue(result, 'value');
   }
 
   @PatchApi({
@@ -173,7 +190,6 @@ export class SystemConfigurationController {
     summary: 'Atualiza configuração do sistema',
     description: 'Atualiza uma configuração existente do sistema',
     status: 'OK',
-    authenticated: true,
     roles: ['ADMIN'],
     response: {
       success: [
@@ -190,11 +206,8 @@ export class SystemConfigurationController {
     @Body() updateDto: UpdateSystemConfigurationDto,
     @CurrentUser() currentUser: AuthenticatedUser,
   ): Promise<SystemConfigurationDto> {
-    return await this.systemConfigurationService.update(
-      id,
-      updateDto,
-      currentUser.id,
-    );
+    const result = await this.update$.execute(id, updateDto, currentUser.id);
+    return maskSecretValue(result, 'value');
   }
 
   @DeleteApi({
@@ -202,13 +215,12 @@ export class SystemConfigurationController {
     summary: 'Remove configuração do sistema',
     description: 'Remove uma configuração do sistema',
     status: 'NO_CONTENT',
-    authenticated: true,
     roles: ['ADMIN'],
   })
   async delete(
     @Param('id') id: string,
     @CurrentUser() currentUser: AuthenticatedUser,
   ): Promise<void> {
-    await this.systemConfigurationService.remove(id, currentUser.id);
+    await this.remove$.execute(currentUser.id, id);
   }
 }
