@@ -88,7 +88,7 @@
   "acceptance_other_version_accepted": "Esta proposta já tem outra versão aceita",
   "acceptance_note_required": "Informe de onde veio a decisão — nota obrigatória para aceite registrado pela equipe",
   "acceptance_notified_title": "Proposta aceita",
-  "acceptance_notified_message": "{name} foi aceita.",
+  "acceptance_notified_message": "A proposta \"{name}\" foi aceita.",
   "public": {
     "get": {
       "title": "Obter proposta pública por token"
@@ -100,7 +100,7 @@
     "revoked": "Esta proposta foi atualizada. Peça o link mais recente.",
     "expired": "Esta proposta expirou.",
     "opened_title": "Proposta aberta pelo cliente",
-    "opened_message": "{name} foi aberta pelo cliente.",
+    "opened_message": "O cliente abriu a proposta \"{name}\".",
     "renew_requested_title": "Renovação solicitada",
     "renew_requested_message": "O cliente pediu um link novo para {name}."
   }

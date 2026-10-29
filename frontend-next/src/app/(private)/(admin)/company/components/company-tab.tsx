@@ -6,6 +6,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { DataTable } from "@/components/data-table";
 import { getCompanyColumns } from "./company-columns";
 import Modal from "@/components/modal";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { FormBuilderModal, type FormBuilderField } from "@/components/form/form-builder";
 import { CompanyEdit } from "./company-edit";
 import type { Company } from "@/lib/actions/company/types";
@@ -23,7 +24,6 @@ export function CompanyTab() {
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [archivingCompany, setArchivingCompany] = useState<Company | null>(null);
-  const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -34,7 +34,6 @@ export function CompanyTab() {
 
   const handleArchive = useCallback((item: Company) => {
     setArchivingCompany(item);
-    setIsArchiveDialogOpen(true);
   }, []);
 
   const queryParams = {
@@ -159,40 +158,20 @@ export function CompanyTab() {
         />
       </Modal>
 
-      {/* Modal de confirmação de arquivamento */}
-      <Modal
-        open={isArchiveDialogOpen}
-        onOpenChange={(open) => {
-          setIsArchiveDialogOpen(open);
-          if (!open) setArchivingCompany(null);
-        }}
+      <ConfirmDialog
+        open={!!archivingCompany}
+        onOpenChange={(open) => !open && setArchivingCompany(null)}
         title={t('archiveConfirm')}
         description={archivingCompany ? `${t('archiveConfirmDescription')} "${archivingCompany.name}"?` : ''}
-      >
-        <div className="flex gap-2 justify-end">
-          <Button
-            variant="outline"
-            onClick={() => {
-              setIsArchiveDialogOpen(false);
-              setArchivingCompany(null);
-            }}
-          >
-            {t('cancel')}
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={async () => {
-              if (!archivingCompany) return;
-              await Alive(() => archiveCompanyMutation.mutateAsync(archivingCompany.id))();
-              queryClient.invalidateQueries({ queryKey: ['companys'] });
-              setIsArchiveDialogOpen(false);
-              setArchivingCompany(null);
-            }}
-          >
-            {t('archive')}
-          </Button>
-        </div>
-      </Modal>
+        confirmLabel={t('archive')}
+        confirmVariant="destructive"
+        onConfirm={async () => {
+          if (!archivingCompany) return;
+          await Alive(() => archiveCompanyMutation.mutateAsync(archivingCompany.id))();
+          queryClient.invalidateQueries({ queryKey: ['companys'] });
+          setArchivingCompany(null);
+        }}
+      />
     </>
   )
 }

@@ -12,7 +12,7 @@ import { useCompanys } from "@/lib/actions/company/queries";
 import { useState, useCallback, useMemo } from 'react';
 import { DataTable } from "@/components/data-table";
 import { getProposalColumns } from "./proposal-columns";
-import Modal from "@/components/modal";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { FormBuilderModal, type FormBuilderField } from "@/components/form/form-builder";
 import type { Proposal } from "@/lib/actions/proposal/types";
 import { z } from "zod";
@@ -32,7 +32,6 @@ export function ProposalTab() {
   const [globalFilter, setGlobalFilter] = useState('');
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [archivingProposal, setArchivingProposal] = useState<Proposal | null>(null);
-  const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -58,7 +57,6 @@ export function ProposalTab() {
 
   const handleArchive = useCallback((item: Proposal) => {
     setArchivingProposal(item);
-    setIsArchiveDialogOpen(true);
   }, []);
 
   const handleDuplicate = useCallback(
@@ -167,39 +165,19 @@ export function ProposalTab() {
         submitLabel={t('create')}
       />
 
-      {/* Modal de confirmação de arquivamento */}
-      <Modal
-        open={isArchiveDialogOpen}
-        onOpenChange={(open) => {
-          setIsArchiveDialogOpen(open);
-          if (!open) setArchivingProposal(null);
-        }}
+      <ConfirmDialog
+        open={!!archivingProposal}
+        onOpenChange={(open) => !open && setArchivingProposal(null)}
         title={t('archiveConfirm')}
         description={archivingProposal ? `${t('archiveConfirmDescription')} "${archivingProposal.name}"?` : ''}
-      >
-        <div className="flex gap-2 justify-end">
-          <Button
-            variant="outline"
-            onClick={() => {
-              setIsArchiveDialogOpen(false);
-              setArchivingProposal(null);
-            }}
-          >
-            {t('cancel')}
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={async () => {
-              if (!archivingProposal) return;
-              await archiveProposalMutation.mutateAsync(archivingProposal.id);
-              setIsArchiveDialogOpen(false);
-              setArchivingProposal(null);
-            }}
-          >
-            {t('archive')}
-          </Button>
-        </div>
-      </Modal>
+        confirmLabel={t('archive')}
+        confirmVariant="destructive"
+        onConfirm={async () => {
+          if (!archivingProposal) return;
+          await archiveProposalMutation.mutateAsync(archivingProposal.id);
+          setArchivingProposal(null);
+        }}
+      />
     </>
   )
 }

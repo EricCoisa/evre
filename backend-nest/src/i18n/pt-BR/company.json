@@ -16,6 +16,7 @@
     "title": "Arquivar empresa"
   },
   "not_found": "Empresa não encontrada",
+  "cannot_archive_with_active_proposals": "Não é possível arquivar: a empresa tem proposta em andamento",
   "contact_not_found": "Contato não encontrado",
   "contacts": {
     "list": {

@@ -88,7 +88,7 @@
   "acceptance_other_version_accepted": "This proposal already has another accepted version",
   "acceptance_note_required": "State where the decision came from — note is required for a team-recorded acceptance",
   "acceptance_notified_title": "Proposal accepted",
-  "acceptance_notified_message": "{name} was accepted.",
+  "acceptance_notified_message": "The proposal \"{name}\" was accepted.",
   "public": {
     "get": {
       "title": "Get a public proposal by token"
@@ -100,7 +100,7 @@
     "revoked": "This proposal was updated. Ask for the latest link.",
     "expired": "This proposal has expired.",
     "opened_title": "Proposal opened by the client",
-    "opened_message": "{name} was opened by the client.",
+    "opened_message": "The client opened the proposal \"{name}\".",
     "renew_requested_title": "Renewal requested",
     "renew_requested_message": "The client asked for a new link to {name}."
   }

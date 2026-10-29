@@ -1,5 +1,5 @@
 import { Test } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { I18nService } from 'nestjs-i18n';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { LoggingService } from '../../logging/logging.service';
@@ -45,6 +45,9 @@ const mockPrisma = {
     create: vi.fn(),
     update: vi.fn(),
   },
+  proposal: {
+    findFirst: vi.fn(),
+  },
 };
 
 const mockI18n = { t: vi.fn().mockReturnValue('mensagem') };
@@ -88,6 +91,7 @@ describe('Company use-cases', () => {
     mockPrisma.company.count.mockResolvedValue(1);
     mockPrisma.company.create.mockResolvedValue(row);
     mockPrisma.company.update.mockResolvedValue({ ...row, archivedAt: new Date() });
+    mockPrisma.proposal.findFirst.mockResolvedValue(null);
     mockResourceAccess.assertCanRead.mockResolvedValue(undefined);
     mockResourceAccess.scopeFilter.mockResolvedValue(undefined);
   });
@@ -204,6 +208,26 @@ describe('Company use-cases', () => {
 
       expect(mockPrisma.company.update).not.toHaveBeenCalled();
       expect(mockLogging.create).not.toHaveBeenCalled();
+    });
+
+    it('recusa com ConflictException quando há proposta em andamento (não arquivada)', async () => {
+      mockPrisma.proposal.findFirst.mockResolvedValue({ id: 'proposal-1' });
+
+      await expect(remove.execute('id-1', admin)).rejects.toThrow(
+        ConflictException,
+      );
+      expect(mockPrisma.company.update).not.toHaveBeenCalled();
+    });
+
+    it('já arquivada não consulta proposta nem recusa', async () => {
+      mockPrisma.company.findUnique.mockResolvedValue({
+        ...row,
+        archivedAt: new Date(),
+      });
+
+      await remove.execute('id-1', admin);
+
+      expect(mockPrisma.proposal.findFirst).not.toHaveBeenCalled();
     });
   });
 });
