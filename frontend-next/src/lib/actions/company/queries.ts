@@ -1,6 +1,8 @@
+"use client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import {
-  getCompanys, getCompany, createCompany, updateCompany, archiveCompany,
+  getCompanys, createCompany, updateCompany, archiveCompany,
   getCompanyContacts, createCompanyContact, updateCompanyContact, archiveCompanyContact,
 } from "./api";
 import { PaginationParams } from "../../types/pagination.types";
@@ -15,15 +17,6 @@ export function useCompanys(params?: PaginationParams) {
     queryKey: ['companys', params],
     queryFn: Collector(() => getCompanys(params)),
     ...getQueryConfig('COMPANYS'),
-  });
-}
-
-export function useCompany(id: string) {
-  return useQuery({
-    queryKey: ['company', id],
-    queryFn: Collector(() => getCompany(id)),
-    enabled: !!id,
-    ...getQueryConfig('COMPANY'),
   });
 }
 
@@ -42,6 +35,7 @@ export function useCreateCompany() {
 
 export function useUpdateCompany() {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const { t } = useTranslation('company');
 
   return useMutation({
@@ -50,6 +44,7 @@ export function useUpdateCompany() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['companys'] });
       queryClient.invalidateQueries({ queryKey: ['company', variables.id] });
+      router.refresh();
       toast.success(t('updatedSuccess'));
     }
   });

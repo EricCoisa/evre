@@ -50,6 +50,19 @@ Schema dividido por área em `backend-nest/prisma/schema/` (`base.prisma`, `user
 - `FeatureFlagCategory` — `GENERAL · AI · CONNECTORS · MESSAGING · SYSTEM · AUTH · DASHBOARD · REPORTS · NOTIFICATIONS`. Ver [[feature-flags-backend]].
 - `VerificationChannel` — `EMAIL · WHATSAPP · AUTHENTICATOR` (reservado para TOTP futuro).
 - `MessagingProvider` — `EVOLUTION_API · EVOLUTION_GO · META`; `MessagingDirection` — `INBOUND · OUTBOUND`; `MessagingStatus` — `QUEUED · SENT · DELIVERED · READ · FAILED`. Mais três enums de template/aprovação/botão (`MessagingTemplateCategory`, `MessagingTemplateApproval`, `MessagingButtonEventStatus`) definidos em `messaging.prisma`. Ver [[messaging]].
+- `ProposalSendChannel` (`proposal.prisma`) — `WHATSAPP · EMAIL · MANUAL`. Era coluna `String` com o
+  conjunto só em comentário (`channel String // WHATSAPP | EMAIL | MANUAL`); virou enum Prisma de
+  verdade no Ajuste 1, como os outros três enums do mesmo arquivo (`ProposalStatus`,
+  `ProposalRecurrence`, `ProposalAcceptanceSource`) — é o que dá à tela um conjunto fechado para
+  mapear rótulo, em vez de imprimir o valor cru (ver [[i18n-frontend]] § `lib/vocabulary.ts`).
+
+> [!note] Models de domínio de negócio (Company/Proposal) ainda sem entrada nesta nota
+> `Company`, `Proposal`, `ProposalVersion` e afins (`backend-nest/prisma/schema/proposal.prisma`,
+> `company.prisma`) ainda não têm linha na tabela de Entidades acima — pendência herdada dos ciclos
+> que os criaram. Um ajuste de integridade do Ajuste 1 vale registrar enquanto isso não é fechado:
+> `ProposalOpenEvent.versionId` ganhou `@relation` para `ProposalVersion` (`onDelete: Cascade`) —
+> antes era uma coluna solta, sem `FOREIGN KEY` na migration, e sem o lado inverso da relação
+> (`ProposalVersion.openEvents`), que o Prisma exige para aceitar a relação de um lado só.
 
 O papel do usuário **não** é enum Prisma: é a tabela `Role`, referenciada por `User.roleId`. Os nomes dos papéis de sistema (`ADMIN`, `USER`, `MODERATOR`) vivem em `src/domain/auth/userRole.const.ts` e são criados pelo seed.
 

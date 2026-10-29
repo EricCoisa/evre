@@ -29,6 +29,7 @@ import {
   setBlockParam,
   setBlockProp,
   setBlockRowSpan,
+  setBlockInline,
   setBlockRowSpanTop,
   setBlockSource,
   setBlockSpan,
@@ -83,6 +84,8 @@ export interface EditorContextValue {
   patch: (id: string, patch: Partial<PageBlock>) => void;
   setProp: (id: string, name: string, value: unknown) => void;
   setSource: (id: string, source: string | undefined) => void;
+  /** Payload colado (`data.inline`), para profiles `inline-only` — mutuamente exclusivo com `setSource`. */
+  setInline: (id: string, inline: unknown) => void;
   setParam: (id: string, name: string, value: unknown) => void;
   canAddTo: (parentId?: string) => boolean;
   /** Histórico */
@@ -92,7 +95,10 @@ export interface EditorContextValue {
   redo: () => void;
 }
 
-const EditorContext = createContext<EditorContextValue | null>(null);
+/** Exportado para o preview do editor poder sair do modo de edição: um `<EditorContext.Provider
+ * value={null}>` ao redor do `LayoutBody` faz o mesmo `BlockGrid` desenhar sem chrome, igual à
+ * página pública. */
+export const EditorContext = createContext<EditorContextValue | null>(null);
 
 /** `null` fora do modo de edição — é assim que o renderer sabe se desenha o chrome. */
 export function useEditor(): EditorContextValue | null {
@@ -251,6 +257,7 @@ export function EditorProvider({
       patch: (id, p) => applyChange((d) => updateBlock(d, id, p)),
       setProp: (id, name, v) => applyChange((d) => setBlockProp(d, id, name, v)),
       setSource: (id, source) => applyChange((d) => setBlockSource(d, id, source)),
+      setInline: (id, inline) => applyChange((d) => setBlockInline(d, id, inline)),
       setParam: (id, name, v) => applyChange((d) => setBlockParam(d, id, name, v)),
       canAddTo: (parentId) => canAdd(draft, parentId, undefined, profile),
       canUndo: past.length > 0,

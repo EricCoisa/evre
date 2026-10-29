@@ -44,6 +44,8 @@
   "contentEmpty": "Ainda sem conteúdo.",
   "commercialLockedTitle": "Envelope comercial bloqueado",
   "commercialLockedDescription": "Só uma proposta em Rascunho pode ser editada. Reabra para edição na aba Publicação para criar uma nova versão.",
+  "envelopeEmptyTitle": "Sem valor no envelope comercial",
+  "envelopeEmptyDescription": "Esta proposta não entra na soma do funil. Se o cliente precisa ver um valor, use um bloco de preço no conteúdo da proposta.",
   "currencyLength": "Use o código ISO 4217 de 3 letras, ex. BRL",
   "totalReais": "Valor total",
   "totalReaisPlaceholder": "ex: 1500,00",

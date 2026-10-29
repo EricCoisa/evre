@@ -1,6 +1,6 @@
 "use client";
 import { FormBuilder, type FormBuilderField } from "@/components/form/form-builder";
-import { updateCompany } from "@/lib/actions/company/api";
+import { useUpdateCompany } from "@/lib/actions/company/queries";
 import { Company } from "@/lib/actions/company/types";
 import { Alive } from "@/lib/api/collector";
 import { useTranslation } from "@/hooks/use-translation";
@@ -18,6 +18,7 @@ interface CompanyEditProps {
 export function CompanyEdit({ company, onCancel, onSuccess }: CompanyEditProps) {
     const { t } = useTranslation('company');
     const queryClient = useQueryClient();
+    const updateCompanyMutation = useUpdateCompany();
     // Diz ao agente qual registro está aberto na tela (ver screen-registry).
     useScreenItem('record', 'companys', company?.id);
 
@@ -59,7 +60,7 @@ export function CompanyEdit({ company, onCancel, onSuccess }: CompanyEditProps) 
             }}
             onCancel={onCancel}
             onSubmit={async (data) => {
-                const result = await Alive(() => updateCompany(company.id, data))();
+                const result = await Alive(() => updateCompanyMutation.mutateAsync({ id: company.id, data }))();
                 return result;
             }}
             onSuccess={() => {

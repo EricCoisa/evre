@@ -1,12 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslation } from '@/hooks/use-translation';
-import { SITE_NAME } from '@/lib/site';
-import { requestProposalRenewal } from '@/lib/actions/proposal-public/api';
+import { useRequestProposalRenewal } from '@/lib/actions/proposal-public/queries';
 
 /** REVOKED e EXPIRED nunca mostram valor nem conteúdo — só o texto do estado (G7 do produto:
  * versão antiga não é mais visível). Só EXPIRED oferece "Pedir renovação". */
@@ -18,17 +16,15 @@ export function ProposalUnavailable({
   reason: 'REVOKED' | 'EXPIRED';
 }) {
   const { t } = useTranslation('proposal');
-  const [requesting, setRequesting] = useState(false);
   const [requested, setRequested] = useState(false);
+  const renewalMutation = useRequestProposalRenewal();
 
   async function handleRenewRequest() {
-    setRequesting(true);
-    const response = await requestProposalRenewal(token);
-    setRequesting(false);
-    if (response.success) {
+    try {
+      await renewalMutation.mutateAsync(token);
       setRequested(true);
-    } else {
-      toast.error(response.message);
+    } catch {
+      // Alive já exibiu o toast de erro
     }
   }
 
@@ -36,7 +32,6 @@ export function ProposalUnavailable({
     <div className="flex min-h-[60vh] items-center justify-center px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <p className="text-sm font-medium text-muted-foreground">{SITE_NAME}</p>
           <CardTitle className="text-xl">
             {reason === 'REVOKED' ? t('publicRevokedTitle') : t('publicExpiredTitle')}
           </CardTitle>
@@ -46,7 +41,7 @@ export function ProposalUnavailable({
         </CardHeader>
         {reason === 'EXPIRED' ? (
           <CardContent className="flex justify-center">
-            <Button onClick={handleRenewRequest} disabled={requesting || requested}>
+            <Button onClick={handleRenewRequest} disabled={renewalMutation.isPending || requested}>
               {requested ? t('publicRenewRequestSent') : t('publicRenewRequest')}
             </Button>
           </CardContent>

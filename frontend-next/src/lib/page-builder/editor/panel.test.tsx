@@ -174,13 +174,24 @@ describe('Palette', () => {
     expect(addButton('table.basic')).toBeDisabled();
   });
 
-  it('profile proposal oferece só os blocos dele', () => {
+  // A4: proposal passou de dataSources 'none' para 'inline-only' e ganhou os 5 blocos de dado —
+  // hoje o catálogo dela é o superset dos 16 tipos, então ela não tem mais um bloco "de fora"
+  // para provar a exclusão; isso passa a ser testado pelo lado do dashboard, que não ganha os
+  // blocos exclusivos de proposta (ex. `topic`).
+  it('profile proposal oferece os blocos do profile, incluindo os 5 de dado (JSON inline)', () => {
     renderPanel({ profile: 'proposal' });
 
     expect(addButton('text.rich')).toBeInTheDocument();
     expect(addButton('group')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /table\.basic/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /chart\./ })).not.toBeInTheDocument();
+    expect(addButton('table.basic')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /chart\.area/ })).toBeInTheDocument();
+  });
+
+  it('profile dashboard não oferece os blocos exclusivos de proposta', () => {
+    renderPanel();
+
+    expect(addButton('table.basic')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /topic/ })).not.toBeInTheDocument();
   });
 });
 

@@ -51,7 +51,7 @@ export function CompanyTab() {
 
   const createCompanySchema = useMemo(() =>
     z.object({
-      name: z.string().min(1, t('nameRequired') || 'Name is required'),
+      name: z.string().min(1, t('nameRequired')),
       tradeName: z.string().optional(),
       taxId: z.string().optional(),
       site: z.string().optional(),
@@ -135,7 +135,6 @@ export function CompanyTab() {
         submitLabel={t('create')}
       />
 
-      {/* Modal de edição */}
       <Modal
         open={isEditDialogOpen}
         onOpenChange={(open) => {

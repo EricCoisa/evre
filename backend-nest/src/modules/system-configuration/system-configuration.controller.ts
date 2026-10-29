@@ -116,6 +116,48 @@ export class SystemConfigurationController {
   }
 
   @GetApi({
+    path: 'app-name',
+    summary: 'Busca nome do app',
+    description: 'Retorna o nome do app para telas públicas, sem sessão',
+    status: 'OK',
+    authenticated: false,
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Configuração encontrada',
+          schema: { dto: SystemConfigurationDto },
+        },
+      ],
+    },
+  })
+  async findAppNameConfiguration() {
+    const result = await this.findByLabelKey$.execute('SYSTEM_APP_NAME');
+    return maskSecretValue(result, 'value');
+  }
+
+  @GetApi({
+    path: 'app-tagline',
+    summary: 'Busca descritor do app',
+    description: 'Retorna o descritor do app para telas públicas, sem sessão',
+    status: 'OK',
+    authenticated: false,
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Configuração encontrada',
+          schema: { dto: SystemConfigurationDto },
+        },
+      ],
+    },
+  })
+  async findAppTaglineConfiguration() {
+    const result = await this.findByLabelKey$.execute('SYSTEM_APP_TAGLINE');
+    return maskSecretValue(result, 'value');
+  }
+
+  @GetApi({
     path: ':id',
     summary: 'Busca configuração por ID',
     description: 'Retorna uma configuração do sistema pelo ID',

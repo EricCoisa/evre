@@ -1,6 +1,7 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
+import Link from "next/link";
 import { Company } from "@/lib/actions/company/types";
 import { Button } from "@/components/ui/button";
 import { ArrowDown, ArrowUp, ArrowUpDown, Pencil, Archive } from "lucide-react";
@@ -19,7 +20,13 @@ export function getCompanyColumns({ t, onEdit, onArchive }: GetCompanyColumnsPro
     {
       accessorKey: "name",
       header: () => <TableHead>{t("name") || "Nome"}</TableHead>,
-      cell: ({ row }) => <DataCell>{row.getValue("name") || t("noName")}</DataCell>,
+      cell: ({ row }) => (
+        <DataCell>
+          <Link href={`/company/${row.original.id}`} className="font-medium hover:underline">
+            {row.getValue("name") || t("noName")}
+          </Link>
+        </DataCell>
+      ),
       meta: {
         mobileOrder: 1,
         mobileWidth: "half",

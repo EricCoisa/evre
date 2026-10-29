@@ -84,20 +84,6 @@ export async function updateProposalStatus(
   return wrapAs(() => api.proposalControllerUpdateStatus(id, data));
 }
 
-export async function listProposalArtifacts(
-  id: string,
-): Promise<ApiResponse<ProposalArtifactDto[]>> {
-  return wrap(() => api.proposalControllerListArtifacts(id));
-}
-
-/** "Excluir" um artefato arquiva no servidor — nada é apagado. */
-export async function archiveProposalArtifact(
-  id: string,
-  artifactId: string,
-): Promise<ApiResponse<void>> {
-  return wrap(() => api.proposalControllerArchiveArtifact(id, artifactId));
-}
-
 /** Congela a versão atual: revoga o link anterior e devolve a URL pública nova. */
 export async function publishProposal(id: string): Promise<ApiResponse<PublishProposalResponseDto>> {
   return wrap(() => api.proposalControllerPublish(id));

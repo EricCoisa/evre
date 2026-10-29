@@ -3,6 +3,16 @@ import { z } from 'zod';
 /** labelKey da `UserConfigurationDefinition` (JSON) com o mapa `pageKey → PageLayout` do usuário. */
 export const PAGE_LAYOUTS_KEY = 'PAGE_LAYOUTS';
 
+/** Espelha `LayoutProfile` de `frontend-next/src/lib/page-builder/profiles.ts` — tipo explícito
+ * (não derivado do objeto) para `'none'` continuar fazendo parte do domínio mesmo que nenhum
+ * profile de hoje o use; derivar do objeto faria o TS esquecer esse valor e recusar a comparação. */
+export interface LayoutProfile {
+  dataSources: 'role-filtered' | 'none' | 'inline-only';
+  storage: 'config' | 'record';
+  maxBlocks: number;
+  maxChildren: number;
+}
+
 /** Superfícies que o PageBuilder monta. Espelha `frontend-next/src/lib/page-builder/profiles.ts`
  * — o backend usa só o que decide a escrita; a lista de blocos e de classNames vem pela ponte. */
 export const LAYOUT_PROFILES = {
@@ -13,15 +23,14 @@ export const LAYOUT_PROFILES = {
     maxChildren: 12,
   },
   proposal: {
-    dataSources: 'none',
+    dataSources: 'inline-only',
     storage: 'record',
     maxBlocks: 80,
     maxChildren: 12,
   },
-} as const;
+} as const satisfies Record<string, LayoutProfile>;
 
 export type LayoutProfileName = keyof typeof LAYOUT_PROFILES;
-export type LayoutProfile = (typeof LAYOUT_PROFILES)[LayoutProfileName];
 
 /** Profile de quem não declara nada — a superfície que existia antes de haver profile. */
 export const DEFAULT_LAYOUT_PROFILE: LayoutProfileName = 'dashboard';
@@ -58,10 +67,17 @@ const LeafBlockSchema = z.object({
   /** Classes Tailwind separadas por espaço, limitadas à allowlist publicada pelo frontend. */
   className: z.string().max(200).optional(),
   props: z.record(z.unknown()).optional(),
+  // `source` (fonte real) e `inline` (payload colado, congelado no layout) são mutuamente
+  // exclusivos. `inline` fica `z.unknown()` de propósito: a shape (list × series) depende do
+  // `kind` que o bloco aceita — checado em `page-layout-validator.service.ts`, nunca aqui.
   data: z
     .object({
-      source: z.string().min(1),
+      source: z.string().min(1).optional(),
       params: z.record(z.unknown()).optional(),
+      inline: z.unknown().optional(),
+    })
+    .refine((d) => d.source === undefined || d.inline === undefined, {
+      message: '"source" e "inline" são mutuamente exclusivos no mesmo bloco',
     })
     .optional(),
 });

@@ -13,6 +13,7 @@ import {
 } from '@dnd-kit/core';
 import { toast } from 'sonner';
 import { LayoutGrid } from 'lucide-react';
+import Modal from '@/components/modal';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/cn';
 import { useMe } from '@/lib/actions/auth/queries';
@@ -21,7 +22,8 @@ import {
   useSaveSystemPageLayout,
 } from '@/lib/actions/pageBuilder/queries';
 import { DEFAULT_PROFILE, type LayoutProfileName } from '../profiles';
-import { BlockGrid } from '../renderer';
+import type { ProposalTerms } from '../proposal-terms-context';
+import { BlockGrid, LayoutBody } from '../renderer';
 import type { PageLayout } from '../schema';
 import {
   DragPreview,
@@ -30,7 +32,7 @@ import {
   parseGridSlotId,
 } from './block-chrome';
 import { BlockInserter } from './block-inserter';
-import { EditorProvider, useEditorOrThrow } from './context';
+import { EditorContext, EditorProvider, useEditorOrThrow } from './context';
 import { findBlock } from './mutations';
 import { EditorPanel } from './panel';
 import { EditorTopBar } from './top-bar';
@@ -44,6 +46,7 @@ export default function PageEditor({
   onExit,
   onSave,
   saving,
+  proposalTerms,
 }: {
   pageKey: string;
   initial: PageLayout;
@@ -57,10 +60,19 @@ export default function PageEditor({
   onSave?: (layout: PageLayout) => void;
   /** Pending do `onSave` externo — mantém "Salvar" desabilitado durante o PUT do registro. */
   saving?: boolean;
+  /** Envelope comercial que o bloco `investment` lê por contexto no preview — mesmo dado que a
+   * página pública recebe. `undefined` fora do profile `proposal`. */
+  proposalTerms?: ProposalTerms;
 }) {
   return (
     <EditorProvider initial={initial} profile={profile} recordId={recordId}>
-      <EditorShell pageKey={pageKey} onExit={onExit} onSave={onSave} saving={saving} />
+      <EditorShell
+        pageKey={pageKey}
+        onExit={onExit}
+        onSave={onSave}
+        saving={saving}
+        proposalTerms={proposalTerms}
+      />
     </EditorProvider>
   );
 }
@@ -70,11 +82,13 @@ function EditorShell({
   onExit,
   onSave: externalSave,
   saving: externalSaving,
+  proposalTerms,
 }: {
   pageKey: string;
   onExit: () => void;
   onSave?: (layout: PageLayout) => void;
   saving?: boolean;
+  proposalTerms?: ProposalTerms;
 }) {
   const { t } = useTranslation('page-builder');
   const editor = useEditorOrThrow();
@@ -85,6 +99,8 @@ function EditorShell({
 
   // Painel lateral de propriedades e catálogo rápido
   const [panelOpen, setPanelOpen] = useState(true);
+  // Modal do preview: mesmo `LayoutBody` da página pública, com o rascunho em edição
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -186,7 +202,25 @@ function EditorShell({
         onSaveAsDefault={onSaveAsDefaultProp}
         onCancel={handleCancel}
         onOpenPanel={() => setPanelOpen((prev) => !prev)}
+        onPreview={() => setPreviewOpen(true)}
       />
+
+      {/* Preview: mesmo LayoutBody da página pública, com o rascunho em edição — o
+       * `EditorContext.Provider value={null}` tira o BlockGrid do modo de edição, então ele
+       * desenha sem BlockChrome, igual ao que o cliente vai ver.
+       * ponytail: mostra só o layout, sem header da empresa/rodapé/bloco de aceite — compor isso
+       * é A6, trazer quando o preview precisar bater com a página pública inteira. */}
+      <Modal
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        title={t('editor.previewModalTitle')}
+        size="full"
+        className="h-[92vh]! max-h-[92vh]! w-[95vw]! max-w-[95vw]!"
+      >
+        <EditorContext.Provider value={null}>
+          <LayoutBody layout={editor.draft} profile={editor.profile} proposalTerms={proposalTerms} />
+        </EditorContext.Provider>
+      </Modal>
 
       {/* Área do Canvas de Edição — clicar fora dos blocos limpa a seleção e fecha a toolbar ativa */}
       <div

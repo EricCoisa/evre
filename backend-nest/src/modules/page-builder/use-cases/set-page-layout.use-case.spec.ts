@@ -94,6 +94,38 @@ describe('SetPageLayoutSchema — layout como string JSON', () => {
         .success,
     ).toBe(false);
   });
+
+  // A4: `source` (fonte real) e `inline` (payload colado) são mutuamente exclusivos — estrutural,
+  // não depende de `kind`, então checado aqui no schema de forma, antes do validador semântico.
+  it('recusa bloco com source e inline ao mesmo tempo', () => {
+    const parsed = SetPageLayoutSchema.safeParse({
+      pageKey: '/dashboard',
+      layout: {
+        v: 1,
+        blocks: [
+          {
+            id: 'b1',
+            type: 'stat.card',
+            data: { source: 'users.list', inline: { data: [] } },
+          },
+        ],
+      },
+    });
+
+    expect(parsed.success).toBe(false);
+  });
+
+  it('aceita bloco só com inline (sem source)', () => {
+    const parsed = SetPageLayoutSchema.safeParse({
+      pageKey: '/dashboard',
+      layout: {
+        v: 1,
+        blocks: [{ id: 'b1', type: 'stat.card', data: { inline: { data: [] } } }],
+      },
+    });
+
+    expect(parsed.success).toBe(true);
+  });
 });
 
 describe('SetPageLayoutUseCase', () => {
@@ -128,9 +160,10 @@ describe('SetPageLayoutUseCase', () => {
         { type: 'text.rich', description: '', accepts: [], container: false, inline: true, props: [] },
       ];
       return Promise.resolve({
+        // A3/A4: proposal também oferece blocos de dado — publicação é `inline-only`, não `none`.
         blocks:
           profile === 'proposal'
-            ? contentBlocks
+            ? [...contentBlocks, ...dataBlocks]
             : [...dataBlocks, ...contentBlocks],
         pages: [{ pageKey: '/dashboard', description: '' }],
         spans: [1, 2, 3, 4],
@@ -443,18 +476,21 @@ describe('SetPageLayoutUseCase', () => {
         blocks: [{ id: 'b1', type: 'text.rich', span: 12, ...extra }],
       }) as PageLayout;
 
-    it('profile none recusa bloco com data.source', async () => {
+    // A4: `proposal` passou de dataSources `'none'` para `'inline-only'` — ganhou os 5 blocos de
+    // dado (table/chart/feed), mas só com `data.inline` (payload colado); `data.source` continua
+    // fora de alcance, exatamente como `'none'` recusava, só que agora com outra mensagem.
+    it('inline-only recusa bloco com data.source', async () => {
       await expect(
         useCase.execute('u1', 'ADMIN', {
           pageKey: '/dashboard',
           profile: 'proposal',
           layout: textBlock({ data: { source: 'users.list' } }),
         }),
-      ).rejects.toThrow(/não busca dado de nenhuma fonte.*b1/s);
+      ).rejects.toThrow(/não busca fonte de dado interna.*b1/s);
       expect(mockSet.execute).not.toHaveBeenCalled();
     });
 
-    it('profile none recusa data.source também dentro de children', async () => {
+    it('inline-only recusa data.source também dentro de children', async () => {
       await expect(
         useCase.execute('u1', 'ADMIN', {
           pageKey: '/dashboard',
@@ -474,11 +510,11 @@ describe('SetPageLayoutUseCase', () => {
             ],
           } as PageLayout,
         }),
-      ).rejects.toThrow(/não busca dado de nenhuma fonte.*c2/s);
+      ).rejects.toThrow(/não busca fonte de dado interna.*c2/s);
       expect(mockSet.execute).not.toHaveBeenCalled();
     });
 
-    it('profile none aceita bloco de conteúdo puro, sem conferir role', async () => {
+    it('inline-only aceita bloco de conteúdo puro, sem conferir role', async () => {
       mockSources.listForRole.mockReturnValue([]);
 
       await useCase.execute('u1', 'USER', {
@@ -491,14 +527,118 @@ describe('SetPageLayoutUseCase', () => {
       expect(mockSources.listForRole).not.toHaveBeenCalled();
     });
 
-    it('profile none recusa bloco que não existe no catálogo dele', async () => {
+    it('inline-only aceita data.inline com shape list certo', async () => {
+      await useCase.execute('u1', 'ADMIN', {
+        pageKey: '/dashboard',
+        profile: 'proposal',
+        layout: {
+          v: 1,
+          blocks: [
+            {
+              id: 'b1',
+              type: 'stat.card',
+              span: 2,
+              data: { inline: { data: [{ nome: 'Ada' }] } },
+            },
+          ],
+        } as PageLayout,
+      });
+
+      expect(mockSet.execute).toHaveBeenCalled();
+    });
+
+    it('inline-only aceita data.inline com shape series certo', async () => {
+      await useCase.execute('u1', 'ADMIN', {
+        pageKey: '/dashboard',
+        profile: 'proposal',
+        layout: {
+          v: 1,
+          blocks: [
+            {
+              id: 'b1',
+              type: 'chart.area',
+              span: 2,
+              data: { inline: { data: [{ date: '2024-01', value: 10 }] } },
+            },
+          ],
+        } as PageLayout,
+      });
+
+      expect(mockSet.execute).toHaveBeenCalled();
+    });
+
+    it('inline-only recusa shape errado — series recebendo array de objeto', async () => {
       await expect(
         useCase.execute('u1', 'ADMIN', {
           pageKey: '/dashboard',
           profile: 'proposal',
-          layout: layout('users.list', 'chart.area'),
+          layout: {
+            v: 1,
+            blocks: [
+              {
+                id: 'b1',
+                type: 'chart.area',
+                span: 2,
+                data: { inline: { data: [{ nome: 'Ada' }] } },
+              },
+            ],
+          } as PageLayout,
         }),
-      ).rejects.toThrow(/não busca dado de nenhuma fonte/);
+      ).rejects.toThrow(/data\.inline espera/);
+      expect(mockSet.execute).not.toHaveBeenCalled();
+    });
+
+    it('inline-only recusa data.inline acima do teto de tamanho', async () => {
+      const oversized = { data: [{ big: 'x'.repeat(70_000) }] };
+
+      await expect(
+        useCase.execute('u1', 'ADMIN', {
+          pageKey: '/dashboard',
+          profile: 'proposal',
+          layout: {
+            v: 1,
+            blocks: [{ id: 'b1', type: 'stat.card', span: 2, data: { inline: oversized } }],
+          } as PageLayout,
+        }),
+      ).rejects.toThrow(/acima do teto/);
+      expect(mockSet.execute).not.toHaveBeenCalled();
+    });
+
+    it('inline-only recusa bloco que não existe no catálogo dele', async () => {
+      await expect(
+        useCase.execute('u1', 'ADMIN', {
+          pageKey: '/dashboard',
+          profile: 'proposal',
+          layout: {
+            v: 1,
+            blocks: [
+              { id: 'b1', type: 'nao.existe', span: 2, data: { inline: { data: [] } } },
+            ],
+          } as PageLayout,
+        }),
+      ).rejects.toThrow(/não existe/);
+    });
+
+    // O espelho de role-filtered: dado colado num dashboard seria um número inventado
+    // parecendo métrica real — recusa também no topo e em children.
+    it('role-filtered (dashboard) recusa data.inline', async () => {
+      await expect(
+        useCase.execute('u1', 'ADMIN', {
+          pageKey: '/dashboard',
+          layout: {
+            v: 1,
+            blocks: [
+              {
+                id: 'b1',
+                type: 'stat.card',
+                span: 2,
+                data: { inline: { data: [{ nome: 'Ada' }] } },
+              },
+            ],
+          } as PageLayout,
+        }),
+      ).rejects.toThrow(/não aceita dado colado.*b1/s);
+      expect(mockSet.execute).not.toHaveBeenCalled();
     });
 
     it('storage record não exige pageKey do catálogo', async () => {

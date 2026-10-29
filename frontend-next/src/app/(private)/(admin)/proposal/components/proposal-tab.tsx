@@ -16,7 +16,6 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 import { FormBuilderModal, type FormBuilderField } from "@/components/form/form-builder";
 import type { Proposal } from "@/lib/actions/proposal/types";
 import { z } from "zod";
-import { useQueryClient } from "@tanstack/react-query";
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { PROPOSAL_STATUSES, proposalStatusLabelKey } from "@/lib/vocabulary";
@@ -33,7 +32,6 @@ export function ProposalTab() {
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [archivingProposal, setArchivingProposal] = useState<Proposal | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const queryClient = useQueryClient();
 
   const queryParams = {
     page: pagination.pageIndex + 1,
@@ -155,9 +153,6 @@ export function ProposalTab() {
           }
 
           return proposal;
-        }}
-        onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ['proposals'] });
         }}
         onError={(error) => {
           console.error('Error creating proposal:', error);

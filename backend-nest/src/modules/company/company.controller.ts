@@ -7,7 +7,6 @@ import {
   GetApi,
   PatchApi,
   PostApi,
-  PutApi,
 } from '../../common/decorators/api-method.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CreateCompanyDto } from './dto/create-company.dto';
@@ -55,6 +54,15 @@ export class CompanyController {
     status: 'CREATED',
     authenticated: true,
     roles: ['ADMIN'],
+    response: {
+      success: [
+        {
+          status: 'CREATED',
+          description: 'Company created',
+          schema: { dto: CompanyDto },
+        },
+      ],
+    },
   })
   async create(
     @Body() dto: CreateCompanyDto,
@@ -102,6 +110,15 @@ export class CompanyController {
     status: 'OK',
     authenticated: true,
     roles: ['ADMIN'],
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Company found',
+          schema: { dto: CompanyDto },
+        },
+      ],
+    },
   })
   async findOne(
     @Param('id') id: string,
@@ -117,6 +134,15 @@ export class CompanyController {
     status: 'OK',
     authenticated: true,
     roles: ['ADMIN'],
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Company updated',
+          schema: { dto: CompanyDto },
+        },
+      ],
+    },
   })
   async update(
     @Param('id') id: string,
@@ -132,6 +158,15 @@ export class CompanyController {
     status: 'OK',
     authenticated: true,
     roles: ['ADMIN'],
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Company archived',
+          schema: { dto: CompanyDto },
+        },
+      ],
+    },
   })
   async remove(
     @Param('id') id: string,
@@ -170,6 +205,15 @@ export class CompanyController {
     status: 'CREATED',
     authenticated: true,
     roles: ['ADMIN'],
+    response: {
+      success: [
+        {
+          status: 'CREATED',
+          description: 'Contact created',
+          schema: { dto: ContactDto },
+        },
+      ],
+    },
   })
   async createContact(
     @Param('id') id: string,
@@ -179,13 +223,22 @@ export class CompanyController {
     return this.createCompanyContact.execute(id, dto, currentUser);
   }
 
-  @PutApi({
+  @PatchApi({
     path: ':id/contacts/:contactId',
     summary: 'company.contacts.update.title',
     body: UpdateContactDto,
     status: 'OK',
     authenticated: true,
     roles: ['ADMIN'],
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Contact updated',
+          schema: { dto: ContactDto },
+        },
+      ],
+    },
   })
   async updateContact(
     @Param('id') id: string,
@@ -202,6 +255,15 @@ export class CompanyController {
     status: 'OK',
     authenticated: true,
     roles: ['ADMIN'],
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Contact archived',
+          schema: { dto: ContactDto },
+        },
+      ],
+    },
   })
   async archiveContact(
     @Param('id') id: string,

@@ -92,13 +92,23 @@ duplicado, e por que `SystemConfiguration`/`UserConfiguration` precisam ficar si
 | `DELETE` | `/system-configuration/:id` | ADMIN | Remove |
 | `GET` | `/system-configuration/signup` | **anônima** | Só a chave `SYSTEM_USER_CREATE` — o `/signup` precisa saber se o cadastro está aberto |
 | `GET` | `/system-configuration/default-theme` | **anônima** | Só a chave `SYSTEMCONFIG_THEME` |
+| `GET` | `/system-configuration/app-name` | **anônima** | Só a chave `SYSTEM_APP_NAME` |
+| `GET` | `/system-configuration/app-tagline` | **anônima** | Só a chave `SYSTEM_APP_TAGLINE` |
 
-As duas rotas anônimas são chaves específicas com rota própria, e ficam **antes** de `:id` no
+As quatro rotas anônimas são chaves específicas com rota própria, e ficam **antes** de `:id` no
 controller (senão `signup` casaria como id). A rota genérica continua ADMIN — é o mesmo padrão que o
 PageBuilder usa em `GET /page-builder/system-layout`, descrito abaixo.
 
+`app-name`/`app-tagline` (Ajuste 1) existem para a página pública de proposta mostrar quem está
+propondo sem exigir sessão — mesma anatomia de `signup`/`default-theme`: `findByLabelKey$` já
+injetado, zero DTO novo, zero use-case novo, só a chave muda.
+
 ## Configs existentes no seed
 
+- Identidade do app: `SYSTEM_APP_NAME` (valor default `'EVRE'` — troque por instalação) e
+  `SYSTEM_APP_TAGLINE` (nasce **vazio**, `''`: é texto de negócio por instalação, o template não
+  assume um descritor). Lidas pelas duas rotas anônimas acima; nenhuma tela de `/settings` edita
+  ainda — só via seed/DB direto.
 - Storage: `SYSTEM_STORAGE_S3_*` e `SYSTEM_STORAGE_LOCAL_*` — ver [[storage]].
 - Provider ativo: `SYSTEM_STORAGE_PROVIDER` (`S3` ou `LOCAL`).
 - Log retention: `SYSTEM_LOG_RETENTION_DAYS`.

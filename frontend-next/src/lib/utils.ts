@@ -44,6 +44,15 @@ export function formatDate(date: string): string {
         }
 }
 
+/** Data sem hora (pt-BR) — para um campo que é prazo/validade, não um timestamp de evento. */
+export function formatDateOnly(date: string): string {
+  try {
+    return new Intl.DateTimeFormat('pt-BR').format(new Date(String(date)));
+  } catch {
+    return String(date);
+  }
+}
+
 /** Centavos → moeda formatada (pt-BR). `null` cai em "-", igual às demais colunas monetárias. */
 export function formatCents(cents: number | null | undefined, currency: string): string {
   if (cents === null || cents === undefined) return '-';

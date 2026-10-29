@@ -10,7 +10,6 @@ import { FormBuilderModal, type FormBuilderField } from "@/components/form/form-
 import { CompanyContactEdit } from "./company-contact-edit";
 import type { Contact } from "@/lib/actions/company/types";
 import { z } from "zod";
-import { useQueryClient } from "@tanstack/react-query";
 import { Alive } from "@/lib/api/collector";
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
@@ -27,7 +26,6 @@ export function CompanyContactsTab({ companyId }: CompanyContactsTabProps) {
   const [archivingContact, setArchivingContact] = useState<Contact | null>(null);
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const queryClient = useQueryClient();
 
   const handleEdit = useCallback((item: Contact) => {
     setEditingContact(item);
@@ -104,9 +102,6 @@ export function CompanyContactsTab({ companyId }: CompanyContactsTabProps) {
           const result = await Alive(() => createContactMutation.mutateAsync(data))();
           return result;
         }}
-        onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ['company', companyId, 'contacts'] });
-        }}
         onError={(error) => {
           console.error('Error creating contact:', error);
         }}
@@ -160,7 +155,6 @@ export function CompanyContactsTab({ companyId }: CompanyContactsTabProps) {
             onClick={async () => {
               if (!archivingContact) return;
               await Alive(() => archiveContactMutation.mutateAsync(archivingContact.id))();
-              queryClient.invalidateQueries({ queryKey: ['company', companyId, 'contacts'] });
               setIsArchiveDialogOpen(false);
               setArchivingContact(null);
             }}

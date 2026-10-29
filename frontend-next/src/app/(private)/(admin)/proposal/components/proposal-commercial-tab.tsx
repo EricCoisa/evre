@@ -84,6 +84,12 @@ export function ProposalCommercialTab({ proposal }: { proposal: Proposal }) {
           <AlertDescription>{t('commercialLockedDescription')}</AlertDescription>
         </Alert>
       )}
+      {proposal.totalCents == null && (
+        <Alert>
+          <AlertTitle>{t('envelopeEmptyTitle')}</AlertTitle>
+          <AlertDescription>{t('envelopeEmptyDescription')}</AlertDescription>
+        </Alert>
+      )}
       <FormBuilder
         key={proposal.id}
         schema={schema}

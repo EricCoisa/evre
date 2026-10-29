@@ -21,4 +21,9 @@ export class ShortUrlService {
   async deactivate(code: string): Promise<void> {
     return this.deactivateShortUrlUseCase.execute(code);
   }
+
+  /** Reconstrói `<SHORT_URL_BASE_URL>/s/<code>` sem gerar código novo — cadeia de base única do módulo. */
+  buildShortUrl(code: string): string {
+    return this.shortenUrlUseCase.buildShortUrl(code);
+  }
 }

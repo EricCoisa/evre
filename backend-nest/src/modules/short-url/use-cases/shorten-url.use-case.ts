@@ -87,7 +87,7 @@ export class ShortenUrlUseCase {
     return result;
   }
 
-  private buildShortUrl(code: string): string {
+  buildShortUrl(code: string): string {
     const base =
       this.configService.get<string>('SHORT_URL_BASE_URL') ||
       this.configService.get<string>('FRONTEND_URL') ||

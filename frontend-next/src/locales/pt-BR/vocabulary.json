@@ -17,5 +17,11 @@
     "REVOKED": "Link revogado",
     "NONE": "Não publicada",
     "UNKNOWN": "Desconhecido"
+  },
+  "sendChannel": {
+    "WHATSAPP": "WhatsApp",
+    "EMAIL": "Email",
+    "MANUAL": "Manual",
+    "UNKNOWN": "Desconhecido"
   }
 }

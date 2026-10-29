@@ -4,6 +4,7 @@ import { describeBlocks } from '@/lib/page-builder/blocks.meta';
 import { classNamesFor } from '@/lib/page-builder/class-names';
 import { describePages } from '@/lib/page-builder/pages';
 import {
+  DEFAULT_PROFILE,
   LAYOUT_PROFILES,
   isLayoutProfileName,
 } from '@/lib/page-builder/profiles';
@@ -33,5 +34,9 @@ export async function GET(req: NextRequest) {
     spans: [...SPANS],
     // Lista fechada de classNames Tailwind permitidos no profile
     classNames: classNamesFor(profile),
+    // Mecanismo de dado desta superfície: "role-filtered" (fonte real), "inline-only" (payload
+    // colado em data.inline) ou "none" (nenhum dado). Resposta autodescritiva — o backend já tem
+    // o mesmo valor no próprio LAYOUT_PROFILES e não depende deste campo para decidir nada.
+    dataSources: LAYOUT_PROFILES[profile ?? DEFAULT_PROFILE].dataSources,
   });
 }

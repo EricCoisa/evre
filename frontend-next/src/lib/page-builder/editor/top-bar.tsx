@@ -3,6 +3,7 @@
 import React from 'react';
 import {
   Check,
+  Eye,
   Redo2,
   SlidersHorizontal,
   Undo2,
@@ -27,6 +28,7 @@ export function EditorTopBar({
   onSaveAsDefault,
   onCancel,
   onOpenPanel,
+  onPreview,
 }: {
   pageKey: string;
   dirty: boolean;
@@ -35,6 +37,7 @@ export function EditorTopBar({
   onSaveAsDefault?: () => void;
   onCancel: () => void;
   onOpenPanel?: () => void;
+  onPreview?: () => void;
 }) {
   const { t } = useTranslation('page-builder');
   const editor = useEditorOrThrow();
@@ -127,6 +130,27 @@ export function EditorTopBar({
             >
               {t('editor.saveAsDefault', { defaultValue: 'Definir como Padrão' })}
             </Button>
+          ) : null}
+
+          {onPreview ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onPreview}
+                  className="h-8 gap-1.5 text-xs"
+                  aria-label={t('editor.preview')}
+                >
+                  <Eye className="size-3.5" />
+                  <span className="hidden sm:inline">{t('editor.preview')}</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p className="text-xs">{t('editor.previewTooltip')}</p>
+              </TooltipContent>
+            </Tooltip>
           ) : null}
 
           <Button

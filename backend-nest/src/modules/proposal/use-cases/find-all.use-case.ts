@@ -26,7 +26,7 @@ export class FindAllProposalUseCase {
     query: PaginationQuery,
     user: AuthenticatedUser,
   ): Promise<PaginatedResponse<ProposalListItem> | ProposalListItem[]> {
-    const { search } = query;
+    const { search, filter } = query;
 
     const and: Prisma.ProposalWhereInput[] = [];
     if (search) {
@@ -36,6 +36,9 @@ export class FindAllProposalUseCase {
           { company: { name: { contains: search, mode: 'insensitive' } } },
         ],
       });
+    }
+    if (filter?.companyId) {
+      and.push({ companyId: filter.companyId });
     }
 
     // Membership por projectId não abre a proposta — só companyId concede a linha-pai.

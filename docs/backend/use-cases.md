@@ -37,10 +37,37 @@ por injeção; nunca para o que o controller já obtém do use-case.
 Exemplos de service legítimo: `SystemConfigurationService` (30+ módulos leem config),
 `UserConfigurationService` (o módulo de IA lê a credencial BYOK), `LoggingService`
 (todo use-case grava auditoria), `FeatureFlagService` (avaliação + cache que o
-`FeatureFlagGuard` consome), `CaptchaService` (`verify` para o `CaptchaGuard`).
+`FeatureFlagGuard` consome), `CaptchaService` (`verify` para o `CaptchaGuard`),
+`ShortUrlService` (`shorten`/`deactivate`/`buildShortUrl`, para outro módulo encurtar ou
+reconstruir uma URL curta sem acessar o use-case de encurtamento direto).
 
 Nos três primeiros o service **delega** ao use-case no que o controller também
 expõe — `SystemConfigurationService.create/update/findOne` são uma linha cada.
+
+`ShortUrlService.buildShortUrl(code)` é o mesmo padrão com um motivo concreto por trás: reconstruir
+`<SHORT_URL_BASE_URL>/s/<code>` (a cadeia `SHORT_URL_BASE_URL || FRONTEND_URL || NEXTAUTH_URL ||
+localhost`) tinha **três cópias** idênticas, uma em cada lugar que precisava montar essa URL sem
+gerar código novo. A correção não foi extrair um helper solto — foi expor o método já existente no
+use-case de encurtamento (`ShortenUrlUseCase.buildShortUrl`, que era `private`) através da facade
+que o módulo já tinha, e trocar as três cópias por uma chamada a ela:
+
+```ts
+@Injectable()
+export class ShortUrlService {
+  constructor(
+    private readonly shortenUrlUseCase: ShortenUrlUseCase,
+    private readonly deactivateShortUrlUseCase: DeactivateShortUrlUseCase,
+  ) {}
+
+  buildShortUrl(code: string): string {
+    return this.shortenUrlUseCase.buildShortUrl(code);
+  }
+}
+```
+
+A regra geral: se duas ou mais chamadoras (de módulos diferentes, ou nem tão diferentes) precisam
+do mesmo cálculo que um use-case de outro módulo já sabe fazer, o lugar certo não é copiar — é a
+facade daquele módulo, mesmo que o método seja de uma linha.
 
 Módulos sem service, porque nada externo os consome: `auth`, `user`, `role`,
 `role-route-access`, `route`, `user-route-access`, `user-configuration-definition`,

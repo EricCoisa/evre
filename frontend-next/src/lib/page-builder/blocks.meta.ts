@@ -36,9 +36,11 @@ export const BLOCK_META = {
     props: [{ name: 'title', type: 'string', required: false }],
   },
   'chart.area': {
-    profiles: ['dashboard'],
+    profiles: ['dashboard', 'proposal'],
     description:
-      'Gráfico de área ao longo do tempo. Precisa de uma fonte do tipo series.',
+      'Gráfico de área ao longo do tempo. No dashboard, precisa de uma fonte do tipo series; na ' +
+      'proposta, o dado vem colado em `data.inline` no formato series: ' +
+      '`{ data: [{ date: "2024-01", value: 100 }, ...] }`.',
     accepts: ['series'],
     props: [
       { name: 'title', type: 'string', required: true },
@@ -46,9 +48,11 @@ export const BLOCK_META = {
     ],
   },
   'chart.bar': {
-    profiles: ['dashboard'],
+    profiles: ['dashboard', 'proposal'],
     description:
-      'Gráfico de barras para dados discretos ao longo do tempo. Precisa de uma fonte do tipo series.',
+      'Gráfico de barras para dados discretos ao longo do tempo. No dashboard, precisa de uma ' +
+      'fonte do tipo series; na proposta, o dado vem colado em `data.inline` no formato series: ' +
+      '`{ data: [{ date: "2024-01", value: 100 }, ...] }`.',
     accepts: ['series'],
     props: [
       { name: 'title', type: 'string', required: true },
@@ -56,9 +60,11 @@ export const BLOCK_META = {
     ],
   },
   'chart.line': {
-    profiles: ['dashboard'],
+    profiles: ['dashboard', 'proposal'],
     description:
-      'Gráfico de linhas para tendências ao longo do tempo. Precisa de uma fonte do tipo series.',
+      'Gráfico de linhas para tendências ao longo do tempo. No dashboard, precisa de uma fonte ' +
+      'do tipo series; na proposta, o dado vem colado em `data.inline` no formato series: ' +
+      '`{ data: [{ date: "2024-01", value: 100 }, ...] }`.',
     accepts: ['series'],
     props: [
       { name: 'title', type: 'string', required: true },
@@ -96,10 +102,12 @@ export const BLOCK_META = {
     ],
   },
   'list.feed': {
-    profiles: ['dashboard'],
+    profiles: ['dashboard', 'proposal'],
     description:
-      'Lista compacta de itens em formato feed (ex: atividades recentes). ' +
-      'Em `columns`, informe [campo_principal, campo_secundário] da fonte escolhida.',
+      'Lista compacta de itens em formato feed (ex: atividades recentes). No dashboard, em ' +
+      '`columns` informe [campo_principal, campo_secundário] da fonte escolhida. Na proposta, o ' +
+      'dado vem colado em `data.inline` no formato list: `{ data: [{ campo: valor, ... }, ...] }` ' +
+      '— `columns` então aponta para as chaves que você mesmo colocou em cada item.',
     accepts: ['list'],
     props: [
       { name: 'title', type: 'string', required: false },
@@ -107,11 +115,13 @@ export const BLOCK_META = {
     ],
   },
   'table.basic': {
-    profiles: ['dashboard'],
+    profiles: ['dashboard', 'proposal'],
     description:
-      'Tabela simples e somente leitura de uma lista paginada. ' +
-      'Em `columns`, use SOMENTE nomes que aparecem em `fields` da fonte escolhida — ' +
-      'campo inventado vira coluna vazia.',
+      'Tabela simples e somente leitura de uma lista paginada. No dashboard, em `columns` use ' +
+      'SOMENTE nomes que aparecem em `fields` da fonte escolhida — campo inventado vira coluna ' +
+      'vazia. Na proposta, o dado vem colado em `data.inline` no formato list: ' +
+      '`{ data: [{ campo: valor, ... }, ...] }` — `columns` então aponta para as chaves que você ' +
+      'mesmo colocou em cada item (sem paginação: a proposta não busca página seguinte).',
     accepts: ['list'],
     props: [
       { name: 'title', type: 'string', required: false },
@@ -144,9 +154,11 @@ export const BLOCK_META = {
   investment: {
     profiles: ['proposal'],
     description:
-      'Bloco de investimento: valor, recorrência, prazo, validade e itens inclusos (e opcionais, ' +
-      'se habilitado). Não recebe o preço por props — lê o envelope comercial da proposta por ' +
-      'contexto, nunca duplicado no JSON do layout.',
+      'Espelha o ENVELOPE comercial da proposta (registro único: o que soma no funil e vai para ' +
+      'o contrato) — valor, recorrência, prazo, validade e itens inclusos (e opcionais, se ' +
+      'habilitado). Não recebe o preço por props — lê o envelope por contexto, nunca duplicado no ' +
+      'JSON do layout. Para valor LIVRE (mais de um preço na mesma proposta: projeto + ' +
+      'mensalidade, planos alternativos), use o bloco `price` em vez deste.',
     accepts: [],
     props: [
       { name: 'title', type: 'string', required: false },
@@ -165,6 +177,49 @@ export const BLOCK_META = {
       { name: 'title', type: 'string', required: false },
       { name: 'height', type: 'number', required: false },
       { name: 'aspect', type: 'string', required: false },
+    ],
+  },
+  heading: {
+    profiles: ['dashboard', 'proposal'],
+    description:
+      'Título de seção com hierarquia semântica real (h1 a h4). Use `level: 1` SOMENTE para o ' +
+      'título da proposta (uma vez, no topo); use `level: 2` para cada seção da proposta ou para ' +
+      'rotular um grupo de cards no dashboard; `level: 3`/`4` para subseção. Não é um card — é a ' +
+      'estrutura da página. Não consome fonte de dados.',
+    accepts: [],
+    props: [
+      { name: 'text', type: 'string', required: true },
+      { name: 'level', type: 'number', required: true },
+    ],
+  },
+  divider: {
+    profiles: ['dashboard', 'proposal'],
+    description:
+      'Linha divisória horizontal, para separar seções sem precisar de um título. `spacing` ' +
+      'controla a margem vertical (sm, md ou lg; padrão md). Não consome fonte de dados.',
+    accepts: [],
+    props: [{ name: 'spacing', type: 'string', required: false }],
+  },
+  price: {
+    profiles: ['proposal'],
+    description:
+      'Tabela de valores LIVRE — apresentação, não registro (não soma no funil, não vai para o ' +
+      'contrato; quem faz isso é o envelope/`investment`). `rows` é uma linha "Rótulo|12000" por ' +
+      'item, valor SEMPRE em centavos. `totalCents` (também em centavos) mostra um total em ' +
+      'destaque com `totalLabel`. **Várias instâncias de `price` na mesma proposta são normais** ' +
+      '— ex. um para o projeto fechado e outro para a mensalidade, cada um com seu `recurrence`. ' +
+      '`highlight` destaca a opção recomendada quando há mais de uma. Não consome fonte de dados.',
+    accepts: [],
+    props: [
+      { name: 'title', type: 'string', required: false },
+      { name: 'subtitle', type: 'string', required: false },
+      { name: 'rows', type: 'string[]', required: true },
+      { name: 'totalLabel', type: 'string', required: false },
+      { name: 'totalCents', type: 'number', required: false },
+      { name: 'currency', type: 'string', required: false },
+      { name: 'recurrence', type: 'string', required: false },
+      { name: 'note', type: 'string', required: false },
+      { name: 'highlight', type: 'boolean', required: false },
     ],
   },
 } as const satisfies Record<string, BlockMeta>;

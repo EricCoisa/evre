@@ -23,6 +23,14 @@ enum ProposalAcceptanceSource {
   @@schema("public")
 }
 
+enum ProposalSendChannel {
+  WHATSAPP
+  EMAIL
+  MANUAL
+
+  @@schema("public")
+}
+
 /// Registro editável da proposta — rascunho + envelope comercial em coluna. Ver docs/architecture/data-model.md.
 model Proposal {
   id            String             @id @default(uuid())
@@ -83,8 +91,9 @@ model ProposalVersion {
   acceptanceIp     String?
   acceptanceAgent  String?
 
-  proposal Proposal       @relation(fields: [proposalId], references: [id], onDelete: Cascade)
-  sends    ProposalSend[]
+  proposal   Proposal            @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  sends      ProposalSend[]
+  openEvents ProposalOpenEvent[]
 
   @@unique([proposalId, version])
   @@index([publicToken])
@@ -95,9 +104,9 @@ model ProposalVersion {
 /// Registro de cada tentativa de envio da proposta (WhatsApp/email/manual) — grava mesmo quando
 /// o canal falha, para a tela mostrar "mandei e não chegou". Ver docs/architecture/data-model.md.
 model ProposalSend {
-  id        String   @id @default(uuid())
+  id        String              @id @default(uuid())
   versionId String
-  channel   String // WHATSAPP | EMAIL | MANUAL
+  channel   ProposalSendChannel
   toPhone   String?
   toEmail   String?
   succeeded Boolean
@@ -121,6 +130,8 @@ model ProposalOpenEvent {
   ip        String?
   userAgent String?
   createdAt DateTime @default(now())
+
+  version ProposalVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
 
   @@index([versionId])
   @@map("proposal_open_events")

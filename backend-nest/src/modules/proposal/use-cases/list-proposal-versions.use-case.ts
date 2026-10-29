@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { ShortUrlService } from '../../short-url/short-url.service';
 import type { AuthenticatedUser } from 'src/common/types/auth.types';
 import {
   PublicationStateConst,
@@ -27,6 +28,8 @@ export interface ProposalVersionWithState {
   state: PublicationState;
   /** `null` até o primeiro envio por WhatsApp construir o link curto — ver `BuildProposalPublicLinkUseCase`. */
   shortUrl: string | null;
+  /** `null` sem `publicToken` — URL completa (`<FRONTEND_URL>/p/<token>`), nunca montada no cliente. */
+  publicUrl: string | null;
 }
 
 /** Estado é sempre derivado de `publicToken`/`revokedAt`/`validUntil` — nunca uma coluna, para não
@@ -49,6 +52,7 @@ export class ListProposalVersionsUseCase {
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
+    private readonly shortUrl: ShortUrlService,
     private readonly findOne: FindOneProposalUseCase,
   ) {}
 
@@ -66,24 +70,26 @@ export class ListProposalVersionsUseCase {
     return versions.map((version) => ({
       ...(version as unknown as Omit<
         ProposalVersionWithState,
-        'state' | 'shortUrl'
+        'state' | 'shortUrl' | 'publicUrl'
       >),
       layout: version.layout as Record<string, unknown>,
       state: derivePublicationState(version),
       shortUrl: version.shortUrlCode
-        ? this.buildShortUrl(version.shortUrlCode)
+        ? this.shortUrl.buildShortUrl(version.shortUrlCode)
+        : null,
+      publicUrl: version.publicToken
+        ? this.buildPublicUrl(version.publicToken)
         : null,
     }));
   }
 
-  /** Mesma regra de base de `ShortenUrlUseCase.buildShortUrl` — só reconstrói a URL, nunca gera código. */
-  private buildShortUrl(code: string): string {
+  /** Mesma regra de base de `BuildProposalPublicLinkUseCase.buildPublicUrl` — reconstrói sem token novo. */
+  private buildPublicUrl(token: string): string {
     const base =
-      this.configService.get<string>('SHORT_URL_BASE_URL') ||
       this.configService.get<string>('FRONTEND_URL') ||
       process.env.NEXTAUTH_URL ||
       'http://localhost:3000';
     const cleanBase = base.replace(/\/+$/, '');
-    return `${cleanBase}/s/${code}`;
+    return `${cleanBase}/p/${token}`;
   }
 }

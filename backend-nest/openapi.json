@@ -330,6 +330,52 @@
         ]
       }
     },
+    "/system-configuration/app-name": {
+      "get": {
+        "description": "Retorna o nome do app para telas públicas, sem sessão",
+        "operationId": "SystemConfigurationController_findAppNameConfiguration",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Configuração encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemConfigurationDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Busca nome do app",
+        "tags": [
+          "system-configuration"
+        ]
+      }
+    },
+    "/system-configuration/app-tagline": {
+      "get": {
+        "description": "Retorna o descritor do app para telas públicas, sem sessão",
+        "operationId": "SystemConfigurationController_findAppTaglineConfiguration",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Configuração encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemConfigurationDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Busca descritor do app",
+        "tags": [
+          "system-configuration"
+        ]
+      }
+    },
     "/system-configuration/{id}": {
       "get": {
         "description": "Retorna uma configuração do sistema pelo ID",
@@ -7081,7 +7127,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "Company created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -7215,7 +7268,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Company found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -7252,7 +7312,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "Company updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -7279,7 +7346,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Company archived",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -7355,7 +7429,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "Contact created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -7370,7 +7451,7 @@
       }
     },
     "/company/{id}/contacts/{contactId}": {
-      "put": {
+      "patch": {
         "operationId": "CompanyController_updateContact",
         "parameters": [
           {
@@ -7402,7 +7483,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "Contact updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -7437,7 +7525,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Contact archived",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -7602,7 +7697,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Proposal found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -7615,7 +7717,7 @@
           "proposal"
         ]
       },
-      "put": {
+      "patch": {
         "operationId": "ProposalController_update",
         "parameters": [
           {
@@ -7639,7 +7741,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "Proposal updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -7666,7 +7775,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Proposal archived",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -7695,7 +7811,14 @@
         ],
         "responses": {
           "201": {
-            "description": ""
+            "description": "Proposal duplicated as a new draft",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -7710,7 +7833,7 @@
       }
     },
     "/proposal/{id}/layout": {
-      "put": {
+      "patch": {
         "operationId": "ProposalController_updateLayout",
         "parameters": [
           {
@@ -7734,7 +7857,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "Proposal layout updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -7749,7 +7879,7 @@
       }
     },
     "/proposal/{id}/terms": {
-      "put": {
+      "patch": {
         "operationId": "ProposalController_updateTerms",
         "parameters": [
           {
@@ -7773,7 +7903,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "Proposal commercial terms updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -7788,7 +7925,7 @@
       }
     },
     "/proposal/{id}/status": {
-      "put": {
+      "patch": {
         "operationId": "ProposalController_updateStatus",
         "parameters": [
           {
@@ -7812,7 +7949,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "Proposal status updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -12503,11 +12647,9 @@
                         "params": {
                           "type": "object",
                           "additionalProperties": {}
-                        }
-                      },
-                      "required": [
-                        "source"
-                      ]
+                        },
+                        "inline": {}
+                      }
                     },
                     "children": {
                       "type": "array",
@@ -12569,11 +12711,9 @@
                               "params": {
                                 "type": "object",
                                 "additionalProperties": {}
-                              }
-                            },
-                            "required": [
-                              "source"
-                            ]
+                              },
+                              "inline": {}
+                            }
                           }
                         },
                         "required": [
@@ -12670,39 +12810,6 @@
           "params"
         ]
       },
-      "CreateCompanyDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "description": "Company name — the only required field",
-            "type": "string",
-            "minLength": 1
-          },
-          "tradeName": {
-            "description": "Trade name (fantasy name)",
-            "type": "string"
-          },
-          "taxId": {
-            "description": "Tax identifier (CNPJ/CPF)",
-            "type": "string"
-          },
-          "site": {
-            "description": "Website",
-            "type": "string"
-          },
-          "segment": {
-            "description": "Market segment",
-            "type": "string"
-          },
-          "notes": {
-            "description": "Free-text notes",
-            "type": "string"
-          }
-        },
-        "required": [
-          "name"
-        ]
-      },
       "CompanyDto": {
         "type": "object",
         "properties": {
@@ -12758,6 +12865,39 @@
           "archivedAt",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "CreateCompanyDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Company name — the only required field",
+            "type": "string",
+            "minLength": 1
+          },
+          "tradeName": {
+            "description": "Trade name (fantasy name)",
+            "type": "string"
+          },
+          "taxId": {
+            "description": "Tax identifier (CNPJ/CPF)",
+            "type": "string"
+          },
+          "site": {
+            "description": "Website",
+            "type": "string"
+          },
+          "segment": {
+            "description": "Market segment",
+            "type": "string"
+          },
+          "notes": {
+            "description": "Free-text notes",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
         ]
       },
       "UpdateCompanyDto": {
@@ -13371,6 +13511,10 @@
           "shortUrl": {
             "type": "string",
             "nullable": true
+          },
+          "publicUrl": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
@@ -13390,7 +13534,8 @@
           "revokedAt",
           "createdAt",
           "state",
-          "shortUrl"
+          "shortUrl",
+          "publicUrl"
         ]
       },
       "AcceptProposalVersionResponseDto": {
@@ -13482,7 +13627,12 @@
             "format": "uuid"
           },
           "channel": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "WHATSAPP",
+              "EMAIL",
+              "MANUAL"
+            ]
           },
           "toPhone": {
             "type": "string",

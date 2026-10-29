@@ -37,6 +37,18 @@ export async function getDefaultThemeConfiguration(): Promise<
   );
 }
 
+export async function getAppNameConfiguration(): Promise<
+  ApiResponse<SystemConfiguration<string>>
+> {
+  return wrapAs(() => api.systemConfigurationControllerFindAppNameConfiguration());
+}
+
+export async function getAppTaglineConfiguration(): Promise<
+  ApiResponse<SystemConfiguration<string>>
+> {
+  return wrapAs(() => api.systemConfigurationControllerFindAppTaglineConfiguration());
+}
+
 export async function updateSystemConfiguration<T>(
   id: string,
   value: T,

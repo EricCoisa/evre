@@ -521,6 +521,54 @@ describe('image', () => {
   });
 });
 
+describe('heading', () => {
+  it('level={2} renderiza um <h2> de verdade (asserção na tag, não na classe)', () => {
+    const HeadingBlock = BLOCK_REGISTRY.heading;
+    render(
+      React.createElement(HeadingBlock, {
+        props: { text: 'Escopo do projeto', level: 2 },
+      }),
+    );
+
+    const heading = screen.getByRole('heading', { level: 2, name: 'Escopo do projeto' });
+    expect(heading.tagName).toBe('H2');
+  });
+
+  it('level={1} renderiza <h1>; level inválido cai no default (h2)', () => {
+    const HeadingBlock = BLOCK_REGISTRY.heading;
+    const { rerender } = render(
+      React.createElement(HeadingBlock, { props: { text: 'Título', level: 1 } }),
+    );
+    expect(screen.getByRole('heading', { level: 1 }).tagName).toBe('H1');
+
+    rerender(React.createElement(HeadingBlock, { props: { text: 'Título', level: 99 } }));
+    expect(screen.getByRole('heading', { level: 2 }).tagName).toBe('H2');
+  });
+
+  it('nunca nasce dentro de um Card', () => {
+    const HeadingBlock = BLOCK_REGISTRY.heading;
+    render(React.createElement(HeadingBlock, { props: { text: 'Seção', level: 2 } }));
+
+    expect(document.querySelector('[data-slot="card"]')).not.toBeInTheDocument();
+  });
+});
+
+describe('divider', () => {
+  it('renderiza um <hr>', () => {
+    const DividerBlock = BLOCK_REGISTRY.divider;
+    render(React.createElement(DividerBlock, { props: {} }));
+
+    expect(document.querySelector('hr')).toBeInTheDocument();
+  });
+
+  it('nunca nasce dentro de um Card', () => {
+    const DividerBlock = BLOCK_REGISTRY.divider;
+    render(React.createElement(DividerBlock, { props: { spacing: 'lg' } }));
+
+    expect(document.querySelector('[data-slot="card"]')).not.toBeInTheDocument();
+  });
+});
+
 describe('investment', () => {
   it('sem contexto mostra o estado vazio explícito', () => {
     const InvestmentBlock = BLOCK_REGISTRY.investment;
@@ -581,6 +629,80 @@ describe('investment', () => {
     );
 
     expect(screen.getByText('Manutenção extra')).toBeInTheDocument();
+  });
+});
+
+describe('price', () => {
+  it('rows com 3 linhas renderiza 3 linhas rótulo → valor', () => {
+    const PriceBlock = BLOCK_REGISTRY.price;
+    render(
+      React.createElement(PriceBlock, {
+        props: {
+          rows: ['Desenvolvimento|180000', 'Design|50000', 'Infra|20000'],
+        },
+      }),
+    );
+
+    expect(screen.getAllByRole('listitem')).toHaveLength(3);
+    expect(screen.getByText('Desenvolvimento')).toBeInTheDocument();
+    expect(screen.getByText('R$ 1.800,00')).toBeInTheDocument();
+  });
+
+  it('totalCents: 2400000 + BRL sai R$ 24.000,00', () => {
+    const PriceBlock = BLOCK_REGISTRY.price;
+    render(
+      React.createElement(PriceBlock, {
+        props: { rows: [], totalCents: 2400000, currency: 'BRL' },
+      }),
+    );
+
+    expect(screen.getByText('R$ 24.000,00')).toBeInTheDocument();
+  });
+
+  it('highlight aplica a moldura de destaque', () => {
+    const PriceBlock = BLOCK_REGISTRY.price;
+    render(
+      React.createElement(PriceBlock, { props: { rows: [], highlight: true } }),
+    );
+
+    expect(document.querySelector('[data-slot="card"]')).toHaveClass('border-primary');
+  });
+
+  it('sem highlight, não ganha a moldura de destaque', () => {
+    const PriceBlock = BLOCK_REGISTRY.price;
+    render(React.createElement(PriceBlock, { props: { rows: [] } }));
+
+    expect(document.querySelector('[data-slot="card"]')).not.toHaveClass('border-primary');
+  });
+
+  it('duas instâncias no mesmo layout renderizam independentes', () => {
+    const PriceBlock = BLOCK_REGISTRY.price;
+    render(
+      <>
+        {React.createElement(PriceBlock, {
+          props: { title: 'Projeto', rows: ['Setup|100000'], recurrence: 'ONE_TIME' },
+        })}
+        {React.createElement(PriceBlock, {
+          props: { title: 'Mensalidade', rows: ['Suporte|5000'], recurrence: 'MONTHLY' },
+        })}
+      </>,
+    );
+
+    expect(screen.getByText('Projeto')).toBeInTheDocument();
+    expect(screen.getByText('Mensalidade')).toBeInTheDocument();
+    expect(screen.getByText('R$ 1.000,00')).toBeInTheDocument();
+    expect(screen.getByText('R$ 50,00')).toBeInTheDocument();
+  });
+
+  it('linha sem "|" ou com valor não numérico mostra "—" em vez de quebrar', () => {
+    const PriceBlock = BLOCK_REGISTRY.price;
+    render(
+      React.createElement(PriceBlock, {
+        props: { rows: ['Sem separador', 'Rótulo|abc'] },
+      }),
+    );
+
+    expect(screen.getAllByText('—')).toHaveLength(2);
   });
 });
 

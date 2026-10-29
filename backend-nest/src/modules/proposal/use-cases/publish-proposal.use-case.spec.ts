@@ -114,6 +114,22 @@ describe('PublishProposalUseCase', () => {
     expect(mockPrisma.$transaction).not.toHaveBeenCalled();
   });
 
+  // A3: envelope vazio deixou de ser motivo de recusa — valor livre vira bloco `price` no layout,
+  // e o funil simplesmente não soma essa proposta (decisão de produto, não checagem de código).
+  it('publicar sem envelope (totalCents null) é aceito — a única recusa é layout vazio', async () => {
+    mockPrisma.proposal.findUnique.mockResolvedValue({
+      ...row,
+      totalCents: null,
+    });
+
+    await useCase.execute('id-1', admin);
+
+    expect(mockTx.proposalVersion.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ totalCents: null }),
+    });
+    expect(mockTx.proposal.update).toHaveBeenCalled();
+  });
+
   it('cria a primeira versão com token de 16 caracteres e muda status DRAFT -> SENT', async () => {
     const result = await useCase.execute('id-1', admin);
 

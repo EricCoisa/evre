@@ -5,7 +5,10 @@ import { captchaConfigKeys } from '../../dist/src/domain/auth/captcha.const';
 import { oauthConfigKeys } from '../../dist/src/domain/auth/oauthProvider.const';
 import { sentryConfigKeys } from '../../dist/src/domain/observability/sentry.const';
 import { notificationConfigKeys } from '../../dist/src/domain/notification/notification-config.const';
-import { AI_CONFIG_KEYS, AiProviderConst } from '../../dist/src/domain/ai/ai.const';
+import {
+  AI_CONFIG_KEYS,
+  AiProviderConst,
+} from '../../dist/src/domain/ai/ai.const';
 import { EMAIL_CONFIG_KEYS } from '../../dist/src/domain/mail/mail.const';
 import { STORAGE_CONFIG_KEYS } from '../../dist/src/domain/storage/storage.const';
 import {
@@ -25,6 +28,9 @@ export async function seedSystemConfigurations(prisma: PrismaClient) {
     blocked?: boolean;
   }> = [
     { labelKey: 'SYSTEM_APP_NAME', valueType: 'STRING', value: 'EVRE' },
+    // Descritor opcional ao lado do nome no header da proposta pública. Nasce vazio —
+    // é texto de negócio por instalação, não faz sentido um default de template.
+    { labelKey: 'SYSTEM_APP_TAGLINE', valueType: 'STRING', value: '' },
     {
       labelKey: 'SYSTEMCONFIG_SUPORTURL',
       valueType: 'STRING',
@@ -104,7 +110,11 @@ export async function seedSystemConfigurations(prisma: PrismaClient) {
       value: 'false',
     },
     { labelKey: 'EMAIL_TEMPLATES', valueType: 'JSON', value: '{}' },
-    { labelKey: 'SYSTEM_MESSAGING_IGNORE_LIST', valueType: 'JSON', value: '[]' },
+    {
+      labelKey: 'SYSTEM_MESSAGING_IGNORE_LIST',
+      valueType: 'JSON',
+      value: '[]',
+    },
     { labelKey: 'SYSTEM_ROLE_HOME_ROUTES', valueType: 'JSON', value: '{}' },
     {
       labelKey: 'SYSTEM_LOG_MIN_LEVEL',

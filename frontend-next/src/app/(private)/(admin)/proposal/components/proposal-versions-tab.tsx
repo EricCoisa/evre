@@ -1,40 +1,15 @@
 'use client';
 
-import { useState } from 'react';
-import type { VariantProps } from 'class-variance-authority';
-import { Eye } from 'lucide-react';
-import { Badge, type badgeVariants } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { useMemo, useState } from 'react';
 import Modal from '@/components/modal';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { DataTable } from '@/components/data-table';
+import { getProposalVersionColumns } from './proposal-version-columns';
 import { useTranslation } from '@/hooks/use-translation';
 import { useProposalVersions } from '@/lib/actions/proposal/queries';
 import type { Proposal, ProposalVersionDto } from '@/lib/actions/proposal/types';
-import { formatCents, formatDate } from '@/lib/utils';
-import { publicationStateLabelKey, type PublicationState } from '@/lib/vocabulary';
-import { EMPTY_LAYOUT } from '@/lib/page-builder/editor/mutations';
 import type { ProposalTerms } from '@/lib/page-builder/proposal-terms-context';
 import { LayoutBody } from '@/lib/page-builder/renderer';
-import { PageLayoutSchema, type PageLayout } from '@/lib/page-builder/schema';
-
-const STATE_BADGE_VARIANT: Record<PublicationState, VariantProps<typeof badgeVariants>['variant']> = {
-  ACTIVE: 'default',
-  EXPIRED: 'outline',
-  REVOKED: 'destructive',
-  NONE: 'secondary',
-};
-
-function parseVersionLayout(raw: unknown): PageLayout {
-  const parsed = PageLayoutSchema.safeParse(raw);
-  return parsed.success ? parsed.data : EMPTY_LAYOUT;
-}
+import { parseRecordLayout } from '@/lib/page-builder/schema';
 
 function toProposalTerms(version: ProposalVersionDto): ProposalTerms {
   return {
@@ -54,50 +29,26 @@ function toProposalTerms(version: ProposalVersionDto): ProposalTerms {
 export function ProposalVersionsTab({ proposal }: { proposal: Proposal }) {
   const { t } = useTranslation('proposal');
   const { t: tVocabulary } = useTranslation('vocabulary');
-  const { data: versions = [], isLoading } = useProposalVersions(proposal.id);
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 50 });
+  const { data, error } = useProposalVersions(proposal.id);
   const [previewVersion, setPreviewVersion] = useState<ProposalVersionDto | null>(null);
 
-  if (isLoading) {
-    return <p className="text-sm text-muted-foreground py-8 text-center">{t('loadingVersions')}</p>;
-  }
-
-  if (versions.length === 0) {
-    return <p className="text-sm text-muted-foreground py-8 text-center">{t('noVersionsYet')}</p>;
-  }
+  const columns = useMemo(
+    () => getProposalVersionColumns({ t, tVocabulary, onView: setPreviewVersion }),
+    [t, tVocabulary],
+  );
 
   return (
     <>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>{t('versionNumber')}</TableHead>
-            <TableHead>{t('versionPublishedAt')}</TableHead>
-            <TableHead>{t('value')}</TableHead>
-            <TableHead>{t('status')}</TableHead>
-            <TableHead />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {versions.map((version) => (
-            <TableRow key={version.id}>
-              <TableCell>v{version.version}</TableCell>
-              <TableCell>{version.publishedAt ? formatDate(version.publishedAt) : '-'}</TableCell>
-              <TableCell>{formatCents(version.totalCents, version.currency)}</TableCell>
-              <TableCell>
-                <Badge variant={STATE_BADGE_VARIANT[version.state as PublicationState]}>
-                  {tVocabulary(publicationStateLabelKey(version.state))}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <Button variant="ghost" size="sm" onClick={() => setPreviewVersion(version)}>
-                  <Eye className="size-4 mr-1.5" />
-                  {t('viewVersion')}
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <DataTable
+        columns={columns}
+        data={data}
+        error={error}
+        queryKey={['proposal', proposal.id, 'versions']}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        emptyMessage={t('noVersionsYet')}
+      />
 
       <Modal
         open={previewVersion !== null}
@@ -107,7 +58,7 @@ export function ProposalVersionsTab({ proposal }: { proposal: Proposal }) {
       >
         {previewVersion && (
           <LayoutBody
-            layout={parseVersionLayout(previewVersion.layout)}
+            layout={parseRecordLayout(previewVersion.layout)}
             profile="proposal"
             proposalTerms={toProposalTerms(previewVersion)}
           />

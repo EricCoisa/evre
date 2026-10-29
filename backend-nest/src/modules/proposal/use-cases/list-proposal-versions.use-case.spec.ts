@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { I18nService } from 'nestjs-i18n';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ResourceAccessService } from 'src/common/infrastructure/resource-access/resource-access.service';
+import { ShortUrlService } from '../../short-url/short-url.service';
 import type { AuthenticatedUser } from 'src/common/types/auth.types';
 import {
   ListProposalVersionsUseCase,
@@ -35,6 +36,9 @@ const mockPrisma = {
 const mockI18n = { t: vi.fn((key: string) => key) };
 const mockResourceAccess = { assertCanRead: vi.fn() };
 const mockConfig = { get: vi.fn(() => 'https://app.example.com') };
+const mockShortUrl = {
+  buildShortUrl: vi.fn((code: string) => `https://app.example.com/s/${code}`),
+};
 
 describe('ListProposalVersionsUseCase', () => {
   let useCase: ListProposalVersionsUseCase;
@@ -46,6 +50,7 @@ describe('ListProposalVersionsUseCase', () => {
         FindOneProposalUseCase,
         { provide: PrismaService, useValue: mockPrisma },
         { provide: ConfigService, useValue: mockConfig },
+        { provide: ShortUrlService, useValue: mockShortUrl },
         { provide: I18nService, useValue: mockI18n },
         { provide: ResourceAccessService, useValue: mockResourceAccess },
       ],
@@ -55,6 +60,9 @@ describe('ListProposalVersionsUseCase', () => {
     vi.clearAllMocks();
     mockPrisma.proposal.findUnique.mockResolvedValue({ ...row });
     mockResourceAccess.assertCanRead.mockResolvedValue(undefined);
+    mockShortUrl.buildShortUrl.mockImplementation(
+      (code: string) => `https://app.example.com/s/${code}`,
+    );
   });
 
   it('busca ordenado por version desc', async () => {
@@ -86,6 +94,46 @@ describe('ListProposalVersionsUseCase', () => {
 
     expect(result.layout).toEqual(versionLayout);
     expect(result.layout).not.toEqual(row.layout);
+  });
+
+  it('publicUrl vem do FRONTEND_URL configurado, nunca montado pelo cliente', async () => {
+    mockPrisma.proposalVersion.findMany.mockResolvedValue([
+      {
+        id: 'version-1',
+        proposalId: 'id-1',
+        version: 1,
+        layout: {},
+        publicToken: 'tok123',
+        shortUrlCode: 'abc123',
+        revokedAt: null,
+        validUntil: null,
+      },
+    ]);
+
+    const [result] = await useCase.execute('id-1', admin);
+
+    expect(result.publicUrl).toBe('https://app.example.com/p/tok123');
+    expect(result.shortUrl).toBe('https://app.example.com/s/abc123');
+    expect(mockShortUrl.buildShortUrl).toHaveBeenCalledWith('abc123');
+  });
+
+  it('publicUrl é null sem publicToken', async () => {
+    mockPrisma.proposalVersion.findMany.mockResolvedValue([
+      {
+        id: 'version-1',
+        proposalId: 'id-1',
+        version: 1,
+        layout: {},
+        publicToken: null,
+        shortUrlCode: null,
+        revokedAt: null,
+        validUntil: null,
+      },
+    ]);
+
+    const [result] = await useCase.execute('id-1', admin);
+
+    expect(result.publicUrl).toBeNull();
   });
 
   it('estado ACTIVE: publicToken presente, sem revokedAt, sem validUntil vencido', () => {

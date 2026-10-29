@@ -52,6 +52,46 @@ Caminho de tela, chave de objeto, qualquer coisa com barra: dentro de um segment
 
 Sintoma de que a regra foi violada: alguém removendo ou recolocando barra à mão nos dois lados da chamada.
 
+## Verbo de atualização: `PATCH`, não `PUT`
+
+`PATCH /recurso/:id` é o verbo do template para atualizar um recurso — `feature-flag`, `user`,
+`system-configuration`, `messaging-template` e (desde o Ajuste 1) `company` e `proposal` seguem
+todos essa convenção. Não há `PUT` de atualização parcial convivendo com `PATCH` no mesmo módulo:
+escolha um verbo por módulo e aplique em **todo** sub-recurso dele (`:id`, `:id/layout`,
+`:id/contacts/:contactId`, …) — convenção divergente dentro do mesmo controller é o tipo de
+inconsistência que a próxima etapa herda e tem que escolher de novo.
+
+`PutApi` continua existindo no decorator para quem precisar de substituição total e idempotente no
+sentido estrito do HTTP, mas não é o default deste template.
+
+## `response` é obrigatório em toda rota autenticada
+
+`@GetApi`/`@PostApi`/`@PatchApi`/`@PutApi`/`@DeleteApi` aceitam um bloco `response` (schema do
+retorno, usado pelo Swagger e pelo gerador do client). Omitir `response` não impede a rota de
+funcionar — ela só sai **sem tipo** do `openapi:export`, e o Orval gera a função do client
+retornando `any`/`unknown`.
+
+```ts
+@PatchApi({
+  path: ':id',
+  summary: 'company.update.title',
+  body: UpdateCompanyDto,
+  status: 'OK',
+  authenticated: true,
+  roles: ['ADMIN'],
+  response: {
+    success: [{ status: 'OK', description: 'Company updated', schema: { dto: CompanyDto } }],
+  },
+})
+```
+
+Sem isso, o adapter do frontend (`lib/actions/<feature>/api.ts`) precisa de
+`as unknown as Promise<T>` em cada função — o cast que `wrapAs` ([[server-actions]]) existe
+justamente para centralizar, quando o tipo do Orval é incompatível de propósito (paginação,
+campo genérico). `response` faltando não é esse caso: é tipo nenhum, e o cast vira obrigatório só
+para compensar um decorator incompleto. Declare `response` em toda rota nova — é o que mantém o
+client gerado tipado sem cast manual.
+
 ## Status codes
 
 `status:` no decorator controla o `@HttpCode`. Declare **sempre** — sem ele o Nest usa o default do método (201 para POST, 200 para o resto), e o contrato passa a depender de um detalhe implícito.

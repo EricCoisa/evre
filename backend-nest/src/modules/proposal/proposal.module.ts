@@ -23,6 +23,7 @@ import { ListProposalArtifactsUseCase } from './use-cases/list-proposal-artifact
 import { PublishProposalUseCase } from './use-cases/publish-proposal.use-case';
 import { RevokeProposalPublicationUseCase } from './use-cases/revoke-proposal-publication.use-case';
 import { ListProposalVersionsUseCase } from './use-cases/list-proposal-versions.use-case';
+import { ResolveCurrentProposalVersionUseCase } from './use-cases/resolve-current-proposal-version.use-case';
 import { GetPublicProposalUseCase } from './use-cases/get-public-proposal.use-case';
 import { RegisterProposalOpenUseCase } from './use-cases/register-proposal-open.use-case';
 import { RequestProposalRenewalUseCase } from './use-cases/request-proposal-renewal.use-case';
@@ -49,6 +50,7 @@ const USE_CASES = [
   PublishProposalUseCase,
   RevokeProposalPublicationUseCase,
   ListProposalVersionsUseCase,
+  ResolveCurrentProposalVersionUseCase,
   GetPublicProposalUseCase,
   RegisterProposalOpenUseCase,
   RequestProposalRenewalUseCase,

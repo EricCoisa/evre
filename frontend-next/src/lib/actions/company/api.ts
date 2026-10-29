@@ -21,36 +21,36 @@ export async function getCompanys(
 }
 
 export async function getCompany(id: string): Promise<ApiResponse<Company>> {
-  return wrap(() => api.companyControllerFindOne(id) as unknown as Promise<Company>);
+  return wrap(() => api.companyControllerFindOne(id));
 }
 
 export async function createCompany(
   data: CreateCompanyDto,
 ): Promise<ApiResponse<Company>> {
-  return wrap(() => api.companyControllerCreate(data) as unknown as Promise<Company>);
+  return wrap(() => api.companyControllerCreate(data));
 }
 
 export async function updateCompany(
   id: string,
   data: UpdateCompanyDto,
 ): Promise<ApiResponse<Company>> {
-  return wrap(() => api.companyControllerUpdate(id, data) as unknown as Promise<Company>);
+  return wrap(() => api.companyControllerUpdate(id, data));
 }
 
 /** "Excluir" uma empresa arquiva no servidor — nada é apagado. */
 export async function archiveCompany(id: string): Promise<ApiResponse<Company>> {
-  return wrap(() => api.companyControllerRemove(id) as unknown as Promise<Company>);
+  return wrap(() => api.companyControllerRemove(id));
 }
 
 export async function getCompanyContacts(companyId: string): Promise<ApiResponse<Contact[]>> {
-  return wrap(() => api.companyControllerListContacts(companyId) as unknown as Promise<Contact[]>);
+  return wrap(() => api.companyControllerListContacts(companyId));
 }
 
 export async function createCompanyContact(
   companyId: string,
   data: CreateContactDto,
 ): Promise<ApiResponse<Contact>> {
-  return wrap(() => api.companyControllerCreateContact(companyId, data) as unknown as Promise<Contact>);
+  return wrap(() => api.companyControllerCreateContact(companyId, data));
 }
 
 export async function updateCompanyContact(
@@ -58,7 +58,7 @@ export async function updateCompanyContact(
   contactId: string,
   data: UpdateContactDto,
 ): Promise<ApiResponse<Contact>> {
-  return wrap(() => api.companyControllerUpdateContact(companyId, contactId, data) as unknown as Promise<Contact>);
+  return wrap(() => api.companyControllerUpdateContact(companyId, contactId, data));
 }
 
 /** "Excluir" um contato arquiva no servidor — nada é apagado. */
@@ -66,5 +66,5 @@ export async function archiveCompanyContact(
   companyId: string,
   contactId: string,
 ): Promise<ApiResponse<Contact>> {
-  return wrap(() => api.companyControllerArchiveContact(companyId, contactId) as unknown as Promise<Contact>);
+  return wrap(() => api.companyControllerArchiveContact(companyId, contactId));
 }

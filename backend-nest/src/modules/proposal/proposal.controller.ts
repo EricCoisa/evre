@@ -1,22 +1,20 @@
 import {
   Body,
   Controller,
-  NotFoundException,
   Param,
   Query,
   UseInterceptors,
   UploadedFile,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { I18nService } from 'nestjs-i18n';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { plainToInstance } from 'class-transformer';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   DeleteApi,
   GetApi,
+  PatchApi,
   PostApi,
-  PutApi,
 } from '../../common/decorators/api-method.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CreateProposalDto } from './dto/create-proposal.dto';
@@ -49,6 +47,7 @@ import { ListProposalArtifactsUseCase } from './use-cases/list-proposal-artifact
 import { PublishProposalUseCase } from './use-cases/publish-proposal.use-case';
 import { RevokeProposalPublicationUseCase } from './use-cases/revoke-proposal-publication.use-case';
 import { ListProposalVersionsUseCase } from './use-cases/list-proposal-versions.use-case';
+import { ResolveCurrentProposalVersionUseCase } from './use-cases/resolve-current-proposal-version.use-case';
 import { AcceptProposalVersionUseCase } from './use-cases/accept-proposal-version.use-case';
 import { SendProposalUseCase } from './use-cases/send-proposal.use-case';
 import { ListProposalSendsUseCase } from './use-cases/list-proposal-sends.use-case';
@@ -82,10 +81,10 @@ export class ProposalController {
     private readonly publishProposal: PublishProposalUseCase,
     private readonly revokeProposalPublication: RevokeProposalPublicationUseCase,
     private readonly listProposalVersions: ListProposalVersionsUseCase,
+    private readonly resolveCurrentProposalVersion: ResolveCurrentProposalVersionUseCase,
     private readonly acceptProposalVersion: AcceptProposalVersionUseCase,
     private readonly sendProposal: SendProposalUseCase,
     private readonly listProposalSends: ListProposalSendsUseCase,
-    private readonly i18n: I18nService,
   ) {}
 
   @PostApi({
@@ -142,6 +141,15 @@ export class ProposalController {
     status: 'OK',
     authenticated: true,
     roles: ['ADMIN'],
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Proposal found',
+          schema: { dto: ProposalDto },
+        },
+      ],
+    },
   })
   async findOne(
     @Param('id') id: string,
@@ -150,13 +158,22 @@ export class ProposalController {
     return this.findOneProposal.execute(id, currentUser);
   }
 
-  @PutApi({
+  @PatchApi({
     path: ':id',
     summary: 'proposal.update.title',
     body: UpdateProposalDto,
     status: 'OK',
     authenticated: true,
     roles: ['ADMIN'],
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Proposal updated',
+          schema: { dto: ProposalDto },
+        },
+      ],
+    },
   })
   async update(
     @Param('id') id: string,
@@ -172,6 +189,15 @@ export class ProposalController {
     status: 'OK',
     authenticated: true,
     roles: ['ADMIN'],
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Proposal archived',
+          schema: { dto: ProposalDto },
+        },
+      ],
+    },
   })
   async remove(
     @Param('id') id: string,
@@ -186,6 +212,15 @@ export class ProposalController {
     status: 'CREATED',
     authenticated: true,
     roles: ['ADMIN'],
+    response: {
+      success: [
+        {
+          status: 'CREATED',
+          description: 'Proposal duplicated as a new draft',
+          schema: { dto: ProposalDto },
+        },
+      ],
+    },
   })
   async duplicate(
     @Param('id') id: string,
@@ -194,13 +229,22 @@ export class ProposalController {
     return this.duplicateProposal.execute(id, currentUser);
   }
 
-  @PutApi({
+  @PatchApi({
     path: ':id/layout',
     summary: 'proposal.layout.update.title',
     body: UpdateProposalLayoutDto,
     status: 'OK',
     authenticated: true,
     roles: ['ADMIN'],
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Proposal layout updated',
+          schema: { dto: ProposalDto },
+        },
+      ],
+    },
   })
   async updateLayout(
     @Param('id') id: string,
@@ -210,13 +254,22 @@ export class ProposalController {
     return this.updateProposalLayout.execute(id, dto, currentUser);
   }
 
-  @PutApi({
+  @PatchApi({
     path: ':id/terms',
     summary: 'proposal.terms.update.title',
     body: UpdateProposalTermsDto,
     status: 'OK',
     authenticated: true,
     roles: ['ADMIN'],
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Proposal commercial terms updated',
+          schema: { dto: ProposalDto },
+        },
+      ],
+    },
   })
   async updateTerms(
     @Param('id') id: string,
@@ -226,13 +279,22 @@ export class ProposalController {
     return this.updateProposalTerms.execute(id, dto, currentUser);
   }
 
-  @PutApi({
+  @PatchApi({
     path: ':id/status',
     summary: 'proposal.status.update.title',
     body: UpdateProposalStatusDto,
     status: 'OK',
     authenticated: true,
     roles: ['ADMIN'],
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Proposal status updated',
+          schema: { dto: ProposalDto },
+        },
+      ],
+    },
   })
   async updateStatus(
     @Param('id') id: string,
@@ -401,11 +463,10 @@ export class ProposalController {
     @CurrentUser() currentUser: AuthenticatedUser,
   ) {
     // Nunca a versão escolhida pelo chamador — só a vigente (a mais recente).
-    const versions = await this.listProposalVersions.execute(id, currentUser);
-    const current = versions[0];
-    if (!current) {
-      throw new NotFoundException(this.i18n.t('proposal.version_not_found'));
-    }
+    const current = await this.resolveCurrentProposalVersion.execute(
+      id,
+      currentUser,
+    );
     return this.acceptProposalVersion.execute({
       versionId: current.id,
       source: ProposalAcceptanceSourceConst.OFFLINE,

@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useTranslation } from '@/hooks/use-translation';
 import { usePageSources } from '@/lib/actions/pageBuilder/queries';
@@ -214,6 +215,7 @@ function BlockForm({
     ? (editor.draft.blocks.find((b) => b.id === parentId)?.children ?? [])
     : editor.draft.blocks;
   const { maxSpan, maxRowSpan } = getMaxResizeBounds(siblingList, block.id);
+  const isInlineOnly = LAYOUT_PROFILES[editor.profile].dataSources === 'inline-only';
 
   return (
     <section className="space-y-4">
@@ -222,7 +224,13 @@ function BlockForm({
         <p className="text-muted-foreground text-xs">{meta.description}</p>
       </div>
 
-      {meta.accepts.length > 0 ? (
+      {meta.accepts.length > 0 && isInlineOnly ? (
+        <InlineDataField
+          accepts={meta.accepts}
+          value={block.data?.inline}
+          onChange={(v) => editor.setInline(block.id, v)}
+        />
+      ) : meta.accepts.length > 0 ? (
         <div className="space-y-1.5">
           <Label className="text-xs">{t('editor.dataSource')}</Label>
           <Select
@@ -498,6 +506,86 @@ function ArtifactStorageKeyField({
           {t('editor.artifactUploadError')}
         </p>
       ) : null}
+    </div>
+  );
+}
+
+/** Payload de exemplo por `kind` — o que o botão "Exemplo" insere. Mesma shape documentada em
+ * `lib/page-builder/types.ts` e na `description` dos blocos de dado. */
+const INLINE_EXAMPLES = {
+  series: JSON.stringify(
+    { data: [{ date: '2024-01', value: 10 }, { date: '2024-02', value: 20 }] },
+    null,
+    2,
+  ),
+  list: JSON.stringify(
+    { data: [{ nome: 'Ada', valor: 1 }, { nome: 'Bob', valor: 2 }] },
+    null,
+    2,
+  ),
+} as const;
+
+/** Campo dedicado de `data.inline` (profiles `inline-only`, ex. proposta): o autor cola o JSON
+ * direto — nunca vira `props` (`BlockPropMeta` só descreve string/number/boolean/string[], e
+ * `inline` é dado, não propriedade do bloco). Validação na hora: JSON inválido mostra o erro e
+ * não propaga para o draft, que mantém o último valor válido. */
+function InlineDataField({
+  accepts,
+  value,
+  onChange,
+}: {
+  accepts: readonly string[];
+  value: unknown;
+  onChange: (value: unknown) => void;
+}) {
+  const { t } = useTranslation('page-builder');
+  const [text, setText] = React.useState(
+    value !== undefined ? JSON.stringify(value, null, 2) : '',
+  );
+  const [error, setError] = React.useState<string | null>(null);
+  const example = accepts.includes('series') ? INLINE_EXAMPLES.series : INLINE_EXAMPLES.list;
+
+  function handleChange(next: string) {
+    setText(next);
+    if (!next.trim()) {
+      setError(null);
+      onChange(undefined);
+      return;
+    }
+    try {
+      onChange(JSON.parse(next));
+      setError(null);
+    } catch {
+      setError(t('editor.inlineInvalidJson'));
+    }
+  }
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <Label className="text-xs">
+          {t('editor.inlineData')}
+          <span className="text-destructive">*</span>
+        </Label>
+        <button
+          type="button"
+          className="text-muted-foreground hover:text-foreground text-[11px] underline"
+          onClick={() => handleChange(example)}
+        >
+          {t('editor.inlineExample')}
+        </button>
+      </div>
+      <Textarea
+        value={text}
+        onChange={(e) => handleChange(e.target.value)}
+        placeholder={example}
+        className="min-h-32 font-mono text-xs"
+      />
+      {error ? (
+        <p className="text-destructive text-xs">{error}</p>
+      ) : (
+        <p className="text-muted-foreground text-xs">{t('editor.inlineHint')}</p>
+      )}
     </div>
   );
 }

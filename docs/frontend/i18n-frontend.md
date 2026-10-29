@@ -130,6 +130,39 @@ O error map é resolvido **no parse**, não na criação do schema — schemas d
 
 Regressão em `src/__tests__/zod-messages.test.ts` — inclusive a troca de idioma em runtime.
 
+## Anti-padrão: `t('chave') || 'fallback em texto'`
+
+```tsx
+// ruim
+{t('nameRequired') || 'Name is required'}
+
+// bom
+{t('nameRequired')}
+```
+
+O fallback parece uma rede de segurança e é **pior que o literal puro**: `t()` só devolve string
+vazia/falsy quando a chave está ausente do JSON do namespace, e nesse caso o `||` esconde o
+problema (a tela continua de pé, só que em inglês, com um texto que `i18n-keys.spec.ts` nunca vê —
+o regex do teste casa chamada de `t()`, não string literal solta). Sem o fallback, chave faltando
+aparece **na tela** (`nameRequired` cru) e no teste. Se a chave existe, o `||` nunca dispara e é só
+código morto.
+
+## `lib/vocabulary.ts` é o único lugar de rótulo de enum
+
+Status, estado de publicação, canal de envio — qualquer enum que a tela precisa rotular. A função
+que resolve enum → chave i18n mora em `lib/vocabulary.ts` (ex.: `proposalStatusLabelKey`,
+`sendChannelLabelKey`), **nunca** literal direto no componente (`{proposal.status}` ou
+`<Badge>{item.channel}</Badge>` imprimindo o valor cru, como `"DRAFT"`/`"WHATSAPP"`, em vez do
+rótulo traduzido).
+
+`vocabulary.ts` é função pura — sem React, sem hook. Quem traduz é o chamador, com `t()` ou
+`<LangLabel text={fooLabelKey(value)} langJson="vocabulary" />` em Server Component. Valor fora do
+enum cai num rótulo `.UNKNOWN` (`sendChannelLabelKey('FAX') === 'sendChannel.UNKNOWN'`) em vez de
+lançar — a tela não quebra por um valor que o front ainda não conhece.
+
+Enum novo entra em `vocabulary.ts` **e** nos dois locales, nunca só num dos dois — mesma regra de
+"Adicionar tradução" acima.
+
 ## Rótulos do menu (`labelKey`)
 
 As rotas no banco (`Route.labelKey`) referenciam chaves do namespace `labelKey`. Ex.: `ROUTE_FEATURE_FLAGS` → `"Feature Flags"`. Cada módulo novo precisa adicionar sua chave em `src/locales/{en,pt-BR}/labelKey.json`.

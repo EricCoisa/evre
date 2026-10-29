@@ -38,10 +38,20 @@ const LeafBlockSchema = z.object({
   /** Classes Tailwind da allowlist (`class-names.ts`), separadas por espaço. */
   className: z.string().optional(),
   props: z.record(z.string(), z.unknown()).optional(),
+  // `source` (fonte real, resolvida em runtime) e `inline` (payload colado, congelado no
+  // layout) são mutuamente exclusivos — um bloco com os dois é recusado aqui mesmo, antes de
+  // chegar no validador semântico. `inline` fica `z.unknown()` de propósito: a shape (list ×
+  // series) depende do `kind` que o bloco aceita, e isso é checado no backend
+  // (`page-layout-validator.service.ts`), nunca aqui — senão toda evolução de `kind` vira
+  // mudança de schema de layout, e layout publicado é imutável.
   data: z
     .object({
-      source: z.string().min(1),
+      source: z.string().min(1).optional(),
       params: z.record(z.string(), z.unknown()).optional(),
+      inline: z.unknown().optional(),
+    })
+    .refine((d) => d.source === undefined || d.inline === undefined, {
+      message: '"source" e "inline" são mutuamente exclusivos no mesmo bloco',
     })
     .optional(),
 });
@@ -65,6 +75,9 @@ export const PageLayoutSchema = z.object({
 
 export type PageBlock = z.infer<typeof PageBlockSchema>;
 export type PageLayout = z.infer<typeof PageLayoutSchema>;
+
+/** Ponto de partida de quem nunca customizou a página — único também para `editor/mutations.ts`. */
+export const EMPTY_LAYOUT: PageLayout = { v: 1, blocks: [] };
 
 /** `span` é token, nunca CSS: o Tailwind faz purge estático e classe montada em runtime some do bundle. */
 export const SPAN_CLASS: Record<number, string> = {
@@ -234,7 +247,9 @@ export function resolvePageLayout(
   return { status: 'none', origin: 'none' };
 }
 
-/** Lê o layout de uma página do valor bruto de PAGE_LAYOUTS; nunca lança, cai em 'none'/'invalid'. */
+/** Lê o layout de uma página do mapa `{ [pageKey]: layout }` de PAGE_LAYOUTS (`storage: 'config'`);
+ * nunca lança, cai em 'none'/'invalid'. Para um registro próprio (`storage: 'record'`, sem mapa),
+ * use `parseRecordLayout`. */
 export function parsePageLayout(raw: unknown, pageKey: string): LayoutResult {
   const value = typeof raw === 'string' ? tryJsonParse(raw) : raw;
   if (!value || typeof value !== 'object') return { status: 'none' };
@@ -246,6 +261,13 @@ export function parsePageLayout(raw: unknown, pageKey: string): LayoutResult {
   if (parsed.data.blocks.length === 0) return { status: 'none' };
 
   return { status: 'ok', layout: parsed.data };
+}
+
+/** Lê o `PageLayout` puro de um registro próprio (`storage: 'record'`, sem o mapa `{ [pageKey]:
+ * layout }` que `parsePageLayout` espera); nunca lança, cai em `EMPTY_LAYOUT`. */
+export function parseRecordLayout(raw: unknown): PageLayout {
+  const parsed = PageLayoutSchema.safeParse(raw);
+  return parsed.success ? parsed.data : EMPTY_LAYOUT;
 }
 
 function tryJsonParse(raw: string): unknown {

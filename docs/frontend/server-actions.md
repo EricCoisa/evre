@@ -87,6 +87,41 @@ chamada, então o header vai no segundo argumento da própria função gerada
 (`api.userControllerSignup(data, { headers: captchaHeader(token) })`). No login o token atravessa o
 route handler `app/api/auth/login/route.ts`, que o repassa junto com o IP. Ver [[captcha]].
 
+## Mutation que altera dado de um RSC precisa de `router.refresh()`
+
+Uma tela de detalhe (`proposal/[id]/page.tsx`, `company/[id]/page.tsx`) costuma ser **Server
+Component**: busca o registro no servidor e passa o resultado como prop estática. Nesse desenho,
+**nenhuma query cliente está montada** na chave que a mutation invalida (`['proposal', id]`,
+`['company', id]`) — não existe observador para `invalidateQueries` acordar. `invalidateQueries`
+sozinho é **no-op**; a tela só muda com reload manual.
+
+O padrão canônico é `useFeatureFlagSync` (`lib/actions/feature-flag/queries.ts`): o hook de sync
+chama `invalidateQueries` **e** `router.refresh()`, que é quem de fato refaz o render do RSC.
+
+```ts
+function useFeatureFlagSync() {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  return () => {
+    queryClient.invalidateQueries({ queryKey: ['feature-flags'] });
+    router.refresh();
+  };
+}
+```
+
+Toda mutation cujo resultado o RSC de detalhe exibe precisa repetir essa anatomia — `useRouter()`
+no hook, `router.refresh()` no `onSuccess`, ao lado do `invalidateQueries`. Hoje é o caso em
+`lib/actions/proposal/queries.ts` (`useUpdateProposal`, `useUpdateProposalLayout`,
+`useUpdateProposalTerms`, `usePublishProposal`, `useUpdateProposalStatus`,
+`useAcceptProposalOffline`) e `lib/actions/company/queries.ts` (`useUpdateCompany`). Ver
+[[page-structure]] § "Mudou o dado: como a tela server-side reage" para a mesma regra do lado do
+gating por flag.
+
+⚠️ Só nas mutations que mudam o que o RSC entregou. Em toda mutation vira um re-render de página
+inteira a cada clique — por isso mutations que só afetam listas (`useArchiveProposal`,
+`useDuplicateProposal`) continuam só com `invalidateQueries`.
+
 ## Alive e Collector (`lib/api/collector.ts`)
 
 Dois helpers para lidar com `ApiResponse<T>` em mutations client-side.

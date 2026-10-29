@@ -40,6 +40,21 @@ vi.mock('./data-sources', () => ({
   getDataSource: (key: string) => mockGetDataSource(key),
 }));
 
+// ResponsiveContainer nunca ganha tamanho real no jsdom; troca pelo data-testid que expõe o que
+// o bloco recebeu (mesmo mock de registry.test.tsx), só para o teste de `data.inline` de T5.
+vi.mock('recharts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('recharts')>()),
+  ResponsiveContainer: ({ children }: { children: ReactNode }) => <>{children}</>,
+  AreaChart: ({ data, children }: { data: unknown[]; children: ReactNode }) => (
+    <div data-testid="area-chart" data-count={data.length}>
+      {children}
+    </div>
+  ),
+  Area: () => null,
+  CartesianGrid: () => null,
+  XAxis: () => null,
+}));
+
 const mockEditor = vi.hoisted(() => ({ current: null as unknown }));
 vi.mock('./editor/context', () => ({
   useEditor: () => mockEditor.current,
@@ -104,7 +119,7 @@ function pageBlock(input: {
   props?: Record<string, unknown>;
   span?: 1 | 2 | 3 | 4;
   className?: string;
-  data?: { source: string; params?: Record<string, unknown> };
+  data?: { source?: string; params?: Record<string, unknown>; inline?: unknown };
   children?: PageBlock[];
 }): PageBlock {
   return { span: 4, props: {}, ...input } as PageBlock;
@@ -163,6 +178,53 @@ describe('BlockGrid — árvore de blocos', () => {
     resolveFetch({ data: [], meta: { total: 42 } });
 
     expect(await screen.findByText('Total: 42')).toBeInTheDocument();
+  });
+
+  // A4: profile `inline-only` (proposta) — o dado vem colado no próprio layout, caminho síncrono,
+  // nunca passa por `getDataSource`/fetch nenhum.
+  it('table.basic com data.inline renderiza as linhas sem tocar no hook de fetch', () => {
+    renderWithClient(
+      <BlockGrid
+        blocks={[
+          pageBlock({
+            id: 't1',
+            type: 'table.basic',
+            props: { columns: ['nome'] },
+            data: { inline: { data: [{ nome: 'Ada' }, { nome: 'Bob' }] } },
+          }),
+        ]}
+      />,
+    );
+
+    expect(screen.getByText('Ada')).toBeInTheDocument();
+    expect(screen.getByText('Bob')).toBeInTheDocument();
+    expect(mockGetDataSource).not.toHaveBeenCalled();
+  });
+
+  it('chart.area com data.inline de series renderiza sem tocar no hook de fetch', () => {
+    renderWithClient(
+      <BlockGrid
+        blocks={[
+          pageBlock({
+            id: 'c1',
+            type: 'chart.area',
+            props: { title: 'Cadastros' },
+            data: {
+              inline: {
+                data: [
+                  { date: '2024-01', value: 10 },
+                  { date: '2024-02', value: 20 },
+                ],
+              },
+            },
+          }),
+        ]}
+      />,
+    );
+
+    expect(screen.getByText('Cadastros')).toBeInTheDocument();
+    expect(screen.getByTestId('area-chart')).toHaveAttribute('data-count', '2');
+    expect(mockGetDataSource).not.toHaveBeenCalled();
   });
 
   it('erro de rede mostra o aviso de falha nos dados', async () => {
@@ -509,18 +571,20 @@ describe('LayoutBody — layout injetado', () => {
   });
 
   it('descarta bloco que não pertence ao profile', () => {
+    // A4: proposal passou a oferecer os 16 tipos do catálogo (ganhou os 5 blocos de dado) — não
+    // sobrou tipo "de fora" dela para este fixture. `topic` é o inverso: só existe em `proposal`,
+    // então serve para provar o filtro com o subject `dashboard`.
     renderWithClient(
       <LayoutBody
-        profile="proposal"
+        profile="dashboard"
         layout={{
           v: 1,
           blocks: [
             pageBlock({ id: 'b1', type: 'alert.banner', props: { title: 'Fica', content: 'ok' } }),
             pageBlock({
               id: 'b2',
-              type: 'table.basic',
-              props: { title: 'Sai', columns: ['a'] },
-              data: { source: 'users.list' },
+              type: 'topic',
+              props: { title: 'Sai', items: ['x'] },
             }),
           ],
         }}
@@ -529,7 +593,5 @@ describe('LayoutBody — layout injetado', () => {
 
     expect(screen.getByText('Fica')).toBeInTheDocument();
     expect(screen.queryByText('Sai')).not.toBeInTheDocument();
-    // Bloco fora do profile nem chega a pedir fonte de dado.
-    expect(mockGetDataSource).not.toHaveBeenCalled();
   });
 });

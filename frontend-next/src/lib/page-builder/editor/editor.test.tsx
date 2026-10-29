@@ -293,7 +293,7 @@ describe('BlockInserter — catálogo do profile', () => {
     return within(await screen.findByRole('dialog'));
   };
 
-  it('dashboard oferece os 9 blocos, inclusive os de dado', async () => {
+  it('dashboard oferece os blocos de dado, mas não os exclusivos de proposta', async () => {
     const user = userEvent.setup();
     renderEditor();
 
@@ -302,9 +302,14 @@ describe('BlockInserter — catálogo do profile', () => {
     expect(inserter.getByText('blocks.table.basic')).toBeInTheDocument();
     expect(inserter.getByText('blocks.chart.area')).toBeInTheDocument();
     expect(inserter.getByText('blocks.list.feed')).toBeInTheDocument();
+    // `topic` só existe no profile proposal — prova que o filtro por profile continua valendo.
+    expect(inserter.queryByText('blocks.topic')).not.toBeInTheDocument();
   });
 
-  it('proposal lista só os blocos do profile', async () => {
+  // A4: proposal passou de dataSources 'none' para 'inline-only' e ganhou os 5 blocos de dado —
+  // hoje o catálogo dela é o superset dos 16 tipos (não sobrou tipo "de fora" dela para testar
+  // a exclusão por esse lado; isso já é coberto pelo teste acima, do lado do dashboard).
+  it('proposal lista os blocos do profile, incluindo os 5 de dado (JSON inline)', async () => {
     const user = userEvent.setup();
     renderEditor(vi.fn(), 'proposal');
 
@@ -312,9 +317,9 @@ describe('BlockInserter — catálogo do profile', () => {
 
     expect(inserter.getByText('blocks.text.rich')).toBeInTheDocument();
     expect(inserter.getByText('blocks.group')).toBeInTheDocument();
-    expect(inserter.queryByText('blocks.table.basic')).not.toBeInTheDocument();
-    expect(inserter.queryByText('blocks.chart.area')).not.toBeInTheDocument();
-    expect(inserter.queryByText('blocks.list.feed')).not.toBeInTheDocument();
+    expect(inserter.getByText('blocks.table.basic')).toBeInTheDocument();
+    expect(inserter.getByText('blocks.chart.area')).toBeInTheDocument();
+    expect(inserter.getByText('blocks.list.feed')).toBeInTheDocument();
   });
 });
 
@@ -408,5 +413,25 @@ describe('EditorShell — salvar, salvar como padrão e cancelar', () => {
 
     expect(onExit).toHaveBeenCalledTimes(1);
     confirmSpy.mockRestore();
+  });
+});
+
+describe('EditorShell — preview (A5)', () => {
+  it('abre o modal com o rascunho em edição, sem o chrome do editor', async () => {
+    const user = userEvent.setup();
+    renderEditor();
+
+    await user.click(addButton('alert.banner'));
+    // O bloco no canvas do editor tem o chrome (BlockChrome marca com `pb-block-*`).
+    expect(screen.getAllByTestId(/^pb-block-/)).toHaveLength(1);
+
+    await user.click(screen.getByRole('button', { name: 'editor.preview' }));
+    const dialog = await screen.findByRole('dialog');
+
+    // O mesmo bloco aparece dentro do modal, mas sem o chrome — é o LayoutBody puro, igual à
+    // página pública, não o BlockGrid em modo de edição.
+    expect(within(dialog).queryByTestId(/^pb-block-/)).not.toBeInTheDocument();
+    // Fora do modal o canvas continua intacto, com o bloco ainda editável.
+    expect(screen.getAllByTestId(/^pb-block-/)).toHaveLength(1);
   });
 });

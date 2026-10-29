@@ -106,4 +106,24 @@ describe('SubNavLayout', () => {
     // O conteúdo não muda porque a aba é controlada externamente e continua "advanced-1"
     expect(screen.getByText('Conteúdo Avançado')).toBeInTheDocument();
   });
+
+  it('sidebarHidden não renderiza a sidebar desktop, e a troca de aba continua funcionando pelo drawer mobile', () => {
+    const sections: SubNavSection[] = [
+      { items: [{ id: 'a', label: 'Item A' }, { id: 'b', label: 'Item B' }] },
+    ];
+    const { container } = render(
+      <SubNavLayout sections={sections} defaultTab="a" sidebarHidden>
+        <TabsContent value="a">Conteúdo A</TabsContent>
+        <TabsContent value="b">Conteúdo B</TabsContent>
+      </SubNavLayout>,
+    );
+
+    expect(container.querySelector('aside')).not.toBeInTheDocument();
+    expect(screen.getByText('Conteúdo A')).toBeInTheDocument();
+
+    fireEvent.click(container.querySelector('#sub-nav-mobile-trigger')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Item B' }));
+
+    expect(screen.getByText('Conteúdo B')).toBeInTheDocument();
+  });
 });

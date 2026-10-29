@@ -11,8 +11,17 @@ import { PageBuilderBridgeService } from '../page-builder-bridge.service';
 import {
   DEFAULT_LAYOUT_PROFILE,
   LAYOUT_PROFILES,
+  type LayoutProfile,
   type LayoutProfileName,
 } from '../dto/page-layout.dto';
+
+/** Formato que `data.inline` precisa ter por `kind` de bloco — mesmo contrato de
+ * `lib/page-builder/types.ts` no frontend. Só sai no payload quando o profile é `inline-only`. */
+const INLINE_SHAPES = {
+  list: '{ data: Record<string, unknown>[], meta?: { total, page, limit, totalPages } }',
+  count: 'mesmo shape de "list" — o bloco usa só meta.total',
+  series: '{ data: { date: string, value: number }[] }',
+} as const;
 
 @AiToolDef()
 @Injectable()
@@ -30,8 +39,11 @@ export class DescribePageBuilderTool implements IAiTool {
       'retornados aqui: o catálogo muda conforme blocos e endpoints são adicionados, e nome de ' +
       'campo ou de param inventado vira coluna vazia ou erro de validação na tela. ' +
       'O catálogo depende do `profile` da superfície que você vai montar: cada profile ' +
-      'oferece blocos e classNames diferentes, e alguns não buscam dado de fonte nenhuma. ' +
-      'Passe o MESMO profile em set_page_layout.',
+      'oferece blocos e classNames diferentes. `dataSources` no retorno diz COMO um bloco que ' +
+      'consome dado recebe esse dado neste profile: "role-filtered" busca uma fonte real listada ' +
+      'em `sources` (use `data.source`); "inline-only" não tem fonte nenhuma — o próprio dado vai ' +
+      'colado em `data.inline`, no shape de `inlineShapes` (por `kind`); "none" não aceita dado ' +
+      'nenhum. Passe o MESMO profile em set_page_layout.',
     inputSchema: z.object({
       profile: z
         .enum(
@@ -58,25 +70,34 @@ export class DescribePageBuilderTool implements IAiTool {
   async execute(input: { profile?: LayoutProfileName }, ctx: AiToolContext) {
     const profile = input?.profile ?? DEFAULT_LAYOUT_PROFILE;
     const schema = await this.bridge.describeSchema(profile);
-    const noSources = LAYOUT_PROFILES[profile].dataSources === 'none';
+    // Anotação explícita widening para `LayoutProfile`: indexar `LAYOUT_PROFILES[profile]` direto
+    // infere só os valores que os profiles de HOJE usam (sem 'none'), e esse campo existe
+    // justamente para o profile `none` que nenhum usa ainda — ver comentário em page-layout.dto.ts.
+    const profileConfig: LayoutProfile = LAYOUT_PROFILES[profile];
+    const { dataSources } = profileConfig;
     return {
       profile,
+      dataSources,
       blocks: schema.blocks,
       pages: schema.pages,
       spans: schema.spans,
       classNames: schema.classNames,
-      maxBlocks: LAYOUT_PROFILES[profile].maxBlocks,
-      maxChildren: LAYOUT_PROFILES[profile].maxChildren,
-      // Profile sem fonte recusa `data.source` em qualquer bloco: oferecer a lista mentiria.
-      sources: noSources
-        ? []
-        : this.pageSources.listForRole(ctx.roleName).map((s) => ({
-            key: s.key,
-            kind: s.kind,
-            description: s.description,
-            fields: s.fields ?? [],
-            params: s.params ?? [],
-          })),
+      maxBlocks: profileConfig.maxBlocks,
+      maxChildren: profileConfig.maxChildren,
+      // Só "role-filtered" busca fonte real — "inline-only" e "none" nunca chamam endpoint,
+      // então oferecer a lista mentiria (o validador recusaria o data.source na escrita).
+      sources:
+        dataSources === 'role-filtered'
+          ? this.pageSources.listForRole(ctx.roleName).map((s) => ({
+              key: s.key,
+              kind: s.kind,
+              description: s.description,
+              fields: s.fields ?? [],
+              params: s.params ?? [],
+            }))
+          : [],
+      // Só existe quando o profile é inline-only: o shape que data.inline precisa ter, por kind.
+      inlineShapes: dataSources === 'inline-only' ? INLINE_SHAPES : undefined,
     };
   }
 }

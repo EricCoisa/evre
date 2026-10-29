@@ -5,22 +5,34 @@ import { ItemNotFound } from "@/components/ui/item-not-found";
 import { Badge } from "@/components/ui/badge";
 import LangLabel from "@/components/ui/langLabel";
 import { getCompany } from "@/lib/actions/company/api";
-import { CompanyEdit } from "../components/company-edit";
-import { CompanyContactsTab } from "../components/company-contacts-tab";
-import { Building2, Users } from "lucide-react";
+import { CompanyConfigTab } from "./components/company-config-tab";
+import { CompanyProposalsTab } from "./components/company-proposals-tab";
+import { CompanyProjectsTab } from "./components/company-projects-tab";
+import { CompanyContractsTab } from "./components/company-contracts-tab";
+import { Building2, FileText, FolderKanban, FileSignature } from "lucide-react";
 
 const companyDetailSections: SubNavSection[] = [
   {
     items: [
       {
-        id: "dados",
-        label: <LangLabel text="tabData" langJson="company" />,
+        id: "configuracao",
+        label: <LangLabel text="tabConfig" langJson="company" />,
         icon: <Building2 className="size-4" />,
       },
       {
-        id: "contatos",
-        label: <LangLabel text="tabContacts" langJson="company" />,
-        icon: <Users className="size-4" />,
+        id: "propostas",
+        label: <LangLabel text="tabProposals" langJson="company" />,
+        icon: <FileText className="size-4" />,
+      },
+      {
+        id: "projetos",
+        label: <LangLabel text="tabProjects" langJson="company" />,
+        icon: <FolderKanban className="size-4" />,
+      },
+      {
+        id: "contratos",
+        label: <LangLabel text="tabContracts" langJson="company" />,
+        icon: <FileSignature className="size-4" />,
       },
     ],
   },
@@ -43,15 +55,25 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
         title={company.name}
         description={company.tradeName ?? undefined}
         badge={
-          company.archivedAt ? <Badge variant="secondary">Arquivada</Badge> : undefined
+          company.archivedAt ? (
+            <Badge variant="secondary">
+              <LangLabel text="archived" langJson="company" />
+            </Badge>
+          ) : undefined
         }
       />
-      <SubNavLayout sections={companyDetailSections} defaultTab="dados">
-        <TabsContent value="dados" className="mt-0 space-y-4">
-          <CompanyEdit company={company} />
+      <SubNavLayout sections={companyDetailSections} defaultTab="configuracao">
+        <TabsContent value="configuracao" className="mt-0 space-y-4">
+          <CompanyConfigTab company={company} />
         </TabsContent>
-        <TabsContent value="contatos" className="mt-0 space-y-4">
-          <CompanyContactsTab companyId={company.id} />
+        <TabsContent value="propostas" className="mt-0 space-y-4">
+          <CompanyProposalsTab companyId={company.id} />
+        </TabsContent>
+        <TabsContent value="projetos" className="mt-0 space-y-4">
+          <CompanyProjectsTab />
+        </TabsContent>
+        <TabsContent value="contratos" className="mt-0 space-y-4">
+          <CompanyContractsTab />
         </TabsContent>
       </SubNavLayout>
     </Container>

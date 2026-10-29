@@ -42,7 +42,7 @@ export class BuildProposalPublicLinkUseCase {
     if (version.shortUrlCode) {
       return {
         code: version.shortUrlCode,
-        shortUrl: this.buildShortUrl(version.shortUrlCode),
+        shortUrl: this.shortUrl.buildShortUrl(version.shortUrlCode),
       };
     }
 
@@ -68,16 +68,5 @@ export class BuildProposalPublicLinkUseCase {
       'http://localhost:3000';
     const cleanBase = base.replace(/\/+$/, '');
     return `${cleanBase}/p/${token}`;
-  }
-
-  /** Mesma regra de base de `ShortenUrlUseCase.buildShortUrl` — reconstrói sem chamar `shorten()` de novo. */
-  private buildShortUrl(code: string): string {
-    const base =
-      this.configService.get<string>('SHORT_URL_BASE_URL') ||
-      this.configService.get<string>('FRONTEND_URL') ||
-      process.env.NEXTAUTH_URL ||
-      'http://localhost:3000';
-    const cleanBase = base.replace(/\/+$/, '');
-    return `${cleanBase}/s/${code}`;
   }
 }

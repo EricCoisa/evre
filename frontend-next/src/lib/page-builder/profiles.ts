@@ -1,8 +1,10 @@
 export interface LayoutProfile {
   /** Tipos de bloco que este profile oferece — espelha o `profiles` de cada entrada de `BLOCK_META`. */
   blocks: readonly string[];
-  /** `role-filtered` confere a fonte contra o alcance de quem grava; `none` recusa qualquer `data.source`. */
-  dataSources: 'role-filtered' | 'none';
+  /** `role-filtered` confere a fonte contra o alcance de quem grava (busca real); `inline-only`
+   * recusa `data.source` e só aceita `data.inline` (payload colado, congelado no layout); `none`
+   * recusa os dois — nenhum dado, de forma nenhuma. */
+  dataSources: 'role-filtered' | 'none' | 'inline-only';
   /** `config` guarda o layout em User/SystemConfiguration; `record` em registro próprio (sem `pageKey` de catálogo). */
   storage: 'config' | 'record';
   maxBlocks: number;
@@ -22,6 +24,8 @@ export const LAYOUT_PROFILES = {
       'button.action',
       'list.feed',
       'table.basic',
+      'heading',
+      'divider',
     ],
     dataSources: 'role-filtered',
     storage: 'config',
@@ -38,8 +42,16 @@ export const LAYOUT_PROFILES = {
       'image',
       'investment',
       'iframe',
+      'heading',
+      'divider',
+      'price',
+      'table.basic',
+      'list.feed',
+      'chart.area',
+      'chart.bar',
+      'chart.line',
     ],
-    dataSources: 'none',
+    dataSources: 'inline-only',
     storage: 'record',
     maxBlocks: 80,
     maxChildren: 12,

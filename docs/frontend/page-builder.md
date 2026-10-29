@@ -147,10 +147,43 @@ Dois arquivos de propósito:
 |---|---|---|
 | `group` | — (é `container`) | `Card` envolvendo outros blocos |
 | `stat.card` | `list`, `count` | `Card` + `meta.total` |
-| `chart.area` | `series` | `ChartContainer` (recharts) |
+| `chart.area` | `series` | `ChartContainer` (recharts AreaChart) |
+| `chart.bar` | `series` | `ChartContainer` (recharts BarChart), para dados discretos |
+| `chart.line` | `series` | `ChartContainer` (recharts LineChart), para tendências contínuas |
+| `alert.banner` | — | `Panel` com destaque visual (`Alert`), título e conteúdo informativo |
+| `list.feed` | `list` | Lista compacta em pilha (`primaryField` e `secondaryField`), ideal para feeds e cartões estreitos |
 | `table.basic` | `list` | `Table` (shadcn), somente leitura; paginação aparece quando há mais de uma página e usa skeleton durante a troca |
+| `heading` | — | `<h1>`–`<h4>` reais (semântica de título, não card) — estrutura de seção |
+| `divider` | — | `<hr>` com margem vertical configurável (`spacing`) — separa seções sem precisar de título |
 
 Adicionar um bloco = uma entrada em cada arquivo. **O agente e o editor descobrem sozinhos**: as props declaradas em `BLOCK_META` viram os campos do painel sem ninguém escrever formulário por bloco, e nada é hardcoded em `description` de tool.
+
+### `heading`/`divider` — estrutura de seção, não card
+
+`text.rich` renderiza por `FormattedRichText`, que é **sintaxe de ênfase** (negrito, itálico) —
+**não** produz `h1`–`h4`. Sem um bloco dedicado, uma página longa não tem como expressar hierarquia
+de título: só texto corrido. `heading` fecha essa lacuna com níveis 1 a 4 reais (`level: 1` para o
+título da própria página/proposta, uma vez; `level: 2` por seção; `3`/`4` para subseção), e
+`divider` separa seções sem precisar de um título. Os dois nascem em `profiles: ['dashboard',
+'proposal']` — são estrutura de página, não conteúdo de um domínio específico — e **nunca** ganham
+moldura de `Card`: um título dentro de card vira "card com título", não "seção".
+
+### Apresentação livre × bloco preso a um registro
+
+Um domínio com valor monetário (ou qualquer outro dado "oficial") tende a ganhar dois blocos com
+papéis diferentes, e vale nomear o padrão para não reinventá-lo:
+
+| | Serve para | Quantos por página |
+|---|---|---|
+| **Bloco ligado ao registro** (ex.: `investment`, que lê `totalCents`/`currency`/`recurrence` de `Proposal` por contexto, nunca por prop) | a verdade do negócio: o que soma em relatório, compara entre versões, vai para um contrato | exatamente 1 |
+| **Bloco de apresentação livre** (ex.: `price` — `rows` de label+valor digitadas à mão, total destacado) | o que o leitor **vê**: quantas composições de valor a página precisar | 0..N |
+
+O bloco ligado ao registro continua sendo a fonte de verdade — é o que garante que o número que o
+funil soma é o mesmo que o cliente lê. O bloco de apresentação livre é só isso, apresentação: não
+alimenta nenhum agregado, não é lido por nenhum relatório. Os dois convivem porque resolvem
+problemas diferentes — um documento que precisa mostrar "projeto fechado **e** mensalidade" em
+blocos separados não cabe num envelope de coluna única, mas também não deveria abandonar o
+envelope só por isso.
 
 ### Agrupar blocos num mesmo card (`container`)
 
@@ -210,6 +243,46 @@ export const SPAN_CLASS = {
 
 Os dois lados tratam classe inválida de forma diferente, de propósito: a escrita **recusa** com a lista do que vale; o renderer **descarta** o token desconhecido (`filterClassName`) e desenha o resto.
 
+### `LayoutProfile` — teto de blocos e origem do dado, por superfície
+
+Cada página customizável pertence a um **profile** (`lib/page-builder/profiles.ts` no frontend,
+espelhado em `backend-nest/.../dto/page-layout.dto.ts` — os dois lados têm teste amarrando as
+declarações, mesmo mecanismo da allowlist de classe acima). O profile fixa quais `type` de bloco
+valem e, crucialmente, **de onde o dado pode vir** via `dataSources`:
+
+| `dataSources` | `data.source` (fonte interna, resolvida em runtime) | `data.inline` (payload colado, gravado no layout) |
+|---|---|---|
+| `role-filtered` (ex.: `dashboard`) | aceita, filtrado pelo alcance do role de quem grava | **recusa** — dado colado num dashboard seria um número inventado parecendo métrica real |
+| `inline-only` (ex.: `proposal`) | **recusa** — nenhum bloco desta superfície busca nada; é o que mantém a página pública segura sem sessão | aceita, validado por shape e tamanho |
+| `none` | recusa | recusa — nenhum dado, de forma nenhuma |
+
+`data.source` e `data.inline` são **mutuamente exclusivos** no mesmo bloco — ter os dois é
+recusado na escrita. `data.inline` é `z.unknown()` no schema de forma (Zod não descreve as três
+shapes possíveis ali, ou qualquer evolução de `kind` viraria mudança de schema de layout publicado
+e imutável); a validação **semântica** de shape mora no `PageLayoutValidator`
+(`page-layout-validator.service.ts`), contra o `accepts` do bloco:
+
+| `accepts` do bloco | `data.inline.data` esperado |
+|---|---|
+| `list`, `count` | array de objeto (`Record<string, unknown>[]`) |
+| `series` | array de `{ date: string, value: number }` |
+
+Dois tetos de tamanho no mesmo validador: **64 KB por bloco**, **256 KB por layout** (soma de topo
++ `children`) — sem teto, uma página vira um documento de megabytes, porque o `inline` é gravado no
+registro **e** servido para quem abre a página. A checagem cobre `children` igual a `data.source`:
+um bloco de dado dentro de um `group` carrega dado como qualquer outro.
+
+No editor, quando o profile é `inline-only`, o painel troca o seletor de fonte por um campo de
+texto dedicado (JSON colado, com validação na hora e um botão "Exemplo" por `kind`) — não é um
+`props` do `BlockPropMeta` (que só descreve `string|number|boolean|string[]`), é `data`, então tem
+campo próprio em vez de reusar o gerador de props.
+
+> `data.inline` não é "menos seguro que `data.source`": antes de existir, uma superfície
+> `dataSources: 'none'` simplesmente não tinha blocos de dado (tabela, gráfico, feed). Com
+> `inline-only`, ela ganha esses blocos sem abrir **nenhum** caminho novo até o banco — o payload é
+> literal, do autor, congelado no layout. `'none'` continua existindo para uma superfície que não
+> deva nem isso.
+
 ## 4. Renderer
 
 ```tsx
@@ -261,6 +334,12 @@ Um `useQuery` por bloco exige **um componente por bloco**. Chamar o hook dentro 
 Três decisões que sustentam o resto:
 
 **O editor renderiza o `BlockGrid` de verdade**, o mesmo do `PageRenderer`, com os dados reais das fontes. Não existe preview separado que possa divergir da tela final — o chrome de edição é só uma casca por cima.
+
+**Botão Preview, na `EditorTopBar`:** abre um modal que renderiza `<LayoutBody layout={editor.draft} profile={editor.profile} proposalTerms={…} />` — o rascunho em edição, incluindo alterações ainda não salvas. `LayoutBody` (`renderer.tsx`) é o componente que renderiza um layout **já resolvido**, sem buscar config nem depender de sessão; o preview do editor é o **segundo** consumidor dele — o primeiro é a página pública, que monta o mesmo componente a partir do layout publicado. É por isso que o preview mostra exatamente o que o leitor final vê, sem reimplementar renderização.
+
+A armadilha: o modal do preview é montado **dentro** do `EditorProvider`, então sem cuidado o `LayoutBody` dentro dele herdaria o contexto do editor e desenharia o `BlockChrome` (contorno, handle de arrastar) por cima — deixando de ser preview. A correção é envolver o `LayoutBody` do modal com `<EditorContext.Provider value={null}>`, o mesmo valor que o contexto tem fora de qualquer editor — `useEditor()` volta a `null` e o `BlockGrid` não desenha chrome nenhum.
+
+> `ponytail:` o preview mostra só o `layout`, sem o que a página pública compõe em volta (header da marca, rodapé, bloco de aceite) — o que varia de uma instância para outra é o layout, e é isso que o preview serve para conferir. Compor a página pública inteira no preview é trazer quando o preview precisar bater 1:1 com o link publicado, não antes.
 
 **O painel não tem código por bloco.** Os campos saem de `BLOCK_META[type].props`, os parâmetros saem da fonte escolhida, o estilo sai de `ALLOWED_CLASS_NAMES` e a largura de `SPANS`. Bloco novo no catálogo ganha UI de edição sem ninguém tocar em `panel.tsx`.
 
@@ -350,7 +429,10 @@ Zod garante só a estrutura. O que evita layout que grava mas não renderiza é 
 - param não declarado pela fonte, ou com tipo errado;
 - `container` sem `children`, `children` em bloco que não é container, ou container dentro de container;
 - `className` com classe fora da allowlist publicada pela ponte;
-- fonte fora do alcance do role de quem está gravando (inclusive nos filhos de um container).
+- fonte fora do alcance do role de quem está gravando (inclusive nos filhos de um container);
+- `data.source` ou `data.inline` incompatível com o `dataSources` do profile ativo (ver §3), os
+  dois no mesmo bloco, shape de `data.inline` que não bate com o `accepts` do bloco, ou acima do
+  teto de tamanho.
 
 As mensagens são escritas para o modelo se autocorrigir — voltam como `tool_result` e ele tenta de novo. No editor, viram toast. Exemplo real:
 
@@ -400,13 +482,3 @@ Frontend:
 ## Relacionados
 
 [[ai-tools]] · [[page-structure]] · [[http-client-orval]] · [[server-actions]] · [[feature-flags-frontend]] · [[i18n-frontend]] · [[system-configuration]] · [[data-model]]
-| 	ype | Consome (ccepts) | Base |
-|---|---|---|
-| group | — (é container) | Card envolvendo outros blocos |
-| stat.card | list, count | Card + meta.total |
-| chart.area | series | ChartContainer (recharts AreaChart) |
-| chart.bar | series | ChartContainer (recharts BarChart), para dados discretos |
-| chart.line | series | ChartContainer (recharts LineChart), para tendências contínuas |
-| lert.banner | — | Panel com destaque visual (Alert), título e conteúdo informativo |
-| list.feed | list | Lista compacta em pilha (primaryField e secondaryField), ideal para feeds e cartões estreitos |
-| 	able.basic | list | Table (shadcn), somente leitura; paginação aparece quando há mais de uma página e usa skeleton durante a troca |

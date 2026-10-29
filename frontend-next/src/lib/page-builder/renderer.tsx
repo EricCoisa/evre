@@ -279,15 +279,27 @@ function BlockBody({
   );
 }
 
+/** Dado colado (profile `inline-only`) sobrescreve o resultado da query — literal do próprio
+ * layout, congelado, caminho síncrono: sem loading nem erro de rede, o dado já está ali. */
+function withInlineOverride<T extends { query: { data?: SourceData } }>(
+  inline: unknown,
+  result: T,
+): T {
+  if (inline === undefined) return result;
+  return { ...result, query: { ...result.query, data: inline as SourceData }, paginatesTable: false };
+}
+
 function useBlockQuery(block: PageBlock) {
-  const source = block.data ? getDataSource(block.data.source) : undefined;
-  const params = block.data?.params;
-  const { paginationKey, page, setPagination } = useBlockPagination(block.data?.source, params);
+  const { source: sourceKey, params, inline } = block.data ?? {};
+  const source = sourceKey ? getDataSource(sourceKey) : undefined;
+  const { paginationKey, page, setPagination } = useBlockPagination(sourceKey, params);
 
   const paginatesTable = block.type === 'table.basic' && source?.kind === 'list';
   const sourceParams = paginatesTable ? { ...params, page } : params;
+  // `source`/`inline` são mutuamente exclusivos (ver schema.ts): com `inline`, `source` já é
+  // `undefined` e `enabled` abaixo já nasce `false` — a query nunca dispara fetch nenhum.
   const query = useQuery({
-    queryKey: ['page-builder-source', block.data?.source, sourceParams],
+    queryKey: ['page-builder-source', sourceKey, sourceParams],
     queryFn: Collector<[], SourceData>(() => source!.fetcher(sourceParams), {
       silentStatuses: [FORBIDDEN],
     }),
@@ -295,7 +307,13 @@ function useBlockQuery(block: PageBlock) {
     placeholderData: paginatesTable ? (previousData) => previousData : undefined,
   });
 
-  return { source, query, paginatesTable, paginationKey, setPagination };
+  return withInlineOverride(inline, {
+    source,
+    query,
+    paginatesTable,
+    paginationKey,
+    setPagination,
+  });
 }
 
 function BlockContent({
@@ -325,11 +343,13 @@ function BlockContent({
 }) {
   const forbidden = errorStatus(query.error) === FORBIDDEN;
   const isOptionalSource = 'optionalSource' in meta && !!meta.optionalSource;
+  const hasInline = block.data?.inline !== undefined;
   const issue = blockIssue({
     missingSource:
       meta.accepts.length > 0 &&
       !isOptionalSource &&
-      !source,
+      !source &&
+      !hasInline,
     failed: query.isError,
     forbidden,
   });

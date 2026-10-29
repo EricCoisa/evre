@@ -7,8 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Modal from '@/components/modal';
 import { useTranslation } from '@/hooks/use-translation';
-import { formatCents, formatDate } from '@/lib/utils';
-import { acceptPublicProposal } from '@/lib/actions/proposal-public/api';
+import { formatCents, formatDate, formatDateOnly } from '@/lib/utils';
+import { useAcceptPublicProposal } from '@/lib/actions/proposal-public/queries';
 import type { PublicProposalDto } from '@/lib/generated/schemas';
 
 /** Bloco de aceite no fim da proposta pública — só este componente é `'use client'`, a página
@@ -27,8 +27,9 @@ export function ProposalAcceptanceForm({
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [acceptedAt, setAcceptedAt] = useState(initialAcceptedAt ?? null);
+  const acceptMutation = useAcceptPublicProposal();
+  const submitting = acceptMutation.isPending;
 
   if (acceptedAt) {
     return (
@@ -50,14 +51,13 @@ export function ProposalAcceptanceForm({
   }
 
   async function handleConfirm() {
-    setSubmitting(true);
-    const response = await acceptPublicProposal(token, { name, email });
-    setSubmitting(false);
-    setConfirmOpen(false);
-    if (response.success && response.data) {
-      setAcceptedAt(response.data.acceptedAt);
-    } else {
-      toast.error(response.message);
+    try {
+      const result = await acceptMutation.mutateAsync({ token, data: { name, email } });
+      setAcceptedAt(result.acceptedAt);
+    } catch {
+      // Alive já exibiu o toast de erro
+    } finally {
+      setConfirmOpen(false);
     }
   }
 
@@ -109,7 +109,7 @@ export function ProposalAcceptanceForm({
           {envelope.validUntil ? (
             <div className="flex justify-between gap-4">
               <dt className="text-muted-foreground">{t('validUntil')}</dt>
-              <dd className="font-medium">{formatDate(envelope.validUntil)}</dd>
+              <dd className="font-medium">{formatDateOnly(envelope.validUntil)}</dd>
             </div>
           ) : null}
         </dl>

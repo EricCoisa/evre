@@ -145,6 +145,20 @@ describe('Proposal use-cases', () => {
       ]);
     });
 
+    it('filtra por companyId quando a query manda filter.companyId', async () => {
+      await findAll.execute(
+        { page: 1, limit: 10, pagination: false, filter: { companyId: 'company-1' } },
+        admin,
+      );
+
+      const args = mockPrisma.proposal.findMany.mock.calls[0][0] as {
+        where: { AND?: unknown[] };
+      };
+      expect(args.where.AND).toEqual(
+        expect.arrayContaining([{ companyId: 'company-1' }]),
+      );
+    });
+
     it('aplica o scopeFilter do usuário no where', async () => {
       mockResourceAccess.scopeFilter.mockResolvedValue({
         OR: [{ companyId: { in: ['company-1'] } }, { projectId: { in: [] } }],

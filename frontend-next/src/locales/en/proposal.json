@@ -44,6 +44,8 @@
   "contentEmpty": "No content yet.",
   "commercialLockedTitle": "Commercial envelope locked",
   "commercialLockedDescription": "Only a proposal in Draft status can be edited. Reopen it for editing in the Publication tab to create a new version.",
+  "envelopeEmptyTitle": "No value in the commercial envelope",
+  "envelopeEmptyDescription": "This proposal is not counted in the pipeline total. If the client needs to see a value, use a price block in the proposal's content.",
   "currencyLength": "Use a 3-letter ISO 4217 code, e.g. BRL",
   "totalReais": "Total value",
   "totalReaisPlaceholder": "e.g. 1500.00",

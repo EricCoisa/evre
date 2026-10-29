@@ -9,7 +9,10 @@ import { BuildProposalPublicLinkUseCase } from './build-proposal-public-link.use
 const mockPrisma = {
   proposalVersion: { findUnique: vi.fn(), update: vi.fn() },
 };
-const mockShortUrl = { shorten: vi.fn() };
+const mockShortUrl = {
+  shorten: vi.fn(),
+  buildShortUrl: vi.fn((code: string) => `http://localhost:3000/s/${code}`),
+};
 const mockConfig = { get: vi.fn(() => undefined) };
 const mockI18n = { t: vi.fn((key: string) => key) };
 

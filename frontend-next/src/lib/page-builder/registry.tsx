@@ -71,6 +71,9 @@ export const BLOCK_REGISTRY: Record<BlockType, (p: BlockProps) => React.ReactNod
   image: ImageBlock,
   investment: InvestmentBlock,
   iframe: IframeBlock,
+  heading: HeadingBlock,
+  divider: DividerBlock,
+  price: PriceBlock,
 };
 
 export function isKnownBlock(type: string): type is BlockType {
@@ -346,6 +349,45 @@ function ImageBlock({ props, bare, className }: BlockProps) {
   );
 }
 
+const HEADING_CLASS: Record<1 | 2 | 3 | 4, string> = {
+  1: 'text-4xl font-bold tracking-tight',
+  2: 'text-2xl font-semibold tracking-tight',
+  3: 'text-xl font-semibold',
+  4: 'text-lg font-medium',
+};
+
+function normalizeHeadingLevel(value: unknown): 1 | 2 | 3 | 4 {
+  const n = Number(value);
+  return n === 1 || n === 2 || n === 3 || n === 4 ? n : 2;
+}
+
+/** Título de seção com tag semântica real (h1–h4); nunca usa Panel/Card. */
+function HeadingBlock({ props, className }: BlockProps) {
+  const level = normalizeHeadingLevel(props.level);
+  const Tag = `h${level}` as 'h1' | 'h2' | 'h3' | 'h4';
+  return (
+    <Tag className={cn(HEADING_CLASS[level], className)}>
+      <FormattedRichText text={str(props.text)} inline />
+    </Tag>
+  );
+}
+
+const DIVIDER_SPACING_CLASS: Record<'sm' | 'md' | 'lg', string> = {
+  sm: 'my-2',
+  md: 'my-4',
+  lg: 'my-8',
+};
+
+function normalizeDividerSpacing(value: unknown): 'sm' | 'md' | 'lg' {
+  return value === 'sm' || value === 'lg' ? value : 'md';
+}
+
+/** Linha divisória horizontal; nunca usa Panel/Card. */
+function DividerBlock({ props, className }: BlockProps) {
+  const spacing = normalizeDividerSpacing(props.spacing);
+  return <hr className={cn(DIVIDER_SPACING_CLASS[spacing], className)} />;
+}
+
 /** Centavos + moeda do envelope → string formatada; nunca dividir por 100 e concatenar símbolo. */
 function formatCents(cents: number | null, currency: string): string {
   if (typeof cents !== 'number') return '—';
@@ -431,6 +473,82 @@ function InvestmentBlock({ props, bare, className }: BlockProps) {
               ))}
             </ul>
           </div>
+        ) : null}
+      </div>
+    </Panel>
+  );
+}
+
+/** "Rótulo|12000" → { label, cents }; sem "|" ou valor não numérico, `cents` vira `null` (mostra "—"). */
+// ponytail: separador "|" é conveniência de digitação manual — estruturar como campo aninhado
+// quando a proposta passar a importar linhas de uma planilha.
+function parsePriceRow(raw: string): { label: string; cents: number | null } {
+  const sep = raw.indexOf('|');
+  if (sep === -1) return { label: raw.trim(), cents: null };
+  const value = Number(raw.slice(sep + 1).trim());
+  return { label: raw.slice(0, sep).trim(), cents: Number.isFinite(value) ? value : null };
+}
+
+function resolveCurrency(value: unknown): string {
+  return typeof value === 'string' && value ? value : 'BRL';
+}
+
+/** Tabela de valores livre (apresentação, não registro): `rows` linha a linha e um total opcional
+ * em destaque. `highlight` dá moldura de card recomendado. */
+function PriceBlock({ props, bare, className }: BlockProps) {
+  const { t } = useTranslation('page-builder');
+  const rows = toStringArray(props.rows).map(parsePriceRow);
+  const currency = resolveCurrency(props.currency);
+  const hasTotal = typeof props.totalCents === 'number';
+  const highlight = props.highlight === true;
+
+  return (
+    <Panel
+      bare={bare}
+      className={cn(highlight ? 'border-primary border-2' : undefined, className)}
+      header={
+        props.title ? (
+          <CardTitle>
+            <FormattedRichText text={str(props.title)} inline />
+          </CardTitle>
+        ) : undefined
+      }
+    >
+      <div className="space-y-3">
+        {props.subtitle ? (
+          <CardDescription>
+            <FormattedRichText text={str(props.subtitle)} inline />
+          </CardDescription>
+        ) : null}
+        {rows.length > 0 ? (
+          <ul className="space-y-1.5 text-sm">
+            {rows.map((row, index) => (
+              <li key={index} className="flex items-baseline justify-between gap-4">
+                <span className="text-muted-foreground">{row.label}</span>
+                <span className="font-medium text-foreground">{formatCents(row.cents, currency)}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {hasTotal ? (
+          <div className="flex items-baseline justify-between gap-4 border-t pt-3">
+            <span className="font-semibold text-foreground">
+              {str(props.totalLabel) || t('priceTotalDefault')}
+            </span>
+            <span className="text-2xl font-bold text-foreground">
+              {formatCents(props.totalCents as number, currency)}
+            </span>
+          </div>
+        ) : null}
+        {props.recurrence ? (
+          <p className="text-sm text-muted-foreground">
+            {t(`investmentRecurrence.${str(props.recurrence)}`, { defaultValue: str(props.recurrence) })}
+          </p>
+        ) : null}
+        {props.note ? (
+          <p className="text-xs text-muted-foreground">
+            <FormattedRichText text={str(props.note)} inline />
+          </p>
         ) : null}
       </div>
     </Panel>

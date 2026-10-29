@@ -57,6 +57,12 @@ tela entregou o mapa do que existe. Por isso a decisão sobe para o `page.tsx`, 
 |---|---|---|
 | `lib/server-context.ts` | `serverMe()`, `serverFeatureFlags()`, `serverFeatureFlag(key)`, `serverCanAccessRoute(path)` | O que o servidor sabe do usuário desta request |
 | `components/sub-nav-layout.tsx` | `<SubNavLayout sections defaultTab="…">` | Casca cliente da navegação por abas (sidebar desktop + drawer mobile): guarda só o `?tab=`. `TabsShell` é a mesma ideia sem sidebar, para poucas abas |
+
+`SubNavLayout` aceita `sidebarHidden?: boolean` (default `false`) para o caso em que o conteúdo
+precisa da largura inteira — ex.: um editor em tela cheia dentro de uma aba. Com `true`, a sidebar
+desktop não renderiza e `<main>` ocupa 100% da largura; o drawer mobile continua igual (no mobile a
+sidebar já não ocupava espaço) e o `?tab=` continua sincronizado por `useTabParam` normalmente —
+é **uma** prop a mais, nenhuma tela existente muda de comportamento por omiti-la.
 | `components/ui/langLabel.tsx` | `<LangLabel text="…" langJson="…" />` | Rótulo traduzido dentro de RSC |
 
 ```tsx
@@ -137,6 +143,14 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
 ```
 
 O registro chega renderizado; o cliente não dispara `GET /user/:id` por conta própria.
+
+Três telas seguem exatamente este desenho — RSC busca o registro, `ItemNotFound` quando não acha,
+`SubNavLayout` com abas em `./components/` navegando por `?tab=`: `user/[id]/page.tsx`,
+`proposal/[id]/page.tsx` e `company/[id]/page.tsx` (esta desde o Ajuste 1, com as abas
+configuração/propostas/projetos/contratos — as duas últimas desabilitadas, sem conteúdo real, até
+`Project`/`Contract` existirem). Tela de detalhe nova parte de um destes três, não reinventa o
+plumbing de `?tab=` (`SubNavLayout` já sincroniza com `useTabParam` quando `tab`/`onTabChange` não
+são passados).
 
 ### Três armadilhas
 

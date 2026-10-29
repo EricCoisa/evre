@@ -18,6 +18,7 @@ import {
 import type { LayoutProfileName } from '../profiles';
 import {
   defaultRowSpanForType,
+  EMPTY_LAYOUT,
   maxBlocksFor,
   maxChildrenFor,
   normalizeRowSpan,
@@ -28,8 +29,7 @@ import {
 
 /** Funções puras que editam o layout do page builder: (layout, ...) → layout. */
 
-/** Ponto de partida de quem nunca customizou a página. */
-export const EMPTY_LAYOUT: PageLayout = { v: 1, blocks: [] };
+export { EMPTY_LAYOUT };
 
 export interface Located {
   block: PageBlock;
@@ -107,6 +107,18 @@ export function setBlockSource(
   });
 }
 
+/** Grava o payload colado (`data.inline`) — mutuamente exclusivo com `data.source` (ver
+ * schema.ts); `undefined` limpa o campo. */
+export function setBlockInline(
+  layout: PageLayout,
+  id: string,
+  inline: unknown,
+): PageLayout {
+  return mapBlocks(layout, (b) =>
+    b.id === id ? { ...b, data: inline === undefined ? undefined : { inline } } : b,
+  );
+}
+
 export function setBlockParam(
   layout: PageLayout,
   id: string,
@@ -162,7 +174,9 @@ export function createBlock(type: BlockType, parentId?: string): PageBlock {
       ? { content: 'Texto' }
       : type === 'button.action'
         ? { label: 'Botão', url: '/' }
-        : {};
+        : type === 'heading'
+          ? { text: 'Título', level: 2 }
+          : {};
 
   return {
     // Id legível: ele aparece nas mensagens de recusa do backend ("bloco table-basic-a1b2: …").

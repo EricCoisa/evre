@@ -18,6 +18,11 @@ import {
   type SetPageLayoutInput,
 } from './dto/page-layout.dto';
 
+/** Teto de `data.inline` por bloco e por layout inteiro — vai para o JSON do layout, gravado no
+ * registro e servido na página pública; sem teto, uma proposta vira um documento de megabytes. */
+const INLINE_MAX_BYTES_PER_BLOCK = 64 * 1024;
+const INLINE_MAX_BYTES_PER_LAYOUT = 256 * 1024;
+
 /** Valida semanticamente um layout de página contra o catálogo real de blocos e fontes. */
 @Injectable()
 export class PageLayoutValidator {
@@ -63,7 +68,7 @@ export class PageLayoutValidator {
     const problems: string[] = [];
 
     for (const block of input.layout.blocks) {
-      problems.push(...this.blockProblems(block, byType));
+      problems.push(...this.blockProblems(block, byType, profile));
       problems.push(...classNameProblems(block, classNames));
 
       for (const child of block.children ?? []) {
@@ -88,7 +93,7 @@ export class PageLayoutValidator {
           );
           continue;
         }
-        problems.push(...this.blockProblems(child, byType));
+        problems.push(...this.blockProblems(child, byType, profile));
         problems.push(...classNameProblems(child, classNames));
       }
     }
@@ -104,6 +109,7 @@ export class PageLayoutValidator {
   private blockProblems(
     block: PageBlock,
     byType: Map<string, PageBlockDescription>,
+    profile: LayoutProfile,
   ): string[] {
     const meta = byType.get(block.type);
     if (!meta) {
@@ -121,12 +127,18 @@ export class PageLayoutValidator {
     }
     if (meta.accepts.length === 0) return [];
 
+    if (block.data?.inline !== undefined) {
+      return inlineProblems(block.id, meta, block.data.inline);
+    }
+
     if (!block.data?.source) {
       if (meta.optionalSource || block.type === 'text.rich') {
         return [];
       }
+      const field =
+        profile.dataSources === 'inline-only' ? 'data.inline' : 'data.source';
       return [
-        `bloco "${block.id}" (${block.type}): precisa de data.source de um destes kinds: ${meta.accepts.join(', ')}`,
+        `bloco "${block.id}" (${block.type}): precisa de ${field} de um destes kinds: ${meta.accepts.join(', ')}`,
       ];
     }
 
@@ -150,7 +162,8 @@ export class PageLayoutValidator {
     return problems;
   }
 
-  /** Recusa fonte de dados inexistente ou fora do alcance do role de quem pediu. */
+  /** Recusa o MECANISMO de dado errado para o profile (fonte real × colado × nenhum). A shape e o
+   * tamanho de um `data.inline` aceito aqui são checados por bloco em `blockProblems`. */
   private assertSourcesAllowed(
     roleName: string,
     layout: PageLayout,
@@ -161,16 +174,42 @@ export class PageLayoutValidator {
     const all = layout.blocks.flatMap((b) => [b, ...(b.children ?? [])]);
 
     // `dataSources: 'none'` é o que torna o render anônimo seguro: nenhum bloco desta
-    // superfície chama endpoint, então não existe dado para vazar a quem abrir a página.
+    // superfície chama endpoint nem lê dado colado — não existe dado nenhum para vazar.
     if (profile.dataSources === 'none') {
-      const withSource = all.filter((b) => b.data?.source).map((b) => b.id);
-      if (withSource.length) {
+      const withData = all
+        .filter((b) => b.data?.source || b.data?.inline !== undefined)
+        .map((b) => b.id);
+      if (withData.length) {
         throw new BadRequestException(
-          `Esta página não busca dado de nenhuma fonte: remova "data.source" do(s) bloco(s) ${withSource.join(', ')}. ` +
+          `Esta página não aceita dado nenhum (nem fonte, nem colado): remova "data" do(s) bloco(s) ${withData.join(', ')}. ` +
             'O conteúdo precisa vir em `props`.',
         );
       }
       return;
+    }
+
+    // `inline-only` (ex: proposta) nunca busca fonte real — só dado colado pelo autor, que
+    // continua congelado no próprio layout. Checar o alcance do role não faz sentido aqui.
+    if (profile.dataSources === 'inline-only') {
+      const withSource = all.filter((b) => b.data?.source).map((b) => b.id);
+      if (withSource.length) {
+        throw new BadRequestException(
+          `Esta página não busca fonte de dado interna: remova "data.source" do(s) bloco(s) ${withSource.join(', ')} e cole o dado em "data.inline". ` +
+            'Chame describe_page_builder para ver o shape esperado por kind.',
+        );
+      }
+      return;
+    }
+
+    // `role-filtered` (ex: dashboard): dado colado aqui seria um número inventado parecendo
+    // métrica real — só fonte de verdade, filtrada pelo alcance de quem está gravando.
+    const withInline = all
+      .filter((b) => b.data?.inline !== undefined)
+      .map((b) => b.id);
+    if (withInline.length) {
+      throw new BadRequestException(
+        `Esta página busca dado de fonte real, não aceita dado colado: remova "data.inline" do(s) bloco(s) ${withInline.join(', ')} e use "data.source".`,
+      );
     }
 
     const allowed = new Set(
@@ -208,6 +247,20 @@ function assertWithinLimits(
       `bloco "${tooMany.id}" excede o teto de ${profile.maxChildren} filhos do profile "${profileName}".`,
     );
   }
+
+  const all = layout.blocks.flatMap((b) => [b, ...(b.children ?? [])]);
+  const inlineBytes = all.reduce(
+    (total, b) =>
+      b.data?.inline !== undefined
+        ? total + Buffer.byteLength(JSON.stringify(b.data.inline) ?? '', 'utf8')
+        : total,
+    0,
+  );
+  if (inlineBytes > INLINE_MAX_BYTES_PER_LAYOUT) {
+    throw new BadRequestException(
+      `Layout com ${inlineBytes} bytes de dado colado (data.inline) excede o teto de ${INLINE_MAX_BYTES_PER_LAYOUT} bytes por layout.`,
+    );
+  }
 }
 
 /** Recusa `className` fora da allowlist que o frontend publica. */
@@ -222,6 +275,53 @@ function classNameProblems(block: PageBlock, allowed: Set<string>): string[] {
         `bloco "${block.id}": className "${invalid.join(', ')}" não está na lista suportada — só valem as classes retornadas em classNames por describe_page_builder`,
       ]
     : [];
+}
+
+/** Valida a shape de `data.inline` contra o `kind` que o bloco aceita (`series` × `list`/`count`,
+ * que compartilham o mesmo shape) e o teto de tamanho. */
+function inlineProblems(
+  blockId: string,
+  meta: PageBlockDescription,
+  inline: unknown,
+): string[] {
+  const bytes = Buffer.byteLength(JSON.stringify(inline) ?? '', 'utf8');
+  if (bytes > INLINE_MAX_BYTES_PER_BLOCK) {
+    return [
+      `bloco "${blockId}": data.inline tem ${bytes} bytes, acima do teto de ${INLINE_MAX_BYTES_PER_BLOCK} bytes por bloco`,
+    ];
+  }
+
+  const wantsSeries = meta.accepts.includes('series');
+  const expected = wantsSeries
+    ? '{ data: { date: string, value: number }[] }'
+    : '{ data: Record<string, unknown>[] }';
+
+  const rawRows = (inline as { data?: unknown } | null | undefined)?.data;
+  if (!Array.isArray(rawRows)) {
+    return [
+      `bloco "${blockId}" (${meta.type}): data.inline precisa do shape ${expected}, recebeu ${JSON.stringify(inline)}`,
+    ];
+  }
+  // `Array.isArray` é tipado como `(arg: any) => arg is any[]` no lib.es5.d.ts — a reatribuição
+  // com anotação explícita evita que esse `any` vaze para `badRow` abaixo.
+  const rows: unknown[] = rawRows;
+
+  const badRow = wantsSeries
+    ? rows.find(
+        (row) =>
+          !row ||
+          typeof row !== 'object' ||
+          typeof (row as Record<string, unknown>).date !== 'string' ||
+          typeof (row as Record<string, unknown>).value !== 'number',
+      )
+    : rows.find((row) => !row || typeof row !== 'object' || Array.isArray(row));
+
+  if (badRow !== undefined) {
+    return [
+      `bloco "${blockId}" (${meta.type}): data.inline espera ${expected}, mas um item veio fora do formato: ${JSON.stringify(badRow)}`,
+    ];
+  }
+  return [];
 }
 
 /** Valida os params de um bloco contra os params declarados pela fonte de dados. */

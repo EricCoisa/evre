@@ -1,10 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import type { VariantProps } from 'class-variance-authority';
 import { toast } from 'sonner';
 import { Ban, CheckCircle2, ClipboardCheck, Send, Undo2, XCircle } from 'lucide-react';
-import { Badge, type badgeVariants } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -31,25 +30,21 @@ import {
   useSendProposal,
   useUpdateProposalStatus,
 } from '@/lib/actions/proposal/queries';
+import { formatDate } from '@/lib/utils';
 import type { Proposal, ProposalVersionDto } from '@/lib/actions/proposal/types';
-import { publicationStateLabelKey, type PublicationState } from '@/lib/vocabulary';
-
-const STATE_BADGE_VARIANT: Record<PublicationState, VariantProps<typeof badgeVariants>['variant']> = {
-  ACTIVE: 'default',
-  EXPIRED: 'outline',
-  REVOKED: 'destructive',
-  NONE: 'secondary',
-};
+import {
+  publicationStateLabelKey,
+  PUBLICATION_STATE_BADGE_VARIANT,
+  sendChannelLabelKey,
+  type PublicationState,
+} from '@/lib/vocabulary';
 
 /** Deriva o que a tela precisa mostrar a partir da versão mais recente — extraído para manter a
  * complexidade do componente baixa (regra do projeto: `complexity` é warn em 10). */
 function toPublicationView(latest: ProposalVersionDto | undefined) {
   const state = (latest?.state ?? 'NONE') as PublicationState;
   const canRevoke = state === 'ACTIVE' || state === 'EXPIRED';
-  const publicUrl =
-    canRevoke && latest?.publicToken && typeof window !== 'undefined'
-      ? `${window.location.origin}/p/${latest.publicToken}`
-      : undefined;
+  const publicUrl = canRevoke ? (latest?.publicUrl ?? undefined) : undefined;
   return { state, canRevoke, publicUrl, shortUrl: canRevoke ? latest?.shortUrl : undefined };
 }
 
@@ -117,7 +112,7 @@ export function ProposalPublicationTab({ proposal }: { proposal: Proposal }) {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t('publicationState')}</span>
-          <Badge variant={STATE_BADGE_VARIANT[state]}>{tVocabulary(publicationStateLabelKey(state))}</Badge>
+          <Badge variant={PUBLICATION_STATE_BADGE_VARIANT[state]}>{tVocabulary(publicationStateLabelKey(state))}</Badge>
         </div>
         <div className="flex gap-2">
           <Button
@@ -181,11 +176,9 @@ export function ProposalPublicationTab({ proposal }: { proposal: Proposal }) {
                 ) : (
                   <XCircle className="size-4 text-destructive" />
                 )}
-                <span>{item.channel}</span>
+                <span>{tVocabulary(sendChannelLabelKey(item.channel))}</span>
                 {item.toPhone && <span className="text-muted-foreground">{item.toPhone}</span>}
-                <span className="text-muted-foreground">
-                  {new Date(item.createdAt).toLocaleString()}
-                </span>
+                <span className="text-muted-foreground">{formatDate(item.createdAt)}</span>
               </li>
             ))}
           </ul>

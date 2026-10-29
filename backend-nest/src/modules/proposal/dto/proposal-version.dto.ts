@@ -25,6 +25,8 @@ export const ProposalVersionSchema = z.object({
   state: z.enum(PUBLICATION_STATE_VALUES),
   /** `null` até o primeiro envio por WhatsApp construir o link curto. */
   shortUrl: z.string().optional().nullable(),
+  /** `null` sem `publicToken` — URL completa, nunca montada no cliente via `window.location.origin`. */
+  publicUrl: z.string().optional().nullable(),
 });
 
 export class ProposalVersionDto extends createZodDto(ProposalVersionSchema) {}

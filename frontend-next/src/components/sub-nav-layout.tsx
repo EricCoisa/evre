@@ -42,6 +42,9 @@ export interface SubNavLayoutProps {
   className?: string;
   sidebarClassName?: string;
   contentClassName?: string;
+  /** Oculta a sidebar desktop e deixa o conteúdo ocupar a largura inteira — o drawer mobile
+   * continua igual, já que no mobile a sidebar não ocupa espaço. */
+  sidebarHidden?: boolean;
 }
 
 interface SubNavDesktopSidebarProps {
@@ -211,6 +214,7 @@ export function SubNavLayout({
   className,
   sidebarClassName,
   contentClassName,
+  sidebarHidden = false,
 }: SubNavLayoutProps) {
   const [internalTab, setInternalTab] = useTabParam(defaultTab);
   const tab = controlledTab ?? internalTab;
@@ -230,9 +234,11 @@ export function SubNavLayout({
     <Tabs value={tab} onValueChange={setTab} className={cn('w-full min-w-0 max-w-full', className)}>
       <div className="flex flex-col md:flex-row gap-2 md:gap-4 lg:gap-6 items-start w-full">
         <SubNavMobileDrawer sections={sections} activeTab={tab} onTabChange={setTab} />
-        <div className={sidebarClassName}>
-          <SubNavDesktopSidebar sections={sections} activeTab={tab} />
-        </div>
+        {!sidebarHidden && (
+          <div className={sidebarClassName}>
+            <SubNavDesktopSidebar sections={sections} activeTab={tab} />
+          </div>
+        )}
         <main className={cn('flex-1 min-w-0 w-full', contentClassName)}>
           {children}
         </main>
