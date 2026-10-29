@@ -7,6 +7,7 @@ import { PaginationParams } from "../../types/pagination.types";
 import { getQueryConfig } from '../../utils';
 import { Collector } from "@/lib/api/collector";
 import { toast } from "sonner";
+import { useTranslation } from "@/hooks/use-translation";
 import { CreateCompanyDto, UpdateCompanyDto, CreateContactDto, UpdateContactDto } from "./types";
 
 export function useCompanys(params?: PaginationParams) {
@@ -28,18 +29,20 @@ export function useCompany(id: string) {
 
 export function useCreateCompany() {
   const queryClient = useQueryClient();
+  const { t } = useTranslation('company');
 
   return useMutation({
     mutationFn: (data: CreateCompanyDto) => createCompany(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companys'] });
-      toast.success('Company created successfully');
+      toast.success(t('createdSuccess'));
     }
   });
 }
 
 export function useUpdateCompany() {
   const queryClient = useQueryClient();
+  const { t } = useTranslation('company');
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateCompanyDto }) =>
@@ -47,19 +50,20 @@ export function useUpdateCompany() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['companys'] });
       queryClient.invalidateQueries({ queryKey: ['company', variables.id] });
-      toast.success('Company updated successfully');
+      toast.success(t('updatedSuccess'));
     }
   });
 }
 
 export function useArchiveCompany() {
   const queryClient = useQueryClient();
+  const { t } = useTranslation('company');
 
   return useMutation({
     mutationFn: archiveCompany,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companys'] });
-      toast.success('Company archived successfully');
+      toast.success(t('archivedSuccess'));
     }
   });
 }
@@ -75,37 +79,40 @@ export function useCompanyContacts(companyId: string) {
 
 export function useCreateCompanyContact(companyId: string) {
   const queryClient = useQueryClient();
+  const { t } = useTranslation('company');
 
   return useMutation({
     mutationFn: (data: CreateContactDto) => createCompanyContact(companyId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company', companyId, 'contacts'] });
-      toast.success('Contact created successfully');
+      toast.success(t('contacts.createdSuccess'));
     }
   });
 }
 
 export function useUpdateCompanyContact(companyId: string) {
   const queryClient = useQueryClient();
+  const { t } = useTranslation('company');
 
   return useMutation({
     mutationFn: ({ contactId, data }: { contactId: string; data: UpdateContactDto }) =>
       updateCompanyContact(companyId, contactId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company', companyId, 'contacts'] });
-      toast.success('Contact updated successfully');
+      toast.success(t('contacts.updatedSuccess'));
     }
   });
 }
 
 export function useArchiveCompanyContact(companyId: string) {
   const queryClient = useQueryClient();
+  const { t } = useTranslation('company');
 
   return useMutation({
     mutationFn: (contactId: string) => archiveCompanyContact(companyId, contactId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company', companyId, 'contacts'] });
-      toast.success('Contact archived successfully');
+      toast.success(t('contacts.archivedSuccess'));
     }
   });
 }

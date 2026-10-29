@@ -8,20 +8,22 @@ import {
   useArchiveProposal,
   useDuplicateProposal,
 } from "@/lib/actions/proposal/queries";
-import { useCompanys, useCreateCompany } from "@/lib/actions/company/queries";
+import { useCompanys } from "@/lib/actions/company/queries";
 import { useState, useCallback, useMemo } from 'react';
 import { DataTable } from "@/components/data-table";
 import { getProposalColumns } from "./proposal-columns";
 import Modal from "@/components/modal";
 import { FormBuilderModal, type FormBuilderField } from "@/components/form/form-builder";
-import { CompanyInlineField } from "./company-inline-field";
-import { resolveOrCreateCompanyId } from "./resolve-company";
 import type { Proposal } from "@/lib/actions/proposal/types";
 import { z } from "zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { PROPOSAL_STATUSES, proposalStatusLabelKey } from "@/lib/vocabulary";
+
+// Sentinel do Select: Radix não aceita `value=""` num `SelectItem` — "sem empresa" precisa de
+// um valor não-vazio próprio, convertido de volta a `undefined` no submit.
+const NO_COMPANY = '__none__';
 
 export function ProposalTab() {
   const { t } = useTranslation('proposal');
@@ -51,7 +53,6 @@ export function ProposalTab() {
 
   const createProposalMutation = useCreateProposal();
   const updateProposalMutation = useUpdateProposal();
-  const createCompanyMutation = useCreateCompany();
   const archiveProposalMutation = useArchiveProposal();
   const duplicateProposalMutation = useDuplicateProposal();
 
@@ -70,19 +71,21 @@ export function ProposalTab() {
   const createProposalSchema = useMemo(() =>
     z.object({
       name: z.string().min(1, t('nameRequired')),
-      companyName: z.string().optional(),
+      companyId: z.string().optional(),
     }),
   [t]);
 
   const createProposalFields = useMemo<FormBuilderField[]>(() => [
     { name: 'name', label: t('name'), placeholder: t('namePlaceholder') },
     {
-      name: 'companyName',
+      name: 'companyId',
       label: t('company'),
-      type: 'custom',
-      render: (field) => (
-        <CompanyInlineField field={field} companies={companies} placeholder={t('companyPlaceholder')} />
-      ),
+      type: 'select',
+      placeholder: t('companyPlaceholder'),
+      options: [
+        { value: NO_COMPANY, label: t('noCompany') },
+        ...companies.map((company) => ({ value: company.id, label: company.name })),
+      ],
     },
   ], [t, companies]);
 
@@ -142,14 +145,12 @@ export function ProposalTab() {
         onSubmit={async (data) => {
           const proposal = await createProposalMutation.mutateAsync({ name: data.name });
 
-          const companyId = await resolveOrCreateCompanyId(
-            data.companyName ?? '',
-            companies,
-            (name) => createCompanyMutation.mutateAsync({ name }),
-          );
-          if (companyId) {
+          if (data.companyId && data.companyId !== NO_COMPANY) {
             try {
-              await updateProposalMutation.mutateAsync({ id: proposal.id, data: { companyId } });
+              await updateProposalMutation.mutateAsync({
+                id: proposal.id,
+                data: { companyId: data.companyId },
+              });
             } catch {
               // Nada é porta — a proposta já existe, segue sem empresa.
             }

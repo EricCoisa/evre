@@ -1,5 +1,9 @@
 {
   "title": "Companies",
+  "description": "Company and contact records.",
+  "createdSuccess": "Company created successfully",
+  "updatedSuccess": "Company updated successfully",
+  "archivedSuccess": "Company archived successfully",
   "entity": "company",
   "entityPlural": "companies",
   "tabData": "Data",
@@ -43,6 +47,9 @@
   "contacts": {
     "entity": "contact",
     "entityPlural": "contacts",
+    "createdSuccess": "Contact created successfully",
+    "updatedSuccess": "Contact updated successfully",
+    "archivedSuccess": "Contact archived successfully",
     "empty": "No contacts found",
     "new": "New Contact",
     "createNew": "Create New Contact",

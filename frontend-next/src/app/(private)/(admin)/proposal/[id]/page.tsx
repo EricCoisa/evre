@@ -9,6 +9,7 @@ import { ItemNotFound } from "@/components/ui/item-not-found";
 import LangLabel from "@/components/ui/langLabel";
 import { getProposal } from "@/lib/actions/proposal/api";
 import { ProposalCommercialTab } from "../components/proposal-commercial-tab";
+import { ProposalCompanyField } from "../components/proposal-company-field";
 import { ProposalContentTab } from "../components/proposal-content-tab";
 import { ProposalPublicationTab } from "../components/proposal-publication-tab";
 import { ProposalVersionsTab } from "../components/proposal-versions-tab";
@@ -55,7 +56,7 @@ export default async function ProposalDetailPage({ params }: { params: Promise<{
     <Container variant="dataTable" border={false}>
       <PageHeader
         title={proposal.name}
-        description={proposal.companyName ?? undefined}
+        description={<ProposalCompanyField proposal={proposal} />}
         badge={<Badge variant="outline">{proposal.status}</Badge>}
         actions={
           <Button asChild variant="outline" size="sm">

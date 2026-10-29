@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import type { VariantProps } from 'class-variance-authority';
 import { toast } from 'sonner';
-import { Ban, CheckCircle2, ClipboardCheck, Send, XCircle } from 'lucide-react';
+import { Ban, CheckCircle2, ClipboardCheck, Send, Undo2, XCircle } from 'lucide-react';
 import { Badge, type badgeVariants } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { PhoneInput } from '@/components/ui/phone-input';
 import { CopyField } from '@/components/copy-field';
 import Modal from '@/components/modal';
 import { CapabilityGate } from '@/components/capability-gate';
@@ -28,6 +29,7 @@ import {
   usePublishProposal,
   useRevokeProposalPublication,
   useSendProposal,
+  useUpdateProposalStatus,
 } from '@/lib/actions/proposal/queries';
 import type { Proposal, ProposalVersionDto } from '@/lib/actions/proposal/types';
 import { publicationStateLabelKey, type PublicationState } from '@/lib/vocabulary';
@@ -60,6 +62,7 @@ export function ProposalPublicationTab({ proposal }: { proposal: Proposal }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [acceptOpen, setAcceptOpen] = useState(false);
   const [sendOpen, setSendOpen] = useState(false);
+  const [reopenOpen, setReopenOpen] = useState(false);
   const [selectedPhone, setSelectedPhone] = useState('');
   const [note, setNote] = useState('');
   const { data: versions = [] } = useProposalVersions(proposal.id);
@@ -69,9 +72,11 @@ export function ProposalPublicationTab({ proposal }: { proposal: Proposal }) {
   const revoke = useRevokeProposalPublication();
   const acceptOffline = useAcceptProposalOffline();
   const send = useSendProposal();
+  const updateStatus = useUpdateProposalStatus();
 
   const { state, canRevoke, publicUrl, shortUrl } = toPublicationView(versions[0]);
   const alreadyAccepted = proposal.status === 'ACCEPTED';
+  const canReopen = proposal.status === 'SENT';
   const sendableContacts = contacts.filter((contact) => !!contact.phone);
 
   async function handleRegisterAcceptance() {
@@ -95,12 +100,16 @@ export function ProposalPublicationTab({ proposal }: { proposal: Proposal }) {
     setSelectedPhone('');
   }
 
+  // Sempre pergunta — nunca envia direto para o contato principal sem confirmar, e nunca exige
+  // empresa: sem contato nenhum, o diálogo ainda deixa digitar um número manualmente.
   function handleSendClick() {
-    if (sendableContacts.length > 1) {
-      setSendOpen(true);
-      return;
-    }
-    void handleSend();
+    setSelectedPhone(sendableContacts.length === 1 ? (sendableContacts[0].phone as string) : '');
+    setSendOpen(true);
+  }
+
+  async function handleReopen() {
+    await updateStatus.mutateAsync({ id: proposal.id, data: { status: 'DRAFT' } });
+    setReopenOpen(false);
   }
 
   return (
@@ -125,8 +134,16 @@ export function ProposalPublicationTab({ proposal }: { proposal: Proposal }) {
           </Button>
           <Button
             variant="outline"
+            onClick={() => setReopenOpen(true)}
+            disabled={!canReopen || updateStatus.isPending}
+          >
+            <Undo2 className="size-4 mr-1.5" />
+            {t('reopenDraft')}
+          </Button>
+          <Button
+            variant="outline"
             onClick={() => setAcceptOpen(true)}
-            disabled={alreadyAccepted || acceptOffline.isPending}
+            disabled={alreadyAccepted || state === 'NONE' || acceptOffline.isPending}
           >
             <ClipboardCheck className="size-4 mr-1.5" />
             {alreadyAccepted ? t('alreadyAcceptedShort') : t('registerAcceptance')}
@@ -197,6 +214,22 @@ export function ProposalPublicationTab({ proposal }: { proposal: Proposal }) {
       </Modal>
 
       <Modal
+        open={reopenOpen}
+        onOpenChange={setReopenOpen}
+        title={t('reopenDraftConfirmTitle')}
+        description={t('reopenDraftConfirmDescription')}
+      >
+        <div className="flex gap-2 justify-end">
+          <Button variant="outline" onClick={() => setReopenOpen(false)} disabled={updateStatus.isPending}>
+            {t('cancel')}
+          </Button>
+          <Button onClick={handleReopen} disabled={updateStatus.isPending}>
+            {t('reopenDraftConfirm')}
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal
         open={acceptOpen}
         onOpenChange={setAcceptOpen}
         title={t('registerAcceptance')}
@@ -235,18 +268,29 @@ export function ProposalPublicationTab({ proposal }: { proposal: Proposal }) {
         description={t('sendChooseContactDescription')}
       >
         <div className="space-y-3">
-          <Select value={selectedPhone} onValueChange={setSelectedPhone}>
-            <SelectTrigger>
-              <SelectValue placeholder={t('sendChooseContactPlaceholder')} />
-            </SelectTrigger>
-            <SelectContent>
-              {sendableContacts.map((contact) => (
-                <SelectItem key={contact.id} value={contact.phone as string}>
-                  {contact.name} — {contact.phone}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {sendableContacts.length > 0 && (
+            <Select value={selectedPhone} onValueChange={setSelectedPhone}>
+              <SelectTrigger>
+                <SelectValue placeholder={t('sendChooseContactPlaceholder')} />
+              </SelectTrigger>
+              <SelectContent>
+                {sendableContacts.map((contact) => (
+                  <SelectItem key={contact.id} value={contact.phone as string}>
+                    {contact.name} — {contact.phone}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <div className="space-y-1.5">
+            <Label htmlFor="send-manual-phone">{t('sendManualPhone')}</Label>
+            <PhoneInput
+              id="send-manual-phone"
+              value={selectedPhone}
+              onChange={setSelectedPhone}
+              disabled={send.isPending}
+            />
+          </div>
           <div className="flex gap-2 justify-end">
             <Button variant="outline" onClick={() => setSendOpen(false)} disabled={send.isPending}>
               {t('cancel')}

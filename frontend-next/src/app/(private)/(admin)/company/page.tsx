@@ -1,4 +1,6 @@
 import { Container } from "@/components/container";
+import { PageHeader } from "@/components/page-header";
+import LangLabel from "@/components/ui/langLabel";
 import { CompanyTab } from "./components/company-tab";
 
 /**
@@ -19,7 +21,11 @@ import { CompanyTab } from "./components/company-tab";
  */
 export default function CompanyPage() {
   return (
-    <Container border={false}>
+    <Container variant="dataTable" border={false}>
+      <PageHeader
+        title={<LangLabel text="title" langJson="company" />}
+        description={<LangLabel text="description" langJson="company" />}
+      />
       <CompanyTab />
     </Container>
   );

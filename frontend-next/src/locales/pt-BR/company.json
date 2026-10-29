@@ -1,5 +1,9 @@
 {
   "title": "Empresas",
+  "description": "Cadastro de empresas e contatos.",
+  "createdSuccess": "Empresa criada com sucesso",
+  "updatedSuccess": "Empresa atualizada com sucesso",
+  "archivedSuccess": "Empresa arquivada com sucesso",
   "entity": "empresa",
   "entityPlural": "empresas",
   "tabData": "Dados",
@@ -43,6 +47,9 @@
   "contacts": {
     "entity": "contato",
     "entityPlural": "contatos",
+    "createdSuccess": "Contato criado com sucesso",
+    "updatedSuccess": "Contato atualizado com sucesso",
+    "archivedSuccess": "Contato arquivado com sucesso",
     "empty": "Nenhum contato encontrado",
     "new": "Novo Contato",
     "createNew": "Criar Novo Contato",

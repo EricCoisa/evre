@@ -1,6 +1,7 @@
 import "./globals.css";
 
 
+import { AppProvider } from "@/contexts/appProvider";
 import { QueryProvider } from "@/contexts/query-provider";
 import { ThemeProvider } from "@/contexts/theme-provider";
 import { SystemConfiguration } from "@/lib/actions/systemConfiguration/types";
@@ -41,11 +42,13 @@ export default async function RootLayout({
     <html lang="pt-br" suppressHydrationWarning>
       <body className="font-sans antialiased bg-background text-foreground">
         <QueryProvider>
-          <ThemeProvider defaultTheme={config ? config.value : undefined}>
-            {children}
-            <CookieConsentBanner data={cookieConsent} />
-            <Toaster />
-          </ThemeProvider>
+          <AppProvider>
+            <ThemeProvider defaultTheme={config ? config.value : undefined}>
+              {children}
+              <CookieConsentBanner data={cookieConsent} />
+              <Toaster />
+            </ThemeProvider>
+          </AppProvider>
         </QueryProvider>
       </body>
     </html>
