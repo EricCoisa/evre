@@ -15,7 +15,7 @@ const user: AuthenticatedUser = {
 };
 
 const mockPrisma = {
-  contact: { findFirst: vi.fn(), update: vi.fn() },
+  companyContact: { findFirst: vi.fn(), update: vi.fn() },
 };
 const mockI18n = { t: vi.fn().mockReturnValue('mensagem') };
 const mockLogging = { create: vi.fn() };
@@ -50,41 +50,43 @@ describe('ArchiveCompanyContactUseCase', () => {
     await expect(
       useCase.execute('company-1', 'contact-1', user),
     ).rejects.toThrow(NotFoundException);
-    expect(mockPrisma.contact.findFirst).not.toHaveBeenCalled();
+    expect(mockPrisma.companyContact.findFirst).not.toHaveBeenCalled();
   });
 
   it('arquiva (seta archivedAt) e não apaga', async () => {
-    mockPrisma.contact.findFirst.mockResolvedValue({
-      id: 'contact-1',
+    mockPrisma.companyContact.findFirst.mockResolvedValue({
+      id: 'cc-1',
       companyId: 'company-1',
-      name: 'Fulano',
       archivedAt: null,
+      messagingContact: { id: 'mc-1', phone: '5511999990000', name: 'Fulano' },
     });
-    mockPrisma.contact.update.mockResolvedValue({
-      id: 'contact-1',
+    mockPrisma.companyContact.update.mockResolvedValue({
+      id: 'cc-1',
       archivedAt: new Date(),
+      messagingContact: { id: 'mc-1', phone: '5511999990000', name: 'Fulano' },
     });
 
-    const archived = await useCase.execute('company-1', 'contact-1', user);
+    const archived = await useCase.execute('company-1', 'cc-1', user);
 
-    expect(mockPrisma.contact.update).toHaveBeenCalledWith({
-      where: { id: 'contact-1' },
+    expect(mockPrisma.companyContact.update).toHaveBeenCalledWith({
+      where: { id: 'cc-1' },
       data: { archivedAt: expect.any(Date) },
+      include: { messagingContact: true },
     });
     expect(archived.archivedAt).toBeInstanceOf(Date);
   });
 
   it('é idempotente: contato já arquivado não atualiza nem loga de novo', async () => {
-    mockPrisma.contact.findFirst.mockResolvedValue({
-      id: 'contact-1',
+    mockPrisma.companyContact.findFirst.mockResolvedValue({
+      id: 'cc-1',
       companyId: 'company-1',
-      name: 'Fulano',
       archivedAt: new Date(),
+      messagingContact: { id: 'mc-1', phone: '5511999990000', name: 'Fulano' },
     });
 
-    await useCase.execute('company-1', 'contact-1', user);
+    await useCase.execute('company-1', 'cc-1', user);
 
-    expect(mockPrisma.contact.update).not.toHaveBeenCalled();
+    expect(mockPrisma.companyContact.update).not.toHaveBeenCalled();
     expect(mockLogging.create).not.toHaveBeenCalled();
   });
 });

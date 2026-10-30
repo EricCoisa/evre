@@ -104,8 +104,9 @@ model MessagingContact {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
-  conversations MessagingConversation[]
-  messages      MessagingMessage[]
+  conversations    MessagingConversation[]
+  messages         MessagingMessage[]
+  companyContacts  CompanyContact[]
 
   @@index([optOut])
   @@index([lastMessageAt])

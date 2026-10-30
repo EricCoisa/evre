@@ -12941,18 +12941,15 @@
             "type": "string",
             "format": "uuid"
           },
-          "name": {
-            "type": "string"
+          "messagingContactId": {
+            "type": "string",
+            "format": "uuid"
           },
           "role": {
             "type": "string",
             "nullable": true
           },
           "email": {
-            "type": "string",
-            "nullable": true
-          },
-          "phone": {
             "type": "string",
             "nullable": true
           },
@@ -12978,30 +12975,66 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "messagingContact": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "phone": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string",
+                "nullable": true
+              },
+              "pushName": {
+                "type": "string",
+                "nullable": true
+              },
+              "profilePictureUrl": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "id",
+              "phone",
+              "name",
+              "pushName",
+              "profilePictureUrl"
+            ],
+            "x-nestjs_zod-self-required": true
           }
         },
         "required": [
           "id",
           "companyId",
-          "name",
+          "messagingContactId",
           "role",
           "email",
-          "phone",
           "isPrimary",
           "isDecisionMaker",
           "notes",
           "archivedAt",
           "createdAt",
-          "updatedAt"
+          "updatedAt",
+          "messagingContact"
         ]
       },
       "CreateContactDto": {
         "type": "object",
         "properties": {
-          "name": {
-            "description": "Contact name",
+          "phone": {
+            "description": "Phone (MessagingContact identity)",
             "type": "string",
             "minLength": 1
+          },
+          "name": {
+            "description": "Contact name; set on MessagingContact when creating",
+            "type": "string"
           },
           "role": {
             "description": "Role at the company",
@@ -13011,10 +13044,6 @@
             "description": "Contact email",
             "type": "string",
             "format": "email"
-          },
-          "phone": {
-            "description": "Contact phone",
-            "type": "string"
           },
           "isPrimary": {
             "type": "boolean",
@@ -13030,17 +13059,12 @@
           }
         },
         "required": [
-          "name"
+          "phone"
         ]
       },
       "UpdateContactDto": {
         "type": "object",
         "properties": {
-          "name": {
-            "description": "Contact name",
-            "type": "string",
-            "minLength": 1
-          },
           "role": {
             "description": "Role at the company",
             "type": "string"
@@ -13049,10 +13073,6 @@
             "description": "Contact email",
             "type": "string",
             "format": "email"
-          },
-          "phone": {
-            "description": "Contact phone",
-            "type": "string"
           },
           "isPrimary": {
             "type": "boolean"

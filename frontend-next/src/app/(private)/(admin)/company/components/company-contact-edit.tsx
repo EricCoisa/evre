@@ -22,10 +22,8 @@ export function CompanyContactEdit({ companyId, contact, onCancel, onSuccess }: 
 
     const updateContactSchema = useMemo(() =>
         z.object({
-            name: z.string().min(1, t('nameRequired')),
             role: z.string().optional(),
             email: z.string().email(t('contacts.emailInvalid')).optional().or(z.literal('')),
-            phone: z.string().optional(),
             isPrimary: z.boolean().optional(),
             isDecisionMaker: z.boolean().optional(),
             notes: z.string().optional(),
@@ -33,10 +31,8 @@ export function CompanyContactEdit({ companyId, contact, onCancel, onSuccess }: 
     [t]);
 
     const contactFields = useMemo<FormBuilderField[]>(() => [
-        { name: 'name', label: t('contacts.name'), placeholder: t('contacts.namePlaceholder') },
         { name: 'role', label: t('contacts.role'), placeholder: t('contacts.rolePlaceholder') },
         { name: 'email', label: t('contacts.email'), type: 'email', placeholder: t('contacts.emailPlaceholder') },
-        { name: 'phone', label: t('contacts.phone'), placeholder: t('contacts.phonePlaceholder') },
         { name: 'isPrimary', label: t('contacts.isPrimary'), type: 'checkbox' },
         { name: 'isDecisionMaker', label: t('contacts.isDecisionMaker'), type: 'checkbox' },
         { name: 'notes', label: t('notes'), type: 'textarea', placeholder: t('notesPlaceholder') },
@@ -51,10 +47,8 @@ export function CompanyContactEdit({ companyId, contact, onCancel, onSuccess }: 
             fields={contactFields}
             mode="edit"
             values={{
-                name: contact.name,
                 role: contact.role ?? undefined,
                 email: contact.email ?? undefined,
-                phone: contact.phone ?? undefined,
                 isPrimary: contact.isPrimary,
                 isDecisionMaker: contact.isDecisionMaker,
                 notes: contact.notes ?? undefined,

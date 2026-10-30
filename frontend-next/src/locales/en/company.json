@@ -69,6 +69,8 @@
     "emailInvalid": "Invalid email",
     "phone": "Phone",
     "phonePlaceholder": "Enter phone",
+    "phoneRequired": "Phone is required",
+    "phoneInvalid": "Invalid phone number",
     "isPrimary": "Primary contact",
     "isDecisionMaker": "Decision maker",
     "primary": "Primary",

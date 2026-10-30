@@ -10,6 +10,7 @@ import { FormBuilderModal, type FormBuilderField } from "@/components/form/form-
 import { CompanyContactEdit } from "./company-contact-edit";
 import type { Contact } from "@/lib/actions/company/types";
 import { z } from "zod";
+import { isValidPhone } from "@/components/ui/phone-input";
 import { Alive } from "@/lib/api/collector";
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
@@ -44,10 +45,10 @@ export function CompanyContactsTab({ companyId }: CompanyContactsTabProps) {
 
   const createContactSchema = useMemo(() =>
     z.object({
-      name: z.string().min(1, t('nameRequired')),
+      phone: z.string().min(1, t('contacts.phoneRequired')).refine(isValidPhone, t('contacts.phoneInvalid')),
+      name: z.string().optional(),
       role: z.string().optional(),
       email: z.string().email(t('contacts.emailInvalid')).optional().or(z.literal('')),
-      phone: z.string().optional(),
       isPrimary: z.boolean().optional().default(false),
       isDecisionMaker: z.boolean().optional().default(false),
       notes: z.string().optional(),
@@ -55,10 +56,10 @@ export function CompanyContactsTab({ companyId }: CompanyContactsTabProps) {
   [t]);
 
   const createContactFields = useMemo<FormBuilderField[]>(() => [
+    { name: 'phone', label: t('contacts.phone'), type: 'phone' as const },
     { name: 'name', label: t('contacts.name'), placeholder: t('contacts.namePlaceholder') },
     { name: 'role', label: t('contacts.role'), placeholder: t('contacts.rolePlaceholder') },
     { name: 'email', label: t('contacts.email'), type: 'email', placeholder: t('contacts.emailPlaceholder') },
-    { name: 'phone', label: t('contacts.phone'), placeholder: t('contacts.phonePlaceholder') },
     { name: 'isPrimary', label: t('contacts.isPrimary'), type: 'checkbox' },
     { name: 'isDecisionMaker', label: t('contacts.isDecisionMaker'), type: 'checkbox' },
     { name: 'notes', label: t('notes'), type: 'textarea', placeholder: t('notesPlaceholder') },
@@ -68,6 +69,9 @@ export function CompanyContactsTab({ companyId }: CompanyContactsTabProps) {
     getCompanyContactColumns({ t, onEdit: handleEdit, onArchive: handleArchive }),
     [t, handleEdit, handleArchive]
   );
+
+  const contactDisplayName = (c: Contact) =>
+    c.messagingContact.name ?? c.messagingContact.phone;
 
   return (
     <>
@@ -99,7 +103,10 @@ export function CompanyContactsTab({ companyId }: CompanyContactsTabProps) {
         fields={createContactFields}
         mode="create"
         onSubmit={async (data) => {
-          const result = await Alive(() => createContactMutation.mutateAsync(data))();
+          const result = await Alive(() => createContactMutation.mutateAsync({
+            ...data,
+            phone: data.phone.replace(/\D/g, ''),
+          }))();
           return result;
         }}
         onError={(error) => {
@@ -114,7 +121,7 @@ export function CompanyContactsTab({ companyId }: CompanyContactsTabProps) {
           setIsEditDialogOpen(open);
           if (!open) setEditingContact(null);
         }}
-        title={editingContact ? `${t('edit')} ${editingContact.name}` : t('edit')}
+        title={editingContact ? `${t('edit')} ${contactDisplayName(editingContact)}` : t('edit')}
         description={t('editDescription')}
       >
         <CompanyContactEdit
@@ -138,7 +145,7 @@ export function CompanyContactsTab({ companyId }: CompanyContactsTabProps) {
           if (!open) setArchivingContact(null);
         }}
         title={t('archiveConfirm')}
-        description={archivingContact ? `${t('archiveConfirmDescription')} "${archivingContact.name}"?` : ''}
+        description={archivingContact ? `${t('archiveConfirmDescription')} "${contactDisplayName(archivingContact)}"?` : ''}
       >
         <div className="flex gap-2 justify-end">
           <Button

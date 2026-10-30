@@ -1,13 +1,17 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { I18nService } from 'nestjs-i18n';
-import type { Contact } from '@prisma/client';
+import type { CompanyContact, MessagingContact } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { LoggingService } from '../../logging/logging.service';
 import { LogActions } from 'src/domain/logging/log-actions';
 import { ResourceAccessService } from 'src/common/infrastructure/resource-access/resource-access.service';
 import type { AuthenticatedUser } from 'src/common/types/auth.types';
 
-/** Arquiva um contato da empresa (nada é apagado); nega antes de ler ou escrever quem não tem Membership nela. */
+export type CompanyContactWithMessaging = CompanyContact & {
+  messagingContact: MessagingContact;
+};
+
+/** Arquiva um vínculo empresa-contato (nada é apagado); nega antes de ler ou escrever quem não tem Membership nela. */
 @Injectable()
 export class ArchiveCompanyContactUseCase {
   constructor(
@@ -21,11 +25,12 @@ export class ArchiveCompanyContactUseCase {
     companyId: string,
     contactId: string,
     user: AuthenticatedUser,
-  ): Promise<Contact> {
+  ): Promise<CompanyContactWithMessaging> {
     await this.resourceAccess.assertCanRead(user, { companyId });
 
-    const found = await this.prisma.contact.findFirst({
+    const found = await this.prisma.companyContact.findFirst({
       where: { id: contactId, companyId },
+      include: { messagingContact: true },
     });
     if (!found) {
       throw new NotFoundException(this.i18n.t('company.contact_not_found'));
@@ -33,9 +38,10 @@ export class ArchiveCompanyContactUseCase {
 
     const archived = found.archivedAt
       ? found
-      : await this.prisma.contact.update({
+      : await this.prisma.companyContact.update({
           where: { id: contactId },
           data: { archivedAt: new Date() },
+          include: { messagingContact: true },
         });
 
     if (!found.archivedAt) {
@@ -43,7 +49,7 @@ export class ArchiveCompanyContactUseCase {
         {
           module: 'COMPANY',
           action: LogActions.ARCHIVE,
-          message: `Contato arquivado: ${found.name}`,
+          message: `Contato arquivado: ${found.messagingContact.name ?? found.messagingContact.phone}`,
           metadata: { companyId, contactId },
         },
         user.id,

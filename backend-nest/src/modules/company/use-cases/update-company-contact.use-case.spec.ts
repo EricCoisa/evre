@@ -15,7 +15,7 @@ const user: AuthenticatedUser = {
 };
 
 const mockPrisma = {
-  contact: { findFirst: vi.fn(), update: vi.fn() },
+  companyContact: { findFirst: vi.fn(), update: vi.fn() },
 };
 const mockI18n = { t: vi.fn().mockReturnValue('mensagem') };
 const mockLogging = { create: vi.fn() };
@@ -47,45 +47,40 @@ describe('UpdateCompanyContactUseCase', () => {
     );
 
     await expect(
-      useCase.execute('company-1', 'contact-1', { name: 'x' } as never, user),
+      useCase.execute('company-1', 'contact-1', { role: 'CEO' } as never, user),
     ).rejects.toThrow(NotFoundException);
-    expect(mockPrisma.contact.findFirst).not.toHaveBeenCalled();
+    expect(mockPrisma.companyContact.findFirst).not.toHaveBeenCalled();
   });
 
   it('lança NotFoundException quando o contato não pertence à empresa informada', async () => {
     mockResourceAccess.assertCanRead.mockResolvedValue(undefined);
-    mockPrisma.contact.findFirst.mockResolvedValue(null);
+    mockPrisma.companyContact.findFirst.mockResolvedValue(null);
 
     await expect(
-      useCase.execute('company-1', 'contact-de-outra-empresa', {
-        name: 'x',
-      } as never, user),
+      useCase.execute('company-1', 'contact-de-outra-empresa', { role: 'CEO' } as never, user),
     ).rejects.toThrow(NotFoundException);
-    expect(mockPrisma.contact.update).not.toHaveBeenCalled();
+    expect(mockPrisma.companyContact.update).not.toHaveBeenCalled();
   });
 
-  it('atualiza o contato e registra no audit trail', async () => {
+  it('atualiza o vínculo e registra no audit trail', async () => {
     mockResourceAccess.assertCanRead.mockResolvedValue(undefined);
-    mockPrisma.contact.findFirst.mockResolvedValue({
-      id: 'contact-1',
+    mockPrisma.companyContact.findFirst.mockResolvedValue({
+      id: 'cc-1',
       companyId: 'company-1',
-      name: 'Antigo',
+      messagingContact: { id: 'mc-1', phone: '5511999990000', name: 'Fulano' },
     });
-    mockPrisma.contact.update.mockResolvedValue({
-      id: 'contact-1',
-      name: 'Novo',
+    mockPrisma.companyContact.update.mockResolvedValue({
+      id: 'cc-1',
+      role: 'CEO',
+      messagingContact: { id: 'mc-1', phone: '5511999990000', name: 'Fulano' },
     });
 
-    await useCase.execute(
-      'company-1',
-      'contact-1',
-      { name: 'Novo' } as never,
-      user,
-    );
+    await useCase.execute('company-1', 'cc-1', { role: 'CEO' } as never, user);
 
-    expect(mockPrisma.contact.update).toHaveBeenCalledWith({
-      where: { id: 'contact-1' },
-      data: { name: 'Novo' },
+    expect(mockPrisma.companyContact.update).toHaveBeenCalledWith({
+      where: { id: 'cc-1' },
+      data: { role: 'CEO' },
+      include: { messagingContact: true },
     });
     expect(mockLogging.create).toHaveBeenCalledWith(
       expect.objectContaining({ module: 'COMPANY' }),

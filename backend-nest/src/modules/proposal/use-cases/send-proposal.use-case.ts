@@ -66,15 +66,16 @@ export class SendProposalUseCase {
     }
 
     const contact = proposal.companyId
-      ? await this.prisma.contact.findFirst({
+      ? await this.prisma.companyContact.findFirst({
           where: {
             companyId: proposal.companyId,
             isPrimary: true,
             archivedAt: null,
           },
+          include: { messagingContact: true },
         })
       : null;
-    const phone = input.phone ?? contact?.phone ?? undefined;
+    const phone = input.phone ?? contact?.messagingContact.phone ?? undefined;
     if (!phone) {
       throw new BadRequestException(this.i18n.t('proposal.send_no_contact'));
     }
@@ -102,8 +103,8 @@ export class SendProposalUseCase {
             ? { value: formatMoney(version.totalCents, version.currency) }
             : {}),
         },
-        ...(contact?.name
-          ? { reserved: { [ReservedVariableKey.FIRST_NAME]: contact.name } }
+        ...(contact?.messagingContact.name
+          ? { reserved: { [ReservedVariableKey.FIRST_NAME]: contact.messagingContact.name } }
           : {}),
         buttons: {
           open: version.publicToken as string,

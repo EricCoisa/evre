@@ -12,7 +12,7 @@ model Company {
   updatedAt  DateTime  @updatedAt
 
   memberships Membership[]
-  contacts    Contact[]
+  contacts    CompanyContact[]
   proposals   Proposal[]
 
   @@index([name])
@@ -21,24 +21,27 @@ model Company {
   @@schema("public")
 }
 
-/// Pessoa de contato de uma empresa. Sem tela própria — vive como aba da empresa.
-model Contact {
-  id              String    @id @default(uuid())
-  companyId       String
-  name            String
-  role            String?
-  email           String?
-  phone           String?
-  isPrimary       Boolean   @default(false)
-  isDecisionMaker Boolean   @default(false)
-  notes           String?   @db.Text
-  archivedAt      DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+/// Vínculo entre um MessagingContact e uma empresa. Guarda só metadata da relação (cargo, flags).
+/// Identidade (nome, telefone) fica no MessagingContact.
+model CompanyContact {
+  id                 String    @id @default(uuid())
+  companyId          String
+  messagingContactId String
+  role               String?
+  email              String?
+  isPrimary          Boolean   @default(false)
+  isDecisionMaker    Boolean   @default(false)
+  notes              String?   @db.Text
+  archivedAt         DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company          Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  messagingContact MessagingContact @relation(fields: [messagingContactId], references: [id], onDelete: Restrict)
 
+  @@unique([companyId, messagingContactId])
   @@index([companyId])
-  @@map("contacts")
+  @@index([messagingContactId])
+  @@map("company_contacts")
   @@schema("public")
 }

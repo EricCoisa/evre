@@ -16,12 +16,15 @@ interface GetCompanyContactColumnsProps {
 export function getCompanyContactColumns({ t, onEdit, onArchive }: GetCompanyContactColumnsProps): ColumnDef<Contact>[] {
   return [
     {
-      accessorKey: "name",
+      id: "name",
+      accessorFn: (row) => row.messagingContact.name ?? row.messagingContact.phone,
       header: () => <TableHead>{t("contacts.name")}</TableHead>,
       cell: ({ row }) => (
         <DataCell>
           <div className="flex flex-col">
-            <span className="font-medium">{row.getValue("name")}</span>
+            <span className="font-medium">
+              {row.original.messagingContact.name ?? row.original.messagingContact.phone}
+            </span>
             {row.original.role && (
               <span className="text-xs text-muted-foreground">{row.original.role}</span>
             )}
@@ -37,9 +40,10 @@ export function getCompanyContactColumns({ t, onEdit, onArchive }: GetCompanyCon
       meta: { mobileOrder: 2, mobileWidth: "half" },
     },
     {
-      accessorKey: "phone",
+      id: "phone",
+      accessorFn: (row) => row.messagingContact.phone,
       header: () => <TableHead>{t("contacts.phone")}</TableHead>,
-      cell: ({ row }) => <DataCell>{row.getValue("phone") || "-"}</DataCell>,
+      cell: ({ row }) => <DataCell>{row.original.messagingContact.phone}</DataCell>,
       meta: { mobileOrder: 3, mobileWidth: "half" },
     },
     {

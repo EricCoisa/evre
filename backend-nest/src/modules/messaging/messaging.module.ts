@@ -170,6 +170,7 @@ import { MessagingRouteCeiling } from './messaging.route-ceiling';
     MessagingTemplateService,
     MessagingConnectionService,
     ButtonHandlerRegistry,
+    CreateContactUseCase,
   ],
 })
 export class MessagingModule {}

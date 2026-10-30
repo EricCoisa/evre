@@ -13,7 +13,7 @@ const user: AuthenticatedUser = {
 };
 
 const mockPrisma = {
-  contact: { findMany: vi.fn() },
+  companyContact: { findMany: vi.fn() },
 };
 const mockResourceAccess = { assertCanRead: vi.fn() };
 
@@ -41,21 +41,22 @@ describe('ListCompanyContactsUseCase', () => {
     await expect(useCase.execute('company-1', user)).rejects.toThrow(
       NotFoundException,
     );
-    expect(mockPrisma.contact.findMany).not.toHaveBeenCalled();
+    expect(mockPrisma.companyContact.findMany).not.toHaveBeenCalled();
   });
 
-  it('lista só os contatos ativos da empresa', async () => {
+  it('lista só os contatos ativos da empresa com dados do MessagingContact', async () => {
     mockResourceAccess.assertCanRead.mockResolvedValue(undefined);
-    mockPrisma.contact.findMany.mockResolvedValue([]);
+    mockPrisma.companyContact.findMany.mockResolvedValue([]);
 
     await useCase.execute('company-1', user);
 
     expect(mockResourceAccess.assertCanRead).toHaveBeenCalledWith(user, {
       companyId: 'company-1',
     });
-    expect(mockPrisma.contact.findMany).toHaveBeenCalledWith(
+    expect(mockPrisma.companyContact.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { companyId: 'company-1', archivedAt: null },
+        include: { messagingContact: true },
       }),
     );
   });

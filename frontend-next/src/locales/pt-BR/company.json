@@ -69,6 +69,8 @@
     "emailInvalid": "E-mail inválido",
     "phone": "Telefone",
     "phonePlaceholder": "Digite o telefone",
+    "phoneRequired": "Telefone é obrigatório",
+    "phoneInvalid": "Número de telefone inválido",
     "isPrimary": "Contato principal",
     "isDecisionMaker": "Tomador de decisão",
     "primary": "Principal",
