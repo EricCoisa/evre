@@ -1,5 +1,5 @@
 "use client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, type QueryKey } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import {
   getCompanys, createCompany, updateCompany, archiveCompany,
@@ -33,18 +33,28 @@ export function useCreateCompany() {
   });
 }
 
-export function useUpdateCompany() {
+/** Invalida as chaves passadas e força um novo render do servidor — `company/[id]` é Server
+ * Component e passa o registro como prop estática, então `invalidateQueries` sozinho é no-op
+ * sobre o que a página já renderizou. */
+function useCompanySync() {
   const queryClient = useQueryClient();
   const router = useRouter();
+
+  return (keys: QueryKey[]) => {
+    keys.forEach((key) => queryClient.invalidateQueries({ queryKey: key }));
+    router.refresh();
+  };
+}
+
+export function useUpdateCompany() {
+  const sync = useCompanySync();
   const { t } = useTranslation('company');
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateCompanyDto }) =>
       updateCompany(id, data),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['companys'] });
-      queryClient.invalidateQueries({ queryKey: ['company', variables.id] });
-      router.refresh();
+      sync([['companys'], ['company', variables.id]]);
       toast.success(t('updatedSuccess'));
     }
   });

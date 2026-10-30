@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/use-translation';
@@ -52,6 +52,19 @@ export function useProposal(id: string) {
   });
 }
 
+/** Invalida as chaves passadas e força um novo render do servidor — `proposal/[id]` é Server
+ * Component e passa o registro como prop estática, então `invalidateQueries` sozinho é no-op
+ * sobre o que a página já renderizou. */
+function useProposalSync() {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  return (keys: QueryKey[]) => {
+    keys.forEach((key) => queryClient.invalidateQueries({ queryKey: key }));
+    router.refresh();
+  };
+}
+
 export function useCreateProposal() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -63,15 +76,12 @@ export function useCreateProposal() {
 }
 
 export function useUpdateProposal() {
-  const queryClient = useQueryClient();
-  const router = useRouter();
+  const sync = useProposalSync();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateProposalDto }) =>
       Alive(() => updateProposal(id, data))(),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['proposals'] });
-      queryClient.invalidateQueries({ queryKey: ['proposal', variables.id] });
-      router.refresh();
+      sync([['proposals'], ['proposal', variables.id]]);
     },
   });
 }
@@ -101,41 +111,34 @@ export function useDuplicateProposal() {
 }
 
 export function useUpdateProposalLayout() {
-  const queryClient = useQueryClient();
-  const router = useRouter();
+  const sync = useProposalSync();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateProposalLayoutDto }) =>
       Alive(() => updateProposalLayout(id, data))(),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['proposal', variables.id] });
-      router.refresh();
+      sync([['proposal', variables.id]]);
     },
   });
 }
 
 export function useUpdateProposalTerms() {
-  const queryClient = useQueryClient();
-  const router = useRouter();
+  const sync = useProposalSync();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateProposalTermsDto }) =>
       Alive(() => updateProposalTerms(id, data))(),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['proposal', variables.id] });
-      router.refresh();
+      sync([['proposal', variables.id]]);
     },
   });
 }
 
 export function useUpdateProposalStatus() {
-  const queryClient = useQueryClient();
-  const router = useRouter();
+  const sync = useProposalSync();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateProposalStatusDto }) =>
       Alive(() => updateProposalStatus(id, data))(),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['proposals'] });
-      queryClient.invalidateQueries({ queryKey: ['proposal', variables.id] });
-      router.refresh();
+      sync([['proposals'], ['proposal', variables.id]]);
     },
   });
 }
@@ -152,14 +155,11 @@ export function useProposalVersions(id: string) {
 /** Publicar deriva o token novo e revoga o anterior no servidor — por isso invalida tanto a
  * proposta (status pode virar SENT) quanto a lista de versões. */
 export function usePublishProposal() {
-  const queryClient = useQueryClient();
-  const router = useRouter();
+  const sync = useProposalSync();
   return useMutation({
     mutationFn: (id: string) => Alive(() => publishProposal(id))(),
     onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: ['proposal', id] });
-      queryClient.invalidateQueries({ queryKey: ['proposal', id, 'versions'] });
-      router.refresh();
+      sync([['proposal', id], ['proposal', id, 'versions']]);
     },
   });
 }
@@ -178,15 +178,12 @@ export function useRevokeProposalPublication() {
 
 /** Idempotente no servidor — registrar o mesmo aceite duas vezes não cria uma segunda decisão. */
 export function useAcceptProposalOffline() {
-  const queryClient = useQueryClient();
-  const router = useRouter();
+  const sync = useProposalSync();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: AcceptProposalOfflineDto }) =>
       Alive(() => acceptProposalOffline(id, data))(),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['proposal', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['proposal', variables.id, 'versions'] });
-      router.refresh();
+      sync([['proposal', variables.id], ['proposal', variables.id, 'versions']]);
     },
   });
 }
