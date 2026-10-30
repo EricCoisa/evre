@@ -18,6 +18,7 @@
   "not_found": "Company not found",
   "cannot_archive_with_active_proposals": "Cannot archive: the company has a proposal in progress",
   "contact_not_found": "Contact not found",
+  "contact_already_linked": "This contact is already linked to this company",
   "contacts": {
     "list": {
       "title": "List company contacts"

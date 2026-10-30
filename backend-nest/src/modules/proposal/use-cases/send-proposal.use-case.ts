@@ -26,12 +26,6 @@ export interface SendProposalOutput {
   shortUrl: string;
 }
 
-/** Formata centavos com a moeda da versão — mesma regra de `ProposalVersion`, nunca float. */
-function formatMoney(cents: number, currency: string): string {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(
-    cents / 100,
-  );
-}
 
 /** Fecha o ciclo "publicou → manda": monta/reusa o link curto e envia o template `PROPOSAL_SENT` por
  * WhatsApp. `trySendTemplate` nunca lança — canal indisponível grava `ProposalSend.succeeded: false`
@@ -85,23 +79,12 @@ export class SendProposalUseCase {
       createdById: user.id,
     });
 
-    const company = proposal.companyId
-      ? await this.prisma.company.findUnique({
-          where: { id: proposal.companyId },
-          select: { name: true },
-        })
-      : null;
-
     const messageId = await this.messaging.trySendTemplate(
       {
         key: PROPOSAL_SENT_TEMPLATE_KEY,
         phone,
         values: {
-          company: company?.name ?? '',
           title: proposal.name,
-          ...(version.totalCents != null
-            ? { value: formatMoney(version.totalCents, version.currency) }
-            : {}),
         },
         ...(contact?.messagingContact.name
           ? { reserved: { [ReservedVariableKey.FIRST_NAME]: contact.messagingContact.name } }

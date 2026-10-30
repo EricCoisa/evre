@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConflictException, NotFoundException } from '@nestjs/common';
+import { I18nService } from 'nestjs-i18n';
 import { CreateCompanyContactUseCase } from './create-company-contact.use-case';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { LoggingService } from '../../logging/logging.service';
@@ -15,9 +16,10 @@ const user: AuthenticatedUser = {
 };
 
 const mockPrisma = {
-  messagingContact: { findUniqueOrThrow: vi.fn() },
-  companyContact: { create: vi.fn() },
+  messagingContact: { findUnique: vi.fn() },
+  companyContact: { findUnique: vi.fn(), create: vi.fn() },
 };
+const mockI18n = { t: vi.fn().mockReturnValue('mensagem') };
 const mockLogging = { create: vi.fn() };
 const mockResourceAccess = { assertCanRead: vi.fn() };
 const mockCreateMessagingContact = { execute: vi.fn() };
@@ -30,6 +32,7 @@ describe('CreateCompanyContactUseCase', () => {
       providers: [
         CreateCompanyContactUseCase,
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: I18nService, useValue: mockI18n },
         { provide: LoggingService, useValue: mockLogging },
         { provide: ResourceAccessService, useValue: mockResourceAccess },
         { provide: CreateContactUseCase, useValue: mockCreateMessagingContact },
@@ -46,34 +49,26 @@ describe('CreateCompanyContactUseCase', () => {
     await expect(
       useCase.execute('company-1', { phone: '5511999990000' } as never, user),
     ).rejects.toThrow(NotFoundException);
+    expect(mockPrisma.messagingContact.findUnique).not.toHaveBeenCalled();
+    expect(mockPrisma.companyContact.create).not.toHaveBeenCalled();
+  });
+
+  it('lança ConflictException quando o vínculo já existe', async () => {
+    mockResourceAccess.assertCanRead.mockResolvedValue(undefined);
+    mockPrisma.messagingContact.findUnique.mockResolvedValue({ id: 'mc-1' });
+    mockPrisma.companyContact.findUnique.mockResolvedValue({ id: 'cc-existente' });
+
+    await expect(
+      useCase.execute('company-1', { phone: '5511999990000' } as never, user),
+    ).rejects.toThrow(ConflictException);
     expect(mockCreateMessagingContact.execute).not.toHaveBeenCalled();
     expect(mockPrisma.companyContact.create).not.toHaveBeenCalled();
   });
 
-  it('cria o MC pelo fluxo canônico e vincula à empresa', async () => {
+  it('encontra MC existente e vincula à empresa sem chamar createMessagingContact', async () => {
     mockResourceAccess.assertCanRead.mockResolvedValue(undefined);
-    mockCreateMessagingContact.execute.mockResolvedValue({ id: 'mc-1', phone: '5511999990000', name: 'Fulano' });
-    mockPrisma.companyContact.create.mockResolvedValue({
-      id: 'cc-1',
-      companyId: 'company-1',
-      messagingContactId: 'mc-1',
-      messagingContact: { id: 'mc-1', phone: '5511999990000', name: 'Fulano' },
-    });
-
-    await useCase.execute('company-1', { phone: '5511999990000', name: 'Fulano' } as never, user);
-
-    expect(mockCreateMessagingContact.execute).toHaveBeenCalledWith({ phone: '5511999990000', name: 'Fulano' });
-    expect(mockPrisma.companyContact.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ companyId: 'company-1', messagingContactId: 'mc-1' }),
-      }),
-    );
-  });
-
-  it('usa MC existente (ConflictException) e vincula à empresa', async () => {
-    mockResourceAccess.assertCanRead.mockResolvedValue(undefined);
-    mockCreateMessagingContact.execute.mockRejectedValue(new ConflictException('exists'));
-    mockPrisma.messagingContact.findUniqueOrThrow.mockResolvedValue({ id: 'mc-existente' });
+    mockPrisma.messagingContact.findUnique.mockResolvedValue({ id: 'mc-existente' });
+    mockPrisma.companyContact.findUnique.mockResolvedValue(null);
     mockPrisma.companyContact.create.mockResolvedValue({
       id: 'cc-1',
       companyId: 'company-1',
@@ -83,11 +78,37 @@ describe('CreateCompanyContactUseCase', () => {
 
     await useCase.execute('company-1', { phone: '5511999990000' } as never, user);
 
-    expect(mockPrisma.messagingContact.findUniqueOrThrow).toHaveBeenCalled();
+    expect(mockCreateMessagingContact.execute).not.toHaveBeenCalled();
     expect(mockPrisma.companyContact.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ messagingContactId: 'mc-existente' }),
+        data: expect.objectContaining({ companyId: 'company-1', messagingContactId: 'mc-existente' }),
       }),
+    );
+  });
+
+  it('cria o MC pelo fluxo canônico quando não existe e vincula à empresa', async () => {
+    mockResourceAccess.assertCanRead.mockResolvedValue(undefined);
+    mockPrisma.messagingContact.findUnique.mockResolvedValue(null);
+    mockCreateMessagingContact.execute.mockResolvedValue({ id: 'mc-novo', phone: '5511999990000', name: 'Fulano' });
+    mockPrisma.companyContact.findUnique.mockResolvedValue(null);
+    mockPrisma.companyContact.create.mockResolvedValue({
+      id: 'cc-1',
+      companyId: 'company-1',
+      messagingContactId: 'mc-novo',
+      messagingContact: { id: 'mc-novo', phone: '5511999990000', name: 'Fulano' },
+    });
+
+    await useCase.execute('company-1', { phone: '5511999990000', name: 'Fulano' } as never, user);
+
+    expect(mockCreateMessagingContact.execute).toHaveBeenCalledWith({ phone: '5511999990000', name: 'Fulano' });
+    expect(mockPrisma.companyContact.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ companyId: 'company-1', messagingContactId: 'mc-novo' }),
+      }),
+    );
+    expect(mockLogging.create).toHaveBeenCalledWith(
+      expect.objectContaining({ module: 'COMPANY' }),
+      user.id,
     );
   });
 });

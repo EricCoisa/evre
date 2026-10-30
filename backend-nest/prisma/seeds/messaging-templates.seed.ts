@@ -103,4 +103,56 @@ export async function seedMessagingTemplates(prisma: PrismaClient) {
     },
   });
   console.log('✅ Messaging template VERIFICATION_CODE created');
+
+  // PROPOSAL_SENT: enviado por SendProposalUseCase (módulo proposal).
+  // Variável custom: title (obrigatória).
+  // Reservada: first_name — cai no fallback 'cliente' sem contato cadastrado.
+  // Botão open: URL, sufixo = publicToken (credencial pública do link, não segredo interno).
+  // Botão opt_out: QUICK_REPLY reservado.
+  const frontendUrl = 'https://evre.com.br';
+  const proposalSentVariables = [
+    { name: 'title', type: 'STRING', required: true },
+    { name: 'first_name', type: 'STRING', required: false, reserved: true },
+  ];
+  const proposalSentTypeButtons = [
+    { key: 'open', kind: 'URL', urlBase: `${frontendUrl}/p/`, required: true },
+    { key: 'opt_out', kind: 'QUICK_REPLY', reserved: true },
+  ];
+  const proposalSentType = await prisma.messagingTemplateType.upsert({
+    where: { key: 'PROPOSAL_SENT' },
+    update: {
+      variables: proposalSentVariables,
+      buttons: proposalSentTypeButtons,
+      isSystem: true,
+    },
+    create: {
+      key: 'PROPOSAL_SENT',
+      name: 'Proposta enviada',
+      variables: proposalSentVariables,
+      buttons: proposalSentTypeButtons,
+      isSystem: true,
+    },
+  });
+  await prisma.messagingTemplate.upsert({
+    where: { key_language: { key: 'PROPOSAL_SENT', language: 'pt-BR' } },
+    update: { isSystem: true },
+    create: {
+      key: 'PROPOSAL_SENT',
+      language: 'pt-BR',
+      category: 'MARKETING',
+      typeId: proposalSentType.id,
+      body: 'Olá {{ first_name }}! A proposta *{{ title }}* está disponível para você.\n\nClique no link abaixo para visualizar todos os detalhes.',
+      buttons: [
+        {
+          kind: 'URL',
+          label: 'Ver proposta',
+          url: `${frontendUrl}/p/{{ open }}`,
+          slot: 'open',
+        },
+        { kind: 'QUICK_REPLY', label: 'Parar de receber', slot: 'opt_out' },
+      ],
+      isSystem: true,
+    },
+  });
+  console.log('✅ Messaging template PROPOSAL_SENT created');
 }

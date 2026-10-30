@@ -1,4 +1,5 @@
 import { ConflictException, Injectable } from '@nestjs/common';
+import { I18nService } from 'nestjs-i18n';
 import type { CompanyContact, MessagingContact } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { LoggingService } from '../../logging/logging.service';
@@ -18,6 +19,7 @@ export type CompanyContactWithMessaging = CompanyContact & {
 export class CreateCompanyContactUseCase {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly i18n: I18nService,
     private readonly loggingService: LoggingService,
     private readonly resourceAccess: ResourceAccessService,
     private readonly createMessagingContact: CreateContactUseCase,
@@ -32,21 +34,19 @@ export class CreateCompanyContactUseCase {
 
     const phone = normalizePhone(dto.phone);
 
-    // Usa o fluxo canônico de criação de MC (normalização, regras); se já existe, apenas busca.
-    let mcId: string;
-    try {
-      const created = await this.createMessagingContact.execute({
-        phone: dto.phone,
-        name: dto.name,
-      });
-      mcId = created.id;
-    } catch (e) {
-      if (!(e instanceof ConflictException)) throw e;
-      const existing = await this.prisma.messagingContact.findUniqueOrThrow({
-        where: { phone },
-        select: { id: true },
-      });
-      mcId = existing.id;
+    const existingMc = await this.prisma.messagingContact.findUnique({
+      where: { phone },
+      select: { id: true },
+    });
+    const mcId = existingMc?.id
+      ?? (await this.createMessagingContact.execute({ phone: dto.phone, name: dto.name })).id;
+
+    const existing = await this.prisma.companyContact.findUnique({
+      where: { companyId_messagingContactId: { companyId, messagingContactId: mcId } },
+      select: { id: true },
+    });
+    if (existing) {
+      throw new ConflictException(this.i18n.t('company.contact_already_linked'));
     }
 
     const { phone: _phone, name: _name, ...contactFields } = dto;
