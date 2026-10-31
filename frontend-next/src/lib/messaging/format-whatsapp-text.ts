@@ -5,24 +5,38 @@ export type FormattedPart =
   | { type: 'bold'; parts: FormattedPart[] }
   | { type: 'italic'; parts: FormattedPart[] }
   | { type: 'strikethrough'; parts: FormattedPart[] }
-  | { type: 'code'; text: string };
+  | { type: 'code'; text: string }
+  | { type: 'sized'; size: string; parts: FormattedPart[] };
 
 /** Transforma texto com formatação WhatsApp em estrutura tipada, processando code, bold, italic e strikethrough em ordem. */
 export function parseWhatsAppFormat(text: string): FormattedPart[] {
-  // Code blocks: ```...``` (não permite aninhamento)
-  const withCode = text.split(/(```[^`]*?```)/);
+  // Font-size markers: [fs:text-lg]...[/fs]
+  const withFontSize = text.split(/(\[fs:[^\]]+\].*?\[\/fs\])/);
 
   const parts: FormattedPart[] = [];
-  for (const part of withCode) {
-    if (part.startsWith('```') && part.endsWith('```')) {
-      const code = part.slice(3, -3).trim();
-      parts.push({ type: 'code', text: code });
-    } else if (part) {
-      // Processar formatação em bold, italic, strikethrough
-      parts.push(...parseInlineFormat(part));
+  for (const segment of withFontSize) {
+    const fsMatch = /^\[fs:([^\]]+)\](.*)\[\/fs\]$/.exec(segment);
+    if (fsMatch) {
+      parts.push({ type: 'sized', size: fsMatch[1], parts: parseCodeSegments(fsMatch[2]) });
+    } else if (segment) {
+      parts.push(...parseCodeSegments(segment));
     }
   }
 
+  return parts;
+}
+
+function parseCodeSegments(text: string): FormattedPart[] {
+  // Code blocks: ```...``` (não permite aninhamento)
+  const withCode = text.split(/(```[^`]*?```)/);
+  const parts: FormattedPart[] = [];
+  for (const part of withCode) {
+    if (part.startsWith('```') && part.endsWith('```')) {
+      parts.push({ type: 'code', text: part.slice(3, -3).trim() });
+    } else if (part) {
+      parts.push(...parseInlineFormat(part));
+    }
+  }
   return parts;
 }
 

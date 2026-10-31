@@ -419,6 +419,7 @@ function ContentRichField({
   metaName,
   compact,
   variables,
+  showFontSize,
   onChange,
 }: {
   label: React.ReactNode;
@@ -426,6 +427,7 @@ function ContentRichField({
   metaName: string;
   compact?: boolean;
   variables?: RichTextVariableOption[];
+  showFontSize?: boolean;
   onChange: (value: unknown) => void;
 }) {
   const { t } = useTranslation('page-builder');
@@ -439,6 +441,7 @@ function ContentRichField({
         ariaLabel={metaName}
         variables={variables}
         variableButtonLabel={t('editor.insertVariable')}
+        showFontSize={showFontSize}
         formatLabels={{
           bold: t('editor.formatBold', { defaultValue: 'Negrito (*texto*)' }),
           italic: t('editor.formatItalic', { defaultValue: 'Itálico (_texto_)' }),
@@ -649,6 +652,7 @@ function PropField({
         metaName={meta.name}
         compact={meta.name !== 'content'}
         variables={variables}
+        showFontSize={!!meta.showFontSize}
         onChange={onChange}
       />
     );

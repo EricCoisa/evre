@@ -788,6 +788,12 @@ function renderPart(part: FormattedPart, index: number): React.ReactNode {
           {part.text}
         </code>
       );
+    case 'sized':
+      return (
+        <span key={index} className={part.size}>
+          {part.parts.map((p, i) => renderPart(p, i))}
+        </span>
+      );
   }
 }
 

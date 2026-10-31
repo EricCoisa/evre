@@ -312,6 +312,9 @@ importers:
       '@lexical/react':
         specifier: 0.41.0
         version: 0.41.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(yjs@13.6.31)
+      '@lexical/selection':
+        specifier: 0.41.0
+        version: 0.41.0
       '@lottiefiles/dotlottie-react':
         specifier: ^0.19.12
         version: 0.19.12(react@19.2.0)

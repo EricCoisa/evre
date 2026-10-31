@@ -5,6 +5,8 @@ export interface BlockPropMeta {
   name: string;
   type: 'string' | 'number' | 'boolean' | 'string[]';
   required: boolean;
+  /** Quando `true`, exibe picker de tamanho de fonte no campo RichText deste prop. */
+  showFontSize?: boolean;
 }
 
 export interface BlockMeta {
@@ -88,7 +90,7 @@ export const BLOCK_META = {
     accepts: ['list', 'count', 'series'],
     optionalSource: true,
     inline: true,
-    props: [{ name: 'content', type: 'string', required: true }],
+    props: [{ name: 'content', type: 'string', required: true, showFontSize: true }],
   },
   'button.action': {
     profiles: ['dashboard', 'proposal'],
