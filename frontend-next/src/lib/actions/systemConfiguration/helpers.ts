@@ -17,7 +17,7 @@ export function isConfigValuePresent(val: unknown): boolean {
     'minioadmin',
     'http://localhost:8333',
     'http://localhost:8333/template',
-    'http://localhost:3002',
+    'http://localhost:3000',
     '000-000-000',
   ];
 

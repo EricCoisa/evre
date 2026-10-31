@@ -346,7 +346,7 @@ export async function seedSystemConfigurations(prisma: PrismaClient) {
     'http://localhost:8333/template',
     'minioadmin',
     'no-reply@example.com',
-    'http://localhost:3002',
+    'http://localhost:3000',
   ];
 
   for (const placeholder of legacyPlaceholders) {

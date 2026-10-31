@@ -80,7 +80,7 @@ function SupportConfigDialog({
       name: 'supportUrl',
       label: t('systemconfig_suporturl'),
       description: t('systemconfig_suporturl_desc'),
-      placeholder: 'http://localhost:3002',
+      placeholder: 'http://localhost:3000',
     },
     {
       name: 'systemId',

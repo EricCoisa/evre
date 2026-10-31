@@ -54,11 +54,32 @@ export class PageBuilderBridgeService {
       );
       return data;
     } catch (err) {
-      throw new Error(
-        err instanceof Error
-          ? err.message
-          : 'Falha ao consultar o catálogo de blocos do PageBuilder',
-      );
+      throw new Error(extractBridgeErrorMessage(err, this.baseUrl()));
     }
   }
+}
+
+function extractBridgeErrorMessage(err: unknown, baseUrl: string): string {
+  if (typeof err === 'object' && err !== null) {
+    const maybeAxios = err as {
+      response?: { data?: { error?: string; message?: string } };
+      code?: string;
+      message?: string;
+    };
+    if (typeof maybeAxios.response?.data?.message === 'string') {
+      return maybeAxios.response.data.message;
+    }
+    if (typeof maybeAxios.response?.data?.error === 'string') {
+      return maybeAxios.response.data.error;
+    }
+    if (maybeAxios.code) {
+      return `Falha ao conectar no frontend (${maybeAxios.code} em ${baseUrl})`;
+    }
+    if (maybeAxios.message && maybeAxios.message.trim() !== '') {
+      return maybeAxios.message;
+    }
+  }
+  return err instanceof Error && err.message.trim() !== ''
+    ? err.message
+    : `Falha ao consultar o catálogo de blocos do PageBuilder em ${baseUrl}`;
 }

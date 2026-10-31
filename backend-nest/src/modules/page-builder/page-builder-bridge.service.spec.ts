@@ -74,4 +74,13 @@ describe('PageBuilderBridgeService', () => {
       'Falha ao consultar o catálogo de blocos do PageBuilder',
     );
   });
+
+  it('devolve erro amigável quando conexão é recusada (ECONNREFUSED com mensagem vazia)', async () => {
+    const connRefused = Object.assign(new Error(''), { code: 'ECONNREFUSED' });
+    vi.mocked(axios.get).mockRejectedValue(connRefused);
+
+    await expect(service.describeSchema()).rejects.toThrow(
+      'Falha ao conectar no frontend (ECONNREFUSED em http://localhost:3000)',
+    );
+  });
 });
