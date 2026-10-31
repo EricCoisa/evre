@@ -23,6 +23,78 @@ const INLINE_SHAPES = {
   series: '{ data: { date: string, value: number }[] }',
 } as const;
 
+const EXPECTED_OUTPUT_FORMAT = {
+  'role-filtered': {
+    v: 1,
+    blocks: [
+      {
+        id: 'string_id_unico (ex: b1)',
+        type: 'tipo_do_bloco (escolhido do catalogo blocks)',
+        span: 'numero de 1 a 12 (largura: 12 = 100%, 6 = 50%, 4 = 33%)',
+        rowSpan: 'numero de 1 a 8 (padrao 4 para tabelas e graficos)',
+        props: {
+          exemplo_prop: 'valor conforme tipos declarados em props do bloco',
+        },
+        data: {
+          source: 'chave_exata_da_fonte_em_sources',
+          params: {
+            limite_ou_filtro: 'valor conforme params aceitos pela fonte',
+          },
+        },
+        className: 'classes_tailwind_da_lista_classNames (opcional)',
+        children: [
+          'apenas se container: true (ex: group). Maximo 1 nivel de aninhamento.',
+        ],
+      },
+    ],
+  },
+  'inline-only': {
+    v: 1,
+    blocks: [
+      {
+        id: 'string_id_unico (ex: b1)',
+        type: 'tipo_do_bloco (escolhido do catalogo blocks)',
+        span: 'numero de 1 a 12 (largura: 12 = 100%, 6 = 50%, 4 = 33%)',
+        rowSpan: 'numero de 1 a 8',
+        props: {
+          exemplo_prop: 'valor conforme tipos declarados em props do bloco',
+        },
+        data: {
+          inline: {
+            data: [
+              'array de objetos com o dado colado (para list ou series conforme inlineShapes). NUNCA use data.source nesta superficie.',
+            ],
+          },
+        },
+        className: 'classes_tailwind_da_lista_classNames (opcional)',
+        children: [
+          'apenas se container: true (ex: group). Maximo 1 nivel de aninhamento.',
+        ],
+      },
+    ],
+  },
+  none: {
+    v: 1,
+    blocks: [
+      {
+        id: 'string_id_unico',
+        type: 'tipo_do_bloco',
+        span: 'numero de 1 a 12',
+        props: {},
+      },
+    ],
+  },
+} as const;
+
+const INSTRUCTIONS_BY_DATASOURCES = {
+  'role-filtered':
+    'Gere um objeto JSON estrito seguindo exatamente a estrutura de "expectedOutputFormat". O campo "v" deve ser obrigatoriamente 1. Para dados, use "data.source" com uma das chaves listadas em "sources" (NUNCA use data.inline). Classes de estilo em "className" devem pertencer estritamente a "classNames". Responda APENAS com o JSON válido.',
+  'inline-only':
+    'Gere um objeto JSON estrito seguindo exatamente a estrutura de "expectedOutputFormat". O campo "v" deve ser obrigatoriamente 1. Para blocos que consomem dados (tabelas, graficos), cole o dado diretamente em "data.inline" seguindo o formato de "inlineShapes" (NUNCA use data.source). Classes de estilo em "className" devem pertencer estritamente a "classNames". Responda APENAS com o JSON válido.',
+  none:
+    'Gere um objeto JSON estrito seguindo exatamente a estrutura de "expectedOutputFormat". Não inclua campo "data". Responda APENAS com o JSON válido.',
+} as const;
+
 export function getDescribeData(
   profile: LayoutProfileName = DEFAULT_PROFILE,
   sources: ReturnType<typeof usePageSources>['data'] = [],
@@ -33,12 +105,14 @@ export function getDescribeData(
   return {
     profile,
     dataSources,
-    blocks: describeBlocks(profile),
-    pages: describePages(),
-    spans: [...SPANS],
-    classNames: classNamesFor(profile),
+    instructions: INSTRUCTIONS_BY_DATASOURCES[dataSources],
+    expectedOutputFormat: EXPECTED_OUTPUT_FORMAT[dataSources],
     maxBlocks: profileConfig.maxBlocks,
     maxChildren: profileConfig.maxChildren,
+    pages: profileConfig.storage === 'config' ? describePages() : undefined,
+    spans: [...SPANS],
+    classNames: classNamesFor(profile),
+    blocks: describeBlocks(profile),
     sources:
       dataSources === 'role-filtered'
         ? (sources ?? []).map((s) => ({

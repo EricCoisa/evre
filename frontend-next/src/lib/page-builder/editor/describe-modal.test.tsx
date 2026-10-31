@@ -28,11 +28,14 @@ vi.mock('@/lib/actions/pageBuilder/queries', () => ({
 }));
 
 describe('getDescribeData', () => {
-  it('retorna a mesma estrutura do describe do backend para dashboard', () => {
+  it('retorna a estrutura correta com expectedOutputFormat para dashboard', () => {
     const data = getDescribeData('dashboard', mockSources);
 
     expect(data.profile).toBe('dashboard');
     expect(data.dataSources).toBe('role-filtered');
+    expect(data.expectedOutputFormat).toBeDefined();
+    expect(data.instructions).toContain('data.source');
+    expect(data.pages).toBeDefined();
     expect(data.maxBlocks).toBe(20);
     expect(data.maxChildren).toBe(12);
     expect(data.blocks.length).toBeGreaterThan(0);
@@ -43,11 +46,14 @@ describe('getDescribeData', () => {
     expect(data.classNames).toBeDefined();
   });
 
-  it('retorna a mesma estrutura do describe do backend para proposal (inline-only)', () => {
+  it('retorna a estrutura correta com inlineShapes e sem pages para proposal', () => {
     const data = getDescribeData('proposal', mockSources);
 
     expect(data.profile).toBe('proposal');
     expect(data.dataSources).toBe('inline-only');
+    expect(data.expectedOutputFormat).toBeDefined();
+    expect(data.instructions).toContain('data.inline');
+    expect(data.pages).toBeUndefined();
     expect(data.sources).toEqual([]);
     expect(data.inlineShapes).toBeDefined();
     expect(data.maxBlocks).toBe(80);
@@ -81,6 +87,7 @@ describe('DescribeModal', () => {
 
     expect(parsed.profile).toBe('dashboard');
     expect(parsed.blocks).toBeDefined();
+    expect(parsed.expectedOutputFormat).toBeDefined();
 
     await waitFor(() => {
       expect(toast.success).toHaveBeenCalledWith('JSON do describe copiado para a área de transferência!');
