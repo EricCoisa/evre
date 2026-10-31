@@ -162,9 +162,7 @@ function Palette() {
     : undefined;
 
   const full = !editor.canAddTo(target);
-  const blockTypes = (Object.keys(BLOCK_META) as BlockType[]).filter((type) =>
-    (LAYOUT_PROFILES[editor.profile].blocks as readonly string[]).includes(type),
-  );
+  const blockTypes = LAYOUT_PROFILES[editor.profile].blocks;
 
   return (
     <section className="space-y-2">
@@ -288,24 +286,16 @@ function BlockForm({
         </div>
       ) : null}
 
-      {meta.props.map((prop) =>
-        block.type === 'iframe' && prop.name === 'storageKey' ? (
-          <ArtifactStorageKeyField
-            key={prop.name}
-            value={block.props?.[prop.name]}
-            onChange={(v) => editor.setProp(block.id, prop.name, v)}
-          />
-        ) : (
-          <PropField
-            key={prop.name}
-            meta={prop}
-            value={block.props?.[prop.name]}
-            fields={source?.fields ?? []}
-            variables={availableVariables}
-            onChange={(v) => editor.setProp(block.id, prop.name, v)}
-          />
-        ),
-      )}
+      {meta.props.map((prop) => (
+        <PropField
+          key={prop.name}
+          meta={prop}
+          value={block.props?.[prop.name]}
+          fields={source?.fields ?? []}
+          variables={availableVariables}
+          onChange={(v) => editor.setProp(block.id, prop.name, v)}
+        />
+      ))}
 
       {source?.params.length ? (
         <div className="space-y-3">
@@ -453,14 +443,6 @@ function ContentRichField({
     </div>
   );
 }
-
-const RICH_TEXT_PROP_NAMES = new Set([
-  'content',
-  'label',
-  'hint',
-  'title',
-  'description',
-]);
 
 /** Campo de `storageKey` do bloco `iframe`: sobe o arquivo em vez de pedir a chave como texto —
  * o conteúdo nunca mora no layout (ver docs/frontend/page-builder.md). Desabilita com motivo
@@ -635,6 +617,15 @@ function PropField({
     </Label>
   );
 
+  if (meta.type === 'storage-file') {
+    return (
+      <ArtifactStorageKeyField
+        value={value}
+        onChange={onChange}
+      />
+    );
+  }
+
   if (meta.type === 'boolean') {
     return (
       <div className="flex items-center justify-between">
@@ -644,7 +635,7 @@ function PropField({
     );
   }
 
-  if (meta.type === 'string' && RICH_TEXT_PROP_NAMES.has(meta.name)) {
+  if (meta.type === 'rich-text') {
     return (
       <ContentRichField
         label={label}

@@ -1,13 +1,23 @@
 import type { LayoutProfileName } from './profiles';
 import type { SourceKind } from './types';
 
+export type BlockPropType =
+  | 'string'
+  | 'rich-text'
+  | 'number'
+  | 'boolean'
+  | 'string[]'
+  | 'storage-file';
+
 export interface BlockPropMeta {
   name: string;
-  type: 'string' | 'number' | 'boolean' | 'string[]';
+  type: BlockPropType;
   required: boolean;
   /** Quando `true`, exibe picker de tamanho de fonte no campo RichText deste prop. */
   showFontSize?: boolean;
 }
+
+export type BlockCategory = 'charts' | 'data' | 'content' | 'structure' | 'media';
 
 export interface BlockMeta {
   description: string;
@@ -22,12 +32,24 @@ export interface BlockMeta {
   inline?: boolean;
   /** Quando `true`, a fonte de dados (`data.source`) é opcional (ex: `text.rich` só usa fonte quando quer mesclar `{{variavel}}`). */
   optionalSource?: boolean;
+  /** Altura padrão em linhas de grade (1 a 8). */
+  defaultRowSpan?: number;
+  /** Altura mínima em linhas de grade (1 a 8). */
+  minRowSpan?: number;
+  /** Categoria do bloco para organização na paleta e inserter rápido. */
+  category?: BlockCategory;
+  /** Nome do ícone representativo (Lucide). */
+  icon?: string;
 }
 
 /** Catálogo de blocos do page builder, sem dependência de React. */
 export const BLOCK_META = {
   group: {
     profiles: ['dashboard', 'proposal'],
+    category: 'structure',
+    icon: 'Columns',
+    defaultRowSpan: 2,
+    minRowSpan: 1,
     description:
       'Um único card contendo outros blocos lado a lado. Use quando o pedido junta coisas ' +
       'numa mesma caixa ("um card com o total à esquerda e a lista à direita"). Não tem ' +
@@ -36,68 +58,92 @@ export const BLOCK_META = {
     accepts: [],
     container: true,
     props: [
-      { name: 'title', type: 'string', required: false },
-      { name: 'description', type: 'string', required: false },
+      { name: 'title', type: 'rich-text', required: false },
+      { name: 'description', type: 'rich-text', required: false },
     ],
   },
   'chart.area': {
     profiles: ['dashboard', 'proposal'],
+    category: 'charts',
+    icon: 'AreaChart',
+    defaultRowSpan: 4,
+    minRowSpan: 2,
     description:
       'Gráfico de área ao longo do tempo. No dashboard, precisa de uma fonte do tipo series; na ' +
       'proposta, o dado vem colado em `data.inline` no formato series: ' +
       '`{ data: [{ date: "2024-01", value: 100 }, ...] }`.',
     accepts: ['series'],
     props: [
-      { name: 'title', type: 'string', required: false },
-      { name: 'description', type: 'string', required: false },
+      { name: 'title', type: 'rich-text', required: false },
+      { name: 'description', type: 'rich-text', required: false },
     ],
   },
   'chart.bar': {
     profiles: ['dashboard', 'proposal'],
+    category: 'charts',
+    icon: 'BarChart',
+    defaultRowSpan: 4,
+    minRowSpan: 2,
     description:
       'Gráfico de barras para dados discretos ao longo do tempo. No dashboard, precisa de uma ' +
       'fonte do tipo series; na proposta, o dado vem colado em `data.inline` no formato series: ' +
       '`{ data: [{ date: "2024-01", value: 100 }, ...] }`.',
     accepts: ['series'],
     props: [
-      { name: 'title', type: 'string', required: false },
-      { name: 'description', type: 'string', required: false },
+      { name: 'title', type: 'rich-text', required: false },
+      { name: 'description', type: 'rich-text', required: false },
     ],
   },
   'chart.line': {
     profiles: ['dashboard', 'proposal'],
+    category: 'charts',
+    icon: 'LineChart',
+    defaultRowSpan: 4,
+    minRowSpan: 2,
     description:
       'Gráfico de linhas para tendências ao longo do tempo. No dashboard, precisa de uma fonte ' +
       'do tipo series; na proposta, o dado vem colado em `data.inline` no formato series: ' +
       '`{ data: [{ date: "2024-01", value: 100 }, ...] }`.',
     accepts: ['series'],
     props: [
-      { name: 'title', type: 'string', required: false },
-      { name: 'description', type: 'string', required: false },
+      { name: 'title', type: 'rich-text', required: false },
+      { name: 'description', type: 'rich-text', required: false },
     ],
   },
   'text.rich': {
     profiles: ['dashboard', 'proposal'],
+    category: 'content',
+    icon: 'Type',
+    defaultRowSpan: 1,
+    minRowSpan: 1,
     description:
       'Elemento de texto rico (Rich Text) com suporte opcional a fonte de dados e variáveis dinâmicas (ex: "Bom dia, temos {{total}} usuários hoje").',
     accepts: ['list', 'count', 'series'],
     optionalSource: true,
     inline: true,
-    props: [{ name: 'content', type: 'string', required: true, showFontSize: true }],
+    props: [{ name: 'content', type: 'rich-text', required: true, showFontSize: true }],
   },
   'button.action': {
     profiles: ['dashboard', 'proposal'],
+    category: 'content',
+    icon: 'MousePointerClick',
+    defaultRowSpan: 1,
+    minRowSpan: 1,
     description:
       'Elemento compacto de botão clicável com texto (Rich Text) e link. Combine com blocos de Texto dentro de qualquer bloco ou Grupo.',
     accepts: [],
     inline: true,
     props: [
-      { name: 'label', type: 'string', required: true },
+      { name: 'label', type: 'rich-text', required: true },
       { name: 'url', type: 'string', required: true },
     ],
   },
   'list.feed': {
     profiles: ['dashboard', 'proposal'],
+    category: 'data',
+    icon: 'List',
+    defaultRowSpan: 4,
+    minRowSpan: 2,
     description:
       'Lista compacta de itens em formato feed (ex: atividades recentes). No dashboard, em ' +
       '`columns` informe [campo_principal, campo_secundário] da fonte escolhida. Na proposta, o ' +
@@ -105,13 +151,17 @@ export const BLOCK_META = {
       '— `columns` então aponta para as chaves que você mesmo colocou em cada item.',
     accepts: ['list'],
     props: [
-      { name: 'title', type: 'string', required: false },
-      { name: 'description', type: 'string', required: false },
+      { name: 'title', type: 'rich-text', required: false },
+      { name: 'description', type: 'rich-text', required: false },
       { name: 'columns', type: 'string[]', required: true },
     ],
   },
   'table.basic': {
     profiles: ['dashboard', 'proposal'],
+    category: 'data',
+    icon: 'Table',
+    defaultRowSpan: 4,
+    minRowSpan: 2,
     description:
       'Tabela simples e somente leitura de uma lista paginada. No dashboard, em `columns` use ' +
       'SOMENTE nomes que aparecem em `fields` da fonte escolhida — campo inventado vira coluna ' +
@@ -120,36 +170,48 @@ export const BLOCK_META = {
       'mesmo colocou em cada item (sem paginação: a proposta não busca página seguinte).',
     accepts: ['list'],
     props: [
-      { name: 'title', type: 'string', required: false },
-      { name: 'description', type: 'string', required: false },
+      { name: 'title', type: 'rich-text', required: false },
+      { name: 'description', type: 'rich-text', required: false },
       { name: 'columns', type: 'string[]', required: true },
     ],
   },
   topic: {
     profiles: ['proposal'],
+    category: 'content',
+    icon: 'ListChecks',
+    defaultRowSpan: 2,
+    minRowSpan: 1,
     description:
       'Bloco de escopo: título, descrição opcional e uma lista de itens. Use para "o que entra" ' +
       'numa proposta — fases, entregáveis, stack técnica. Não consome fonte de dados.',
     accepts: [],
     props: [
-      { name: 'title', type: 'string', required: false },
-      { name: 'description', type: 'string', required: false },
+      { name: 'title', type: 'rich-text', required: false },
+      { name: 'description', type: 'rich-text', required: false },
       { name: 'items', type: 'string[]', required: true },
     ],
   },
   image: {
     profiles: ['proposal'],
+    category: 'media',
+    icon: 'ImageIcon',
+    defaultRowSpan: 3,
+    minRowSpan: 1,
     description:
       'Imagem com legenda opcional (mockup, print de tela, diagrama). Não consome fonte de dados.',
     accepts: [],
     props: [
       { name: 'url', type: 'string', required: true },
       { name: 'alt', type: 'string', required: false },
-      { name: 'caption', type: 'string', required: false },
+      { name: 'caption', type: 'rich-text', required: false },
     ],
   },
   investment: {
     profiles: ['proposal'],
+    category: 'data',
+    icon: 'Coins',
+    defaultRowSpan: 3,
+    minRowSpan: 1,
     description:
       'Espelha o ENVELOPE comercial da proposta (registro único: o que soma no funil e vai para ' +
       'o contrato) — valor, recorrência, prazo, validade e itens inclusos (e opcionais, se ' +
@@ -158,26 +220,34 @@ export const BLOCK_META = {
       'mensalidade, planos alternativos), use o bloco `price` em vez deste.',
     accepts: [],
     props: [
-      { name: 'title', type: 'string', required: false },
+      { name: 'title', type: 'rich-text', required: false },
       { name: 'showOptional', type: 'boolean', required: false },
     ],
   },
   iframe: {
     profiles: ['proposal'],
+    category: 'media',
+    icon: 'Globe',
+    defaultRowSpan: 4,
+    minRowSpan: 2,
     description:
       'Demonstração HTML interativa (protótipo, apresentação) isolada em sandbox. O conteúdo vem ' +
       'do storage por `storageKey` — nunca HTML inline no layout. Preview estático; o toque abre ' +
       'um modal com a interação liberada. Não consome fonte de dados.',
     accepts: [],
     props: [
-      { name: 'storageKey', type: 'string', required: true },
-      { name: 'title', type: 'string', required: false },
+      { name: 'storageKey', type: 'storage-file', required: true },
+      { name: 'title', type: 'rich-text', required: false },
       { name: 'height', type: 'number', required: false },
       { name: 'aspect', type: 'string', required: false },
     ],
   },
   heading: {
     profiles: ['dashboard', 'proposal'],
+    category: 'content',
+    icon: 'Heading',
+    defaultRowSpan: 1,
+    minRowSpan: 1,
     description:
       'Título de seção com hierarquia semântica real (h1 a h4). Use `level: 1` SOMENTE para o ' +
       'título da proposta (uma vez, no topo); use `level: 2` para cada seção da proposta ou para ' +
@@ -185,12 +255,16 @@ export const BLOCK_META = {
       'estrutura da página. Não consome fonte de dados.',
     accepts: [],
     props: [
-      { name: 'text', type: 'string', required: true },
+      { name: 'text', type: 'rich-text', required: true },
       { name: 'level', type: 'number', required: true },
     ],
   },
   divider: {
     profiles: ['dashboard', 'proposal'],
+    category: 'structure',
+    icon: 'Minus',
+    defaultRowSpan: 1,
+    minRowSpan: 1,
     description:
       'Linha divisória horizontal, para separar seções sem precisar de um título. `spacing` ' +
       'controla a margem vertical (sm, md ou lg; padrão md). Não consome fonte de dados.',
@@ -199,6 +273,10 @@ export const BLOCK_META = {
   },
   price: {
     profiles: ['proposal'],
+    category: 'data',
+    icon: 'DollarSign',
+    defaultRowSpan: 3,
+    minRowSpan: 1,
     description:
       'Tabela de valores LIVRE — apresentação, não registro (não soma no funil, não vai para o ' +
       'contrato; quem faz isso é o envelope/`investment`). `rows` é uma linha "Rótulo|12000" por ' +
@@ -208,8 +286,8 @@ export const BLOCK_META = {
       '`highlight` destaca a opção recomendada quando há mais de uma. Não consome fonte de dados.',
     accepts: [],
     props: [
-      { name: 'title', type: 'string', required: false },
-      { name: 'description', type: 'string', required: false },
+      { name: 'title', type: 'rich-text', required: false },
+      { name: 'description', type: 'rich-text', required: false },
       { name: 'rows', type: 'string[]', required: true },
       { name: 'totalLabel', type: 'string', required: false },
       { name: 'totalCents', type: 'number', required: false },
@@ -232,6 +310,13 @@ export function canAcceptChildrenType(type: string): boolean {
   return !isInlineBlockType(type);
 }
 
+/** Devolve a lista de tipos de bloco suportados por um determinado profile. */
+export function blocksForProfile(profile: LayoutProfileName): BlockType[] {
+  return (Object.keys(BLOCK_META) as BlockType[]).filter((type) =>
+    (BLOCK_META[type].profiles as readonly LayoutProfileName[]).includes(profile),
+  );
+}
+
 /** Sem profile devolve o catálogo inteiro — chamador antigo continua vendo tudo. */
 export function describeBlocks(profile?: LayoutProfileName) {
   return Object.entries(BLOCK_META)
@@ -247,6 +332,10 @@ export function describeBlocks(profile?: LayoutProfileName) {
       container: 'container' in meta ? meta.container : false,
       inline: 'inline' in meta ? meta.inline : false,
       optionalSource: 'optionalSource' in meta ? meta.optionalSource : false,
+      defaultRowSpan: meta.defaultRowSpan ?? 1,
+      minRowSpan: meta.minRowSpan ?? 1,
+      category: meta.category ?? 'content',
+      icon: meta.icon,
       props: meta.props.map((p): BlockPropMeta => ({ ...p })),
     }));
 }

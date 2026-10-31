@@ -1,6 +1,10 @@
+import { blocksForProfile, type BlockType } from './blocks.meta';
+
+export type LayoutProfileName = 'dashboard' | 'proposal';
+
 export interface LayoutProfile {
-  /** Tipos de bloco que este profile oferece — espelha o `profiles` de cada entrada de `BLOCK_META`. */
-  blocks: readonly string[];
+  /** Tipos de bloco que este profile oferece — derivados dinamicamente de `BLOCK_META`. */
+  readonly blocks: readonly BlockType[];
   /** `role-filtered` confere a fonte contra o alcance de quem grava (busca real); `inline-only`
    * recusa `data.source` e só aceita `data.inline` (payload colado, congelado no layout); `none`
    * recusa os dois — nenhum dado, de forma nenhuma. */
@@ -11,52 +15,27 @@ export interface LayoutProfile {
   maxChildren: number;
 }
 
-/** Superfícies que o PageBuilder monta. Cada profile decide blocos, fonte de dado, persistência e tetos. */
-export const LAYOUT_PROFILES = {
+/** Superfícies que o PageBuilder monta. Cada profile decide fonte de dado, persistência e tetos; os blocos vêm de BLOCK_META. */
+export const LAYOUT_PROFILES: Record<LayoutProfileName, LayoutProfile> = {
   dashboard: {
-    blocks: [
-      'group',
-      'chart.area',
-      'chart.bar',
-      'chart.line',
-      'text.rich',
-      'button.action',
-      'list.feed',
-      'table.basic',
-      'heading',
-      'divider',
-    ],
+    get blocks() {
+      return blocksForProfile('dashboard');
+    },
     dataSources: 'role-filtered',
     storage: 'config',
     maxBlocks: 20,
     maxChildren: 12,
   },
   proposal: {
-    blocks: [
-      'group',
-      'text.rich',
-      'button.action',
-      'topic',
-      'image',
-      'investment',
-      'iframe',
-      'heading',
-      'divider',
-      'price',
-      'table.basic',
-      'list.feed',
-      'chart.area',
-      'chart.bar',
-      'chart.line',
-    ],
+    get blocks() {
+      return blocksForProfile('proposal');
+    },
     dataSources: 'inline-only',
     storage: 'record',
     maxBlocks: 80,
     maxChildren: 12,
   },
-} as const satisfies Record<string, LayoutProfile>;
-
-export type LayoutProfileName = keyof typeof LAYOUT_PROFILES;
+};
 
 /** Profile de quem não declara nada — a superfície que existia antes de haver profile. */
 export const DEFAULT_PROFILE = 'dashboard' satisfies LayoutProfileName;

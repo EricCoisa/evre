@@ -120,8 +120,8 @@ describe('describeBlocks', () => {
     const seriesBlocks = ['chart.area', 'chart.bar', 'chart.line'] as const;
     const firstProps = BLOCK_META[seriesBlocks[0]].props;
     expect(firstProps).toEqual([
-      { name: 'title', type: 'string', required: false },
-      { name: 'description', type: 'string', required: false },
+      { name: 'title', type: 'rich-text', required: false },
+      { name: 'description', type: 'rich-text', required: false },
     ]);
     for (const type of seriesBlocks.slice(1)) {
       expect(BLOCK_META[type].props).toEqual(firstProps);
@@ -132,8 +132,8 @@ describe('describeBlocks', () => {
     const listBlocks = ['table.basic', 'list.feed'] as const;
     const firstProps = BLOCK_META[listBlocks[0]].props;
     expect(firstProps).toEqual([
-      { name: 'title', type: 'string', required: false },
-      { name: 'description', type: 'string', required: false },
+      { name: 'title', type: 'rich-text', required: false },
+      { name: 'description', type: 'rich-text', required: false },
       { name: 'columns', type: 'string[]', required: true },
     ]);
     for (const type of listBlocks.slice(1)) {

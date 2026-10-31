@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { BLOCK_META, type BlockType } from './blocks.meta';
 import {
   DEFAULT_PROFILE,
   LAYOUT_PROFILES,
@@ -185,30 +186,15 @@ export function normalizeSpan(span?: number): BlockSpan {
 }
 
 export function minRowSpanForType(type?: string): BlockRowSpan {
-  if (!type) return 1;
-  if (
-    type.startsWith('chart.') ||
-    type.startsWith('table.') ||
-    type === 'list.feed'
-  ) {
-    return 2;
-  }
-  return 1;
+  if (!type || !(type in BLOCK_META)) return 1;
+  const meta = BLOCK_META[type as BlockType];
+  return (meta.minRowSpan ?? 1) as BlockRowSpan;
 }
 
 export function defaultRowSpanForType(type?: string): BlockRowSpan {
-  if (!type) return 1;
-  if (
-    type.startsWith('chart.') ||
-    type.startsWith('table.') ||
-    type === 'list.feed'
-  ) {
-    return 4;
-  }
-  if (type === 'group') {
-    return 2;
-  }
-  return 1;
+  if (!type || !(type in BLOCK_META)) return 1;
+  const meta = BLOCK_META[type as BlockType];
+  return (meta.defaultRowSpan ?? 1) as BlockRowSpan;
 }
 
 export function normalizeRowSpan(rowSpan?: number, type?: string): BlockRowSpan {

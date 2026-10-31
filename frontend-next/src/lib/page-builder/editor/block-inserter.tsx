@@ -4,9 +4,17 @@ import React, { useState } from 'react';
 import {
   AreaChart,
   BarChart,
+  Coins,
   Columns,
+  Component,
+  DollarSign,
+  Globe,
+  Heading,
+  Image as ImageIcon,
   LineChart,
   List,
+  ListChecks,
+  Minus,
   MousePointerClick,
   Plus,
   Search,
@@ -27,81 +35,23 @@ import { LAYOUT_PROFILES } from '../profiles';
 import { useEditorOrThrow } from './context';
 import { isContainerType } from './mutations';
 
-interface BlockDefinitionItem {
-  type: BlockType;
-  titleKey: string;
-  defaultTitle: string;
-  icon: React.ComponentType<{ className?: string }>;
-  category: 'charts' | 'content' | 'data' | 'structure';
-  descriptionKey: string;
-}
-
-const BLOCK_DEFINITIONS: BlockDefinitionItem[] = [
-  {
-    type: 'chart.area',
-    titleKey: 'blocks.chart.area',
-    defaultTitle: 'Gráfico de Área',
-    icon: AreaChart,
-    category: 'charts',
-    descriptionKey: 'Evolução de dados ao longo do tempo com preenchimento.',
-  },
-  {
-    type: 'chart.line',
-    titleKey: 'blocks.chart.line',
-    defaultTitle: 'Gráfico de Linha',
-    icon: LineChart,
-    category: 'charts',
-    descriptionKey: 'Tendências e variações de indicadores ao longo do tempo.',
-  },
-  {
-    type: 'chart.bar',
-    titleKey: 'blocks.chart.bar',
-    defaultTitle: 'Gráfico de Barras',
-    icon: BarChart,
-    category: 'charts',
-    descriptionKey: 'Comparação de valores discretos ou períodos.',
-  },
-  {
-    type: 'table.basic',
-    titleKey: 'blocks.table.basic',
-    defaultTitle: 'Tabela de Dados',
-    icon: Table,
-    category: 'data',
-    descriptionKey: 'Listagem tabular paginada com colunas personalizáveis.',
-  },
-  {
-    type: 'list.feed',
-    titleKey: 'blocks.list.feed',
-    defaultTitle: 'Lista / Atividades Recentes',
-    icon: List,
-    category: 'data',
-    descriptionKey: 'Feed compacto de itens e eventos recentes.',
-  },
-  {
-    type: 'text.rich',
-    titleKey: 'blocks.text.rich',
-    defaultTitle: 'Texto Formatado (Rich Text)',
-    icon: Type,
-    category: 'content',
-    descriptionKey: 'Bloco de texto livre com formatação, títulos, negrito e links.',
-  },
-  {
-    type: 'button.action',
-    titleKey: 'blocks.button.action',
-    defaultTitle: 'Botão de Ação',
-    icon: MousePointerClick,
-    category: 'content',
-    descriptionKey: 'Botão clicável com link e rótulo formatável para chamadas de ação.',
-  },
-  {
-    type: 'group',
-    titleKey: 'blocks.group',
-    defaultTitle: 'Grupo de Colunas',
-    icon: Columns,
-    category: 'structure',
-    descriptionKey: 'Caixa com colunas internas para agrupar blocos lado a lado.',
-  },
-];
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  AreaChart,
+  BarChart,
+  Coins,
+  Columns,
+  DollarSign,
+  Globe,
+  Heading,
+  ImageIcon,
+  LineChart,
+  List,
+  ListChecks,
+  Minus,
+  MousePointerClick,
+  Table,
+  Type,
+};
 
 export function BlockInserter({
   index = 0,
@@ -134,20 +84,30 @@ export function BlockInserter({
   const parentOnlyAcceptsInline =
     !!parentBlock && !isContainerType(parentBlock.type);
 
-  const inProfile = new Set<string>(LAYOUT_PROFILES[editor.profile].blocks);
+  const availableBlockTypes = LAYOUT_PROFILES[editor.profile].blocks;
 
-  const filteredBlocks = BLOCK_DEFINITIONS.filter((item) =>
-    inProfile.has(item.type),
-  ).filter((item) => {
-    if (parentId && isContainerType(item.type)) return false;
-    if (parentOnlyAcceptsInline && !isInlineBlockType(item.type)) return false;
+  const filteredBlocks = availableBlockTypes
+    .map((type) => {
+      const meta = BLOCK_META[type];
+      const iconComponent = meta?.icon && meta.icon in ICON_MAP ? ICON_MAP[meta.icon] : Component;
+      return {
+        type,
+        icon: iconComponent,
+        titleKey: `blocks.${type}`,
+        defaultTitle: type,
+        description: meta?.description ?? '',
+      };
+    })
+    .filter((item) => {
+      if (parentId && isContainerType(item.type)) return false;
+      if (parentOnlyAcceptsInline && !isInlineBlockType(item.type)) return false;
 
-    const query = search.trim().toLowerCase();
-    if (!query) return true;
-    const name = t(item.titleKey, { defaultValue: item.defaultTitle }).toLowerCase();
-    const desc = (BLOCK_META[item.type]?.description || item.descriptionKey).toLowerCase();
-    return name.includes(query) || desc.includes(query) || item.type.includes(query);
-  });
+      const query = search.trim().toLowerCase();
+      if (!query) return true;
+      const name = t(item.titleKey, { defaultValue: item.defaultTitle }).toLowerCase();
+      const desc = item.description.toLowerCase();
+      return name.includes(query) || desc.includes(query) || item.type.includes(query);
+    });
 
   const handleSelect = (type: BlockType) => {
     if (gridSlot) {
@@ -247,7 +207,7 @@ export function BlockInserter({
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-xs font-medium text-foreground">{title}</p>
                         <p className="text-muted-foreground line-clamp-1 text-[11px]">
-                          {BLOCK_META[item.type]?.description || item.descriptionKey}
+                          {item.description}
                         </p>
                       </div>
                     </button>
