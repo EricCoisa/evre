@@ -197,18 +197,22 @@ export function ChatWindowsProvider({
     const live = conversations.filter((item) => !item.archived);
     const archived = conversations.filter((item) => item.archived);
 
-    if (archived.length === 0) {
+    if (archived.length === 0 && connections.length === 1) {
       if (live.length === 1) {
         openChat({ connectionId: live[0].connectionId, phone, ...extra });
         return;
       }
-      if (live.length === 0 && connections.length === 1) {
+      if (live.length === 0) {
         openChat({ connectionId: connections[0].id, phone, ...extra });
         return;
       }
     }
 
-    const sendable = live.length > 0 ? threadOptions(live) : newOptions(connections);
+    const liveConnectionIds = new Set(live.map((item) => item.connectionId));
+    const sendable = [
+      ...threadOptions(live),
+      ...newOptions(connections.filter((c) => !liveConnectionIds.has(c.id))),
+    ];
     const options = [...sendable, ...threadOptions(archived)];
     if (options.length > 0) setPicker({ phone, extra, options });
   };

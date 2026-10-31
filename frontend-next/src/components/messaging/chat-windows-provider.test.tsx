@@ -186,7 +186,7 @@ describe('ChatWindowsProvider', () => {
       fireEvent.click(screen.getByRole('button', { name: 'resolver' }));
     };
 
-    it('1 conversa existente: abre direto, sem modal — mesmo com 3 conexões configuradas', async () => {
+    it('1 conversa existente + 1 conexão: abre direto, sem modal', async () => {
       mocks.resolveConversations.mockResolvedValue([
         {
           connectionId: 'conn-1',
@@ -197,11 +197,38 @@ describe('ChatWindowsProvider', () => {
         },
       ]);
       mocks.connections.mockReturnValue({
-        data: [{ id: 'conn-1' }, { id: 'conn-2' }, { id: 'conn-3' }],
+        data: [{ id: 'conn-1', provider: 'EVOLUTION_API', phone: '5511900000001' }],
       });
       resolve();
       expect(await screen.findByTestId('thread')).toHaveTextContent(PHONE);
       expect(screen.queryByText('pickConversationTitle')).not.toBeInTheDocument();
+    });
+
+    it('1 conversa existente + 2+ conexões: modal com a thread e as conexões sem thread', async () => {
+      mocks.resolveConversations.mockResolvedValue([
+        {
+          connectionId: 'conn-1',
+          provider: 'EVOLUTION_API',
+          connectionPhone: '5511900000001',
+          archived: false,
+          lastMessageAt: '2026-02-01T10:00:00.000Z',
+        },
+      ]);
+      mocks.connections.mockReturnValue({
+        data: [
+          { id: 'conn-1', provider: 'EVOLUTION_API', phone: '5511900000001' },
+          { id: 'conn-2', provider: 'EVOLUTION_GO', phone: '5511900000002' },
+        ],
+      });
+      resolve();
+
+      expect(await screen.findByText('pickConversationTitle')).toBeInTheDocument();
+      expect(screen.getByText('5511900000001')).toBeInTheDocument();
+      expect(screen.getByText('newConversation')).toBeInTheDocument();
+      expect(screen.queryByTestId('thread')).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByText('5511900000001'));
+      expect(await screen.findByTestId('thread')).toHaveTextContent(PHONE);
     });
 
     it('2+ conversas existentes: modal listando as threads; escolher uma abre nela', async () => {
