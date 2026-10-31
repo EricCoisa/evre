@@ -11,11 +11,11 @@ export type FormattedPart =
 /** Transforma texto com formatação WhatsApp em estrutura tipada, processando code, bold, italic e strikethrough em ordem. */
 export function parseWhatsAppFormat(text: string): FormattedPart[] {
   // Font-size markers: [fs:text-lg]...[/fs]
-  const withFontSize = text.split(/(\[fs:[^\]]+\].*?\[\/fs\])/);
+  const withFontSize = text.split(/(\[fs:[^\]]+\][\s\S]*?\[\/fs\])/);
 
   const parts: FormattedPart[] = [];
   for (const segment of withFontSize) {
-    const fsMatch = /^\[fs:([^\]]+)\](.*)\[\/fs\]$/.exec(segment);
+    const fsMatch = /^\[fs:([^\]]+)\]([\s\S]*)\[\/fs\]$/.exec(segment);
     if (fsMatch) {
       parts.push({ type: 'sized', size: fsMatch[1], parts: parseCodeSegments(fsMatch[2]) });
     } else if (segment) {

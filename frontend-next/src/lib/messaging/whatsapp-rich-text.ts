@@ -41,8 +41,23 @@ export function exportWhatsAppText(): string {
   for (const paragraph of $getRoot().getChildren()) {
     if (!$isElementNode(paragraph)) continue;
     let line = '';
+    let currentTwClass: string | undefined = undefined;
+    let currentBuffer = '';
+
+    const flush = () => {
+      if (!currentBuffer) return;
+      if (currentTwClass) {
+        line += `[fs:${currentTwClass}]${currentBuffer}[/fs]`;
+      } else {
+        line += currentBuffer;
+      }
+      currentBuffer = '';
+      currentTwClass = undefined;
+    };
+
     for (const child of paragraph.getChildren()) {
       if ($isLineBreakNode(child)) {
+        flush();
         line += '\n';
         continue;
       }
@@ -51,8 +66,14 @@ export function exportWhatsAppText(): string {
       const serialized = serializeWhatsAppText(child.getTextContent(), format);
       const fontSizeMatch = /font-size:\s*([^;]+)/.exec(child.getStyle());
       const twClass = fontSizeMatch ? CSS_TO_TW[fontSizeMatch[1].trim()] : undefined;
-      line += twClass ? `[fs:${twClass}]${serialized}[/fs]` : serialized;
+
+      if (twClass !== currentTwClass) {
+        flush();
+        currentTwClass = twClass;
+      }
+      currentBuffer += serialized;
     }
+    flush();
     lines.push(line);
   }
   return lines.join('\n');

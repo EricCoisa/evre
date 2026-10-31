@@ -23,6 +23,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -156,6 +157,7 @@ function FormatToolbar({
       if (!$isRangeSelection(selection)) return;
       $patchStyleText(selection, { 'font-size': css });
     });
+    editor.focus();
   };
 
   const activeFontSizeEntry = FONT_SIZES.find((s) => s.tw === activeSize);
@@ -196,10 +198,17 @@ function FormatToolbar({
                 <span>{activeFontSizeEntry?.label ?? 'Tamanho'}</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="min-w-28">
+            <DropdownMenuContent
+              align="start"
+              className="min-w-28"
+              onCloseAutoFocus={(event) => {
+                event.preventDefault();
+                editor.focus();
+              }}
+            >
               {activeSize ? (
                 <>
-                  <DropdownMenuItem onClick={() => applyFontSize('')}>
+                  <DropdownMenuItem onSelect={() => applyFontSize('')}>
                     Padrão
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -208,7 +217,7 @@ function FormatToolbar({
               {FONT_SIZES.map((s) => (
                 <DropdownMenuItem
                   key={s.tw}
-                  onClick={() => applyFontSize(s.css)}
+                  onSelect={() => applyFontSize(s.css)}
                   className="gap-2"
                 >
                   <span className={cn('font-medium', s.tw)}>{s.label}</span>

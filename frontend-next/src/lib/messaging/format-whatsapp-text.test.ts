@@ -122,4 +122,26 @@ describe('parseWhatsAppFormat', () => {
       { type: 'code', text: 'b' },
     ]);
   });
+
+  it('formatação com tamanho de fonte [fs:text-lg]', () => {
+    expect(parseWhatsAppFormat('[fs:text-lg]texto grande[/fs]')).toEqual([
+      {
+        type: 'sized',
+        size: 'text-lg',
+        parts: [{ type: 'text', text: 'texto grande' }],
+      },
+    ]);
+  });
+
+  it('formatação com tamanho de fonte contendo negrito', () => {
+    expect(parseWhatsAppFormat('normal [fs:text-xl]*negrito grande*[/fs] fim')).toEqual([
+      { type: 'text', text: 'normal ' },
+      {
+        type: 'sized',
+        size: 'text-xl',
+        parts: [{ type: 'bold', parts: [{ type: 'text', text: 'negrito grande' }] }],
+      },
+      { type: 'text', text: ' fim' },
+    ]);
+  });
 });
