@@ -60,12 +60,12 @@ async function renderPage() {
 }
 
 describe('/company/[id]', () => {
-  it('renderiza as 4 abas: configuração, propostas, projetos e contratos', async () => {
+  it('renderiza as 5 abas: configuração, contatos, propostas, projetos e contratos', async () => {
     mocks.searchParams = new URLSearchParams();
     await renderPage();
 
     const tabs = screen.getAllByRole('tab').map((tab) => tab.textContent);
-    expect(tabs).toEqual(['tabConfig', 'tabProposals', 'tabProjects', 'tabContracts']);
+    expect(tabs).toEqual(['tabConfig', 'tabContacts', 'tabProposals', 'tabProjects', 'tabContracts']);
   });
 
   it('?tab=propostas abre direto na aba de propostas', async () => {
