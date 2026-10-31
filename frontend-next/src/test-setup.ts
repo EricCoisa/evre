@@ -17,6 +17,20 @@ Object.defineProperty(window, 'matchMedia', {
   }),
 })
 
+// jsdom lacks ResizeObserver (used in Shadcn Tabs / Dialog / Tooltip scroll checks)
+if (typeof (globalThis as Record<string, unknown>).ResizeObserver === 'undefined') {
+  (globalThis as Record<string, unknown>).ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+}
+
+// jsdom lacks scrollIntoView
+if (typeof window.HTMLElement.prototype.scrollIntoView !== 'function') {
+  window.HTMLElement.prototype.scrollIntoView = vi.fn()
+}
+
 // jsdom's AbortSignal lags behind Node/browsers and lacks `.any` — polyfill it
 // so code that combines a caller signal with an internal timeout can run under test.
 if (typeof AbortSignal.any !== 'function') {

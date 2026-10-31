@@ -4,6 +4,7 @@ import React from 'react';
 import {
   Check,
   Eye,
+  FileJson,
   Redo2,
   SlidersHorizontal,
   Undo2,
@@ -29,6 +30,7 @@ export function EditorTopBar({
   onCancel,
   onOpenPanel,
   onPreview,
+  onDescribe,
 }: {
   pageKey: string;
   dirty: boolean;
@@ -38,6 +40,7 @@ export function EditorTopBar({
   onCancel: () => void;
   onOpenPanel?: () => void;
   onPreview?: () => void;
+  onDescribe?: () => void;
 }) {
   const { t } = useTranslation('page-builder');
   const editor = useEditorOrThrow();
@@ -149,6 +152,33 @@ export function EditorTopBar({
               </TooltipTrigger>
               <TooltipContent side="bottom">
                 <p className="text-xs">{t('editor.previewTooltip')}</p>
+              </TooltipContent>
+            </Tooltip>
+          ) : null}
+
+          {onDescribe ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onDescribe}
+                  className="h-8 gap-1.5 text-xs"
+                  aria-label={t('editor.describe', { defaultValue: 'Describe' })}
+                >
+                  <FileJson className="size-3.5" />
+                  <span className="hidden sm:inline">
+                    {t('editor.describe', { defaultValue: 'Describe' })}
+                  </span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p className="text-xs">
+                  {t('editor.describeTooltip', {
+                    defaultValue: 'Copiar especificações da página (describe) para IA externa',
+                  })}
+                </p>
               </TooltipContent>
             </Tooltip>
           ) : null}

@@ -32,6 +32,7 @@ import {
   parseGridSlotId,
 } from './block-chrome';
 import { BlockInserter } from './block-inserter';
+import { DescribeModal } from './describe-modal';
 import { EditorContext, EditorProvider, useEditorOrThrow } from './context';
 import { findBlock } from './mutations';
 import { EditorPanel } from './panel';
@@ -101,6 +102,8 @@ function EditorShell({
   const [panelOpen, setPanelOpen] = useState(true);
   // Modal do preview: mesmo `LayoutBody` da página pública, com o rascunho em edição
   const [previewOpen, setPreviewOpen] = useState(false);
+  // Modal do describe: mesma informação do agente interno para cópia manual
+  const [describeOpen, setDescribeOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -203,6 +206,14 @@ function EditorShell({
         onCancel={handleCancel}
         onOpenPanel={() => setPanelOpen((prev) => !prev)}
         onPreview={() => setPreviewOpen(true)}
+        onDescribe={() => setDescribeOpen(true)}
+      />
+
+      {/* Modal do Describe: mesma informação do agente interno para cópia do operador */}
+      <DescribeModal
+        open={describeOpen}
+        onOpenChange={setDescribeOpen}
+        profile={editor.profile}
       />
 
       {/* Preview: mesmo LayoutBody da página pública, com o rascunho em edição — o

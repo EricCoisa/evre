@@ -84,7 +84,16 @@
     "artifactMissingRecord": "Save the proposal before uploading the artifact.",
     "tabVisual": "Visual",
     "tabJson": "JSON",
-    "jsonHint": "Valid edits are applied in real time."
+    "jsonHint": "Valid edits are applied in real time.",
+    "describe": "Describe",
+    "describeTooltip": "Copy page specifications (describe) for external AI",
+    "describeModalTitle": "Page Specifications (Describe)",
+    "describeModalDesc": "Same information that the internal agent uses to assemble and validate the layout.",
+    "describeModalInstruction": "Copy this JSON and send it to the external AI to generate a compatible layout.",
+    "describeCopyJson": "Copy JSON",
+    "describeCopied": "Copied!",
+    "describeCopySuccess": "Describe JSON copied to clipboard!",
+    "describeCopyError": "Could not copy to clipboard."
   },
   "blocks": {
     "group": "Group",

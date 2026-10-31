@@ -8,7 +8,7 @@ vi.mock('@/hooks/use-translation', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
-function renderTopBar(onPreview?: () => void) {
+function renderTopBar(onPreview?: () => void, onDescribe?: () => void) {
   return render(
     <EditorProvider initial={EMPTY_LAYOUT}>
       <EditorTopBar
@@ -18,6 +18,7 @@ function renderTopBar(onPreview?: () => void) {
         onSave={vi.fn()}
         onCancel={vi.fn()}
         onPreview={onPreview}
+        onDescribe={onDescribe}
       />
     </EditorProvider>,
   );
@@ -37,5 +38,22 @@ describe('EditorTopBar — preview', () => {
     renderTopBar(undefined);
 
     expect(screen.queryByRole('button', { name: 'editor.preview' })).not.toBeInTheDocument();
+  });
+});
+
+describe('EditorTopBar — describe', () => {
+  it('mostra o botão de describe quando onDescribe é passado', () => {
+    const onDescribe = vi.fn();
+    renderTopBar(undefined, onDescribe);
+
+    const button = screen.getByRole('button', { name: 'editor.describe' });
+    button.click();
+    expect(onDescribe).toHaveBeenCalledTimes(1);
+  });
+
+  it('não mostra o botão de describe quando onDescribe não é passado', () => {
+    renderTopBar(undefined, undefined);
+
+    expect(screen.queryByRole('button', { name: 'editor.describe' })).not.toBeInTheDocument();
   });
 });
