@@ -259,7 +259,7 @@ function TemplateButtonItem({
           onChange={(e) => onUpdate(draft.uid, { label: e.target.value })}
         />
         <p className="text-right text-xs text-muted-foreground">
-          {button.label.length}/{LABEL_MAX}
+          {(button.label ?? '').length}/{LABEL_MAX}
         </p>
       </div>
 

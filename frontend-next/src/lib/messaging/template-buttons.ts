@@ -59,14 +59,15 @@ const PHONE_RE = /^\+?[0-9][0-9\s().-]{5,}$/;
 
 /** Chave i18n (namespace messaging) do problema do botão, ou `null` se estiver válido. */
 export function validateButton(button: TemplateButton): string | null {
-  if (!button.label.trim()) return 'buttonErrLabel';
+  if (!(button.label ?? '').trim()) return 'buttonErrLabel';
   if (button.kind === 'URL') {
-    if (!URL_RE.test(button.url.trim())) return 'buttonErrUrl';
-    const names = [...usedVariableNames(button.url)];
+    const url = button.url ?? '';
+    if (!URL_RE.test(url.trim())) return 'buttonErrUrl';
+    const names = [...usedVariableNames(url)];
     if (names.length > 1) return 'buttonErrUrlVars';
-    if (names.length === 1 && !button.url.trim().endsWith('}}')) return 'buttonErrUrlVars';
+    if (names.length === 1 && !url.trim().endsWith('}}')) return 'buttonErrUrlVars';
   }
-  if (button.kind === 'PHONE_NUMBER' && !PHONE_RE.test(button.phoneNumber.trim())) {
+  if (button.kind === 'PHONE_NUMBER' && !PHONE_RE.test((button.phoneNumber ?? '').trim())) {
     return 'buttonErrPhone';
   }
   return null;
@@ -75,12 +76,12 @@ export function validateButton(button: TemplateButton): string | null {
 /** Normaliza para o payload: apara textos e põe as respostas rápidas por último. */
 export function toPayload(buttons: TemplateButton[]): TemplateButton[] {
   return orderButtons(buttons).map((button) => {
-    const label = button.label.trim();
+    const label = (button.label ?? '').trim();
     switch (button.kind) {
       case 'URL':
-        return { ...button, label, url: button.url.trim() };
+        return { ...button, label, url: (button.url ?? '').trim() };
       case 'PHONE_NUMBER':
-        return { ...button, label, phoneNumber: button.phoneNumber.trim() };
+        return { ...button, label, phoneNumber: (button.phoneNumber ?? '').trim() };
       default:
         return { ...button, label };
     }

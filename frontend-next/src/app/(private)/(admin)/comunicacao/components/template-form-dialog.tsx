@@ -103,11 +103,11 @@ function checkCanSaveTemplate({
 }) {
   return (
     Boolean(typeId) &&
-    Boolean(key.trim()) &&
+    Boolean((key ?? '').trim()) &&
     Boolean(language) &&
     Boolean(category) &&
-    Boolean(body.trim()) &&
-    body.length <= 1024 &&
+    Boolean((body ?? '').trim()) &&
+    (body ?? '').length <= 1024 &&
     buttonsValid &&
     missingRequiredCount === 0 &&
     !isPending
@@ -180,9 +180,9 @@ async function saveTemplateDraft({
   onUpdated?: (template: MessagingTemplateCatalogItem) => void;
 }) {
   const buttonsPayload = activeButtons.length > 0 ? toPayload(activeButtons) : undefined;
-  const trimmedBody = body.trim();
-  const trimmedHeader = headerText.trim();
-  const trimmedFooter = footer.trim();
+  const trimmedBody = (body ?? '').trim();
+  const trimmedHeader = (headerText ?? '').trim();
+  const trimmedFooter = (footer ?? '').trim();
 
   if (editing) {
     return updateExistingTemplateDraft({
@@ -200,7 +200,7 @@ async function saveTemplateDraft({
 
   await createTemplate.mutateAsync({
     typeId,
-    key: key.trim(),
+    key: (key ?? '').trim(),
     language,
     category,
     body: trimmedBody,
@@ -269,7 +269,7 @@ function TemplateMetadataFields({
             disabled={Boolean(editing)}
             onChange={(e) => onKeyChange(e.target.value)}
           />
-          {hasSubmitted && !key.trim() && <p className="text-[0.8rem] text-destructive">{tCommon('validation_required')}</p>}
+          {hasSubmitted && !(key ?? '').trim() && <p className="text-[0.8rem] text-destructive">{tCommon('validation_required')}</p>}
         </div>
       </div>
 
@@ -343,7 +343,7 @@ function TemplateBodyField({
         reserved={reserved}
         usedNames={usedNames}
       />
-      {hasSubmitted && !body.trim() && (
+      {hasSubmitted && !(body ?? '').trim() && (
         <p className="text-[0.8rem] text-destructive">{tCommon('validation_required')}</p>
       )}
       <p
@@ -403,7 +403,7 @@ function getInitialFormValues(editing: MessagingTemplateCatalogItem | null) {
       bypassOptOut: false,
     };
   }
-  const headerText = editing.header?.kind === 'TEXT' ? editing.header.text : '';
+  const headerText = editing.header?.kind === 'TEXT' ? (editing.header.text ?? '') : '';
   return {
     typeId: editing.typeId,
     key: editing.key,
@@ -411,7 +411,7 @@ function getInitialFormValues(editing: MessagingTemplateCatalogItem | null) {
     language: editing.language,
     category: editing.category,
     headerText,
-    body: editing.body,
+    body: editing.body ?? '',
     footer: editing.footer ?? '',
     bypassOptOut: editing.bypassOptOut,
   };
@@ -497,7 +497,7 @@ function useTemplateMetaIssues(
       () => ({
         category,
         body,
-        header: headerText.trim() ? ({ kind: 'TEXT', text: headerText } as const) : null,
+        header: (headerText ?? '').trim() ? ({ kind: 'TEXT', text: headerText } as const) : null,
         footer: footer || null,
         buttons: activeButtons.length > 0 ? activeButtons : null,
       }),

@@ -286,7 +286,7 @@ export function useMetaTemplateCheck(draft: MetaTemplateDraft, enabled: boolean)
   const { data, isFetching } = useQuery<{ issues: MetaTemplateIssue[] }>({
     queryKey: ['messaging', 'meta-check', draft],
     queryFn: Collector(() => checkMetaTemplate(draft)),
-    enabled: enabled && !!draft.body.trim(),
+    enabled: enabled && !!(draft.body ?? '').trim(),
     placeholderData: keepPreviousData,
     staleTime: 1000 * 60,
     refetchOnWindowFocus: false,
