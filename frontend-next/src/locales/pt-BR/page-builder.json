@@ -81,7 +81,10 @@
     "artifactUploading": "Enviando...",
     "artifactUploadError": "Falha ao enviar o artefato.",
     "artifactStorageDisabled": "Upload desabilitado: o storage está indisponível no momento.",
-    "artifactMissingRecord": "Salve a proposta antes de enviar o artefato."
+    "artifactMissingRecord": "Salve a proposta antes de enviar o artefato.",
+    "tabVisual": "Visual",
+    "tabJson": "JSON",
+    "jsonHint": "Edições válidas são aplicadas em tempo real."
   },
   "blocks": {
     "group": "Grupo",

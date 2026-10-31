@@ -18,6 +18,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
@@ -38,6 +44,7 @@ import { classNamesFor } from '../class-names';
 import { getMaxResizeBounds } from '../grid-engine';
 import { LAYOUT_PROFILES } from '../profiles';
 import {
+  PageLayoutSchema,
   QUICK_HEIGHTS,
   QUICK_WIDTHS,
   minRowSpanForType,
@@ -79,17 +86,28 @@ export function EditorPanel({
         </Button>
       </header>
 
-      <div className="flex-1 space-y-4 overflow-y-auto p-4">
-        <Palette />
-        <Separator />
-        {editor.selected ? (
-          <BlockForm sources={sources} sourcesLoading={isLoading} />
-        ) : (
-          <p className="text-muted-foreground py-8 text-center text-sm">
-            {t('editor.nothingSelected')}
-          </p>
-        )}
-      </div>
+      <Tabs defaultValue="visual" className="flex-1 flex flex-col overflow-hidden pt-0 sm:pt-0 gap-0">
+        <div className="shrink-0 px-4 pt-2">
+          <TabsList>
+            <TabsTrigger value="visual">{t('editor.tabVisual', { defaultValue: 'Visual' })}</TabsTrigger>
+            <TabsTrigger value="json">JSON</TabsTrigger>
+          </TabsList>
+        </div>
+        <TabsContent value="visual" className="flex-1 overflow-y-auto px-4 pt-2 pb-4 space-y-4">
+          <Palette />
+          <Separator />
+          {editor.selected ? (
+            <BlockForm sources={sources} sourcesLoading={isLoading} />
+          ) : (
+            <p className="text-muted-foreground py-8 text-center text-sm">
+              {t('editor.nothingSelected')}
+            </p>
+          )}
+        </TabsContent>
+        <TabsContent value="json" className="flex-1 overflow-y-auto px-4 pt-2 pb-4">
+          <JsonEditor />
+        </TabsContent>
+      </Tabs>
 
       <footer className="space-y-2 border-t p-4">
         <div className="flex items-center gap-2">
@@ -747,6 +765,64 @@ function ClassNamePicker({
             ))}
         </SelectContent>
       </Select>
+    </div>
+  );
+}
+
+/** Editor JSON em tempo real: exibe o rascunho serializado, propaga edições válidas para o draft. */
+function JsonEditor() {
+  const { t } = useTranslation('page-builder');
+  const editor = useEditorOrThrow();
+  const [text, setText] = React.useState(() => JSON.stringify(editor.draft, null, 2));
+  const [error, setError] = React.useState<string | null>(null);
+  const isFocused = React.useRef(false);
+
+  // Sincroniza o texto quando o draft muda fora do editor JSON (undo/redo, visual)
+  React.useEffect(() => {
+    if (!isFocused.current) {
+      setText(JSON.stringify(editor.draft, null, 2));
+    }
+  }, [editor.draft]);
+
+  function handleChange(next: string) {
+    setText(next);
+    if (!next.trim()) {
+      setError(null);
+      return;
+    }
+    try {
+      const result = PageLayoutSchema.safeParse(JSON.parse(next));
+      if (result.success) {
+        editor.setLayout(result.data);
+        setError(null);
+      } else {
+        setError(result.error.issues[0]?.message ?? t('editor.inlineInvalidJson'));
+      }
+    } catch {
+      setError(t('editor.inlineInvalidJson'));
+    }
+  }
+
+  return (
+    <div className="space-y-1.5">
+      <Textarea
+        value={text}
+        onChange={(e) => handleChange(e.target.value)}
+        onFocus={() => { isFocused.current = true; }}
+        onBlur={() => {
+          isFocused.current = false;
+          setText(JSON.stringify(editor.draft, null, 2));
+        }}
+        className="min-h-96 resize-y font-mono text-xs"
+        spellCheck={false}
+      />
+      {error ? (
+        <p className="text-destructive text-xs">{error}</p>
+      ) : (
+        <p className="text-muted-foreground text-xs">
+          {t('editor.jsonHint', { defaultValue: 'Edições válidas são aplicadas em tempo real.' })}
+        </p>
+      )}
     </div>
   );
 }

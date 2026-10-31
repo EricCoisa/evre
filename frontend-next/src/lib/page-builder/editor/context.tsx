@@ -93,6 +93,8 @@ export interface EditorContextValue {
   canRedo: boolean;
   undo: () => void;
   redo: () => void;
+  /** Substitui o rascunho inteiro — usado pelo editor JSON para aplicar edits em tempo real. */
+  setLayout: (layout: PageLayout) => void;
 }
 
 /** Exportado para o preview do editor poder sair do modo de edição: um `<EditorContext.Provider
@@ -264,6 +266,7 @@ export function EditorProvider({
       canRedo: future.length > 0,
       undo,
       redo,
+      setLayout: (layout) => applyChange(() => layout),
     };
   }, [
     draft,
