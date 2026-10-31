@@ -35,7 +35,10 @@ export const BLOCK_META = {
       'divide a largura DENTRO do card (2 + 2 = metade e metade).',
     accepts: [],
     container: true,
-    props: [{ name: 'title', type: 'string', required: false }],
+    props: [
+      { name: 'title', type: 'string', required: false },
+      { name: 'description', type: 'string', required: false },
+    ],
   },
   'chart.area': {
     profiles: ['dashboard', 'proposal'],
@@ -45,7 +48,7 @@ export const BLOCK_META = {
       '`{ data: [{ date: "2024-01", value: 100 }, ...] }`.',
     accepts: ['series'],
     props: [
-      { name: 'title', type: 'string', required: true },
+      { name: 'title', type: 'string', required: false },
       { name: 'description', type: 'string', required: false },
     ],
   },
@@ -57,7 +60,7 @@ export const BLOCK_META = {
       '`{ data: [{ date: "2024-01", value: 100 }, ...] }`.',
     accepts: ['series'],
     props: [
-      { name: 'title', type: 'string', required: true },
+      { name: 'title', type: 'string', required: false },
       { name: 'description', type: 'string', required: false },
     ],
   },
@@ -69,18 +72,8 @@ export const BLOCK_META = {
       '`{ data: [{ date: "2024-01", value: 100 }, ...] }`.',
     accepts: ['series'],
     props: [
-      { name: 'title', type: 'string', required: true },
+      { name: 'title', type: 'string', required: false },
       { name: 'description', type: 'string', required: false },
-    ],
-  },
-  'alert.banner': {
-    profiles: ['dashboard', 'proposal'],
-    description:
-      'Banner de alerta informativo com ícone e mensagem de destaque. Não consome fonte de dados.',
-    accepts: [],
-    props: [
-      { name: 'title', type: 'string', required: true },
-      { name: 'content', type: 'string', required: true },
     ],
   },
   'text.rich': {
@@ -113,6 +106,7 @@ export const BLOCK_META = {
     accepts: ['list'],
     props: [
       { name: 'title', type: 'string', required: false },
+      { name: 'description', type: 'string', required: false },
       { name: 'columns', type: 'string[]', required: true },
     ],
   },
@@ -127,6 +121,7 @@ export const BLOCK_META = {
     accepts: ['list'],
     props: [
       { name: 'title', type: 'string', required: false },
+      { name: 'description', type: 'string', required: false },
       { name: 'columns', type: 'string[]', required: true },
     ],
   },
@@ -137,7 +132,7 @@ export const BLOCK_META = {
       'numa proposta — fases, entregáveis, stack técnica. Não consome fonte de dados.',
     accepts: [],
     props: [
-      { name: 'title', type: 'string', required: true },
+      { name: 'title', type: 'string', required: false },
       { name: 'description', type: 'string', required: false },
       { name: 'items', type: 'string[]', required: true },
     ],
@@ -214,13 +209,12 @@ export const BLOCK_META = {
     accepts: [],
     props: [
       { name: 'title', type: 'string', required: false },
-      { name: 'subtitle', type: 'string', required: false },
+      { name: 'description', type: 'string', required: false },
       { name: 'rows', type: 'string[]', required: true },
       { name: 'totalLabel', type: 'string', required: false },
       { name: 'totalCents', type: 'number', required: false },
       { name: 'currency', type: 'string', required: false },
       { name: 'recurrence', type: 'string', required: false },
-      { name: 'note', type: 'string', required: false },
       { name: 'highlight', type: 'boolean', required: false },
     ],
   },

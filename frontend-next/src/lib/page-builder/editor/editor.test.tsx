@@ -111,12 +111,12 @@ describe('PageEditor', () => {
     const user = userEvent.setup();
     renderEditor();
 
-    await user.click(addButton('alert.banner'));
+    await user.click(addButton('chart.area'));
 
     expect(screen.queryByText('editor.emptyPage')).not.toBeInTheDocument();
     // A description do bloco só existe no painel (o botão da paleta mostra só o type), então
     // achá-la prova que o bloco novo já entrou selecionado.
-    expect(screen.getByText(BLOCK_META['alert.banner'].description)).toBeInTheDocument();
+    expect(screen.getByText(BLOCK_META['chart.area'].description)).toBeInTheDocument();
     // E o campo gerado a partir de BLOCK_META.
     expect(screen.getByText('title')).toBeInTheDocument();
   });
@@ -147,7 +147,7 @@ describe('PageEditor', () => {
     const user = userEvent.setup();
     const { container } = renderEditor();
 
-    await user.click(addButton('alert.banner'));
+    await user.click(addButton('chart.area'));
     const block = container.querySelector('[data-testid^="pb-block-"]')!;
     expect(block).toBeInTheDocument();
 
@@ -197,11 +197,11 @@ describe('PageEditor', () => {
     const user = userEvent.setup();
     const { container } = renderEditor();
 
-    await user.click(addButton('alert.banner'));
+    await user.click(addButton('chart.area'));
     await user.click(addButton('group'));
     await user.click(addButton('table.basic'));
 
-    const rootBlock = container.querySelector('[data-testid^="pb-block-alert-banner-"]')!;
+    const rootBlock = container.querySelector('[data-testid^="pb-block-chart-area-"]')!;
     const nestedBlock = container.querySelector('[data-testid^="pb-block-table-basic-"]')!;
     expect(rootBlock).toBeInTheDocument();
     expect(nestedBlock).toBeInTheDocument();
@@ -224,7 +224,7 @@ describe('PageEditor', () => {
     expect(screen.queryByTestId('pb-drag-preview')).not.toBeInTheDocument();
 
     startDrag(rootBlock);
-    expect(screen.getByTestId('pb-drag-preview')).toHaveTextContent('alert.banner');
+    expect(screen.getByTestId('pb-drag-preview')).toHaveTextContent('chart.area');
     endDrag();
     await waitFor(() =>
       expect(screen.queryByTestId('pb-drag-preview')).not.toBeInTheDocument(),
@@ -261,7 +261,7 @@ describe('PageEditor', () => {
 
     expect(screen.getByRole('button', { name: 'editor.save' })).toBeDisabled();
 
-    await user.click(addButton('alert.banner'));
+    await user.click(addButton('chart.area'));
 
     expect(screen.getByRole('button', { name: 'editor.save' })).toBeEnabled();
   });
@@ -273,8 +273,8 @@ describe('Palette — alvo de inserção', () => {
     renderEditor();
 
     await user.click(screen.getByRole('button', { name: /group/i }));
-    await user.click(screen.getByRole('button', { name: /alert\.banner/i }));
-    // Seleção está no alert.banner (filho). O próximo bloco deve nascer irmão dele, não na raiz.
+    await user.click(screen.getByRole('button', { name: /chart\.area/i }));
+    // Seleção está no chart.area (filho). O próximo bloco deve nascer irmão dele, não na raiz.
     await user.click(screen.getByRole('button', { name: /table\.basic/i }));
 
     const group = screen
@@ -336,7 +336,7 @@ describe('EditorShell — salvar, salvar como padrão e cancelar', () => {
     const user = userEvent.setup();
     const { onExit } = renderEditor();
 
-    await user.click(addButton('alert.banner'));
+    await user.click(addButton('chart.area'));
     await user.click(screen.getByRole('button', { name: 'editor.save' }));
 
     expect(mockSave.mutate).toHaveBeenCalledTimes(1);
@@ -395,7 +395,7 @@ describe('EditorShell — salvar, salvar como padrão e cancelar', () => {
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
     const { onExit } = renderEditor();
 
-    await user.click(addButton('alert.banner'));
+    await user.click(addButton('chart.area'));
     await user.click(screen.getByRole('button', { name: 'editor.cancel' }));
 
     expect(confirmSpy).toHaveBeenCalledWith('editor.discardConfirm');
@@ -408,7 +408,7 @@ describe('EditorShell — salvar, salvar como padrão e cancelar', () => {
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
     const { onExit } = renderEditor();
 
-    await user.click(addButton('alert.banner'));
+    await user.click(addButton('chart.area'));
     await user.click(screen.getByRole('button', { name: 'editor.cancel' }));
 
     expect(onExit).toHaveBeenCalledTimes(1);
@@ -421,7 +421,7 @@ describe('EditorShell — preview (A5)', () => {
     const user = userEvent.setup();
     renderEditor();
 
-    await user.click(addButton('alert.banner'));
+    await user.click(addButton('chart.area'));
     // O bloco no canvas do editor tem o chrome (BlockChrome marca com `pb-block-*`).
     expect(screen.getAllByTestId(/^pb-block-/)).toHaveLength(1);
 

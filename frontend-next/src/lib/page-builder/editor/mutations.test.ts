@@ -35,7 +35,7 @@ const layout = (): PageLayout => ({
       props: { title: 'Users' },
       children: [
         { id: 'c1', type: 'table.basic', span: 2, props: { columns: ['name'] } },
-        { id: 'c2', type: 'alert.banner', span: 2, props: {} },
+        { id: 'c2', type: 'text.rich', span: 2, props: {} },
       ],
     },
   ],
@@ -138,22 +138,22 @@ describe('removeBlock', () => {
 describe('addBlock / createBlock', () => {
   it('container nasce com children, folha não', () => {
     expect(createBlock('group').children).toEqual([]);
-    expect(createBlock('alert.banner').children).toBeUndefined();
+    expect(createBlock('text.rich').children).toBeUndefined();
   });
 
   it('filho nasce com meia largura e bloco de topo com largura cheia', () => {
-    expect(createBlock('alert.banner').span).toBe(12);
-    expect(createBlock('alert.banner', 'g').span).toBe(6);
+    expect(createBlock('text.rich').span).toBe(12);
+    expect(createBlock('text.rich', 'g').span).toBe(6);
   });
 
   it('gera ids únicos', () => {
-    const ids = new Set(Array.from({ length: 50 }, () => createBlock('alert.banner').id));
+    const ids = new Set(Array.from({ length: 50 }, () => createBlock('text.rich').id));
 
     expect(ids.size).toBe(50);
   });
 
   it('adiciona no topo e dentro de um container', () => {
-    const child = createBlock('alert.banner', 'g');
+    const child = createBlock('text.rich', 'g');
     const next = addBlock(layout(), child, 'g');
 
     expect(findBlock(next, child.id)!.parentId).toBe('g');
@@ -162,17 +162,17 @@ describe('addBlock / createBlock', () => {
 
   it('respeita o teto de blocos da página', () => {
     let full = EMPTY_LAYOUT;
-    for (let i = 0; i < MAX_BLOCKS; i++) full = addBlock(full, createBlock('alert.banner'));
+    for (let i = 0; i < MAX_BLOCKS; i++) full = addBlock(full, createBlock('text.rich'));
 
     expect(canAdd(full)).toBe(false);
-    expect(addBlock(full, createBlock('alert.banner')).blocks).toHaveLength(MAX_BLOCKS);
+    expect(addBlock(full, createBlock('text.rich')).blocks).toHaveLength(MAX_BLOCKS);
     expect(PageLayoutSchema.safeParse(full).success).toBe(true);
   });
 
   it('respeita o teto de filhos de um container', () => {
     let full = addBlock(EMPTY_LAYOUT, { ...createBlock('group'), id: 'g' });
     for (let i = 0; i < MAX_CHILDREN; i++) {
-      full = addBlock(full, createBlock('alert.banner', 'g'), 'g');
+      full = addBlock(full, createBlock('text.rich', 'g'), 'g');
     }
 
     expect(canAdd(full, 'g')).toBe(false);
@@ -258,9 +258,9 @@ describe('moveBlock — entrando e saindo de um container', () => {
   it('recusa entrar num container que já está no teto de filhos', () => {
     let full = addBlock(EMPTY_LAYOUT, { ...createBlock('group'), id: 'g' });
     for (let i = 0; i < MAX_CHILDREN; i++) {
-      full = addBlock(full, createBlock('alert.banner', 'g'), 'g');
+      full = addBlock(full, createBlock('text.rich', 'g'), 'g');
     }
-    full = addBlock(full, { ...createBlock('alert.banner'), id: 'solto' });
+    full = addBlock(full, { ...createBlock('text.rich'), id: 'solto' });
 
     expect(moveBlock(full, 'solto', 'g')).toEqual(full);
   });
@@ -291,7 +291,7 @@ describe('resultado continua válido para o schema', () => {
 describe('canDrop / moveBlockTo — destino explícito', () => {
   const nested = (): PageLayout => ({
     blocks: [
-      { id: 'g', type: 'group', span: 4, props: {}, children: [{ id: 'c1', type: 'alert.banner', span: 2, props: {} }] },
+      { id: 'g', type: 'group', span: 4, props: {}, children: [{ id: 'c1', type: 'text.rich', span: 2, props: {} }] },
       { id: 'b', type: 'table.basic', span: 4, props: {} },
     ],
   }) as PageLayout;

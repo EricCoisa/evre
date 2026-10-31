@@ -23,7 +23,7 @@ describe('2D Bento Grid Engine — movimentação livre em espaços disponíveis
       blocks: [
         { id: 'card1', type: 'stat.card', span: 6, rowSpan: 1, props: {} },
         { id: 'card2', type: 'stat.card', span: 6, rowSpan: 1, props: {} },
-        { id: 'alert1', type: 'alert.banner', span: 6, rowSpan: 2, props: {} },
+        { id: 'alert1', type: 'group', span: 6, rowSpan: 2, props: {} },
       ],
     };
 
@@ -49,7 +49,7 @@ describe('2D Bento Grid Engine — movimentação livre em espaços disponíveis
     const stackedRight: PageLayout = {
       v: 1,
       blocks: [
-        { id: 'tallLeft', type: 'alert.banner', span: 6, rowSpan: 2, x: 0, y: 0, props: {} },
+        { id: 'tallLeft', type: 'group', span: 6, rowSpan: 2, x: 0, y: 0, props: {} },
         { id: 'cardTopRight', type: 'stat.card', span: 6, rowSpan: 1, x: 6, y: 0, props: {} },
         { id: 'cardBottomRight', type: 'stat.card', span: 6, rowSpan: 1, x: 6, y: 1, props: {} },
       ],

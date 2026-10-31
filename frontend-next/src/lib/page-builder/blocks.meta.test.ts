@@ -20,10 +20,9 @@ describe('describeBlocks', () => {
     expect(textRich.accepts).toEqual(['list', 'count', 'series']);
   });
 
-  it('sem argumento lista os 16 blocos do catálogo', () => {
+  it('sem argumento lista os 15 blocos do catálogo', () => {
     expect(describeBlocks().map((b) => b.type).sort()).toEqual(
       [
-        'alert.banner',
         'button.action',
         'chart.area',
         'chart.bar',
@@ -66,7 +65,6 @@ describe('describeBlocks', () => {
       expect(dashboardTypes).not.toContain(type);
     }
     expect(proposalTypes.sort()).toEqual([
-      'alert.banner',
       'button.action',
       'chart.area',
       'chart.bar',
@@ -103,9 +101,8 @@ describe('describeBlocks', () => {
     }
   });
 
-  it('profile dashboard ganhou heading e divider — agora 11 blocos', () => {
+  it('profile dashboard ganhou heading e divider — agora 10 blocos', () => {
     expect(describeBlocks('dashboard').map((b) => b.type).sort()).toEqual([
-      'alert.banner',
       'button.action',
       'chart.area',
       'chart.bar',
@@ -117,6 +114,31 @@ describe('describeBlocks', () => {
       'table.basic',
       'text.rich',
     ]);
+  });
+
+  it('padronização: blocos da família series (chart.area, chart.bar, chart.line) têm props idênticas para troca direta', () => {
+    const seriesBlocks = ['chart.area', 'chart.bar', 'chart.line'] as const;
+    const firstProps = BLOCK_META[seriesBlocks[0]].props;
+    expect(firstProps).toEqual([
+      { name: 'title', type: 'string', required: false },
+      { name: 'description', type: 'string', required: false },
+    ]);
+    for (const type of seriesBlocks.slice(1)) {
+      expect(BLOCK_META[type].props).toEqual(firstProps);
+    }
+  });
+
+  it('padronização: blocos da família list (table.basic, list.feed) têm props idênticas para troca direta', () => {
+    const listBlocks = ['table.basic', 'list.feed'] as const;
+    const firstProps = BLOCK_META[listBlocks[0]].props;
+    expect(firstProps).toEqual([
+      { name: 'title', type: 'string', required: false },
+      { name: 'description', type: 'string', required: false },
+      { name: 'columns', type: 'string[]', required: true },
+    ]);
+    for (const type of listBlocks.slice(1)) {
+      expect(BLOCK_META[type].props).toEqual(firstProps);
+    }
   });
 
   // BLOCK_META[t].profiles e LAYOUT_PROFILES[p].blocks declaram o mesmo fato em dois lugares:

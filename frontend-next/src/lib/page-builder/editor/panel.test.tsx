@@ -155,7 +155,7 @@ describe('Palette', () => {
     await user.click(addButton('group'));
 
     expect(addButton('group')).toBeDisabled();
-    expect(addButton('alert.banner')).toBeEnabled();
+    expect(addButton('text.rich')).toBeEnabled();
   });
 
   it('atinge o teto de filhos do container e desabilita tudo com o aviso', async () => {
@@ -166,11 +166,11 @@ describe('Palette', () => {
     // A seleção migra para o último filho, que mantém o mesmo parentId,
     // então clicar MAX_CHILDREN vezes seguidas continua inserindo no mesmo group.
     for (let i = 0; i < MAX_CHILDREN; i++) {
-      await user.click(addButton('alert.banner'));
+      await user.click(addButton('text.rich'));
     }
 
     expect(screen.getByText('editor.limitReached')).toBeInTheDocument();
-    expect(addButton('alert.banner')).toBeDisabled();
+    expect(addButton('text.rich')).toBeDisabled();
     expect(addButton('table.basic')).toBeDisabled();
   });
 
@@ -384,7 +384,7 @@ describe('BlockForm — largura (span)', () => {
     const user = userEvent.setup();
     const withAlert: PageLayout = {
       v: 1,
-      blocks: [{ id: 's1', type: 'alert.banner', span: 12, props: { title: 'Aviso', content: 'Texto' } }],
+      blocks: [{ id: 's1', type: 'text.rich', span: 12, props: { content: 'Texto' } }],
     };
     renderPanel({ initial: withAlert, preselect: 's1' });
 

@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import {
-  AlertCircle,
   AreaChart,
   BarChart,
   Columns,
@@ -77,14 +76,6 @@ const BLOCK_DEFINITIONS: BlockDefinitionItem[] = [
     icon: List,
     category: 'data',
     descriptionKey: 'Feed compacto de itens e eventos recentes.',
-  },
-  {
-    type: 'alert.banner',
-    titleKey: 'blocks.alert.banner',
-    defaultTitle: 'Alerta Informativo',
-    icon: AlertCircle,
-    category: 'content',
-    descriptionKey: 'Aviso de destaque com ícone e mensagem rápida.',
   },
   {
     type: 'text.rich',

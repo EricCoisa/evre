@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { innerAlignClass } from './class-names';
 import { useProposalTerms } from './proposal-terms-context';
 
-import { Info } from 'lucide-react';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, XAxis } from 'recharts';
 import {
   Card,
@@ -62,7 +61,6 @@ export const BLOCK_REGISTRY: Record<BlockType, (p: BlockProps) => React.ReactNod
   'chart.area': AreaChartBlock,
   'chart.bar': BarChartBlock,
   'chart.line': LineChartBlock,
-  'alert.banner': AlertBanner,
   'text.rich': RichTextBlock,
   'button.action': ButtonActionBlock,
   'list.feed': ListFeed,
@@ -111,18 +109,47 @@ function Panel({
   );
 }
 
+/** Renderiza o cabeçalho universal de Card (`title`, `description` e controles/children). */
+function renderBlockHeader(
+  title?: unknown,
+  description?: unknown,
+  children?: React.ReactNode,
+): React.ReactNode {
+  const hasTitle = Boolean(title);
+  const hasDescription = Boolean(description);
+  const hasChildren = Boolean(children);
+
+  if (!hasTitle && !hasDescription && !hasChildren) return undefined;
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      {hasTitle || hasDescription ? (
+        <div>
+          {hasTitle ? (
+            <CardTitle>
+              <FormattedRichText text={str(title)} inline />
+            </CardTitle>
+          ) : null}
+          {hasDescription ? (
+            <CardDescription className={hasTitle ? 'mt-1' : undefined}>
+              <FormattedRichText text={str(description)} inline />
+            </CardDescription>
+          ) : null}
+        </div>
+      ) : null}
+      {hasChildren ? (
+        <div className="flex flex-wrap items-center gap-2">{children}</div>
+      ) : null}
+    </div>
+  );
+}
+
 function Group({ props, bare, className, children }: BlockProps) {
   return (
     <Panel
       bare={bare}
       className={className}
-      header={
-        props.title ? (
-          <CardTitle>
-            <FormattedRichText text={str(props.title)} inline />
-          </CardTitle>
-        ) : undefined
-      }
+      header={renderBlockHeader(props.title, props.description)}
     >
       <div className="grid grid-cols-1 gap-3 md:gap-4 lg:grid-cols-12 lg:auto-rows-[44px] items-stretch">{children}</div>
     </Panel>
@@ -139,25 +166,7 @@ function AreaChartBlock({ props, data, bare, className, children }: BlockProps) 
     <Panel
       bare={bare}
       className={className}
-      header={
-        <>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <CardTitle>
-                <FormattedRichText text={str(props.title)} inline />
-              </CardTitle>
-              {props.description ? (
-                <CardDescription className="mt-1">
-                  <FormattedRichText text={str(props.description)} inline />
-                </CardDescription>
-              ) : null}
-            </div>
-            {children ? (
-              <div className="flex flex-wrap items-center gap-2">{children}</div>
-            ) : null}
-          </div>
-        </>
-      }
+      header={renderBlockHeader(props.title, props.description, children)}
     >
       <ChartContainer config={chartConfig} className="aspect-auto h-full min-h-[120px] w-full flex-1">
         <AreaChart data={points}>
@@ -183,25 +192,7 @@ function BarChartBlock({ props, data, bare, className, children }: BlockProps) {
     <Panel
       bare={bare}
       className={className}
-      header={
-        <>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <CardTitle>
-                <FormattedRichText text={str(props.title)} inline />
-              </CardTitle>
-              {props.description ? (
-                <CardDescription className="mt-1">
-                  <FormattedRichText text={str(props.description)} inline />
-                </CardDescription>
-              ) : null}
-            </div>
-            {children ? (
-              <div className="flex flex-wrap items-center gap-2">{children}</div>
-            ) : null}
-          </div>
-        </>
-      }
+      header={renderBlockHeader(props.title, props.description, children)}
     >
       <ChartContainer config={chartConfig} className="aspect-auto h-full min-h-[120px] w-full flex-1">
         <BarChart data={points}>
@@ -221,25 +212,7 @@ function LineChartBlock({ props, data, bare, className, children }: BlockProps) 
     <Panel
       bare={bare}
       className={className}
-      header={
-        <>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <CardTitle>
-                <FormattedRichText text={str(props.title)} inline />
-              </CardTitle>
-              {props.description ? (
-                <CardDescription className="mt-1">
-                  <FormattedRichText text={str(props.description)} inline />
-                </CardDescription>
-              ) : null}
-            </div>
-            {children ? (
-              <div className="flex flex-wrap items-center gap-2">{children}</div>
-            ) : null}
-          </div>
-        </>
-      }
+      header={renderBlockHeader(props.title, props.description, children)}
     >
       <ChartContainer config={chartConfig} className="aspect-auto h-full min-h-[120px] w-full flex-1">
         <LineChart data={points}>
@@ -259,48 +232,15 @@ function LineChartBlock({ props, data, bare, className, children }: BlockProps) 
   );
 }
 
-function AlertBanner({ props, bare, className, children }: BlockProps) {
-  return (
-    <Panel
-      bare={bare}
-      className={cn('border-primary/20 bg-primary/5', className)}
-      header={
-        <div className="flex items-center gap-2">
-          <Info className="size-4 shrink-0 text-primary" />
-          <CardTitle className="text-base">
-            <FormattedRichText text={str(props.title)} inline />
-          </CardTitle>
-        </div>
-      }
-    >
-      <div className="space-y-2">
-        <FormattedRichText text={str(props.content)} />
-        {children ? (
-          <div className="flex flex-wrap items-center gap-2 pt-1">{children}</div>
-        ) : null}
-      </div>
-    </Panel>
-  );
-}
-
 function TopicBlock({ props, bare, className, children }: BlockProps) {
   const items = toStringArray(props.items);
   return (
     <Panel
       bare={bare}
       className={className}
-      header={
-        <CardTitle>
-          <FormattedRichText text={str(props.title)} inline />
-        </CardTitle>
-      }
+      header={renderBlockHeader(props.title, props.description, children)}
     >
       <div className="space-y-2">
-        {props.description ? (
-          <CardDescription>
-            <FormattedRichText text={str(props.description)} />
-          </CardDescription>
-        ) : null}
         {items.length > 0 ? (
           <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
             {items.map((item, index) => (
@@ -495,7 +435,7 @@ function resolveCurrency(value: unknown): string {
 
 /** Tabela de valores livre (apresentação, não registro): `rows` linha a linha e um total opcional
  * em destaque. `highlight` dá moldura de card recomendado. */
-function PriceBlock({ props, bare, className }: BlockProps) {
+function PriceBlock({ props, bare, className, children }: BlockProps) {
   const { t } = useTranslation('page-builder');
   const rows = toStringArray(props.rows).map(parsePriceRow);
   const currency = resolveCurrency(props.currency);
@@ -506,20 +446,9 @@ function PriceBlock({ props, bare, className }: BlockProps) {
     <Panel
       bare={bare}
       className={cn(highlight ? 'border-primary border-2' : undefined, className)}
-      header={
-        props.title ? (
-          <CardTitle>
-            <FormattedRichText text={str(props.title)} inline />
-          </CardTitle>
-        ) : undefined
-      }
+      header={renderBlockHeader(props.title, props.description, children)}
     >
       <div className="space-y-3">
-        {props.subtitle ? (
-          <CardDescription>
-            <FormattedRichText text={str(props.subtitle)} inline />
-          </CardDescription>
-        ) : null}
         {rows.length > 0 ? (
           <ul className="space-y-1.5 text-sm">
             {rows.map((row, index) => (
@@ -543,11 +472,6 @@ function PriceBlock({ props, bare, className }: BlockProps) {
         {props.recurrence ? (
           <p className="text-sm text-muted-foreground">
             {t(`investmentRecurrence.${str(props.recurrence)}`, { defaultValue: str(props.recurrence) })}
-          </p>
-        ) : null}
-        {props.note ? (
-          <p className="text-xs text-muted-foreground">
-            <FormattedRichText text={str(props.note)} inline />
           </p>
         ) : null}
       </div>
@@ -885,7 +809,7 @@ function ListFeed({
     <Panel
       bare={bare}
       className={className}
-      header={tableHeaderWithChildren(props.title, children)}
+      header={renderBlockHeader(props.title, props.description, children)}
     >
       <div className="divide-y divide-border" aria-busy={isLoading}>
         {isLoading ? (
@@ -930,7 +854,7 @@ function BasicTable({
     <Panel
       bare={bare}
       className={className}
-      header={tableHeaderWithChildren(props.title, children)}
+      header={renderBlockHeader(props.title, props.description, children)}
     >
       <Table aria-busy={isLoading}>
         <TableHeader>
@@ -962,25 +886,6 @@ function BasicTable({
 
 function toStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.map(str) : [];
-}
-
-function tableHeaderWithChildren(
-  value: unknown,
-  children?: React.ReactNode,
-): React.ReactNode {
-  if (!value && !children) return undefined;
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-2">
-      {value ? (
-        <CardTitle>
-          <FormattedRichText text={str(value)} inline />
-        </CardTitle>
-      ) : null}
-      {children ? (
-        <div className="flex flex-wrap items-center gap-2">{children}</div>
-      ) : null}
-    </div>
-  );
 }
 
 function BasicTableRows({

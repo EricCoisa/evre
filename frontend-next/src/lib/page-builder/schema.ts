@@ -205,7 +205,7 @@ export function defaultRowSpanForType(type?: string): BlockRowSpan {
   ) {
     return 4;
   }
-  if (type === 'group' || type === 'alert.banner') {
+  if (type === 'group') {
     return 2;
   }
   return 1;

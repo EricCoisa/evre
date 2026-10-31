@@ -150,7 +150,6 @@ Dois arquivos de propósito:
 | `chart.area` | `series` | `ChartContainer` (recharts AreaChart) |
 | `chart.bar` | `series` | `ChartContainer` (recharts BarChart), para dados discretos |
 | `chart.line` | `series` | `ChartContainer` (recharts LineChart), para tendências contínuas |
-| `alert.banner` | — | `Panel` com destaque visual (`Alert`), título e conteúdo informativo |
 | `list.feed` | `list` | Lista compacta em pilha (`primaryField` e `secondaryField`), ideal para feeds e cartões estreitos |
 | `table.basic` | `list` | `Table` (shadcn), somente leitura; paginação aparece quando há mais de uma página e usa skeleton durante a troca |
 | `heading` | — | `<h1>`–`<h4>` reais (semântica de título, não card) — estrutura de seção |
