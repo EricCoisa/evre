@@ -482,7 +482,8 @@ export function setBlockSpanLeft(
 export function setBlockRowSpanTop(
   layout: PageLayout,
   id: string,
-  rowSpan: number,
+  newY: number,
+  newRowSpan: number,
 ): PageLayout {
   const located = findBlock(layout, id);
   if (!located) return layout;
@@ -490,7 +491,7 @@ export function setBlockRowSpanTop(
   if (!located.parentId) {
     return {
       ...layout,
-      blocks: resizeBlockTopInGrid(layout.blocks, id, rowSpan),
+      blocks: resizeBlockTopInGrid(layout.blocks, id, newY, newRowSpan),
     };
   }
 
@@ -498,7 +499,7 @@ export function setBlockRowSpanTop(
     ...layout,
     blocks: layout.blocks.map((b) =>
       b.id === located.parentId
-        ? { ...b, children: resizeBlockTopInGrid(b.children ?? [], id, rowSpan) }
+        ? { ...b, children: resizeBlockTopInGrid(b.children ?? [], id, newY, newRowSpan) }
         : b,
     ),
   };

@@ -1,4 +1,5 @@
 import {
+  minRowSpanForType,
   normalizeRowSpan,
   normalizeSpan,
   type BlockRowSpan,
@@ -769,11 +770,38 @@ export function resizeBlockLeftInGrid(
 export function resizeBlockTopInGrid(
   blocks: PageBlock[],
   id: string,
-  desiredRowSpan: number,
+  newY: number,
+  newRowSpan: number,
   cols = 12,
 ): PageBlock[] {
-  // Redimensiona a escala de altura sem alterar a posição (y) do bloco
-  return resizeBlockRowSpanInGrid(blocks, id, desiredRowSpan, cols);
+  const placed = resolveGridLayout(blocks, cols);
+  const target = placed.find((p) => p.block.id === id);
+  if (!target) return blocks;
+
+  const others = placed.filter((p) => p.block.id !== id);
+  const fixedBottom = target.y + target.rowSpan;
+
+  // Limite superior: não pode ultrapassar o topo da grade (0) nem a borda inferior do bloco acima
+  let minTop = 0;
+  for (const other of others) {
+    const overlapsHorizontally =
+      target.x < other.x + other.span && target.x + target.span > other.x;
+    if (overlapsHorizontally && other.y + other.rowSpan <= target.y) {
+      minTop = Math.max(minTop, other.y + other.rowSpan);
+    }
+  }
+
+  const minRowSpan = minRowSpanForType(target.block.type);
+  const clampedY = Math.max(minTop, Math.min(fixedBottom - minRowSpan, newY));
+  const clampedRowSpan = normalizeRowSpan(fixedBottom - clampedY, target.block.type);
+
+  return placed.map((p) => ({
+    ...p.block,
+    x: p.x,
+    y: p.block.id === id ? clampedY : p.y,
+    span: p.span,
+    rowSpan: p.block.id === id ? clampedRowSpan : p.rowSpan,
+  }));
 }
 
 /**

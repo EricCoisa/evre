@@ -340,6 +340,8 @@ function BlockResizeHandles({
     const startY = e.clientY;
     const initialSpan = currentSpan;
     const initialRowSpan = currentRowSpan;
+    const initialY = placedInList?.y ?? block.y ?? 0;
+    const fixedBottom = initialY + initialRowSpan;
 
     const handlePointerMove = (moveEvent: PointerEvent) => {
       if (!isDraggingRef.current) return;
@@ -362,9 +364,10 @@ function BlockResizeHandles({
         editor.setRowSpan(block.id, nextRowSpan);
       }
       if (handle === 'top') {
-        const deltaRows = Math.round(-deltaY / 36);
-        const nextRowSpan = Math.min(24, Math.max(1, initialRowSpan + deltaRows));
-        editor.setRowSpan(block.id, nextRowSpan);
+        const deltaRows = Math.round(deltaY / 36);
+        const desiredY = initialY + deltaRows;
+        const desiredRowSpan = fixedBottom - desiredY;
+        editor.setRowSpanTop(block.id, desiredY, desiredRowSpan);
       }
     };
 

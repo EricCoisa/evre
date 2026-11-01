@@ -77,7 +77,7 @@ export interface EditorContextValue {
   setSpan: (id: string, span: number) => void;
   setSpanLeft: (id: string, span: number) => void;
   setRowSpan: (id: string, rowSpan: number) => void;
-  setRowSpanTop: (id: string, rowSpan: number) => void;
+  setRowSpanTop: (id: string, newY: number, newRowSpan: number) => void;
   remove: (id: string) => void;
   move: (activeId: string, overId: string) => void;
   moveTo: (activeId: string, targetId: string, placement: DropPlacement) => void;
@@ -246,8 +246,8 @@ export function EditorProvider({
       setRowSpan: (id, rowSpan) => {
         applyChange((d) => setBlockRowSpan(d, id, rowSpan));
       },
-      setRowSpanTop: (id, rowSpan) => {
-        applyChange((d) => setBlockRowSpanTop(d, id, rowSpan));
+      setRowSpanTop: (id, newY, newRowSpan) => {
+        applyChange((d) => setBlockRowSpanTop(d, id, newY, newRowSpan));
       },
       remove: (id) => {
         applyChange((d) => removeBlock(d, id));
