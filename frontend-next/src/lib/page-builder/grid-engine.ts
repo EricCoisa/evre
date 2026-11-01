@@ -772,36 +772,8 @@ export function resizeBlockTopInGrid(
   desiredRowSpan: number,
   cols = 12,
 ): PageBlock[] {
-  const placed = resolveGridLayout(blocks, cols);
-  const target = placed.find((p) => p.block.id === id);
-  if (!target) return blocks;
-
-  const others = placed.filter((p) => p.block.id !== id);
-  const bottomEdge = target.y + target.rowSpan;
-
-  let minTop = 0;
-  for (const other of others) {
-    const overlapsHorizontally =
-      target.x < other.x + other.span && target.x + target.span > other.x;
-    if (overlapsHorizontally && other.y + other.rowSpan <= target.y) {
-      minTop = Math.max(minTop, other.y + other.rowSpan);
-    }
-  }
-
-  const maxRowSpanTop = Math.min(24, Math.max(target.rowSpan, bottomEdge - minTop));
-  const clampedRowSpan = normalizeRowSpan(
-    Math.min(Math.max(1, desiredRowSpan), maxRowSpanTop),
-    target.block.type,
-  );
-  const nextY = Math.max(minTop, bottomEdge - clampedRowSpan);
-
-  return placed.map((p) => ({
-    ...p.block,
-    x: p.x,
-    y: p.block.id === id ? nextY : p.y,
-    span: p.span,
-    rowSpan: p.block.id === id ? clampedRowSpan : p.rowSpan,
-  }));
+  // Redimensiona a escala de altura sem alterar a posição (y) do bloco
+  return resizeBlockRowSpanInGrid(blocks, id, desiredRowSpan, cols);
 }
 
 /**

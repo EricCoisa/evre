@@ -364,7 +364,7 @@ function BlockResizeHandles({
       if (handle === 'top') {
         const deltaRows = Math.round(-deltaY / 36);
         const nextRowSpan = Math.min(24, Math.max(1, initialRowSpan + deltaRows));
-        editor.setRowSpanTop(block.id, nextRowSpan);
+        editor.setRowSpan(block.id, nextRowSpan);
       }
     };
 

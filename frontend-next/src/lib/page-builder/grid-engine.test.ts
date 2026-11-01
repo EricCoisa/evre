@@ -217,7 +217,7 @@ describe('Limitação de redimensionamento ao encostar em outro bloco ou fim da 
 
     // E aumentar rightBlock pela alça superior (de rowSpan=1 em y=1 para rowSpan=2) expande para y=0..2:
     const expandedTop = setBlockRowSpanTop(clampedLeft, 'rightBlock', 2);
-    expect(findBlock(expandedTop, 'rightBlock')!.block).toMatchObject({ x: 3, y: 0, span: 9, rowSpan: 2 });
+    expect(findBlock(expandedTop, 'rightBlock')!.block).toMatchObject({ x: 3, y: 1, span: 9, rowSpan: 2 });
   });
 
   it('ao lado de um Gráfico (que ocupa no mínimo 2 linhas mesmo que estivesse salvo com rowSpan=1), um Card com rowSpan=1 ocupa metade da altura e libera o espaço abaixo dele como slot vazio para outros elementos', () => {
