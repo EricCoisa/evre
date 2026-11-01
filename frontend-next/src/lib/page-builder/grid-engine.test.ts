@@ -101,36 +101,53 @@ describe('Troca de lugar e de tamanho (Swap) — setas e overlay de drag', () =>
     ],
   });
 
-  it('mover para cima/baixo usando a seta troca de lugar e de tamanho sem empurrar os outros cards', () => {
+  it('mover para cima/baixo usando a seta troca de lugar mantendo os tamanhos originais de cada bloco', () => {
     const initial = threePlusTwo();
-
-    // Mover c4 (50%, na linha 1 esq) para cima troca com c1 (33%, na linha 0 esq):
-    // c4 passa a ter 33% (span 4) em (0, 0), e c1 passa a ter 50% (span 6) em (0, 1).
-    // Os demais (c2, c3, c5) continuam intactos nas mesmas posições!
     const movedUp = nudgeBlockGrid(initial, 'c4', 'up');
-    expect(findBlock(movedUp, 'c4')!.block).toMatchObject({ x: 0, y: 0, span: 4 });
-    expect(findBlock(movedUp, 'c1')!.block).toMatchObject({ x: 0, y: 1, span: 6 });
-    expect(findBlock(movedUp, 'c2')!.block).toMatchObject({ x: 4, y: 0, span: 4 });
-    expect(findBlock(movedUp, 'c3')!.block).toMatchObject({ x: 8, y: 0, span: 4 });
-    expect(findBlock(movedUp, 'c5')!.block).toMatchObject({ x: 6, y: 1, span: 6 });
-
-    // E se movermos c2 (do meio, 33%) para baixo, troca com c1 (ou o mais próximo abaixo) e troca de tamanho:
-    const movedDown = nudgeBlockGrid(initial, 'c3', 'down');
-    expect(findBlock(movedDown, 'c3')!.block).toMatchObject({ x: 6, y: 1, span: 6 });
-    expect(findBlock(movedDown, 'c5')!.block).toMatchObject({ x: 8, y: 0, span: 4 });
+    expect(findBlock(movedUp, 'c4')!.block).toMatchObject({ x: 0, y: 0, span: 6 });
+    expect(findBlock(movedUp, 'c1')!.block).toMatchObject({ x: 0, y: 1, span: 4 });
   });
 
-  it('soltar um bloco no overlay "swap" sobre outro bloco troca posição e tamanho', () => {
-    const initial = threePlusTwo();
+  it('trocar de posição preserva estritamente o tamanho original de cada bloco (ex: divider não herda altura da tabela)', () => {
+    const layout: PageLayout = {
+      v: 1,
+      blocks: [
+        { id: 'div1', type: 'divider', span: 12, rowSpan: 1, x: 0, y: 0, props: {} },
+        {
+          id: 'table1',
+          type: 'table.basic',
+          span: 12,
+          rowSpan: 11,
+          x: 0,
+          y: 1,
+          props: { title: 'Usuários' },
+          data: { params: { limit: 10 } },
+        },
+      ],
+    };
 
-    // Arrastar c5 (50% em x=6, y=1) sobre o overlay swap de c2 (33% em x=4, y=0)
+    const swapped = moveBlockTo(layout, 'div1', 'table1', 'swap');
+    const swappedDiv = findBlock(swapped, 'div1')!.block;
+    const swappedTable = findBlock(swapped, 'table1')!.block;
+
+    // O divider NUNCA assume a altura da tabela (continua com rowSpan: 1)
+    expect(swappedDiv.rowSpan).toBe(1);
+    expect(swappedDiv.span).toBe(12);
+
+    // A tabela NUNCA é achatada para o tamanho do divider (continua com rowSpan: 11)
+    expect(swappedTable.rowSpan).toBe(11);
+    expect(swappedTable.span).toBe(12);
+
+    // A tabela foi para o topo (y=0) e o divider foi para baixo da tabela sem colidir
+    expect(swappedTable.y).toBe(0);
+    expect(swappedDiv.y).toBeGreaterThanOrEqual(11);
+  });
+
+  it('trocar de lugar entre cards de larguras diferentes preserva os spans originais', () => {
+    const initial = threePlusTwo();
     const swapped = moveBlockTo(initial, 'c5', 'c2', 'swap');
-    expect(findBlock(swapped, 'c5')!.block).toMatchObject({ x: 4, y: 0, span: 4 });
-    expect(findBlock(swapped, 'c2')!.block).toMatchObject({ x: 6, y: 1, span: 6 });
-    // Os vizinhos c1, c3, c4 não são empurrados
-    expect(findBlock(swapped, 'c1')!.block).toMatchObject({ x: 0, y: 0, span: 4 });
-    expect(findBlock(swapped, 'c3')!.block).toMatchObject({ x: 8, y: 0, span: 4 });
-    expect(findBlock(swapped, 'c4')!.block).toMatchObject({ x: 0, y: 1, span: 6 });
+    expect(findBlock(swapped, 'c5')!.block.span).toBe(6);
+    expect(findBlock(swapped, 'c2')!.block.span).toBe(4);
   });
 });
 

@@ -705,15 +705,15 @@ export function moveBlockTo(
     // cada um assume a posição e o tamanho (span/rowSpan/x/y) do outro!
     const fromReplaced: PageBlock = {
       ...to.block,
-      span: from.block.span,
-      rowSpan: from.block.rowSpan,
+      span: to.block.span,
+      rowSpan: to.block.rowSpan,
       x: from.block.x,
       y: from.block.y,
     };
     const toReplaced: PageBlock = {
       ...from.block,
-      span: to.block.span,
-      rowSpan: to.block.rowSpan,
+      span: from.block.span,
+      rowSpan: from.block.rowSpan,
       x: to.block.x,
       y: to.block.y,
     };

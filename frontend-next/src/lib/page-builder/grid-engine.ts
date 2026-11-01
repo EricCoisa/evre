@@ -395,29 +395,99 @@ export function swapBlocksInGrid(
   const b = placed.find((p) => p.block.id === idB);
   if (!a || !b) return blocks;
 
-  const swapped: PlacedBlock[] = placed.map((p) => {
-    if (p.block.id === idA) {
-      return {
-        ...p,
-        x: b.x,
-        y: b.y,
-        span: b.span,
-        rowSpan: normalizeRowSpan(b.rowSpan, p.block.type),
-      };
-    }
-    if (p.block.id === idB) {
-      return {
-        ...p,
-        x: a.x,
-        y: a.y,
-        span: a.span,
-        rowSpan: normalizeRowSpan(a.rowSpan, p.block.type),
-      };
-    }
-    return p;
-  });
+  // Identifica qual bloco está acima (top) e qual está abaixo (bottom)
+  const isABeforeB = a.y < b.y || (a.y === b.y && a.x < b.x);
+  const top = isABeforeB ? a : b;
+  const bottom = isABeforeB ? b : a;
 
-  return persistPlacedBlocks(swapped);
+  let nextPlaced: PlacedBlock[];
+
+  if (top.y === bottom.y) {
+    // Caso 1: Mesma linha vertical — troca horizontal simples de colunas
+    const targetXTop = Math.max(0, Math.min(cols - top.span, bottom.x));
+    const targetXBottom = Math.max(0, Math.min(cols - bottom.span, top.x));
+
+    nextPlaced = placed.map((p) => {
+      if (p.block.id === top.block.id) {
+        return { ...p, x: targetXTop, y: top.y, span: top.span, rowSpan: top.rowSpan };
+      }
+      if (p.block.id === bottom.block.id) {
+        return { ...p, x: targetXBottom, y: bottom.y, span: bottom.span, rowSpan: bottom.rowSpan };
+      }
+      return p;
+    });
+  } else {
+    // Caso 2: Linhas verticais diferentes — troca de ordem no fluxo vertical
+    const hTop = top.rowSpan;
+    const hBottom = bottom.rowSpan;
+    const deltaH = hBottom - hTop;
+
+    const topStartY = top.y;
+    const topEndY = top.y + top.rowSpan;
+    const bottomStartY = bottom.y;
+
+    nextPlaced = placed.map((p) => {
+      // O bloco de baixo sobe para o topo
+      if (p.block.id === bottom.block.id) {
+        const targetX = Math.max(0, Math.min(cols - bottom.span, top.x));
+        return {
+          ...p,
+          x: targetX,
+          y: topStartY,
+          span: bottom.span,
+          rowSpan: bottom.rowSpan,
+        };
+      }
+
+      // O bloco de cima desce para a posição de baixo, ajustado por deltaH
+      if (p.block.id === top.block.id) {
+        const targetX = Math.max(0, Math.min(cols - top.span, bottom.x));
+        return {
+          ...p,
+          x: targetX,
+          y: bottomStartY + deltaH,
+          span: top.span,
+          rowSpan: top.rowSpan,
+        };
+      }
+
+      // Blocos intermediários entre top e bottom deslizam por deltaH
+      if (p.y >= topEndY && p.y < bottomStartY) {
+        return {
+          ...p,
+          y: Math.max(0, p.y + deltaH),
+        };
+      }
+
+      // Demais blocos permanecem inalterados
+      return p;
+    });
+  }
+
+  // Troca a ordem dos dois blocos no array para que o bloco que subiu tenha prioridade de resolução
+  const idxTop = nextPlaced.findIndex((p) => p.block.id === top.block.id);
+  const idxBottom = nextPlaced.findIndex((p) => p.block.id === bottom.block.id);
+  if (idxTop !== -1 && idxBottom !== -1) {
+    const temp = nextPlaced[idxTop];
+    nextPlaced[idxTop] = nextPlaced[idxBottom];
+    nextPlaced[idxBottom] = temp;
+  }
+
+  // Re-resolve para garantir ordenação limpa e sem sobreposições
+  const resolved = resolveGridLayout(
+    nextPlaced.map((p) => ({
+      ...p.block,
+      x: p.x,
+      y: p.y,
+      span: p.span,
+      rowSpan: p.rowSpan,
+    })),
+    cols,
+  );
+
+  // Compacta quaisquer linhas vazias órfãs para garantir que nunca sobrem buracos
+  const compacted = compactEmptyRows(resolved, cols);
+  return persistPlacedBlocks(compacted);
 }
 
 /**
