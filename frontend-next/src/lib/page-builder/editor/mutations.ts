@@ -6,6 +6,7 @@ import {
   type BlockType,
 } from '../blocks.meta';
 import {
+  autoPackBlocks,
   moveBlockToCell,
   nudgeBlockInGrid,
   resizeBlockLeftInGrid,
@@ -735,34 +736,31 @@ export function moveBlockTo(
     return insertAt(detached, cleanBlock, parentId, children.length);
   }
 
-  // Quando o usuário solta em "before" ou "after" de um bloco que já está na grade 2D,
-  // se o bloco alvo ou os irmãos tiverem coordenadas (x, y), posiciona na mesma coluna (x)
-  // do alvo (acima em `to.y` ou abaixo em `to.y + to.rowSpan`)!
+  const targetIndex = findBlock(detached, targetId)?.index ?? 0;
+  const insertIndex = placement === 'after' ? targetIndex + 1 : targetIndex;
+  const reordered = insertAt(detached, from.block, parentId, insertIndex);
+
+  // Se a lista de destino possuir coordenadas de grade (x, y), reempacota os blocos na nova ordem sequencial
+  // garantindo fluxo contínuo, sem buracos, sem sobreposições e sem saltos de blocos!
   const targetList = parentId
-    ? (findBlock(layout, parentId)?.block.children ?? [])
-    : layout.blocks;
+    ? (findBlock(reordered, parentId)?.block.children ?? [])
+    : reordered.blocks;
   const hasAnyGridCoords = targetList.some(
     (b) => typeof b.x === 'number' || typeof b.y === 'number',
   );
 
-  if (hasAnyGridCoords && from.parentId === parentId) {
-    const placedList = resolveGridLayout(targetList);
-    const placedTarget = placedList.find((p) => p.block.id === targetId);
-    if (placedTarget) {
-      const targetX = placedTarget.x;
-      const targetY =
-        placement === 'after'
-          ? placedTarget.y + placedTarget.rowSpan
-          : placedTarget.y;
-      return moveBlockToGrid(layout, activeId, targetX, targetY, parentId);
+  if (hasAnyGridCoords) {
+    const packedList = autoPackBlocks(targetList);
+    if (!parentId) {
+      return { ...reordered, blocks: packedList };
     }
+    return {
+      ...reordered,
+      blocks: reordered.blocks.map((b) =>
+        b.id === parentId ? { ...b, children: packedList } : b,
+      ),
+    };
   }
 
-  const targetIndex = findBlock(detached, targetId)?.index ?? 0;
-  return insertAt(
-    detached,
-    from.block,
-    parentId,
-    placement === 'after' ? targetIndex + 1 : targetIndex,
-  );
+  return reordered;
 }

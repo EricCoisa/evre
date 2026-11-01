@@ -383,4 +383,34 @@ describe('Limitação de redimensionamento ao encostar em outro bloco ou fim da 
     });
 
   });
+  it('mover Visão geral para abaixo do divider posiciona Visão geral entre o divider e o grupo (sem pular para baixo do grupo)', () => {
+    // Reproduz exatamente o cenário das imagens 9 a 11 do usuário:
+    const layout: PageLayout = {
+      v: 1,
+      blocks: [
+        { id: 'visao-geral', type: 'heading', span: 12, rowSpan: 1, x: 0, y: 0, props: { text: 'Visão geral' } },
+        { id: 'divider', type: 'divider', span: 12, rowSpan: 1, x: 0, y: 1, props: {} },
+        { id: 'grupo', type: 'group', span: 12, rowSpan: 6, x: 0, y: 2, props: { title: 'Indicadores de usuários' }, children: [] },
+      ],
+    };
+
+    // Solta "Visão geral" no dropzone "Abaixo" (after) do Divider
+    const next = moveBlockTo(layout, 'visao-geral', 'divider', 'after');
+
+    const divider = findBlock(next, 'divider')!.block;
+    const visaoGeral = findBlock(next, 'visao-geral')!.block;
+    const grupo = findBlock(next, 'grupo')!.block;
+
+    // Divider fica no topo (y=0)
+    expect(divider.y).toBe(0);
+
+    // Visão geral fica logo abaixo do divider (y=1)
+    expect(visaoGeral.y).toBe(1);
+
+    // Grupo fica logo abaixo de Visão geral (y=2), NUNCA pula para o topo nem joga os outros para baixo!
+    expect(grupo.y).toBe(2);
+
+    // Ordem no array deve ser rigorosamente: divider -> visao-geral -> grupo
+    expect(next.blocks.map((b) => b.id)).toEqual(['divider', 'visao-geral', 'grupo']);
+  });
 });

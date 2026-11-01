@@ -296,6 +296,27 @@ export function resolveGridLayout(blocks: PageBlock[], cols = 12): PlacedBlock[]
 }
 
 /**
+ * Reempacota uma lista de blocos na ordem sequencial do array (fluxo natural da grade),
+ * calculando (x, y) de cada bloco para preencher a grade de forma limpa, sem buracos e sem sobreposições.
+ */
+export function autoPackBlocks(blocks: PageBlock[], cols = 12): PageBlock[] {
+  const occupied: GridRect[] = [];
+  return blocks.map((block) => {
+    const span = normalizeSpan(block.span);
+    const rowSpan = calculateEffectiveRowSpan(block, cols);
+    const slot = findFirstAvailableSlot(occupied, span, rowSpan, cols);
+    occupied.push({ x: slot.x, y: slot.y, span, rowSpan });
+    return {
+      ...block,
+      x: slot.x,
+      y: slot.y,
+      span,
+      rowSpan,
+    };
+  });
+}
+
+/**
  * Descobre todos os espaços livres na grade (inclusive buracos ao lado ou abaixo de blocos)
  * para que o usuário possa arrastar e encaixar blocos livremente onde houver espaço.
  */
