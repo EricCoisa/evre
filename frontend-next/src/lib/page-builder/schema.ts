@@ -33,7 +33,7 @@ const LeafBlockSchema = z.object({
   id: z.string().min(1),
   type: z.string().min(1),
   span: z.number().int().min(1).max(12).optional(),
-  rowSpan: z.number().int().min(1).max(8).optional(),
+  rowSpan: z.number().int().min(1).max(24).optional(),
   x: z.number().int().min(0).max(11).optional(),
   y: z.number().int().min(0).max(99).optional(),
   /** Classes Tailwind da allowlist (`class-names.ts`), separadas por espaço. */
@@ -120,6 +120,22 @@ export const ROW_SPAN_CLASS: Record<number, string> = {
   6: 'lg:row-span-6',
   7: 'lg:row-span-7',
   8: 'lg:row-span-8',
+  9: 'lg:row-span-9',
+  10: 'lg:row-span-10',
+  11: 'lg:row-span-11',
+  12: 'lg:row-span-12',
+  13: 'lg:row-span-13',
+  14: 'lg:row-span-14',
+  15: 'lg:row-span-15',
+  16: 'lg:row-span-16',
+  17: 'lg:row-span-17',
+  18: 'lg:row-span-18',
+  19: 'lg:row-span-19',
+  20: 'lg:row-span-20',
+  21: 'lg:row-span-21',
+  22: 'lg:row-span-22',
+  23: 'lg:row-span-23',
+  24: 'lg:row-span-24',
 } as const;
 
 export const ROW_START_CLASS: Record<number, string> = {
@@ -153,12 +169,44 @@ export const ROW_START_CLASS: Record<number, string> = {
   27: 'lg:row-start-28',
   28: 'lg:row-start-29',
   29: 'lg:row-start-30',
+  30: 'lg:row-start-31',
+  31: 'lg:row-start-32',
+  32: 'lg:row-start-33',
+  33: 'lg:row-start-34',
+  34: 'lg:row-start-35',
+  35: 'lg:row-start-36',
+  36: 'lg:row-start-37',
+  37: 'lg:row-start-38',
+  38: 'lg:row-start-39',
+  39: 'lg:row-start-40',
+  40: 'lg:row-start-41',
+  41: 'lg:row-start-42',
+  42: 'lg:row-start-43',
+  43: 'lg:row-start-44',
+  44: 'lg:row-start-45',
+  45: 'lg:row-start-46',
+  46: 'lg:row-start-47',
+  47: 'lg:row-start-48',
+  48: 'lg:row-start-49',
+  49: 'lg:row-start-50',
+  50: 'lg:row-start-51',
+  51: 'lg:row-start-52',
+  52: 'lg:row-start-53',
+  53: 'lg:row-start-54',
+  54: 'lg:row-start-55',
+  55: 'lg:row-start-56',
+  56: 'lg:row-start-57',
+  57: 'lg:row-start-58',
+  58: 'lg:row-start-59',
+  59: 'lg:row-start-60',
 } as const;
 
 export const SPANS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
 export type BlockSpan = (typeof SPANS)[number];
 
-export const ROW_SPANS = [1, 2, 3, 4, 5, 6, 7, 8] as const;
+export const ROW_SPANS = [
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+] as const;
 export type BlockRowSpan = (typeof ROW_SPANS)[number];
 
 export const QUICK_WIDTHS: { label: string; span: BlockSpan }[] = [
@@ -174,9 +222,13 @@ export const QUICK_WIDTHS: { label: string; span: BlockSpan }[] = [
 
 export const QUICK_HEIGHTS: { label: string; rowSpan: BlockRowSpan }[] = [
   { label: '1x (Compacto)', rowSpan: 1 },
-  { label: '2x (Médio)', rowSpan: 2 },
-  { label: '3x (Alto)', rowSpan: 3 },
+  { label: '2x (Padrão)', rowSpan: 2 },
+  { label: '3x (Médio)', rowSpan: 3 },
   { label: '4x (Extra)', rowSpan: 4 },
+  { label: '6x (Grande)', rowSpan: 6 },
+  { label: '8x (Alto)', rowSpan: 8 },
+  { label: '12x (Expandido)', rowSpan: 12 },
+  { label: '16x (Máximo)', rowSpan: 16 },
 ];
 
 export function normalizeSpan(span?: number): BlockSpan {
@@ -197,11 +249,15 @@ export function defaultRowSpanForType(type?: string): BlockRowSpan {
   return (meta.defaultRowSpan ?? 1) as BlockRowSpan;
 }
 
-export function normalizeRowSpan(rowSpan?: number, type?: string): BlockRowSpan {
+export function normalizeRowSpan(
+  rowSpan?: number,
+  type?: string,
+  maxAllowed = 24,
+): BlockRowSpan {
   const min = minRowSpanForType(type);
   if (!rowSpan) return defaultRowSpanForType(type);
   if (rowSpan <= 2 && min > 1) return defaultRowSpanForType(type);
-  const clamped = Math.min(8, Math.max(min, Math.round(rowSpan)));
+  const clamped = Math.min(maxAllowed, Math.max(min, Math.round(rowSpan)));
   return clamped as BlockRowSpan;
 }
 

@@ -59,13 +59,196 @@ export function findFirstAvailableSlot(
  * - Respeita coordenadas (x, y) já definidas no bloco quando não colidem;
  * - Encaixa automaticamente blocos sem coordenadas no primeiro espaço suficiente (Bento Auto-Pack).
  */
+/**
+ * Estima o número exato de linhas de grade (44px + 16px gap) necessárias para acomodar o texto
+ * com base na quantidade real de caracteres por linha da coluna e quebras de linha,
+ * evitando sobrar espaço vazio excessivo.
+ */
+export function estimateTextRowSpan(content: string, span = 12): BlockRowSpan {
+  if (!content || !content.trim()) return 1;
+
+  // Ignora quebras de linha em branco no final causadas pelo cursor no editor
+  const trimmed = content.replace(/\n+$/, '');
+  const lines = trimmed.split('\n');
+
+  // Em 12 colunas (~1100px), cabem ~110 caracteres. Em 3 colunas (~270px), cabem ~28 caracteres.
+  const charsPerLine = Math.max(26, Math.round((span / 12) * 110));
+
+  let visualLinesCount = 0;
+  for (const line of lines) {
+    if (line.trim().length === 0) {
+      visualLinesCount += 0.5;
+    } else {
+      visualLinesCount += Math.max(1, Math.ceil(line.length / charsPerLine));
+    }
+  }
+
+  const hasHeading = /^#{1,4}\s/m.test(trimmed);
+  // Cada linha de texto visual tem ~22px (font-size 14px + leading 1.6).
+  const totalContentHeight = visualLinesCount * 22 + (hasHeading ? 16 : 0);
+
+  // Primeira linha de grid tem 44px; cada linha extra adiciona 60px (44px + 16px gap).
+  if (totalContentHeight <= 48) return 1;
+  const neededRows = 1 + Math.ceil((totalContentHeight - 48) / 60);
+
+  return normalizeRowSpan(neededRows, 'text.rich');
+}
+
+/**
+ * Remove linhas inteiras (12 colunas) vazias na grade, puxando os blocos subsequentes para cima
+ * para evitar buracos quando o conteúdo de um bloco acima for apagado ou reduzido.
+ */
+export function compactEmptyRows(placed: PlacedBlock[], cols = 12): PlacedBlock[] {
+  if (placed.length === 0) return placed;
+  const maxRow = placed.reduce((max, p) => Math.max(max, p.y + p.rowSpan), 0);
+
+  let current = placed;
+  for (let y = maxRow - 1; y >= 0; y--) {
+    const hasAnyBlockInRow = current.some(
+      (p) => y >= p.y && y < p.y + p.rowSpan,
+    );
+    const hasBlockBelow = current.some((p) => p.y > y);
+    if (!hasAnyBlockInRow && hasBlockBelow) {
+      current = current.map((p) => (p.y > y ? { ...p, y: p.y - 1 } : p));
+    }
+  }
+
+  return current;
+}
+
+/**
+ * Converte uma altura estimada em pixels (considerando padding de card e elementos internos)
+ * para o número correspondente de linhas de grade (base 44px + 60px por linha adicional).
+ */
+export function pixelsToRowSpan(pixels: number, type?: string): BlockRowSpan {
+  if (pixels <= 48) return normalizeRowSpan(1, type);
+  const neededRows = 1 + Math.ceil((pixels - 48) / 60);
+  return normalizeRowSpan(neededRows, type);
+}
+
+/**
+ * Extrai a quantidade de itens a serem exibidos por um bloco de dados (ex: feed ou tabela).
+ * Prioridade: 1) data.params.limit, 2) data.inline.data.length, 3) props.items.length, 4) fallback.
+ */
+export function extractDataBlockItemCount(block: PageBlock, defaultCount = 5): number {
+  const paramLimit = Number(block.data?.params?.limit);
+  if (Number.isFinite(paramLimit) && paramLimit > 0) {
+    return paramLimit;
+  }
+  const inline = block.data?.inline;
+  if (inline && typeof inline === 'object' && Array.isArray((inline as { data?: unknown[] }).data)) {
+    return (inline as { data: unknown[] }).data.length;
+  }
+  if (Array.isArray(block.props?.items)) {
+    return block.props.items.length;
+  }
+  if (Array.isArray(block.props?.rows)) {
+    return block.props.rows.length;
+  }
+  return defaultCount;
+}
+
+/**
+ * Estima a altura necessária para um bloco list.feed.
+ * Cada item tem título principal + subtítulo de data/hora + espaçamento (~52px).
+ */
+export function estimateFeedRowSpan(block: PageBlock): BlockRowSpan {
+  const hasHeader = Boolean(block.props?.title || block.props?.description);
+  const count = extractDataBlockItemCount(block, 5);
+  // Padding do card (48px) + Cabeçalho (64px se existir) + itens (count * 52px)
+  const totalHeight = 48 + (hasHeader ? 64 : 0) + count * 52;
+  return pixelsToRowSpan(totalHeight, 'list.feed');
+}
+
+/**
+ * Estima a altura necessária para um bloco table.basic.
+ * Cabeçalho do card + thead (~40px) + cada linha (~40px) + paginação (~48px).
+ */
+export function estimateTableRowSpan(block: PageBlock): BlockRowSpan {
+  const hasHeader = Boolean(block.props?.title || block.props?.description);
+  const count = extractDataBlockItemCount(block, 5);
+  const totalHeight = 48 + (hasHeader ? 64 : 0) + 40 + count * 40 + 48;
+  return pixelsToRowSpan(totalHeight, 'table.basic');
+}
+
+/**
+ * Estima a altura necessária para o bloco topic (itens de escopo em proposta).
+ */
+export function estimateTopicRowSpan(block: PageBlock): BlockRowSpan {
+  const hasHeader = Boolean(block.props?.title || block.props?.description);
+  const items = Array.isArray(block.props?.items) ? block.props.items : [];
+  const count = Math.max(1, items.length);
+  const totalHeight = 48 + (hasHeader ? 64 : 0) + count * 36;
+  return pixelsToRowSpan(totalHeight, 'topic');
+}
+
+/**
+ * Estima a altura necessária para o bloco price (tabela de valores em proposta).
+ */
+export function estimatePriceRowSpan(block: PageBlock): BlockRowSpan {
+  const hasHeader = Boolean(block.props?.title || block.props?.description);
+  const rows = Array.isArray(block.props?.rows) ? block.props.rows : [];
+  const count = Math.max(1, rows.length);
+  const totalHeight = 48 + (hasHeader ? 64 : 0) + count * 40 + 54;
+  return pixelsToRowSpan(totalHeight, 'price');
+}
+
+/**
+ * Registro extensível e agnóstico de estimadores de altura por tipo de bloco.
+ */
+export type BlockRowSpanEstimator = (block: PageBlock, cols?: number) => BlockRowSpan;
+
+export const BLOCK_ROW_SPAN_ESTIMATORS: Record<string, BlockRowSpanEstimator> = {
+  'text.rich': (block) => {
+    const content = typeof block.props?.content === 'string' ? block.props.content : '';
+    if (!content) return 1;
+    const span = normalizeSpan(block.span);
+    return estimateTextRowSpan(content, span);
+  },
+  'list.feed': estimateFeedRowSpan,
+  'table.basic': estimateTableRowSpan,
+  topic: estimateTopicRowSpan,
+  price: estimatePriceRowSpan,
+};
+
+/**
+ * Calcula a altura mínima necessária para um bloco com base no seu conteúdo e filhos:
+ * - Para containers (ex: `group`): expande automaticamente para abraçar os filhos + cabeçalho;
+ * - Para blocos de conteúdo variável (`list.feed`, `table.basic`, `text.rich`, etc.): calcula
+ *   a altura exata para comportar itens, textos e paginação sem truncar nem sobrepor;
+ * - Respeita o rowSpan explicitamente definido pelo usuário quando for maior.
+ */
+export function calculateEffectiveRowSpan(block: PageBlock, cols = 12): BlockRowSpan {
+  let minNeeded = normalizeRowSpan(block.rowSpan, block.type);
+
+  // 1. Containers (group ou qualquer bloco com children): abraça a altura total dos filhos
+  if (block.children && block.children.length > 0) {
+    const placedChildren = resolveGridLayout(block.children, cols);
+    const maxChildBottom = Math.max(0, ...placedChildren.map((c) => c.y + c.rowSpan));
+    const hasTitle = Boolean(block.props?.title);
+    const hasDesc = Boolean(block.props?.description);
+    const headerRows = hasTitle && hasDesc ? 2 : hasTitle || hasDesc ? 1 : 0;
+    const containerNeeded = maxChildBottom + headerRows;
+    minNeeded = normalizeRowSpan(Math.max(minNeeded, containerNeeded), block.type);
+  }
+
+  // 2. Estimador agnóstico por tipo de bloco (baseado no conteúdo, props e parâmetros de dados)
+  const estimator = BLOCK_ROW_SPAN_ESTIMATORS[block.type];
+  if (estimator) {
+    const contentNeeded = estimator(block, cols);
+    minNeeded = normalizeRowSpan(Math.max(minNeeded, contentNeeded), block.type);
+  }
+
+  return minNeeded;
+}
+
 export function resolveGridLayout(blocks: PageBlock[], cols = 12): PlacedBlock[] {
   const occupied: GridRect[] = [];
   const result: PlacedBlock[] = [];
 
   for (const block of blocks) {
     const span = normalizeSpan(block.span);
-    const rowSpan = normalizeRowSpan(block.rowSpan, block.type);
+    const rowSpan = calculateEffectiveRowSpan(block, cols);
     const hasExplicitCoords =
       typeof block.x === 'number' &&
       typeof block.y === 'number' &&
@@ -434,7 +617,7 @@ export function getMaxResizeBounds(
 ): { maxSpan: BlockSpan; maxRowSpan: BlockRowSpan } {
   const placed = resolveGridLayout(blocks, cols);
   const target = placed.find((p) => p.block.id === id);
-  if (!target) return { maxSpan: cols as BlockSpan, maxRowSpan: 8 };
+  if (!target) return { maxSpan: cols as BlockSpan, maxRowSpan: 24 };
 
   const others = placed.filter((p) => p.block.id !== id);
 
@@ -452,7 +635,7 @@ export function getMaxResizeBounds(
 
   // 2. Limite vertical (maxRowSpan): da linha `target.y` até o limite (8)
   // ou até encostar no primeiro bloco abaixo que ocupe alguma das mesmas colunas.
-  let maxBottom = target.y + 8;
+  let maxBottom = target.y + 24;
   for (const other of others) {
     const overlapsHorizontally =
       target.x < other.x + other.span && target.x + target.span > other.x;
@@ -535,7 +718,7 @@ export function resizeBlockTopInGrid(
     }
   }
 
-  const maxRowSpanTop = Math.min(8, Math.max(target.rowSpan, bottomEdge - minTop));
+  const maxRowSpanTop = Math.min(24, Math.max(target.rowSpan, bottomEdge - minTop));
   const clampedRowSpan = normalizeRowSpan(
     Math.min(Math.max(1, desiredRowSpan), maxRowSpanTop),
     target.block.type,

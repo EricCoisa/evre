@@ -102,9 +102,9 @@ function Panel({
     );
   }
   return (
-    <Card className={cn('h-full', className)}>
-      {header ? <CardHeader className={cn('w-full', inner)}>{header}</CardHeader> : null}
-      {children ? <CardContent className={cn('w-full flex-1 min-h-0 flex flex-col justify-center', inner)}>{children}</CardContent> : null}
+    <Card className={cn('h-full flex flex-col overflow-hidden', className)}>
+      {header ? <CardHeader className={cn('w-full shrink-0', inner)}>{header}</CardHeader> : null}
+      {children ? <CardContent className={cn('w-full flex-1 min-h-0 flex flex-col justify-start overflow-y-auto', inner)}>{children}</CardContent> : null}
     </Card>
   );
 }
@@ -628,7 +628,7 @@ function RichTextBlock({ props, data, className, children }: BlockProps) {
   const inner = innerAlignClass(className);
 
   return (
-    <div className={cn('flex h-full w-full flex-col justify-center gap-1', inner, className)}>
+    <div className={cn('flex h-full w-full flex-col justify-start gap-1 overflow-y-auto max-h-full', inner, className)}>
       {content ? <FormattedRichText text={content} /> : null}
       {children ? (
         <div className="flex flex-wrap items-center gap-2">{children}</div>
@@ -655,7 +655,7 @@ function ButtonActionBlock({ props, className, children }: BlockProps) {
   );
 
   return (
-    <div className={cn('flex h-full w-full flex-col justify-center gap-1', inner, className)}>
+    <div className={cn('flex h-full w-full flex-col justify-start gap-1 overflow-y-auto max-h-full', inner, className)}>
       {buttonNode}
       {children ? (
         <div className="flex flex-wrap items-center gap-2">{children}</div>

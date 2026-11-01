@@ -110,7 +110,7 @@ function FloatingBlockToolbar({
   const { t } = useTranslation('page-builder');
   const editor = useEditorOrThrow();
   const currentSpan = normalizeSpan(block.span);
-  const currentRowSpan = normalizeRowSpan(block.rowSpan, block.type);
+
   const isInline = isInlineBlockType(block.type);
 
   const located = editor.draft.blocks.some((b) => b.id === block.id)
@@ -119,6 +119,7 @@ function FloatingBlockToolbar({
       editor.draft.blocks);
   const { maxSpan, maxRowSpan } = getMaxResizeBounds(located, block.id);
   const placedInList = resolveGridLayout(located).find((p) => p.block.id === block.id);
+  const currentRowSpan = placedInList?.rowSpan ?? normalizeRowSpan(block.rowSpan, block.type);
   const alignRight =
     nested ||
     (placedInList ? placedInList.x + placedInList.span >= 9 && placedInList.x >= 4 : false);
@@ -317,7 +318,13 @@ function BlockResizeHandles({
 }) {
   const editor = useEditorOrThrow();
   const currentSpan = normalizeSpan(block.span);
-  const currentRowSpan = normalizeRowSpan(block.rowSpan, block.type);
+
+  const located = editor.draft.blocks.some((b) => b.id === block.id)
+    ? editor.draft.blocks
+    : (editor.draft.blocks.find((b) => b.children?.some((c) => c.id === block.id))?.children ??
+      editor.draft.blocks);
+  const placedInList = resolveGridLayout(located).find((p) => p.block.id === block.id);
+  const currentRowSpan = placedInList?.rowSpan ?? normalizeRowSpan(block.rowSpan, block.type);
   const isDraggingRef = useRef(false);
 
   const startResize = (
@@ -351,12 +358,12 @@ function BlockResizeHandles({
       }
       if (handle === 'bottom' || handle === 'corner') {
         const deltaRows = Math.round(deltaY / 36);
-        const nextRowSpan = Math.min(8, Math.max(1, initialRowSpan + deltaRows));
+        const nextRowSpan = Math.min(24, Math.max(1, initialRowSpan + deltaRows));
         editor.setRowSpan(block.id, nextRowSpan);
       }
       if (handle === 'top') {
         const deltaRows = Math.round(-deltaY / 36);
-        const nextRowSpan = Math.min(8, Math.max(1, initialRowSpan + deltaRows));
+        const nextRowSpan = Math.min(24, Math.max(1, initialRowSpan + deltaRows));
         editor.setRowSpanTop(block.id, nextRowSpan);
       }
     };

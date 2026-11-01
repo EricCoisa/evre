@@ -4,6 +4,11 @@ import {
   resolveGridLayout,
   findEmptyGridSlots,
   getMaxResizeBounds,
+  calculateEffectiveRowSpan,
+  estimateFeedRowSpan,
+  estimateTableRowSpan,
+  estimateTopicRowSpan,
+  estimatePriceRowSpan,
 } from './grid-engine';
 import {
   findBlock,
@@ -216,5 +221,149 @@ describe('Limitação de redimensionamento ao encostar em outro bloco ou fim da 
     // O espaço abaixo do Card (x=0, y=1, span=6) fica 100% livre na grade para colocar Texto, Botão ou outro Card!
     const slots = findEmptyGridSlots(placed, 12, false);
     expect(slots).toContainEqual({ x: 0, y: 1, span: 6, rowSpan: 1 });
+  });
+
+  describe('Contenção automática de altura (Group e Text.rich)', () => {
+    it('expande automaticamente o rowSpan de um Group para acomodar o cabeçalho e a altura dos filhos', () => {
+      const layout: PageLayout = {
+        v: 1,
+        blocks: [
+          {
+            id: 'group1',
+            type: 'group',
+            span: 12,
+            props: { title: 'Indicadores', description: 'Visão geral' },
+            children: [
+              { id: 'c1', type: 'text.rich', span: 3, props: { content: 'Total' } },
+              { id: 'chart1', type: 'chart.area', span: 6, rowSpan: 4, props: {} },
+            ],
+          },
+          { id: 'nextHeading', type: 'heading', span: 12, props: { text: 'Gestão de usuários' } },
+        ],
+      };
+
+      const placed = resolveGridLayout(layout.blocks);
+      const placedGroup = placed.find((p) => p.block.id === 'group1')!;
+      const placedNext = placed.find((p) => p.block.id === 'nextHeading')!;
+
+      // O grupo tem filhos com rowSpan 4 + cabeçalho com 2 linhas -> precisa de no mínimo 6 linhas
+      expect(placedGroup.rowSpan).toBeGreaterThanOrEqual(6);
+      // O próximo bloco começa estritamente após o término do grupo, sem sobreposição
+      expect(placedNext.y).toBeGreaterThanOrEqual(placedGroup.y + placedGroup.rowSpan);
+    });
+
+    it('ajusta a altura mínima de text.rich com múltiplas linhas ou títulos markdown para evitar truncamento', () => {
+      const layout: PageLayout = {
+        v: 1,
+        blocks: [
+          {
+            id: 'text1',
+            type: 'text.rich',
+            span: 3,
+            props: { content: '### Total de usuários\n**3**' },
+          },
+        ],
+      };
+
+      const placed = resolveGridLayout(layout.blocks);
+      const placedText = placed.find((p) => p.block.id === 'text1')!;
+      expect(placedText.rowSpan).toBe(2);
+    });
+
+    it('calcula altura proporcional para blocos de texto longos e estreitos sem travar em limites baixos', () => {
+      const longText = 'Texto '.repeat(100);
+      const layout: PageLayout = {
+        v: 1,
+        blocks: [
+          {
+            id: 'long',
+            type: 'text.rich',
+            span: 3,
+            props: { content: longText },
+          },
+        ],
+      };
+
+      const placed = resolveGridLayout(layout.blocks);
+      const placedLong = placed.find((p) => p.block.id === 'long')!;
+      // Em span: 3 (coluna estreita), texto longo precisa de pelo menos 6 linhas de grid
+      expect(placedLong.rowSpan).toBeGreaterThanOrEqual(6);
+    });
+
+    it('ajusta a altura de list.feed proporcionalmente ao número de itens (limit)', () => {
+      const feedBlock = {
+        id: 'feed1',
+        type: 'list.feed',
+        span: 12,
+        props: { title: 'Atividades recentes', description: 'Últimas ações' },
+        data: { source: 'logs.list', params: { limit: 10 } },
+      };
+
+      // Com 10 itens + cabeçalho, precisa de 11 linhas
+      const estimated = estimateFeedRowSpan(feedBlock);
+      expect(estimated).toBe(11);
+
+      const effective = calculateEffectiveRowSpan(feedBlock);
+      expect(effective).toBe(11);
+    });
+
+    it('ajusta a altura de table.basic proporcionalmente ao número de linhas (limit)', () => {
+      const tableBlock = {
+        id: 'table1',
+        type: 'table.basic',
+        span: 12,
+        props: { title: 'Usuários recentes', description: 'Lista de cadastros' },
+        data: { source: 'users.list', params: { limit: 10 } },
+      };
+
+      const estimated = estimateTableRowSpan(tableBlock);
+      expect(estimated).toBe(11);
+    });
+
+    it('ajusta a altura de topic e price com base nos itens e linhas das props', () => {
+      const topicBlock = {
+        id: 't1',
+        type: 'topic',
+        props: { title: 'Escopo', items: ['Item 1', 'Item 2', 'Item 3', 'Item 4'] },
+      };
+      expect(estimateTopicRowSpan(topicBlock)).toBeGreaterThanOrEqual(4);
+
+      const priceBlock = {
+        id: 'p1',
+        type: 'price',
+        props: { title: 'Valores', rows: ['Plano 1|1000', 'Plano 2|2000', 'Plano 3|3000'] },
+      };
+      expect(estimatePriceRowSpan(priceBlock)).toBeGreaterThanOrEqual(5);
+    });
+
+    it('expande list.feed no layout completo e posiciona blocos seguintes sem sobreposição', () => {
+      const layout: PageLayout = {
+        v: 1,
+        blocks: [
+          {
+            id: 'feed',
+            type: 'list.feed',
+            span: 12,
+            rowSpan: 4,
+            props: { title: 'Atividades', description: 'Log' },
+            data: { source: 'logs.list', params: { limit: 10 } },
+          },
+          {
+            id: 'afterFeed',
+            type: 'heading',
+            span: 12,
+            props: { text: 'Próxima Seção' },
+          },
+        ],
+      };
+
+      const placed = resolveGridLayout(layout.blocks);
+      const placedFeed = placed.find((p) => p.block.id === 'feed')!;
+      const placedAfter = placed.find((p) => p.block.id === 'afterFeed')!;
+
+      expect(placedFeed.rowSpan).toBe(11);
+      expect(placedAfter.y).toBeGreaterThanOrEqual(placedFeed.y + placedFeed.rowSpan);
+    });
+
   });
 });

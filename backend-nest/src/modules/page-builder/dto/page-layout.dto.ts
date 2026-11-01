@@ -61,7 +61,7 @@ const LeafBlockSchema = z.object({
   type: z.string().min(1),
   /** Token de grid 1–12, nunca CSS. O frontend mapeia para classes literais do Tailwind. */
   span: z.number().int().min(1).max(12).optional(),
-  rowSpan: z.number().int().min(1).max(8).optional(),
+  rowSpan: z.number().int().min(1).max(24).optional(),
   x: z.number().int().min(0).max(11).optional(),
   y: z.number().int().min(0).max(99).optional(),
   /** Classes Tailwind separadas por espaço, limitadas à allowlist publicada pelo frontend. */
