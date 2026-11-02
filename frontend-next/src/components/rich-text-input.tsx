@@ -98,21 +98,23 @@ function EditablePlugin({ disabled }: { disabled: boolean }) {
   return null;
 }
 
-function FormatToolbar({
+export function RichTextFormatButtons({
+  editor,
   labels,
-  disabled,
+  disabled = false,
   variables,
   variableButtonLabel,
-  showFontSize,
+  showFontSize = true,
 }: {
-  labels: RichTextInputProps['formatLabels'];
-  disabled: boolean;
+  editor: LexicalEditor;
+  labels?: Partial<RichTextInputProps['formatLabels']>;
+  disabled?: boolean;
   variables?: RichTextVariableOption[];
   variableButtonLabel?: string;
   showFontSize?: boolean;
 }) {
-  const [editor] = useLexicalComposerContext();
   const [activeSize, setActiveSize] = useState<string | undefined>(undefined);
+  const [activeFormats, setActiveFormats] = useState<Set<TextFormatType>>(new Set());
 
   useEffect(() => {
     return editor.registerUpdateListener(({ editorState }) => {
@@ -120,19 +122,34 @@ function FormatToolbar({
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           setActiveSize(undefined);
+          setActiveFormats(new Set());
           return;
         }
         const cssValue = $getSelectionStyleValueForProperty(selection, 'font-size', '');
         setActiveSize(cssValue ? CSS_TO_TW[cssValue] : undefined);
+
+        const formats = new Set<TextFormatType>();
+        if (selection.hasFormat('bold')) formats.add('bold');
+        if (selection.hasFormat('italic')) formats.add('italic');
+        if (selection.hasFormat('strikethrough')) formats.add('strikethrough');
+        if (selection.hasFormat('code')) formats.add('code');
+        setActiveFormats(formats);
       });
     });
   }, [editor]);
 
+  const defaultLabels = {
+    bold: labels?.bold ?? 'Negrito (*texto*)',
+    italic: labels?.italic ?? 'Itálico (_texto_)',
+    strikethrough: labels?.strikethrough ?? 'Riscado (~texto~)',
+    code: labels?.code ?? 'Código (```texto```)',
+  };
+
   const buttons: { format: TextFormatType; label: string; icon: React.ReactNode }[] = [
-    { format: 'bold', label: labels.bold, icon: <Bold className="size-4" /> },
-    { format: 'italic', label: labels.italic, icon: <Italic className="size-4" /> },
-    { format: 'strikethrough', label: labels.strikethrough, icon: <Strikethrough className="size-4" /> },
-    { format: 'code', label: labels.code, icon: <Code className="size-4" /> },
+    { format: 'bold', label: defaultLabels.bold, icon: <Bold className="size-3.5" /> },
+    { format: 'italic', label: defaultLabels.italic, icon: <Italic className="size-3.5" /> },
+    { format: 'strikethrough', label: defaultLabels.strikethrough, icon: <Strikethrough className="size-3.5" /> },
+    { format: 'code', label: defaultLabels.code, icon: <Code className="size-3.5" /> },
   ];
 
   const insertVariable = (token: string) => {
@@ -163,14 +180,19 @@ function FormatToolbar({
   const activeFontSizeEntry = FONT_SIZES.find((s) => s.tw === activeSize);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-1 border-b px-1 py-0.5">
-      <div className="flex items-center gap-1">
-        {buttons.map(({ format, label, icon }) => (
+    <div className="flex items-center gap-0.5">
+      {buttons.map(({ format, label, icon }) => {
+        const isActive = activeFormats.has(format);
+        return (
           <Button
             key={format}
             type="button"
-            size="icon-sm"
+            size="icon"
             variant="ghost"
+            className={cn(
+              'size-6 text-muted-foreground hover:text-foreground',
+              isActive && 'bg-primary/15 text-primary hover:bg-primary/20 hover:text-primary font-semibold',
+            )}
             aria-label={label}
             title={label}
             disabled={disabled}
@@ -179,55 +201,55 @@ function FormatToolbar({
           >
             {icon}
           </Button>
-        ))}
+        );
+      })}
 
-        {showFontSize ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                disabled={disabled}
-                className="h-6 gap-1 px-2 text-[11px] font-medium"
-                aria-label="Tamanho de fonte"
-                title="Tamanho de fonte"
-                onMouseDown={(event) => event.preventDefault()}
-              >
-                <Type className="size-3" />
-                <span>{activeFontSizeEntry?.label ?? 'Tamanho'}</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="start"
-              className="min-w-28"
-              onCloseAutoFocus={(event) => {
-                event.preventDefault();
-                editor.focus();
-              }}
+      {showFontSize ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              disabled={disabled}
+              className="h-6 gap-1 px-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+              aria-label="Tamanho de fonte"
+              title="Tamanho de fonte"
+              onMouseDown={(event) => event.preventDefault()}
             >
-              {activeSize ? (
-                <>
-                  <DropdownMenuItem onSelect={() => applyFontSize('')}>
-                    Padrão
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                </>
-              ) : null}
-              {FONT_SIZES.map((s) => (
-                <DropdownMenuItem
-                  key={s.tw}
-                  onSelect={() => applyFontSize(s.css)}
-                  className="gap-2"
-                >
-                  <span className={cn('font-medium', s.tw)}>{s.label}</span>
-                  {activeSize === s.tw ? <Check className="ml-auto size-3" /> : null}
+              <Type className="size-3" />
+              <span>{activeFontSizeEntry?.label ?? 'Tamanho'}</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="start"
+            className="min-w-28"
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              editor.focus();
+            }}
+          >
+            {activeSize ? (
+              <>
+                <DropdownMenuItem onSelect={() => applyFontSize('')}>
+                  Padrão
                 </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : null}
-      </div>
+                <DropdownMenuSeparator />
+              </>
+            ) : null}
+            {FONT_SIZES.map((s) => (
+              <DropdownMenuItem
+                key={s.tw}
+                onSelect={() => applyFontSize(s.css)}
+                className="gap-2"
+              >
+                <span className={cn('font-medium', s.tw)}>{s.label}</span>
+                {activeSize === s.tw ? <Check className="ml-auto size-3" /> : null}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : null}
 
       {variables && variables.length > 0 ? (
         <DropdownMenu>
@@ -237,7 +259,7 @@ function FormatToolbar({
               size="sm"
               variant="outline"
               disabled={disabled}
-              className="h-6 gap-1 px-2 text-[11px] font-medium"
+              className="h-6 gap-1 px-1.5 text-[11px] font-medium"
               aria-label={variableButtonLabel ?? 'Inserir variável'}
               title={variableButtonLabel ?? 'Inserir variável'}
               onMouseDown={(event) => event.preventDefault()}
@@ -271,6 +293,35 @@ function FormatToolbar({
           </DropdownMenuContent>
         </DropdownMenu>
       ) : null}
+    </div>
+  );
+}
+
+function FormatToolbar({
+  labels,
+  disabled,
+  variables,
+  variableButtonLabel,
+  showFontSize,
+}: {
+  labels: RichTextInputProps['formatLabels'];
+  disabled: boolean;
+  variables?: RichTextVariableOption[];
+  variableButtonLabel?: string;
+  showFontSize?: boolean;
+}) {
+  const [editor] = useLexicalComposerContext();
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-1 border-b px-1 py-0.5">
+      <RichTextFormatButtons
+        editor={editor}
+        labels={labels}
+        disabled={disabled}
+        variables={variables}
+        variableButtonLabel={variableButtonLabel}
+        showFontSize={showFontSize}
+      />
     </div>
   );
 }

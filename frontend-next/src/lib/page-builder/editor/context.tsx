@@ -8,6 +8,8 @@ import React, {
   useMemo,
   useState,
 } from 'react';
+import type { LexicalEditor } from 'lexical';
+import type { RichTextVariableOption } from '@/components/rich-text-input';
 import type { BlockType } from '../blocks.meta';
 import { DEFAULT_PROFILE, type LayoutProfileName } from '../profiles';
 import type { PageBlock, PageLayout } from '../schema';
@@ -39,6 +41,14 @@ import {
 } from './mutations';
 
 /** Estado do editor: rascunho local do layout, histórico (Undo/Redo) e controles de seleção. */
+export interface ActiveRichTextInfo {
+  editor: LexicalEditor;
+  blockId: string;
+  propName: string;
+  showFontSize?: boolean;
+  variables?: RichTextVariableOption[];
+}
+
 export interface EditorContextValue {
   draft: PageLayout;
   /** Superfície sendo editada: decide blocos oferecidos, classNames válidos e tetos. */
@@ -48,6 +58,9 @@ export interface EditorContextValue {
   recordId?: string;
   dirty: boolean;
   selectedId: string | null;
+  /** Editor rich-text atualmente ativo/focado para exibição da barra suspensa contextual. */
+  activeRichText: ActiveRichTextInfo | null;
+  setActiveRichText: (info: ActiveRichTextInfo | null) => void;
   /** Bloco sendo arrastado agora; as zonas de destino só existem durante o arrasto. */
   draggingId: string | null;
   setDraggingId: (id: string | null) => void;
@@ -128,6 +141,7 @@ export function EditorProvider({
   const [past, setPast] = useState<PageLayout[]>([]);
   const [future, setFuture] = useState<PageLayout[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [activeRichText, setActiveRichText] = useState<ActiveRichTextInfo | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
 
   const applyChange = useCallback((updater: (current: PageLayout) => PageLayout) => {
@@ -197,10 +211,15 @@ export function EditorProvider({
       recordId,
       dirty: JSON.stringify(draft) !== JSON.stringify(initial),
       selectedId,
+      activeRichText,
       draggingId,
       setDraggingId,
       selected,
-      select: setSelectedId,
+      setActiveRichText,
+      select: (id) => {
+        setSelectedId(id);
+        setActiveRichText((prev) => (prev && prev.blockId !== id ? null : prev));
+      },
       add: (type, parentId) => {
         const block = createBlock(type, parentId);
         applyChange((d) => addBlock(d, block, parentId, profile));
@@ -274,6 +293,7 @@ export function EditorProvider({
     recordId,
     initial,
     selectedId,
+      activeRichText,
     draggingId,
     past.length,
     future.length,

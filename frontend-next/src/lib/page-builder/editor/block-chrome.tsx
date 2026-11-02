@@ -5,6 +5,7 @@ import { SortableContext, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useDroppable } from '@dnd-kit/core';
 import {
+  Pencil,
   ArrowDown,
   ArrowLeft,
   ArrowLeftRight,
@@ -25,6 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { RichTextFormatButtons } from '@/components/rich-text-input';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/cn';
 import {
@@ -112,6 +114,12 @@ function FloatingBlockToolbar({
   const currentSpan = normalizeSpan(block.span);
 
   const isInline = isInlineBlockType(block.type);
+  const isTextEditable =
+    block.type === 'text.rich' ||
+    block.type === 'heading' ||
+    block.type === 'button.action' ||
+    block.type === 'topic' ||
+    block.type === 'price';
 
   const located = editor.draft.blocks.some((b) => b.id === block.id)
     ? editor.draft.blocks
@@ -120,9 +128,12 @@ function FloatingBlockToolbar({
   const { maxSpan, maxRowSpan } = getMaxResizeBounds(located, block.id);
   const placedInList = resolveGridLayout(located).find((p) => p.block.id === block.id);
   const currentRowSpan = placedInList?.rowSpan ?? normalizeRowSpan(block.rowSpan, block.type);
-  const alignRight =
-    nested ||
-    (placedInList ? placedInList.x + placedInList.span >= 9 && placedInList.x >= 4 : false);
+  const placedX = placedInList?.x ?? block.x ?? 0;
+  const placedSpan = placedInList?.span ?? currentSpan;
+  const alignRight = placedX + placedSpan >= 9 && placedX >= 4;
+
+  const isRichTextActive =
+    editor.activeRichText !== null && editor.activeRichText.blockId === block.id;
 
   const stop = (fn: () => void) => (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -133,7 +144,7 @@ function FloatingBlockToolbar({
   return (
     <div
       className={cn(
-        'bg-background absolute bottom-full mb-1.5 z-40 flex items-center gap-0.5 rounded-lg border border-border/80 p-1 shadow-md transition-all max-w-[calc(100vw-2rem)] whitespace-nowrap',
+        'bg-background absolute bottom-full mb-2.5 z-50 flex items-center gap-0.5 rounded-lg border border-border/80 p-1 shadow-md transition-all max-w-[calc(100vw-2rem)] whitespace-nowrap',
         alignRight ? 'right-0' : 'left-0',
         selected
           ? 'opacity-100 scale-100 pointer-events-auto'
@@ -198,7 +209,21 @@ function FloatingBlockToolbar({
         <ArrowRight className="size-3.5" />
       </Button>
 
+      {isRichTextActive && editor.activeRichText ? (
+        <>
+          <div className="mx-0.5 h-3.5 w-px bg-border" />
+          <RichTextFormatButtons
+            editor={editor.activeRichText.editor}
+            showFontSize={editor.activeRichText.showFontSize ?? true}
+            variables={editor.activeRichText.variables}
+            variableButtonLabel={t('editor.insertVariable', { defaultValue: 'Variável' })}
+          />
+        </>
+      ) : null}
+
       <div className="mx-0.5 h-3.5 w-px bg-border" />
+
+
 
       {/* Seletor rápido de largura (Grid 12 colunas) */}
       <DropdownMenu>
@@ -279,7 +304,7 @@ function FloatingBlockToolbar({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <div className="mx-0.5 h-3.5 w-px bg-border" />
+
 
       {/* Duplicar Bloco */}
       <Button
@@ -629,6 +654,12 @@ export function BlockChrome({
   const selected = editor.selectedId === block.id;
   const isContainer = isContainerType(block.type);
   const isInline = isInlineBlockType(block.type);
+  const isTextEditable =
+    block.type === 'text.rich' ||
+    block.type === 'heading' ||
+    block.type === 'button.action' ||
+    block.type === 'topic' ||
+    block.type === 'price';
   
   const isChildSelected = (block.children ?? []).some((c) => c.id === editor.selectedId);
   const hasInteractiveChildren = isContainer || (block.children?.length ?? 0) > 0;
@@ -653,7 +684,7 @@ export function BlockChrome({
         'group/pb relative rounded-xl transition-all',
         'h-full',
         selected
-          ? 'ring-2 ring-primary shadow-md ring-offset-2'
+          ? 'ring-2 ring-primary shadow-md ring-offset-2 z-40'
           : 'hover:ring-1 hover:ring-primary/40',
         nested ? 'ring-inset' : '',
         isDragging && 'z-50 opacity-50 scale-[0.98]',
@@ -661,21 +692,12 @@ export function BlockChrome({
       onClick={handleSelect}
       data-testid={`pb-block-${block.id}`}
     >
-      {/* Toolbar Flutuante Contextual */}
-      <FloatingBlockToolbar
-        block={block}
-        nested={nested}
-        selected={selected}
-        attributes={attributes as unknown as Record<string, unknown>}
-        listeners={listeners as unknown as Record<string, unknown>}
-      />
-
       {/* Conteúdo Renderizado do Bloco */}
       <div
         data-pb-content=""
         className={cn(
           'h-full',
-          !hasInteractiveChildren && 'pointer-events-none',
+          !hasInteractiveChildren && !isTextEditable && 'pointer-events-none',
         )}
       >
         {children}
@@ -683,6 +705,15 @@ export function BlockChrome({
 
       {/* Alças 2D para Redimensionar Largura e Altura */}
       <BlockResizeHandles block={block} selected={selected} />
+
+      {/* Toolbar Flutuante Contextual — renderizada por último para sobrepor as alças e bordas */}
+      <FloatingBlockToolbar
+        block={block}
+        nested={nested}
+        selected={selected}
+        attributes={attributes as unknown as Record<string, unknown>}
+        listeners={listeners as unknown as Record<string, unknown>}
+      />
 
       {/* Inserção rápida dentro de um container (Grupo) ou quando selecionado em um bloco que aceite micro-elementos */}
       {showChildInserter ? (

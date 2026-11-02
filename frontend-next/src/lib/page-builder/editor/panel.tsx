@@ -828,8 +828,8 @@ function isContainer(type: string): boolean {
 }
 
 /** Constrói a lista de variáveis `{{var}}` disponíveis a partir da fonte de dados selecionada. */
-function buildVariableOptions(
-  source: PageSourceDto | undefined,
+export function buildVariableOptions(
+  source?: { kind: SourceKind; fields?: string[] } | PageSourceDto,
 ): RichTextVariableOption[] {
   if (!source) return [];
   const options: RichTextVariableOption[] = [];

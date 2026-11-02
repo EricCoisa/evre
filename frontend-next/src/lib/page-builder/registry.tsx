@@ -3,6 +3,8 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { InlineRichText } from './editor/inline-rich-text';
+import type { RichTextVariableOption } from '@/components/rich-text-input';
 import { innerAlignClass } from './class-names';
 import { useProposalTerms } from './proposal-terms-context';
 
@@ -53,6 +55,10 @@ export interface BlockProps {
   onPageChange?: (page: number) => void;
   /** Mantém a tabela montada e mostra skeleton nas linhas enquanto troca de página. */
   isLoading?: boolean;
+  blockId?: string;
+  onPropChange?: (name: string, value: unknown) => void;
+  editing?: boolean;
+  variables?: RichTextVariableOption[];
 }
 
 /** Mapa de componentes dos blocos do page builder, amarrado a BLOCK_META. */
@@ -84,11 +90,13 @@ function Panel({
   className,
   header,
   children,
+  editing,
 }: {
   bare?: boolean;
   className?: string;
   header?: React.ReactNode;
   children?: React.ReactNode;
+  editing?: boolean;
 }) {
   // `cn` por último: o className do layout vence o default do bloco quando conflita
   // (ex.: `p-0` sobre o padding do Card), que é o ponto de deixar o usuário customizar.
@@ -102,9 +110,9 @@ function Panel({
     );
   }
   return (
-    <Card className={cn('h-full flex flex-col overflow-hidden', className)}>
+    <Card className={cn('h-full flex flex-col', editing ? 'overflow-visible' : 'overflow-hidden', className)}>
       {header ? <CardHeader className={cn('w-full shrink-0', inner)}>{header}</CardHeader> : null}
-      {children ? <CardContent className={cn('w-full flex-1 min-h-0 flex flex-col justify-start overflow-y-auto', inner)}>{children}</CardContent> : null}
+      <CardContent className={cn('w-full flex-1 min-h-0 flex flex-col justify-start', editing ? 'overflow-visible' : 'overflow-y-auto', inner)}>{children}</CardContent>
     </Card>
   );
 }
@@ -114,25 +122,54 @@ function renderBlockHeader(
   title?: unknown,
   description?: unknown,
   children?: React.ReactNode,
+  editMeta?: {
+    blockId: string;
+    onPropChange: (name: string, value: unknown) => void;
+  },
 ): React.ReactNode {
   const hasTitle = Boolean(title);
   const hasDescription = Boolean(description);
   const hasChildren = Boolean(children);
 
-  if (!hasTitle && !hasDescription && !hasChildren) return undefined;
+  if (!hasTitle && !hasDescription && !hasChildren && !editMeta) return undefined;
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-2">
-      {hasTitle || hasDescription ? (
-        <div>
-          {hasTitle ? (
+      {hasTitle || hasDescription || editMeta ? (
+        <div className="flex-1 min-w-0">
+          {hasTitle || editMeta ? (
             <CardTitle>
-              <FormattedRichText text={str(title)} inline />
+              {editMeta ? (
+                <InlineRichText
+                  blockId={editMeta.blockId}
+                  propName="title"
+                  value={str(title)}
+                  onChange={(val) => editMeta.onPropChange('title', val)}
+                  placeholder="Título..."
+                  showFontSize={false}
+                  singleLine
+                  className="font-semibold text-lg"
+                />
+              ) : (
+                <FormattedRichText text={str(title)} inline />
+              )}
             </CardTitle>
           ) : null}
-          {hasDescription ? (
-            <CardDescription className={hasTitle ? 'mt-1' : undefined}>
-              <FormattedRichText text={str(description)} inline />
+          {hasDescription || (editMeta && description !== undefined) ? (
+            <CardDescription className={hasTitle || editMeta ? 'mt-1' : undefined}>
+              {editMeta ? (
+                <InlineRichText
+                  blockId={editMeta.blockId}
+                  propName="description"
+                  value={str(description)}
+                  onChange={(val) => editMeta.onPropChange('description', val)}
+                  placeholder="Descrição..."
+                  showFontSize={false}
+                  singleLine
+                />
+              ) : (
+                <FormattedRichText text={str(description)} inline />
+              )}
             </CardDescription>
           ) : null}
         </div>
@@ -144,12 +181,14 @@ function renderBlockHeader(
   );
 }
 
-function Group({ props, bare, className, children }: BlockProps) {
+function Group({ props, bare, className, children, blockId, onPropChange, editing }: BlockProps) {
+  const editMeta = editing && blockId && onPropChange ? { blockId, onPropChange } : undefined;
   return (
     <Panel
       bare={bare}
       className={className}
-      header={renderBlockHeader(props.title, props.description)}
+      header={renderBlockHeader(props.title, props.description, undefined, editMeta)}
+      editing={editing}
     >
       <div className="grid grid-cols-1 gap-3 md:gap-4 lg:grid-cols-12 lg:auto-rows-[44px] items-stretch">{children}</div>
     </Panel>
@@ -160,13 +199,14 @@ const chartConfig = {
   value: { label: 'Total', color: 'var(--primary)' },
 } satisfies ChartConfig;
 
-function AreaChartBlock({ props, data, bare, className, children }: BlockProps) {
+function AreaChartBlock({ props, data, bare, className, children, blockId, onPropChange, editing }: BlockProps) {
   const points = (data as SeriesResponse | undefined)?.data ?? [];
+  const editMeta = editing && blockId && onPropChange ? { blockId, onPropChange } : undefined;
   return (
     <Panel
       bare={bare}
       className={className}
-      header={renderBlockHeader(props.title, props.description, children)}
+      header={renderBlockHeader(props.title, props.description, children, editMeta)}
     >
       <ChartContainer config={chartConfig} className="aspect-auto h-full min-h-[120px] w-full flex-1">
         <AreaChart data={points}>
@@ -186,13 +226,14 @@ function AreaChartBlock({ props, data, bare, className, children }: BlockProps) 
   );
 }
 
-function BarChartBlock({ props, data, bare, className, children }: BlockProps) {
+function BarChartBlock({ props, data, bare, className, children, blockId, onPropChange, editing }: BlockProps) {
   const points = (data as SeriesResponse | undefined)?.data ?? [];
+  const editMeta = editing && blockId && onPropChange ? { blockId, onPropChange } : undefined;
   return (
     <Panel
       bare={bare}
       className={className}
-      header={renderBlockHeader(props.title, props.description, children)}
+      header={renderBlockHeader(props.title, props.description, children, editMeta)}
     >
       <ChartContainer config={chartConfig} className="aspect-auto h-full min-h-[120px] w-full flex-1">
         <BarChart data={points}>
@@ -206,13 +247,14 @@ function BarChartBlock({ props, data, bare, className, children }: BlockProps) {
   );
 }
 
-function LineChartBlock({ props, data, bare, className, children }: BlockProps) {
+function LineChartBlock({ props, data, bare, className, children, blockId, onPropChange, editing }: BlockProps) {
   const points = (data as SeriesResponse | undefined)?.data ?? [];
+  const editMeta = editing && blockId && onPropChange ? { blockId, onPropChange } : undefined;
   return (
     <Panel
       bare={bare}
       className={className}
-      header={renderBlockHeader(props.title, props.description, children)}
+      header={renderBlockHeader(props.title, props.description, children, editMeta)}
     >
       <ChartContainer config={chartConfig} className="aspect-auto h-full min-h-[120px] w-full flex-1">
         <LineChart data={points}>
@@ -232,13 +274,14 @@ function LineChartBlock({ props, data, bare, className, children }: BlockProps) 
   );
 }
 
-function TopicBlock({ props, bare, className, children }: BlockProps) {
+function TopicBlock({ props, bare, className, children, blockId, onPropChange, editing }: BlockProps) {
   const items = toStringArray(props.items);
+  const editMeta = editing && blockId && onPropChange ? { blockId, onPropChange } : undefined;
   return (
     <Panel
       bare={bare}
       className={className}
-      header={renderBlockHeader(props.title, props.description, children)}
+      header={renderBlockHeader(props.title, props.description, children, editMeta)}
     >
       <div className="space-y-2">
         {items.length > 0 ? (
@@ -302,12 +345,30 @@ function normalizeHeadingLevel(value: unknown): 1 | 2 | 3 | 4 {
 }
 
 /** Título de seção com tag semântica real (h1–h4); nunca usa Panel/Card. */
-function HeadingBlock({ props, className }: BlockProps) {
+function HeadingBlock({ props, className, blockId, onPropChange, editing }: BlockProps) {
   const level = normalizeHeadingLevel(props.level);
   const Tag = `h${level}` as 'h1' | 'h2' | 'h3' | 'h4';
+  const rawText = str(props.text);
+
+  if (editing && blockId && onPropChange) {
+    return (
+      <div className={cn(HEADING_CLASS[level], className)}>
+        <InlineRichText
+          blockId={blockId}
+          propName="text"
+          value={rawText}
+          onChange={(val) => onPropChange('text', val)}
+          placeholder="Título da seção..."
+          showFontSize={false}
+          singleLine
+        />
+      </div>
+    );
+  }
+
   return (
     <Tag className={cn(HEADING_CLASS[level], className)}>
-      <FormattedRichText text={str(props.text)} inline />
+      <FormattedRichText text={rawText} inline />
     </Tag>
   );
 }
@@ -345,9 +406,10 @@ function formatDate(value: string): string {
   return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('pt-BR').format(date);
 }
 
-function InvestmentBlock({ props, bare, className }: BlockProps) {
+function InvestmentBlock({ props, bare, className, blockId, onPropChange, editing }: BlockProps) {
   const { t } = useTranslation('page-builder');
   const terms = useProposalTerms();
+  const editMeta = editing && blockId && onPropChange ? { blockId, onPropChange } : undefined;
 
   if (!terms) {
     return (
@@ -364,9 +426,22 @@ function InvestmentBlock({ props, bare, className }: BlockProps) {
       bare={bare}
       className={className}
       header={
-        props.title ? (
+        props.title || editMeta ? (
           <CardTitle>
-            <FormattedRichText text={str(props.title)} inline />
+            {editMeta ? (
+              <InlineRichText
+                blockId={editMeta.blockId}
+                propName="title"
+                value={str(props.title)}
+                onChange={(val) => editMeta.onPropChange('title', val)}
+                placeholder="Título do investimento..."
+                showFontSize={false}
+                singleLine
+                className="font-semibold text-lg"
+              />
+            ) : (
+              <FormattedRichText text={str(props.title)} inline />
+            )}
           </CardTitle>
         ) : undefined
       }
@@ -435,18 +510,19 @@ function resolveCurrency(value: unknown): string {
 
 /** Tabela de valores livre (apresentação, não registro): `rows` linha a linha e um total opcional
  * em destaque. `highlight` dá moldura de card recomendado. */
-function PriceBlock({ props, bare, className, children }: BlockProps) {
+function PriceBlock({ props, bare, className, children, blockId, onPropChange, editing }: BlockProps) {
   const { t } = useTranslation('page-builder');
   const rows = toStringArray(props.rows).map(parsePriceRow);
   const currency = resolveCurrency(props.currency);
   const hasTotal = typeof props.totalCents === 'number';
   const highlight = props.highlight === true;
+  const editMeta = editing && blockId && onPropChange ? { blockId, onPropChange } : undefined;
 
   return (
     <Panel
       bare={bare}
       className={cn(highlight ? 'border-primary border-2' : undefined, className)}
-      header={renderBlockHeader(props.title, props.description, children)}
+      header={renderBlockHeader(props.title, props.description, children, editMeta)}
     >
       <div className="space-y-3">
         {rows.length > 0 ? (
@@ -622,10 +698,29 @@ export function interpolateVariables(text: string, data?: SourceData): string {
   });
 }
 
-function RichTextBlock({ props, data, className, children }: BlockProps) {
+function RichTextBlock({ props, data, className, children, blockId, onPropChange, editing, variables }: BlockProps) {
   const rawContent = str(props.content);
-  const content = interpolateVariables(rawContent, data);
+  const content = editing ? rawContent : interpolateVariables(rawContent, data);
   const inner = innerAlignClass(className);
+
+  if (editing && blockId && onPropChange) {
+    return (
+      <div className={cn('flex h-full w-full flex-col justify-start gap-1 overflow-y-auto max-h-full', inner, className)}>
+        <InlineRichText
+          blockId={blockId}
+          propName="content"
+          value={rawContent}
+          onChange={(val) => onPropChange('content', val)}
+          placeholder="Digite o texto..."
+          showFontSize
+          variables={variables}
+        />
+        {children ? (
+          <div className="flex flex-wrap items-center gap-2">{children}</div>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div className={cn('flex h-full w-full flex-col justify-start gap-1 overflow-y-auto max-h-full', inner, className)}>
@@ -637,10 +732,34 @@ function RichTextBlock({ props, data, className, children }: BlockProps) {
   );
 }
 
-function ButtonActionBlock({ props, className, children }: BlockProps) {
+function ButtonActionBlock({ props, className, children, blockId, onPropChange, editing }: BlockProps) {
   const url = safeHref(props.url);
   const label = str(props.label);
   const inner = innerAlignClass(className);
+
+  if (editing && blockId && onPropChange) {
+    return (
+      <div className={cn('flex h-full w-full flex-col justify-start gap-1 overflow-y-auto max-h-full', inner, className)}>
+        <div
+          className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-primary text-primary-foreground shadow-xs h-full min-h-8 w-full cursor-text px-3 py-1"
+        >
+          <InlineRichText
+            blockId={blockId}
+            propName="label"
+            value={label || 'Botão'}
+            onChange={(val) => onPropChange('label', val)}
+            placeholder="Texto do botão..."
+            showFontSize={false}
+            singleLine
+            className="text-center font-medium"
+          />
+        </div>
+        {children ? (
+          <div className="flex flex-wrap items-center gap-2">{children}</div>
+        ) : null}
+      </div>
+    );
+  }
 
   const buttonNode = url ? (
     <Button asChild size="sm" className="h-full min-h-8 w-full">
@@ -846,15 +965,19 @@ function BasicTable({
   onPageChange,
   isLoading,
   children,
+  blockId,
+  onPropChange,
+  editing,
 }: BlockProps) {
   const columns = toStringArray(props.columns);
   const { data: rows = [], meta } = (data as ListResponse | undefined) ?? {};
   const { limit: skeletonRows = 5, page = 1, totalPages = 1 } = meta ?? {};
+  const editMeta = editing && blockId && onPropChange ? { blockId, onPropChange } : undefined;
   return (
     <Panel
       bare={bare}
       className={className}
-      header={renderBlockHeader(props.title, props.description, children)}
+      header={renderBlockHeader(props.title, props.description, children, editMeta)}
     >
       <Table aria-busy={isLoading}>
         <TableHeader>

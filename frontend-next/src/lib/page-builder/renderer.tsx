@@ -32,6 +32,8 @@ import {
 } from './editor/block-chrome';
 import { useEditor } from './editor/context';
 import { EMPTY_LAYOUT } from './editor/mutations';
+import { buildVariableOptions } from './editor/panel';
+import type { RichTextVariableOption } from '@/components/rich-text-input';
 import {
   findEmptyGridSlots,
   resolveGridLayout,
@@ -250,6 +252,7 @@ function BlockBody({
   paginationKey,
   setPagination,
   editing,
+  variables,
 }: {
   Component: (typeof BLOCK_REGISTRY)[keyof typeof BLOCK_REGISTRY];
   block: PageBlock;
@@ -260,7 +263,13 @@ function BlockBody({
   paginationKey: string;
   setPagination: (v: { key: string; page: number }) => void;
   editing: boolean;
+  variables?: RichTextVariableOption[];
 }) {
+  const editor = useEditor();
+  const onPropChange = editor
+    ? (name: string, value: unknown) => editor.setProp(block.id, name, value)
+    : undefined;
+
   return (
     <Component
       props={block.props ?? {}}
@@ -273,6 +282,10 @@ function BlockBody({
           ? (nextPage: number) => setPagination({ key: paginationKey, page: nextPage })
           : undefined
       }
+      blockId={block.id}
+      onPropChange={onPropChange}
+      editing={editing}
+      variables={variables}
     >
       <BlockChildren block={block} meta={meta} editing={editing} />
     </Component>
@@ -327,6 +340,7 @@ function BlockContent({
   paginationKey,
   setPagination,
   editing,
+  variables,
   t,
 }: {
   block: PageBlock;
@@ -339,6 +353,7 @@ function BlockContent({
   paginationKey: string;
   setPagination: (v: { key: string; page: number }) => void;
   editing: boolean;
+  variables?: RichTextVariableOption[];
   t: (k: string) => string;
 }) {
   const forbidden = errorStatus(query.error) === FORBIDDEN;
@@ -377,6 +392,7 @@ function BlockContent({
       paginationKey={paginationKey}
       setPagination={setPagination}
       editing={editing}
+      variables={variables}
     />
   );
 }
@@ -396,6 +412,7 @@ function Block({
   const { t } = useTranslation('page-builder');
   const editor = useEditor();
   const { source, query, paginatesTable, paginationKey, setPagination } = useBlockQuery(block);
+  const variables = React.useMemo(() => (source ? buildVariableOptions(source) : undefined), [source]);
 
   if (!isKnownBlock(block.type)) {
     if (process.env.NODE_ENV !== 'production') {
@@ -442,6 +459,7 @@ function Block({
         paginationKey={paginationKey}
         setPagination={setPagination}
         editing={!!editor}
+        variables={variables}
         t={t}
       />
     </BlockBoundary>
