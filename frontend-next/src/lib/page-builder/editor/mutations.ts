@@ -11,6 +11,7 @@ import {
 import {
   autoPackBlocks,
   calculateEffectiveRowSpan,
+  insertBlockIntoGrid,
   moveBlockToCell,
   nudgeBlockInGrid,
   removeBlockFromGrid,
@@ -265,15 +266,71 @@ export function addBlock(
   block: PageBlock,
   parentId?: string,
   profile?: LayoutProfileName,
+  selectedId?: string | null,
 ): PageLayout {
   if (!canAdd(layout, parentId, block.type, profile)) return layout;
-  if (!parentId) return { ...layout, blocks: [...layout.blocks, block] };
 
+  if (parentId) {
+    return {
+      ...layout,
+      blocks: layout.blocks.map((b) =>
+        b.id === parentId ? { ...b, children: [...(b.children ?? []), block] } : b,
+      ),
+    };
+  }
+
+  // Se houver um bloco selecionado no nível raiz:
+  if (selectedId) {
+    const selected = layout.blocks.find((b) => b.id === selectedId);
+    if (selected && typeof selected.x === 'number' && typeof selected.y === 'number') {
+      const placed = resolveGridLayout(layout.blocks);
+      const placedSelected = placed.find((p) => p.block.id === selectedId);
+      if (placedSelected) {
+        const rightSpaceX = placedSelected.x + placedSelected.span;
+        // Verifica se há espaço livre ao lado direito do bloco selecionado
+        if (rightSpaceX < 12) {
+          const freeSpan = 12 - rightSpaceX;
+          const isSlotFree = !placed.some(
+            (p) =>
+              p.x < 12 &&
+              p.x + p.span > rightSpaceX &&
+              p.y < placedSelected.y + placedSelected.rowSpan &&
+              p.y + p.rowSpan > placedSelected.y,
+          );
+          if (isSlotFree) {
+            return {
+              ...layout,
+              blocks: insertBlockIntoGrid(
+                layout.blocks,
+                block,
+                rightSpaceX,
+                placedSelected.y,
+                freeSpan,
+                12,
+              ),
+            };
+          }
+        }
+        // Se não há espaço livre ao lado, insere logo após o bloco selecionado
+        return insertBlockAfter(layout, selectedId, block, profile);
+      }
+    }
+  }
+
+  // Sem bloco selecionado: insere ao final da página (abaixo do último bloco)
+  const placed = resolveGridLayout(layout.blocks);
+  const maxBottom = Math.max(0, ...placed.map((p) => p.y + p.rowSpan));
+  const newRowSpan = block.rowSpan ?? defaultRowSpanForType(block.type);
+  const newBlock: PageBlock = {
+    ...block,
+    x: 0,
+    y: maxBottom,
+    span: block.span ?? 12,
+    rowSpan: newRowSpan,
+  };
   return {
     ...layout,
-    blocks: layout.blocks.map((b) =>
-      b.id === parentId ? { ...b, children: [...(b.children ?? []), block] } : b,
-    ),
+    blocks: [...layout.blocks, newBlock],
   };
 }
 
@@ -446,39 +503,22 @@ export function insertBlockAtGrid(
   profile?: LayoutProfileName,
 ): PageLayout {
   if (!canAdd(layout, parentId, block.type, profile)) return layout;
-  const placedBlock: PageBlock = {
-    ...block,
-    span: span ? normalizeSpan(span) : block.span,
-    rowSpan: block.rowSpan ?? defaultRowSpanForType(block.type),
-    x,
-    y,
-  };
+
   if (!parentId) {
-    const withCoords = resolveGridLayout(layout.blocks).map((p) => ({
-      ...p.block,
-      x: p.x,
-      y: p.y,
-      span: p.span,
-      rowSpan: p.rowSpan,
-    }));
-    const nextBlocks = moveBlockToCell([...withCoords, placedBlock], placedBlock.id, x, y);
-    return { ...layout, blocks: nextBlocks };
+    return {
+      ...layout,
+      blocks: insertBlockIntoGrid(layout.blocks, block, x, y, span, 12),
+    };
   }
+
   return {
     ...layout,
     blocks: layout.blocks.map((b) => {
       if (b.id !== parentId) return b;
       const children = b.children ?? [];
-      const withCoords = resolveGridLayout(children).map((p) => ({
-        ...p.block,
-        x: p.x,
-        y: p.y,
-        span: p.span,
-        rowSpan: p.rowSpan,
-      }));
       return {
         ...b,
-        children: moveBlockToCell([...withCoords, placedBlock], placedBlock.id, x, y),
+        children: insertBlockIntoGrid(children, block, x, y, span, 12),
       };
     }),
   };

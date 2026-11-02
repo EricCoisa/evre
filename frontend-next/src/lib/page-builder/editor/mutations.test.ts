@@ -17,7 +17,9 @@ import {
   canDrop,
   insertBlockAfter,
   insertBlockAt,
+  insertBlockAtGrid,
   moveBlockTo,
+  setBlockSpan,
 } from './mutations';
 
 /** Testa o aninhamento de um nível, os limites do Zod e o descarte da fonte antiga ao trocar de fonte. */
@@ -641,12 +643,89 @@ describe('insertBlockAfter & insertBlockAt (2D Grid Insertion)', () => {
     expect(slotsAfter2.some((s) => s.y === 7)).toBe(false);
   });
 
+  it('ao encolher um bloco horizontalmente e adicionar blocos no espaço ao lado, eles ficam ao lado dele na grade', () => {
+    const layoutWithTable: PageLayout = {
+      v: 1,
+      blocks: [
+        {
+          id: 'b10',
+          type: 'table.basic',
+          span: 12,
+          rowSpan: 8,
+          x: 0,
+          y: 0,
+          props: { title: 'Cronograma e investimento por etapa' },
+        },
+        {
+          id: 'b3',
+          type: 'heading',
+          span: 12,
+          rowSpan: 1,
+          x: 0,
+          y: 8,
+          props: { text: 'Objetivo' },
+        },
+      ],
+    };
+
+    // 1. Encolhe b10 horizontalmente de span 12 para span 6
+    const shrunk = setBlockSpan(layoutWithTable, 'b10', 6);
+    expect(findBlock(shrunk, 'b10')!.block).toMatchObject({ x: 0, y: 0, span: 6, rowSpan: 8 });
+
+    // 2. Adiciona Gráfico de Área no espaço livre ao lado (x=6, y=0, span=6)
+    const chart = createBlock('chart.area');
+    const withChart = insertBlockAtGrid(shrunk, chart, 6, 0, 6);
+
+    const b10AfterChart = findBlock(withChart, 'b10')!.block;
+    const chartAfter = findBlock(withChart, chart.id)!.block;
+
+    expect(b10AfterChart).toMatchObject({ x: 0, y: 0, span: 6, rowSpan: 8 });
+    expect(chartAfter).toMatchObject({ x: 6, y: 0, span: 6, rowSpan: 4 });
+
+    // b3 abaixo de ambos permanece em y=8 sem ser empurrado indevidamente
+    expect(findBlock(withChart, 'b3')!.block.y).toBe(8);
+
+    // 3. Adiciona Grupo no espaço restante logo abaixo do gráfico (x=6, y=4, span=6)
+    const grp = createBlock('group');
+    const withGroup = insertBlockAtGrid(withChart, grp, 6, 4, 6);
+
+    const b10Final = findBlock(withGroup, 'b10')!.block;
+    const chartFinal = findBlock(withGroup, chart.id)!.block;
+    const grpFinal = findBlock(withGroup, grp.id)!.block;
+
+    expect(b10Final).toMatchObject({ x: 0, y: 0, span: 6, rowSpan: 8 });
+    expect(chartFinal).toMatchObject({ x: 6, y: 0, span: 6, rowSpan: 4 });
+    expect(grpFinal).toMatchObject({ x: 6, y: 4, span: 6, rowSpan: 2 });
+
+    // Ambos os blocos adicionados (Gráfico de Área & Grupo) ficaram perfeitamente ao lado de Cronograma!
+    expect(findBlock(withGroup, 'b3')!.block.y).toBe(8);
+  });
+
+  it('addBlock com bloco selecionado que possui espaço livre ao lado insere automaticamente ao lado dele', () => {
+    const layoutWithTable: PageLayout = {
+      v: 1,
+      blocks: [
+        {
+          id: 'b10',
+          type: 'table.basic',
+          span: 6,
+          rowSpan: 8,
+          x: 0,
+          y: 0,
+          props: { title: 'Cronograma' },
+        },
+      ],
+    };
+
+    const chart = createBlock('chart.area');
+    // Usuário selecionou b10 e clicou para adicionar no painel lateral
+    const withAdded = addBlock(layoutWithTable, chart, undefined, undefined, 'b10');
+
+    expect(findBlock(withAdded, 'b10')!.block).toMatchObject({ x: 0, y: 0, span: 6 });
+    expect(findBlock(withAdded, chart.id)!.block).toMatchObject({ x: 6, y: 0, span: 6 });
+  });
+
   it('compactLayout colapsa linhas vazias órfãs de layouts legados (ex: dash2.json com vácuo de 23 linhas)', () => {
-    // Simula o caso real de dash2.json:
-    // b11 era text.rich com rowSpan salvo de 24 em y=28 (terminando em y=52).
-    // b3 (heading) foi salvo em y=52.
-    // Com a regra de text.rich span=12 ter effectiveRowSpan=1, b11 ocupa apenas y=28 (termina em 29).
-    // Isso deixaria as linhas 29..51 (23 linhas) 100% vazias.
     const legacyLayout: PageLayout = {
       v: 1,
       blocks: [

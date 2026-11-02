@@ -226,7 +226,7 @@ export function EditorProvider({
       },
       add: (type, parentId) => {
         const block = createBlock(type, parentId);
-        applyChange((d) => addBlock(d, block, parentId, profile));
+        applyChange((d) => addBlock(d, block, parentId, profile, selectedId));
         setSelectedId(block.id);
       },
       insertAt: (type, index, parentId) => {

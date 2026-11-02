@@ -1,4 +1,5 @@
 import {
+  defaultRowSpanForType,
   isAutoHeightBlockType,
   isContainerType,
   minRowSpanForType,
@@ -1343,6 +1344,88 @@ function persistPlacedBlocks(placed: PlacedBlock[]): PageBlock[] {
     span: p.span,
     rowSpan: p.rowSpan,
   }));
+}
+
+/**
+ * Insere um novo bloco diretamente em uma posição (targetX, targetY) da grade 2D com span específico:
+ * - Garante que o novo bloco fique exatamente em targetX e targetY;
+ * - Se a altura do bloco colidir com blocos abaixo naquela coluna, empurra-os para baixo em cascata
+ *   (respeitando espaços vazios existentes), NUNCA faz swap nem move o bloco para x=0!
+ */
+export function insertBlockIntoGrid(
+  blocks: PageBlock[],
+  block: PageBlock,
+  targetX: number,
+  targetY: number,
+  desiredSpan?: number,
+  cols = 12,
+): PageBlock[] {
+  const placed = resolveGridLayout(blocks, cols);
+  const span = desiredSpan ? normalizeSpan(desiredSpan) : normalizeSpan(block.span);
+  const defaultRowSpan = block.rowSpan ?? defaultRowSpanForType(block.type);
+  const minRowSpan = minRowSpanForType(block.type);
+
+  const overlapsHorizontally = (p: PlacedBlock) =>
+    p.x < targetX + span && p.x + p.span > targetX;
+
+  // Verifica blocos que estão abaixo de targetY na mesma faixa de colunas
+  const belowTarget = placed
+    .filter((p) => overlapsHorizontally(p) && p.y >= targetY)
+    .sort((a, b) => a.y - b.y);
+
+  const firstBelow = belowTarget[0];
+  const availableSpace = firstBelow ? firstBelow.y - targetY : 999;
+
+  let rowSpan = defaultRowSpan;
+  if (availableSpace > 0 && availableSpace < defaultRowSpan) {
+    if (availableSpace >= minRowSpan) {
+      rowSpan = normalizeRowSpan(availableSpace, block.type);
+    }
+  }
+
+  const targetBottom = targetY + rowSpan;
+  const collidingBelow = belowTarget.filter((p) => p.y < targetBottom);
+
+  const updatedBlocks = placed.map((p) => ({
+    ...p.block,
+    x: p.x,
+    y: p.y,
+    span: p.span,
+    rowSpan: p.rowSpan,
+  }));
+
+  if (collidingBelow.length > 0) {
+    let pushThreshold = targetBottom;
+    const sortedBelow = [...belowTarget].sort((a, b) => a.y - b.y);
+
+    for (const b of sortedBelow) {
+      const current = updatedBlocks.find((ub) => ub.id === b.block.id);
+      if (!current) continue;
+
+      if ((current.y ?? 0) < pushThreshold) {
+        current.y = pushThreshold;
+        pushThreshold = (current.y ?? 0) + (current.rowSpan ?? 1);
+      } else {
+        break;
+      }
+    }
+  }
+
+  const newPlacedBlock: PageBlock = {
+    ...block,
+    x: targetX,
+    y: targetY,
+    span,
+    rowSpan,
+  };
+
+  const nextBlocks = [...updatedBlocks, newPlacedBlock].sort(
+    (a, b) => (a.y ?? 0) - (b.y ?? 0) || (a.x ?? 0) - (b.x ?? 0),
+  );
+
+  const resolved = resolveGridLayout(nextBlocks, cols);
+  const compacted = compactEmptyRows(resolved, cols);
+  return persistPlacedBlocks(compacted);
 }
 
 /**
