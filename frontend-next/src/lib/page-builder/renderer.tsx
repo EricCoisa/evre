@@ -217,7 +217,7 @@ export function BlockGrid({ blocks }: { blocks: PageLayout['blocks'] }) {
     : [];
 
   return (
-    <div className="grid grid-cols-1 gap-3 md:gap-4 lg:grid-cols-12 lg:auto-rows-[44px] items-stretch">
+    <div className="grid grid-cols-1 gap-3 md:gap-4 lg:grid-cols-12 lg:auto-rows-[minmax(44px,auto)] items-stretch">
       {blocks.map((block) => (
         <Block
           key={block.id}

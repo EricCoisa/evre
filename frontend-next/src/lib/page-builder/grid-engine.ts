@@ -72,59 +72,59 @@ interface PresetMetric {
 
 const PRESET_METRICS: Record<TextPreset, PresetMetric> = {
   heading1: {
-    // text-4xl (36px font, font-bold, leading ~44px)
-    charsPer12Col: 46,
+    // text-4xl (36px font, font-bold, leading ~42px)
+    charsPer12Col: 54,
     minChars: 10,
-    lineHeightPx: 44,
-    extraPaddingPx: 12,
-  },
-  heading2: {
-    // text-2xl (24px font, font-semibold, leading ~34px)
-    charsPer12Col: 62,
-    minChars: 14,
-    lineHeightPx: 34,
+    lineHeightPx: 42,
     extraPaddingPx: 8,
   },
-  heading3: {
-    // text-xl (20px font, font-semibold, leading ~30px)
-    charsPer12Col: 78,
-    minChars: 18,
-    lineHeightPx: 30,
+  heading2: {
+    // text-2xl (24px font, font-semibold, leading ~32px)
+    charsPer12Col: 80,
+    minChars: 14,
+    lineHeightPx: 32,
     extraPaddingPx: 6,
   },
-  heading4: {
-    // text-lg (18px font, font-medium, leading ~28px)
-    charsPer12Col: 90,
-    minChars: 20,
+  heading3: {
+    // text-xl (20px font, font-semibold, leading ~28px)
+    charsPer12Col: 96,
+    minChars: 18,
     lineHeightPx: 28,
     extraPaddingPx: 4,
   },
-  lead: {
-    // text-base (16px font, leading-relaxed ~26px)
-    charsPer12Col: 94,
-    minChars: 22,
+  heading4: {
+    // text-lg (18px font, font-medium, leading ~26px)
+    charsPer12Col: 110,
+    minChars: 20,
     lineHeightPx: 26,
+    extraPaddingPx: 4,
+  },
+  lead: {
+    // text-base (16px font, leading-relaxed ~24px)
+    charsPer12Col: 120,
+    minChars: 22,
+    lineHeightPx: 24,
     extraPaddingPx: 4,
   },
   quote: {
     // text-sm, italic, pl-4, border-l-2
-    charsPer12Col: 96,
-    minChars: 22,
-    lineHeightPx: 24,
-    extraPaddingPx: 16,
+    charsPer12Col: 135,
+    minChars: 24,
+    lineHeightPx: 22,
+    extraPaddingPx: 8,
   },
   caption: {
-    // text-xs (12px font, leading ~18px)
-    charsPer12Col: 125,
+    // text-xs (12px font, leading ~16px)
+    charsPer12Col: 160,
     minChars: 28,
-    lineHeightPx: 18,
+    lineHeightPx: 16,
     extraPaddingPx: 0,
   },
   paragraph: {
-    // text-sm (14px font, leading-relaxed ~23px)
-    charsPer12Col: 110,
+    // text-sm (14px font, leading-relaxed ~22.75px)
+    charsPer12Col: 140,
     minChars: 26,
-    lineHeightPx: 23,
+    lineHeightPx: 22,
     extraPaddingPx: 0,
   },
 };
@@ -164,8 +164,14 @@ export function estimateTextRowSpan(
 
   const metric = PRESET_METRICS[effectivePreset] ?? PRESET_METRICS.paragraph;
 
-  // Remove marcações [fs:...] para que as tags não contem como caracteres visuais
-  const cleanContent = content.replace(/\[fs:[^\]]+\]/g, '').replace(/\[\/fs\]/g, '');
+  // Remove marcações [fs:...], formatações de rich text (*negrito*, _itálico_, ~tachado~, `código`)
+  // e normaliza quebras de linha para que a contagem reflita os caracteres visuais reais
+  const cleanContent = content
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .replace(/\[fs:[^\]]+\]/g, '')
+    .replace(/\[\/fs\]/g, '')
+    .replace(/[*_~`]/g, '');
 
   // Preserva todas as quebras de linha (incluindo quebras extras/vazias criadas com Enter)
   const lines = cleanContent.split('\n');
@@ -182,7 +188,8 @@ export function estimateTextRowSpan(
       visualLinesCount += 1;
     } else {
       const isListItem = /^\s*[-*•]\s/.test(line);
-      const lineWraps = Math.max(1, Math.ceil(line.length / charsPerLine));
+      const trimmedLine = line.trimEnd();
+      const lineWraps = Math.max(1, Math.ceil(trimmedLine.length / charsPerLine));
       visualLinesCount += isListItem ? lineWraps * 1.15 : lineWraps;
     }
   }
@@ -331,8 +338,15 @@ export const BLOCK_ROW_SPAN_ESTIMATORS: Record<string, BlockRowSpanEstimator> = 
  * - Respeita o rowSpan explicitamente definido pelo usuário quando for maior.
  */
 export function calculateEffectiveRowSpan(block: PageBlock, cols = 12): BlockRowSpan {
-  // Para blocos de conteúdo textual/inline, a altura é 100% automática com base no conteúdo real e preset
+  // Para blocos de conteúdo textual/inline, a altura é automática com base no conteúdo real e preset.
+  // Blocos auto-height de largura total (span >= cols) ocupam a linha inteira da grade;
+  // com auto-rows minmax(44px, auto), essa linha da grade se ajusta de forma fluida e contínua pixel a pixel
+  // a cada caractere e quebra de linha digitada, sem saltos discretos de 60px nem vácuos vazios.
   if (isAutoHeightBlockType(block.type)) {
+    const span = normalizeSpan(block.span);
+    if (span >= cols) {
+      return 1;
+    }
     const estimator = BLOCK_ROW_SPAN_ESTIMATORS[block.type];
     if (estimator) {
       return estimator(block, cols);
@@ -345,12 +359,17 @@ export function calculateEffectiveRowSpan(block: PageBlock, cols = 12): BlockRow
   // 1. Containers (group ou qualquer bloco com children): abraça a altura total dos filhos
   if (block.children && block.children.length > 0) {
     const parentSpan = normalizeSpan(block.span);
-    // Para estimar os filhos com precisão de quebra de linha, passa a largura real que o container oferece aos filhos
+    // Para estimar os filhos com precisão de quebra de linha, passa a largura real que o container oferece aos filhos.
+    // Dentro de um container (group), calcula a altura estimada real dos filhos textuais
+    // para que o Card do container abraçar todo o conteúdo sem truncar.
     const mappedChildren = block.children.map((c) => ({
       ...c,
       span: normalizeSpan(
         Math.max(1, Math.round((parentSpan * normalizeSpan(c.span)) / 12)),
       ),
+      rowSpan: isAutoHeightBlockType(c.type)
+        ? (BLOCK_ROW_SPAN_ESTIMATORS[c.type]?.(c, cols) ?? 1)
+        : c.rowSpan,
     }));
     const placedChildren = resolveGridLayout(mappedChildren, cols);
     const maxChildBottom = Math.max(0, ...placedChildren.map((c) => c.y + c.rowSpan));

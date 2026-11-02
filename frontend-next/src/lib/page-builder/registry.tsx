@@ -199,7 +199,7 @@ function Group({ props, bare, className, children, blockId, onPropChange, editin
       header={renderBlockHeader(props.title, props.description, undefined, editMeta)}
       editing={editing}
     >
-      <div className="grid grid-cols-1 gap-3 md:gap-4 lg:grid-cols-12 lg:auto-rows-[44px] items-stretch">{children}</div>
+      <div className="grid grid-cols-1 gap-3 md:gap-4 lg:grid-cols-12 lg:auto-rows-[minmax(44px,auto)] items-stretch">{children}</div>
     </Panel>
   );
 }

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { PageLayoutSchema, MAX_BLOCKS, MAX_CHILDREN, type PageLayout } from '../schema';
+import { PageLayoutSchema, MAX_BLOCKS, MAX_CHILDREN, type PageLayout, type PageBlock } from '../schema';
+import { calculateEffectiveRowSpan } from '../grid-engine';
 import {
   EMPTY_LAYOUT,
   addBlock,
@@ -470,5 +471,64 @@ describe('insertBlockAfter & insertBlockAt (2D Grid Insertion)', () => {
     const multiWordBlock = findBlock(multiWordReverted, 'text2')!.block;
     expect(multiWordBlock.props.preset).toBe('paragraph');
     expect(multiWordBlock.props.content).toBe('[fs:text-sm]Criar uma plataforma[/fs]');
+  });
+
+  it('ao expandir texto em bloco paragraph, calcula rowSpan proporcional sem vácuo exponencial', () => {
+    let layout: PageLayout = {
+      v: 1,
+      blocks: [
+        {
+          id: 'text1',
+          type: 'text.rich',
+          span: 12,
+          rowSpan: 1,
+          x: 0,
+          y: 0,
+          props: { content: 'Linha 1', preset: 'paragraph' },
+        },
+        {
+          id: 'text2',
+          type: 'text.rich',
+          span: 12,
+          rowSpan: 1,
+          x: 0,
+          y: 1,
+          props: { content: 'Criar uma plataforma...', preset: 'paragraph' },
+        },
+      ],
+    };
+
+    const paragraph =
+      'Desenvolvimento de uma plataforma digital para personal trainers gerenciarem seus alunos, organizarem exercícios e criarem treinos personalizados. A solução contará com uma área administrativa para o profissional e uma área exclusiva para os alunos acompanharem seus treinos.';
+
+    // Blocos full-width (span 12) mantêm rowSpan 1 e usam auto-rows minmax(44px, auto)
+    // para expansão suave e contínua pixel a pixel a cada linha/caractere digitado,
+    // garantindo que text2 permaneça sempre exatamente após a linha 1 com gap uniforme.
+    layout = setBlockProp(layout, 'text1', 'content', paragraph);
+    expect(findBlock(layout, 'text1')!.block.rowSpan).toBe(1);
+    expect(findBlock(layout, 'text2')!.block.y).toBe(1);
+
+    const sixParagraphs = Array(6).fill(paragraph).join('\n');
+    layout = setBlockProp(layout, 'text1', 'content', sixParagraphs);
+    expect(findBlock(layout, 'text1')!.block.rowSpan).toBe(1);
+    expect(findBlock(layout, 'text2')!.block.y).toBe(1);
+
+    const sevenParagraphs = Array(7).fill(paragraph).join('\n');
+    layout = setBlockProp(layout, 'text1', 'content', sevenParagraphs);
+    expect(findBlock(layout, 'text1')!.block.rowSpan).toBe(1);
+    expect(findBlock(layout, 'text2')!.block.y).toBe(1);
+
+    // Já blocos de largura parcial (span < 12) em grade bento calculam rowSpan proporcional
+    // para reservar espaço no grid lado a lado com outros blocos
+    const partialText: PageBlock = {
+      id: 'partial1',
+      type: 'text.rich',
+      span: 6,
+      rowSpan: 1,
+      x: 0,
+      y: 0,
+      props: { content: sevenParagraphs, preset: 'paragraph' },
+    };
+    expect(calculateEffectiveRowSpan(partialText, 12)).toBeGreaterThanOrEqual(5);
   });
 });

@@ -531,7 +531,7 @@ describe('Limitação de redimensionamento ao encostar em outro bloco ou fim da 
         {
           id: 'intro',
           type: 'text.rich',
-          span: 12,
+          span: 6,
           x: 0,
           y: 0,
           props: { content: longHeadingText, preset: 'paragraph' },
@@ -539,7 +539,7 @@ describe('Limitação de redimensionamento ao encostar em outro bloco ou fim da 
         {
           id: 'card1',
           type: 'topic',
-          span: 12,
+          span: 6,
           rowSpan: 4,
           x: 0,
           y: 2,
@@ -572,14 +572,14 @@ describe('Limitação de redimensionamento ao encostar em outro bloco ou fim da 
     const revertedIntro = placedReverted.find((p) => p.block.id === 'intro')!;
     const revertedCard = placedReverted.find((p) => p.block.id === 'card1')!;
 
-    // O intro volta a ter rowSpan 2
-    expect(revertedIntro.rowSpan).toBe(2);
+    // O intro volta a ter rowSpan 3
+    expect(revertedIntro.rowSpan).toBe(3);
 
-    // O card de baixo NÃO DEVE deixar vácuo: deve colar imediatamente após o intro (y = 2)
-    expect(revertedCard.y).toBe(2);
+    // O card de baixo NÃO DEVE deixar vácuo: deve colar imediatamente após o intro (y = 3)
+    expect(revertedCard.y).toBe(3);
 
-    // No draft sincronizado, o card também volta para y = 2 sem vácuos
+    // No draft sincronizado, o card também volta para y = 3 sem vácuos
     const cardInRevertedDraft = revertedLayout.blocks.find((b) => b.id === 'card1')!;
-    expect(cardInRevertedDraft.y).toBe(2);
+    expect(cardInRevertedDraft.y).toBe(3);
   });
 });
