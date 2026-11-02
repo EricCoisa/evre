@@ -705,7 +705,7 @@ function RichTextBlock({ props, data, className, children, blockId, onPropChange
 
   if (editing && blockId && onPropChange) {
     return (
-      <div className={cn('flex h-full w-full flex-col justify-start gap-1 overflow-y-auto max-h-full', inner, className)}>
+      <div className={cn('flex w-full flex-col justify-start gap-1 min-h-0', inner, className)}>
         <InlineRichText
           blockId={blockId}
           propName="content"
@@ -723,7 +723,7 @@ function RichTextBlock({ props, data, className, children, blockId, onPropChange
   }
 
   return (
-    <div className={cn('flex h-full w-full flex-col justify-start gap-1 overflow-y-auto max-h-full', inner, className)}>
+    <div className={cn('flex w-full flex-col justify-start gap-1 min-h-0', inner, className)}>
       {content ? <FormattedRichText text={content} /> : null}
       {children ? (
         <div className="flex flex-wrap items-center gap-2">{children}</div>

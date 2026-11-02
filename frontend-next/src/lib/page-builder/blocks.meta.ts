@@ -300,6 +300,16 @@ export const BLOCK_META = {
 
 export type BlockType = keyof typeof BLOCK_META;
 
+export function isAutoHeightBlockType(type?: string): boolean {
+  if (!type) return false;
+  return (
+    type === 'text.rich' ||
+    type === 'heading' ||
+    type === 'button.action' ||
+    type === 'divider'
+  );
+}
+
 export function isInlineBlockType(type: string): boolean {
   const meta = BLOCK_META[type as BlockType];
   return !!meta && 'inline' in meta && !!meta.inline;

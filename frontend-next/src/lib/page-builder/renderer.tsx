@@ -41,6 +41,7 @@ import {
 } from './grid-engine';
 import { BLOCK_REGISTRY, isKnownBlock } from './registry';
 import type { SourceData } from './types';
+import { isAutoHeightBlockType } from './blocks.meta';
 import {
   COL_START_CLASS,
   PAGE_LAYOUTS_KEY,
@@ -439,8 +440,9 @@ function Block({
     const colSpan = SPAN_CLASS[effectiveSpan] ?? 'lg:col-span-12';
     const colStart = placed ? COL_START_CLASS[placed.x] : undefined;
     const rowStart = placed ? ROW_START_CLASS[placed.y] : undefined;
+    const isAutoHeight = isAutoHeightBlockType(block.type);
     const rowSpan = placed ? ROW_SPAN_CLASS[placed.rowSpan] : undefined;
-    const alignSelf = 'h-full';
+    const alignSelf = isAutoHeight ? 'h-auto self-start' : 'h-full';
     gridClass = [colStart, colSpan, rowStart, rowSpan, alignSelf]
       .filter(Boolean)
       .join(' ');

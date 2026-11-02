@@ -34,6 +34,7 @@ import {
   resolveGridLayout,
   type EmptyGridSlot,
 } from '../grid-engine';
+import { isAutoHeightBlockType } from '../blocks.meta';
 import {
   COL_START_CLASS,
   QUICK_HEIGHTS,
@@ -114,6 +115,7 @@ function FloatingBlockToolbar({
   const currentSpan = normalizeSpan(block.span);
 
   const isInline = isInlineBlockType(block.type);
+  const isAutoHeight = isAutoHeightBlockType(block.type);
   const isTextEditable =
     block.type === 'text.rich' ||
     block.type === 'heading' ||
@@ -343,6 +345,7 @@ function BlockResizeHandles({
 }) {
   const editor = useEditorOrThrow();
   const currentSpan = normalizeSpan(block.span);
+  const isAutoHeight = isAutoHeightBlockType(block.type);
 
   const located = editor.draft.blocks.some((b) => b.id === block.id)
     ? editor.draft.blocks
@@ -438,48 +441,52 @@ function BlockResizeHandles({
         <div className="h-3.5 w-0.5 rounded-full bg-background" />
       </div>
 
-      {/* Alça Superior (Altura por cima) */}
-      <div
-        onPointerDown={(e) => startResize(e, 'top')}
-        data-testid={`pb-resize-top-${block.id}`}
-        className={cn(
-          'absolute top-0 left-1/2 -translate-x-1/2 z-20 flex h-2.5 w-12 cursor-ns-resize items-center justify-center rounded-b-sm transition-all',
-          selected
-            ? 'opacity-100 bg-primary/80 hover:bg-primary'
-            : 'opacity-0 group-hover/pb:opacity-70 hover:opacity-100 bg-muted-foreground/40 hover:bg-primary',
-        )}
-        title="Arrastar borda superior para ajustar altura"
-      >
-        <div className="h-0.5 w-6 rounded-full bg-background" />
-      </div>
+      {!isAutoHeight ? (
+        <>
+          {/* Alça Superior (Altura por cima) */}
+          <div
+            onPointerDown={(e) => startResize(e, 'top')}
+            data-testid={`pb-resize-top-${block.id}`}
+            className={cn(
+              'absolute top-0 left-1/2 -translate-x-1/2 z-20 flex h-2.5 w-12 cursor-ns-resize items-center justify-center rounded-b-sm transition-all',
+              selected
+                ? 'opacity-100 bg-primary/80 hover:bg-primary'
+                : 'opacity-0 group-hover/pb:opacity-70 hover:opacity-100 bg-muted-foreground/40 hover:bg-primary',
+            )}
+            title="Arrastar borda superior para ajustar altura"
+          >
+            <div className="h-0.5 w-6 rounded-full bg-background" />
+          </div>
 
-      {/* Alça Inferior (Altura por baixo) */}
-      <div
-        onPointerDown={(e) => startResize(e, 'bottom')}
-        data-testid={`pb-resize-bottom-${block.id}`}
-        className={cn(
-          'absolute bottom-0 left-1/2 -translate-x-1/2 z-20 flex h-2.5 w-12 cursor-ns-resize items-center justify-center rounded-t-sm transition-all',
-          selected
-            ? 'opacity-100 bg-primary/80 hover:bg-primary'
-            : 'opacity-0 group-hover/pb:opacity-70 hover:opacity-100 bg-muted-foreground/40 hover:bg-primary',
-        )}
-        title="Arrastar borda inferior para ajustar altura"
-      >
-        <div className="h-0.5 w-6 rounded-full bg-background" />
-      </div>
+          {/* Alça Inferior (Altura por baixo) */}
+          <div
+            onPointerDown={(e) => startResize(e, 'bottom')}
+            data-testid={`pb-resize-bottom-${block.id}`}
+            className={cn(
+              'absolute bottom-0 left-1/2 -translate-x-1/2 z-20 flex h-2.5 w-12 cursor-ns-resize items-center justify-center rounded-t-sm transition-all',
+              selected
+                ? 'opacity-100 bg-primary/80 hover:bg-primary'
+                : 'opacity-0 group-hover/pb:opacity-70 hover:opacity-100 bg-muted-foreground/40 hover:bg-primary',
+            )}
+            title="Arrastar borda inferior para ajustar altura"
+          >
+            <div className="h-0.5 w-6 rounded-full bg-background" />
+          </div>
 
-      {/* Alça de Canto Inferior Direito (Largura + Altura simultâneos estilo Excalidraw) */}
-      <div
-        onPointerDown={(e) => startResize(e, 'corner')}
-        data-testid={`pb-resize-corner-${block.id}`}
-        className={cn(
-          'absolute bottom-0 right-0 z-25 size-4 cursor-nwse-resize rounded-tl-md rounded-br-xl border-2 border-background transition-all',
-          selected
-            ? 'opacity-100 bg-primary hover:scale-125'
-            : 'opacity-0 group-hover/pb:opacity-80 hover:opacity-100 bg-primary/70 hover:scale-125',
-        )}
-        title="Arrastar canto para redimensionar livremente"
-      />
+          {/* Alça de Canto Inferior Direito (Largura + Altura simultâneos estilo Excalidraw) */}
+          <div
+            onPointerDown={(e) => startResize(e, 'corner')}
+            data-testid={`pb-resize-corner-${block.id}`}
+            className={cn(
+              'absolute bottom-0 right-0 z-25 size-4 cursor-nwse-resize rounded-tl-md rounded-br-xl border-2 border-background transition-all',
+              selected
+                ? 'opacity-100 bg-primary hover:scale-125'
+                : 'opacity-0 group-hover/pb:opacity-80 hover:opacity-100 bg-primary/70 hover:scale-125',
+            )}
+            title="Arrastar canto para redimensionar livremente"
+          />
+        </>
+      ) : null}
     </>
   );
 }
@@ -654,6 +661,7 @@ export function BlockChrome({
   const selected = editor.selectedId === block.id;
   const isContainer = isContainerType(block.type);
   const isInline = isInlineBlockType(block.type);
+  const isAutoHeight = isAutoHeightBlockType(block.type);
   const isTextEditable =
     block.type === 'text.rich' ||
     block.type === 'heading' ||
@@ -682,7 +690,7 @@ export function BlockChrome({
       className={cn(
         spanClass,
         'group/pb relative rounded-xl transition-all',
-        'h-full',
+        isAutoHeight ? 'h-auto min-h-0 self-start' : 'h-full',
         selected
           ? 'ring-2 ring-primary shadow-md ring-offset-2 z-40'
           : 'hover:ring-1 hover:ring-primary/40',
@@ -696,7 +704,7 @@ export function BlockChrome({
       <div
         data-pb-content=""
         className={cn(
-          'h-full',
+          isAutoHeight ? 'h-auto min-h-0' : 'h-full',
           !hasInteractiveChildren && !isTextEditable && 'pointer-events-none',
         )}
       >

@@ -207,10 +207,10 @@ describe('Limitação de redimensionamento ao encostar em outro bloco ou fim da 
     const layout: PageLayout = {
       v: 1,
       blocks: [
-        { id: 'b1', type: 'heading', span: 12, rowSpan: 1, x: 0, y: 0, props: {} },
-        { id: 'b2', type: 'text.rich', span: 12, rowSpan: 2, x: 0, y: 1, props: {} },
-        { id: 'b3', type: 'heading', span: 12, rowSpan: 1, x: 0, y: 3, props: {} },
-        { id: 'b4', type: 'text.rich', span: 12, rowSpan: 3, x: 0, y: 4, props: {} },
+        { id: 'b1', type: 'stat.card', span: 12, rowSpan: 1, x: 0, y: 0, props: {} },
+        { id: 'b2', type: 'stat.card', span: 12, rowSpan: 2, x: 0, y: 1, props: {} },
+        { id: 'b3', type: 'stat.card', span: 12, rowSpan: 1, x: 0, y: 3, props: {} },
+        { id: 'b4', type: 'stat.card', span: 12, rowSpan: 3, x: 0, y: 4, props: {} },
       ],
     };
 
@@ -221,6 +221,25 @@ describe('Limitação de redimensionamento ao encostar em outro bloco ou fim da 
     // b3 e b4 são empurrados para baixo
     expect(findBlock(afterResize, 'b3')!.block).toMatchObject({ y: 5, rowSpan: 1 });
     expect(findBlock(afterResize, 'b4')!.block).toMatchObject({ y: 6, rowSpan: 3 });
+  });
+
+  it('calcula altura automática para blocos de texto (text.rich, heading) sem gerar vácuos manuais', () => {
+    const textBlock = {
+      id: 't1',
+      type: 'text.rich',
+      span: 12 as const,
+      rowSpan: 4 as const,
+      props: { content: 'Texto curto' },
+    };
+    expect(calculateEffectiveRowSpan(textBlock, 12)).toBe(1);
+
+    const longText = {
+      id: 't2',
+      type: 'text.rich',
+      span: 4 as const,
+      props: { content: 'Linha 1\nLinha 2\nLinha 3\nLinha 4\nLinha 5\nLinha 6' },
+    };
+    expect(calculateEffectiveRowSpan(longText, 12)).toBeGreaterThanOrEqual(2);
   });
 
   it('ao redimensionar bloco na coluna esquerda, empurra apenas a coluna esquerda mantendo a direita intacta', () => {

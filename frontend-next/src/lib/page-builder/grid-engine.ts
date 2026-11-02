@@ -1,4 +1,5 @@
 import {
+  isAutoHeightBlockType,
   minRowSpanForType,
   normalizeRowSpan,
   normalizeSpan,
@@ -220,6 +221,15 @@ export const BLOCK_ROW_SPAN_ESTIMATORS: Record<string, BlockRowSpanEstimator> = 
  * - Respeita o rowSpan explicitamente definido pelo usuário quando for maior.
  */
 export function calculateEffectiveRowSpan(block: PageBlock, cols = 12): BlockRowSpan {
+  // Para blocos de conteúdo textual/inline, a altura é 100% automática com base no conteúdo real
+  if (isAutoHeightBlockType(block.type)) {
+    const estimator = BLOCK_ROW_SPAN_ESTIMATORS[block.type];
+    if (estimator) {
+      return estimator(block, cols);
+    }
+    return 1;
+  }
+
   let minNeeded = normalizeRowSpan(block.rowSpan, block.type);
 
   // 1. Containers (group ou qualquer bloco com children): abraça a altura total dos filhos

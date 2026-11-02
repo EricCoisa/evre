@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { BLOCK_META, type BlockType } from './blocks.meta';
+import { BLOCK_META, isAutoHeightBlockType, type BlockType } from './blocks.meta';
+export { isAutoHeightBlockType };
 import {
   DEFAULT_PROFILE,
   LAYOUT_PROFILES,
