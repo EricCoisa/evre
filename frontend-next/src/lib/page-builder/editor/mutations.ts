@@ -13,6 +13,7 @@ import {
   calculateEffectiveRowSpan,
   moveBlockToCell,
   nudgeBlockInGrid,
+  removeBlockFromGrid,
   resizeBlockLeftInGrid,
   resizeBlockRowSpanInGrid,
   resizeBlockSpanInGrid,
@@ -184,15 +185,41 @@ export function setBlockParam(
 }
 
 export function removeBlock(layout: PageLayout, id: string): PageLayout {
+  const located = findBlock(layout, id);
+  if (!located) return layout;
+
+  if (located.parentId) {
+    const parent = layout.blocks.find((b) => b.id === located.parentId);
+    if (!parent) return layout;
+    const oldRowSpan = calculateEffectiveRowSpan(parent, 12);
+    const updatedChildren = removeBlockFromGrid(parent.children ?? [], id, 12);
+    const updatedParent = { ...parent, children: updatedChildren };
+    const newRowSpan = calculateEffectiveRowSpan(updatedParent, 12);
+
+    const updatedBlocks = layout.blocks.map((b) =>
+      b.id === located.parentId ? updatedParent : b,
+    );
+    if (oldRowSpan !== newRowSpan && typeof parent.y === 'number') {
+      return {
+        ...layout,
+        blocks: syncBlockRowSpanChange(
+          updatedBlocks,
+          parent.id,
+          oldRowSpan,
+          newRowSpan,
+          12,
+        ),
+      };
+    }
+    return {
+      ...layout,
+      blocks: updatedBlocks,
+    };
+  }
+
   return {
     ...layout,
-    blocks: layout.blocks
-      .filter((b) => b.id !== id)
-      .map((b) =>
-        b.children
-          ? { ...b, children: b.children.filter((c) => c.id !== id) }
-          : b,
-      ),
+    blocks: removeBlockFromGrid(layout.blocks, id, 12),
   };
 }
 

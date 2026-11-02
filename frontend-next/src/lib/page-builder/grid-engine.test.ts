@@ -5,6 +5,7 @@ import {
   findEmptyGridSlots,
   getMaxResizeBounds,
   calculateEffectiveRowSpan,
+  resizeBlockRowSpanInGrid,
   estimateTextRowSpan,
   estimateFeedRowSpan,
   estimateTableRowSpan,
@@ -335,7 +336,44 @@ describe('Limitação de redimensionamento ao encostar em outro bloco ou fim da 
 
     // O espaço abaixo do Card (x=0, y=1, span=6) fica 100% livre na grade para colocar Texto, Botão ou outro Card!
     const slots = findEmptyGridSlots(placed, 12, false);
-    expect(slots).toContainEqual({ x: 0, y: 1, span: 6, rowSpan: 1 });
+    expect(slots).toContainEqual({ x: 0, y: 1, span: 6, rowSpan: 3 });
+  });
+
+  it('ao redimensionar um bloco para baixo, ele deve ocupar o espaço vazio', () => {
+    const blocks: PageBlock[] = [
+      { id: 'cardTop', type: 'stat.card', span: 6, rowSpan: 2, x: 6, y: 0, props: {} },
+      { id: 'bottomBlock', type: 'text.rich', span: 12, rowSpan: 2, x: 0, y: 6, props: {} },
+    ];
+    // cardTop está em y=0, rowSpan=2 (ocupa rows 0 e 1).
+    // rows 2, 3, 4, 5 estão vazias.
+    // bottomBlock está em y=6.
+    const resized = resizeBlockRowSpanInGrid(blocks, 'cardTop', 4);
+    const card = resized.find((b) => b.id === 'cardTop')!;
+    const bottom = resized.find((b) => b.id === 'bottomBlock')!;
+
+    // O card expande ocupando o espaço vazio (rowSpan=4) sem puxar ou mexer prematuramente no bottomBlock
+    expect(card.rowSpan).toBe(4);
+    expect(bottom.y).toBe(6);
+
+    // Se o card crescer além do espaço vazio (ex: rowSpan=7), aí sim empurra o bottomBlock para y=7
+    const expandedFurther = resizeBlockRowSpanInGrid(resized, 'cardTop', 7);
+    const cardFurther = expandedFurther.find((b) => b.id === 'cardTop')!;
+    const bottomFurther = expandedFurther.find((b) => b.id === 'bottomBlock')!;
+    expect(cardFurther.rowSpan).toBe(7);
+    expect(bottomFurther.y).toBe(7);
+  });
+
+  it('ao redimensionar um bloco para baixo com coluna vizinha alta, ele deve ocupar o espaço vazio', () => {
+    const blocks: PageBlock[] = [
+      { id: 'leftTall', type: 'group', span: 6, rowSpan: 8, x: 0, y: 0, props: {} },
+      { id: 'cardRight', type: 'stat.card', span: 6, rowSpan: 1, x: 6, y: 0, props: {} },
+    ];
+    const resized = resizeBlockRowSpanInGrid(blocks, 'cardRight', 4);
+    const card = resized.find((b) => b.id === 'cardRight')!;
+    const left = resized.find((b) => b.id === 'leftTall')!;
+
+    expect(card.rowSpan).toBe(4);
+    expect(left.rowSpan).toBe(8);
   });
 
   describe('Contenção automática de altura (Group e Text.rich)', () => {

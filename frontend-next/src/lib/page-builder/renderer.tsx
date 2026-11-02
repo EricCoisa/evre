@@ -35,6 +35,7 @@ import { EMPTY_LAYOUT } from './editor/mutations';
 import { buildVariableOptions } from './editor/panel';
 import type { RichTextVariableOption } from '@/components/rich-text-input';
 import {
+  compactEmptyRows,
   findEmptyGridSlots,
   resolveGridLayout,
   type PlacedBlock,
@@ -206,10 +207,10 @@ function PageActions({
 export function BlockGrid({ blocks }: { blocks: PageLayout['blocks'] }) {
   const editor = useEditor();
   const validBlocks = blocks.filter((b) => isKnownBlock(b.type));
+  const placedList = compactEmptyRows(resolveGridLayout(validBlocks));
   const placedById = new Map(
-    resolveGridLayout(validBlocks).map((p) => [p.block.id, p]),
+    placedList.map((p) => [p.block.id, p]),
   );
-  const placedList = [...placedById.values()];
   const canRenderEmptySlots =
     !!editor && typeof editor.moveToGrid === 'function';
   const emptySlots = canRenderEmptySlots
@@ -542,7 +543,7 @@ function BlockChildren({
       Math.max(1, Math.round((parentSpan * normalizeSpan(c.span)) / 12)),
     ),
   }));
-  const placedChildren = resolveGridLayout(mappedValidChildren);
+  const placedChildren = compactEmptyRows(resolveGridLayout(mappedValidChildren));
   const placedById = new Map(
     placedChildren.map((p, idx) => [validChildren[idx].id, { ...p, block: validChildren[idx] }]),
   );

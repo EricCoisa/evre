@@ -7,6 +7,7 @@ import {
   type BlockRowSpan,
   type BlockSpan,
   type PageBlock,
+  type PageLayout,
 } from './schema';
 import { normalizeTextPreset, type TextPreset } from './blocks.meta';
 
@@ -217,9 +218,17 @@ export function estimateTextRowSpan(
  */
 export function compactEmptyRows(placed: PlacedBlock[], cols = 12): PlacedBlock[] {
   if (placed.length === 0) return placed;
-  const maxRow = placed.reduce((max, p) => Math.max(max, p.y + p.rowSpan), 0);
 
   let current = placed;
+
+  // 1. Se todos os blocos estão abaixo de y=0, puxa todos para o topo (y=0)
+  const minY = Math.min(...current.map((p) => p.y));
+  if (minY > 0) {
+    current = current.map((p) => ({ ...p, y: p.y - minY }));
+  }
+
+  // 2. Colapsa qualquer linha intermediária que esteja 100% vazia
+  const maxRow = current.reduce((max, p) => Math.max(max, p.y + p.rowSpan), 0);
   for (let y = maxRow - 1; y >= 0; y--) {
     const hasAnyBlockInRow = current.some(
       (p) => y >= p.y && y < p.y + p.rowSpan,
@@ -572,7 +581,35 @@ export function findEmptyGridSlots(
     }
   }
 
-  return slots;
+  return mergeContiguousEmptySlots(slots);
+}
+
+/**
+ * Agrupa verticalmente slots vazios contíguos que possuem as mesmas colunas (x e span),
+ * transformando múltiplos botões individuais em uma única área de inserção/dropzone limpa
+ * com altura proporcional (rowSpan), evitando poluição visual e pilhas de botões.
+ */
+export function mergeContiguousEmptySlots(slots: EmptyGridSlot[]): EmptyGridSlot[] {
+  if (slots.length <= 1) return slots;
+
+  const merged: EmptyGridSlot[] = [];
+  const sorted = [...slots].sort((a, b) => a.x - b.x || a.span - b.span || a.y - b.y);
+
+  for (const slot of sorted) {
+    const last = merged[merged.length - 1];
+    if (
+      last &&
+      last.x === slot.x &&
+      last.span === slot.span &&
+      last.y + last.rowSpan === slot.y
+    ) {
+      last.rowSpan = normalizeRowSpan(last.rowSpan + slot.rowSpan);
+    } else {
+      merged.push({ ...slot });
+    }
+  }
+
+  return merged.sort((a, b) => a.y - b.y || a.x - b.x);
 }
 
 /**
@@ -1046,71 +1083,103 @@ export function syncBlockRowSpanChange(
 
   const delta = newRowSpan - oldRowSpan;
   if (delta === 0) {
-    const compacted = compactEmptyRows(placed, cols);
-    return persistPlacedBlocks(compacted);
+    return persistPlacedBlocks(placed);
   }
 
-  const targetBottom = target.y + oldRowSpan;
   const newTargetBottom = target.y + newRowSpan;
 
-  const others = placed.filter((p) => p.block.id !== id);
-  const overlapsTargetHorizontally = (p: PlacedBlock) =>
-    p.x < target.x + target.span && p.x + p.span > target.x;
-
-  let shifted: PageBlock[];
-
   if (delta > 0) {
-    // Crescimento para baixo: empurra blocos subsequentes
-    const belowTarget = others
-      .filter((o) => overlapsTargetHorizontally(o) && o.y >= targetBottom)
-      .sort((a, b) => a.y - b.y);
+    // 1. O bloco alvo cresce para baixo até sua nova altura
+    const updatedPositions = new Map<
+      string,
+      { x: number; y: number; span: BlockSpan; rowSpan: BlockRowSpan }
+    >();
 
-    const firstBelow = belowTarget[0];
-    const pushAmount = firstBelow
-      ? Math.max(0, newTargetBottom - firstBelow.y)
-      : delta;
-
-    shifted = placed.map((p) => {
+    for (const p of placed) {
       if (p.block.id === id) {
-        return {
-          ...p.block,
+        updatedPositions.set(p.block.id, {
           x: p.x,
           y: p.y,
           span: p.span,
-          rowSpan: newRowSpan,
-        };
-      }
-      if (pushAmount > 0 && overlapsTargetHorizontally(p) && p.y >= targetBottom) {
-        return {
-          ...p.block,
+          rowSpan: newRowSpan as BlockRowSpan,
+        });
+      } else {
+        updatedPositions.set(p.block.id, {
           x: p.x,
-          y: p.y + pushAmount,
+          y: p.y,
           span: p.span,
           rowSpan: p.rowSpan,
-        };
+        });
       }
+    }
+
+    // 2. Cascade de absorção e colisão para baixo:
+    // Ordenamos os outros blocos abaixo de target.y por y crescente.
+    // Cada bloco só é empurrado se colidir diretamente com o obstáculo mais baixo acima dele
+    // em qualquer uma de suas colunas. Se houver espaço vazio entre o obstáculo e o bloco,
+    // o obstáculo consome/dissolve o espaço vazio e os blocos abaixo NÃO se movem!
+    const othersBelow = placed
+      .filter((p) => p.block.id !== id && p.y >= target.y)
+      .sort((a, b) => a.y - b.y || a.x - b.x);
+
+    for (const curr of othersBelow) {
+      const currPos = updatedPositions.get(curr.block.id)!;
+      let minAllowedY = currPos.y;
+
+      for (const [otherId, pos] of updatedPositions.entries()) {
+        if (otherId === curr.block.id) continue;
+        const overlapsH =
+          currPos.x < pos.x + pos.span && currPos.x + currPos.span > pos.x;
+        // Obstáculo acima ou colidindo com currPos
+        if (overlapsH && pos.y < currPos.y + currPos.rowSpan) {
+          const obstacleBottom = pos.y + pos.rowSpan;
+          if (obstacleBottom > minAllowedY) {
+            minAllowedY = obstacleBottom;
+          }
+        }
+      }
+
+      if (minAllowedY !== currPos.y) {
+        updatedPositions.set(curr.block.id, {
+          ...currPos,
+          y: minAllowedY,
+        });
+      }
+    }
+
+    const shifted = placed.map((p) => {
+      const pos = updatedPositions.get(p.block.id)!;
       return {
         ...p.block,
-        x: p.x,
-        y: p.y,
-        span: p.span,
-        rowSpan: p.rowSpan,
+        x: pos.x,
+        y: pos.y,
+        span: pos.span,
+        rowSpan: pos.rowSpan,
       };
     });
+
+    const sortedShifted = [...shifted].sort(
+      (a, b) => (a.y ?? 0) - (b.y ?? 0) || (a.x ?? 0) - (b.x ?? 0),
+    );
+    const resolved = resolveGridLayout(sortedShifted, cols);
+    return persistPlacedBlocks(resolved);
   } else {
     // Redução de altura (delta < 0): puxa os blocos abaixo para cima para colapsar o vácuo
     const pullAmount = Math.abs(delta);
-    shifted = placed.map((p) => {
+    const shifted = placed.map((p) => {
       if (p.block.id === id) {
         return {
           ...p.block,
           x: p.x,
           y: p.y,
           span: p.span,
-          rowSpan: newRowSpan,
+          rowSpan: newRowSpan as BlockRowSpan,
         };
       }
-      if (overlapsTargetHorizontally(p) && p.y >= newTargetBottom) {
+      if (
+        currOverlapsTargetHorizontally(p, target) &&
+        p.y >= newTargetBottom
+      ) {
         return {
           ...p.block,
           x: p.x,
@@ -1127,13 +1196,18 @@ export function syncBlockRowSpanChange(
         rowSpan: p.rowSpan,
       };
     });
-  }
 
-  // Ordena por y para garantir que blocos superiores tenham prioridade na resolução
-  const sortedShifted = [...shifted].sort((a, b) => (a.y ?? 0) - (b.y ?? 0) || (a.x ?? 0) - (b.x ?? 0));
-  const resolved = resolveGridLayout(sortedShifted, cols);
-  const compacted = compactEmptyRows(resolved, cols);
-  return persistPlacedBlocks(compacted);
+    const sortedShifted = [...shifted].sort(
+      (a, b) => (a.y ?? 0) - (b.y ?? 0) || (a.x ?? 0) - (b.x ?? 0),
+    );
+    const resolved = resolveGridLayout(sortedShifted, cols);
+    const compacted = compactEmptyRows(resolved, cols);
+    return persistPlacedBlocks(compacted);
+  }
+}
+
+function currOverlapsTargetHorizontally(a: PlacedBlock, b: PlacedBlock): boolean {
+  return a.x < b.x + b.span && a.x + a.span > b.x;
 }
 
 export function resizeBlockRowSpanInGrid(
@@ -1158,6 +1232,107 @@ export function resizeBlockRowSpanInGrid(
   return syncBlockRowSpanChange(blocks, id, target.rowSpan, clampedRowSpan, cols);
 }
 
+/**
+ * Remove um bloco da grade 2D e puxa os blocos abaixo para cima na mesma disposição:
+ * - Se o bloco removido ocupava linhas inteiras, todas as linhas vazias são colapsadas;
+ * - Se estava numa coluna específica, os blocos diretamente abaixo dele naquela coluna sobem
+ *   até encostar no bloco superior ou topo, mantendo seu alinhamento e sem colidir com vizinhos;
+ * - Compacta quaisquer linhas vazias órfãs ao final.
+ */
+export function removeBlockFromGrid(
+  blocks: PageBlock[],
+  id: string,
+  cols = 12,
+): PageBlock[] {
+  const hasCoordinates = blocks.some(
+    (b) => typeof b.x === 'number' && typeof b.y === 'number',
+  );
+  if (!hasCoordinates) {
+    return blocks.filter((b) => b.id !== id);
+  }
+
+  const placed = resolveGridLayout(blocks, cols);
+  const target = placed.find((p) => p.block.id === id);
+  if (!target) {
+    return blocks.filter((b) => b.id !== id);
+  }
+
+  const others = placed.filter((p) => p.block.id !== id);
+  if (others.length === 0) return [];
+
+  const targetBottom = target.y + target.rowSpan;
+  const overlapsTargetHorizontally = (p: PlacedBlock) =>
+    p.x < target.x + target.span && p.x + p.span > target.x;
+
+  // Mapa de posições atualizadas
+  const currentPositions = new Map<string, PlacedBlock>();
+  for (const o of others) {
+    currentPositions.set(o.block.id, { ...o });
+  }
+
+  // Se o bloco ocupava a largura total ou linhas 100% exclusivas (nenhum outro bloco compartilha aquelas linhas)
+  const rowsOccupiedByOthers = others.some(
+    (o) => o.y < targetBottom && o.y + o.rowSpan > target.y,
+  );
+
+  if (!rowsOccupiedByOthers) {
+    // Caso limpo: As linhas do target eram 100% exclusivas dele (ex: span 12).
+    // Todos os blocos abaixo sobem exatamente target.rowSpan linhas, preservando a disposição relativa!
+    const pullAmount = target.rowSpan;
+    for (const o of others) {
+      if (o.y >= targetBottom) {
+        currentPositions.set(o.block.id, {
+          ...o,
+          y: Math.max(target.y, o.y - pullAmount),
+        });
+      }
+    }
+  } else {
+    // Caso de coluna parcial: Sobe apenas os blocos no footprint horizontal do target
+    // ordenados de cima para baixo
+    const belowTarget = others
+      .filter((o) => overlapsTargetHorizontally(o) && o.y >= targetBottom)
+      .sort((a, b) => a.y - b.y || a.x - b.x);
+
+    for (const b of belowTarget) {
+      const currentB = currentPositions.get(b.block.id)!;
+      // Procura o obstáculo mais baixo que está acima de currentB nas mesmas colunas
+      let minAllowedY = 0;
+      for (const [otherId, other] of currentPositions.entries()) {
+        if (otherId === b.block.id) continue;
+        const overlapsH =
+          currentB.x < other.x + other.span && currentB.x + currentB.span > other.x;
+        if (overlapsH && other.y + other.rowSpan <= currentB.y) {
+          minAllowedY = Math.max(minAllowedY, other.y + other.rowSpan);
+        }
+      }
+
+      // Sobe até encostar no obstáculo, respeitando o limite do espaço deixado pelo target
+      const pullAmount = target.rowSpan;
+      const desiredY = Math.max(minAllowedY, currentB.y - pullAmount);
+      currentPositions.set(b.block.id, {
+        ...currentB,
+        y: desiredY,
+      });
+    }
+  }
+
+  // 2. Resolve a grade com as novas posições e compacta quaisquer linhas vazias órfãs
+  const updatedPlaced = others.map((o) => currentPositions.get(o.block.id)!);
+  const resolved = resolveGridLayout(
+    updatedPlaced.map((p) => ({
+      ...p.block,
+      x: p.x,
+      y: p.y,
+      span: p.span,
+      rowSpan: p.rowSpan,
+    })),
+    cols,
+  );
+  const compacted = compactEmptyRows(resolved, cols);
+  return persistPlacedBlocks(compacted);
+}
+
 /** Grava x, y, span e rowSpan nos blocos e ordena de forma estável para leitura/mobile. */
 function persistPlacedBlocks(placed: PlacedBlock[]): PageBlock[] {
   const sorted = [...placed].sort((a, b) => a.y - b.y || a.x - b.x);
@@ -1169,4 +1344,40 @@ function persistPlacedBlocks(placed: PlacedBlock[]): PageBlock[] {
     rowSpan: p.rowSpan,
   }));
 }
+
+/**
+ * Compacta um layout inteiro (e recursivamente os filhos de containers),
+ * eliminando quaisquer linhas 100% vazias órfãs (todas as colunas livres)
+ * resultantes de migrações, blocos apagados ou mudanças de cálculo de rowSpan.
+ */
+export function compactLayout(layout: PageLayout, cols = 12): PageLayout {
+  if (!layout || !layout.blocks || layout.blocks.length === 0) return layout;
+
+  const compactBlocksRecursive = (blocks: PageBlock[]): PageBlock[] => {
+    const blocksWithCompactedChildren = blocks.map((b) => {
+      if (b.children && b.children.length > 0) {
+        return {
+          ...b,
+          children: compactBlocksRecursive(b.children),
+        };
+      }
+      return b;
+    });
+
+    const hasCoordinates = blocksWithCompactedChildren.some(
+      (b) => typeof b.x === 'number' && typeof b.y === 'number',
+    );
+    if (!hasCoordinates) return blocksWithCompactedChildren;
+
+    const placed = resolveGridLayout(blocksWithCompactedChildren, cols);
+    const compacted = compactEmptyRows(placed, cols);
+    return persistPlacedBlocks(compacted);
+  };
+
+  return {
+    ...layout,
+    blocks: compactBlocksRecursive(layout.blocks),
+  };
+}
+
 

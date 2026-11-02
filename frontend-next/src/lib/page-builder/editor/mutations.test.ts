@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { PageLayoutSchema, MAX_BLOCKS, MAX_CHILDREN, type PageLayout, type PageBlock } from '../schema';
-import { calculateEffectiveRowSpan } from '../grid-engine';
+import { calculateEffectiveRowSpan, compactEmptyRows, compactLayout, findEmptyGridSlots, resolveGridLayout } from '../grid-engine';
 import {
   EMPTY_LAYOUT,
   addBlock,
@@ -11,6 +11,7 @@ import {
   removeBlock,
   setBlockParam,
   setBlockProp,
+  setBlockRowSpan,
   setBlockSource,
   updateBlock,
   canDrop,
@@ -135,6 +136,75 @@ describe('removeBlock', () => {
     const next = removeBlock(layout(), 'c1');
 
     expect(findBlock(next, 'g')!.block.children!.map((c) => c.id)).toEqual(['c2']);
+  });
+
+  it('ao deletar um bloco de largura total, os elementos abaixo sobem na mesma disposição eliminando o buraco vertical', () => {
+    const gridLayout: PageLayout = {
+      v: 1,
+      blocks: [
+        { id: 'topCard', type: 'stat.card', span: 12, rowSpan: 2, x: 0, y: 0, props: {} },
+        { id: 'cronograma', type: 'table.basic', span: 12, rowSpan: 8, x: 0, y: 2, props: {} },
+        { id: 'bottomText', type: 'text.rich', span: 12, rowSpan: 2, x: 0, y: 10, props: { content: 'Milestones' } },
+        { id: 'footerText', type: 'text.rich', span: 12, rowSpan: 1, x: 0, y: 12, props: { content: 'Footer' } },
+      ],
+    };
+
+    const next = removeBlock(gridLayout, 'cronograma');
+
+    expect(next.blocks.map((b) => b.id)).toEqual(['topCard', 'bottomText', 'footerText']);
+    const top = findBlock(next, 'topCard')!.block;
+    const bottom = findBlock(next, 'bottomText')!.block;
+    const footer = findBlock(next, 'footerText')!.block;
+
+    // topCard permanece inalterado em y=0
+    expect(top.y).toBe(0);
+    // bottomText sobe de y=10 para y=2, encostando no topCard (rowSpan=2)
+    expect(bottom.y).toBe(2);
+    // footerText sobe e fica logo abaixo do bottomText (rowSpan efetivo de text.rich largura 12 = 1)
+    expect(footer.y).toBe(3);
+  });
+
+  it('ao deletar o primeiro bloco no topo (y=0), todos os blocos subsequentes sobem para o topo', () => {
+    const gridLayout: PageLayout = {
+      v: 1,
+      blocks: [
+        { id: 'banner', type: 'stat.card', span: 12, rowSpan: 4, x: 0, y: 0, props: {} },
+        { id: 'content', type: 'table.basic', span: 12, rowSpan: 3, x: 0, y: 4, props: {} },
+      ],
+    };
+
+    const next = removeBlock(gridLayout, 'banner');
+    const content = findBlock(next, 'content')!.block;
+    expect(content.y).toBe(0);
+  });
+
+  it('ao deletar um bloco em coluna parcial, sobe apenas os blocos daquela coluna sem desalinhar a coluna vizinha', () => {
+    const gridLayout: PageLayout = {
+      v: 1,
+      blocks: [
+        { id: 'leftTop', type: 'stat.card', span: 6, rowSpan: 4, x: 0, y: 0, props: {} },
+        { id: 'leftBottom', type: 'stat.card', span: 6, rowSpan: 4, x: 0, y: 4, props: {} },
+        { id: 'rightTall', type: 'table.basic', span: 6, rowSpan: 8, x: 6, y: 0, props: {} },
+        { id: 'footer', type: 'text.rich', span: 12, rowSpan: 2, x: 0, y: 8, props: {} },
+      ],
+    };
+
+    const next = removeBlock(gridLayout, 'leftTop');
+
+    const leftBottom = findBlock(next, 'leftBottom')!.block;
+    const rightTall = findBlock(next, 'rightTall')!.block;
+    const footer = findBlock(next, 'footer')!.block;
+
+    // leftBottom sobe de y=4 para y=0 no espaço deixado por leftTop
+    expect(leftBottom.x).toBe(0);
+    expect(leftBottom.y).toBe(0);
+
+    // rightTall não foi afetado e continua em y=0
+    expect(rightTall.x).toBe(6);
+    expect(rightTall.y).toBe(0);
+
+    // footer não pode invadir a coluna de rightTall (altura 8), permanecendo em y=8
+    expect(footer.y).toBe(8);
   });
 });
 
@@ -531,4 +601,91 @@ describe('insertBlockAfter & insertBlockAt (2D Grid Insertion)', () => {
     };
     expect(calculateEffectiveRowSpan(partialText, 12)).toBeGreaterThanOrEqual(5);
   });
+
+  it('redimensiona bloco para baixo ocupando espaço vazio existente sem empurrar blocos', () => {
+    const layout: PageLayout = {
+      v: 1,
+      blocks: [
+        { id: 'b1', type: 'group', span: 12, rowSpan: 5, x: 0, y: 0, props: {} },
+        { id: 'b2', type: 'text.rich', span: 12, rowSpan: 1, x: 0, y: 6, props: { content: 'Texto 1' } },
+        { id: 'b3', type: 'text.rich', span: 12, rowSpan: 1, x: 0, y: 8, props: { content: 'Texto 2' } },
+      ],
+    };
+
+    // Antes: linha 5 é vazia (slot vazio) e linha 7 é vazia (slot vazio)
+    const slotsBefore = findEmptyGridSlots(resolveGridLayout(layout.blocks));
+    expect(slotsBefore.some((s) => s.y === 5)).toBe(true);
+    expect(slotsBefore.some((s) => s.y === 7)).toBe(true);
+
+    // Passo 1: b1 cresce de rowSpan 5 para 6 (ocupa a linha 5 que estava vazia)
+    const updated1 = setBlockRowSpan(layout, 'b1', 6);
+    expect(findBlock(updated1, 'b1')!.block.rowSpan).toBe(6);
+    expect(findBlock(updated1, 'b2')!.block.y).toBe(6); // Não foi empurrado!
+    expect(findBlock(updated1, 'b3')!.block.y).toBe(8); // Não foi empurrado!
+
+    // O slot vazio na linha 5 foi dissolvido pelo bloco
+    const slotsAfter1 = findEmptyGridSlots(resolveGridLayout(updated1.blocks));
+    expect(slotsAfter1.some((s) => s.y === 5)).toBe(false);
+    expect(slotsAfter1.some((s) => s.y === 7)).toBe(true);
+
+    // Passo 2: b1 cresce de rowSpan 6 para 7 (colide com b2 em y=6)
+    // b2 deve ser empurrado para y=7 (ocupando o espaço vazio que estava na linha 7)
+    // e b3 em y=8 NÃO deve ser empurrado, pois a linha 7 absorveu o movimento de b2!
+    const updated2 = setBlockRowSpan(updated1, 'b1', 7);
+    expect(findBlock(updated2, 'b1')!.block.rowSpan).toBe(7);
+    expect(findBlock(updated2, 'b2')!.block.y).toBe(7); // Empurrado de 6 para 7
+    expect(findBlock(updated2, 'b3')!.block.y).toBe(8); // Permanece em 8, espaço na linha 7 absorveu!
+
+    const slotsAfter2 = findEmptyGridSlots(resolveGridLayout(updated2.blocks));
+    expect(slotsAfter2.some((s) => s.y === 5)).toBe(false);
+    expect(slotsAfter2.some((s) => s.y === 7)).toBe(false);
+  });
+
+  it('compactLayout colapsa linhas vazias órfãs de layouts legados (ex: dash2.json com vácuo de 23 linhas)', () => {
+    // Simula o caso real de dash2.json:
+    // b11 era text.rich com rowSpan salvo de 24 em y=28 (terminando em y=52).
+    // b3 (heading) foi salvo em y=52.
+    // Com a regra de text.rich span=12 ter effectiveRowSpan=1, b11 ocupa apenas y=28 (termina em 29).
+    // Isso deixaria as linhas 29..51 (23 linhas) 100% vazias.
+    const legacyLayout: PageLayout = {
+      v: 1,
+      blocks: [
+        {
+          id: 'b11',
+          type: 'text.rich',
+          span: 12,
+          rowSpan: 24,
+          x: 0,
+          y: 28,
+          props: { content: 'Milestones' },
+        },
+        {
+          id: 'b3',
+          type: 'heading',
+          span: 12,
+          rowSpan: 1,
+          x: 0,
+          y: 52,
+          props: { text: '1. Objetivo' },
+        },
+      ],
+    };
+
+    const compacted = compactLayout(legacyLayout, 12);
+    const b11After = findBlock(compacted, 'b11')!.block;
+    const b3After = findBlock(compacted, 'b3')!.block;
+
+    // b11 deve começar no topo inicial compactado (ou y=0 se nada acima)
+    expect(b11After.y).toBe(0);
+    expect(b11After.rowSpan).toBe(1);
+
+    // b3 deve encostar imediatamente abaixo de b11 (y=1) sem o buraco de 23 linhas!
+    expect(b3After.y).toBe(1);
+    expect(b3After.rowSpan).toBe(1);
+
+    // Não deve existir nenhum slot vazio órfão entre b11 e b3
+    const slots = findEmptyGridSlots(resolveGridLayout(compacted.blocks), 12);
+    expect(slots.length).toBe(0);
+  });
 });
+

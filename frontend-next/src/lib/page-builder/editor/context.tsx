@@ -11,6 +11,7 @@ import React, {
 import type { LexicalEditor } from 'lexical';
 import type { RichTextVariableOption } from '@/components/rich-text-input';
 import type { BlockType } from '../blocks.meta';
+import { compactLayout } from '../grid-engine';
 import { DEFAULT_PROFILE, type LayoutProfileName } from '../profiles';
 import type { PageBlock, PageLayout } from '../schema';
 import {
@@ -139,7 +140,8 @@ export function EditorProvider({
   recordId?: string;
   children: React.ReactNode;
 }) {
-  const [draft, setDraft] = useState<PageLayout>(initial);
+  const normalizedInitial = useMemo(() => compactLayout(initial), [initial]);
+  const [draft, setDraft] = useState<PageLayout>(normalizedInitial);
   const [past, setPast] = useState<PageLayout[]>([]);
   const [future, setFuture] = useState<PageLayout[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -211,7 +213,7 @@ export function EditorProvider({
       draft,
       profile,
       recordId,
-      dirty: JSON.stringify(draft) !== JSON.stringify(initial),
+      dirty: JSON.stringify(draft) !== JSON.stringify(normalizedInitial),
       selectedId,
       activeRichText,
       draggingId,
@@ -293,13 +295,13 @@ export function EditorProvider({
       canRedo: future.length > 0,
       undo,
       redo,
-      setLayout: (layout) => applyChange(() => layout),
+      setLayout: (layout) => applyChange(() => compactLayout(layout)),
     };
   }, [
     draft,
     profile,
     recordId,
-    initial,
+    normalizedInitial,
     selectedId,
       activeRichText,
     draggingId,
