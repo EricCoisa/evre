@@ -425,8 +425,8 @@ export function setBlockSpan(
 }
 
 /**
- * Altera o rowSpan (altura 1..8) do bloco limitando ao espaço disponível até encostar
- * em algum bloco abaixo, sem empurrar ou bagunçar os blocos seguintes.
+ * Altera o rowSpan do bloco pela borda inferior, empurrando automaticamente os blocos abaixo
+ * para baixo (comportamento idêntico a quando o conteúdo de um bloco cresce).
  */
 export function setBlockRowSpan(
   layout: PageLayout,

@@ -180,7 +180,7 @@ describe('Limitação de redimensionamento ao encostar em outro bloco ou fim da 
     expect(getMaxResizeBounds(afterShrinkC4.blocks, 'c4').maxSpan).toBe(6);
   });
 
-  it('bloqueia o aumento de altura (rowSpan) quando há outro bloco logo abaixo', () => {
+  it('empurra os blocos abaixo para baixo ao aumentar altura (rowSpan) pela borda inferior', () => {
     const layout: PageLayout = {
       v: 1,
       blocks: [
@@ -189,11 +189,58 @@ describe('Limitação de redimensionamento ao encostar em outro bloco ou fim da 
       ],
     };
 
-    expect(getMaxResizeBounds(layout.blocks, 'top').maxRowSpan).toBe(1);
+    // Altura máxima vertical não é mais travada pelo bloco de baixo
+    expect(getMaxResizeBounds(layout.blocks, 'top').maxRowSpan).toBe(24);
 
-    const afterAttempt = setBlockRowSpan(layout, 'top', 3);
-    expect(findBlock(afterAttempt, 'top')!.block.rowSpan).toBe(1);
-    expect(findBlock(afterAttempt, 'bottom')!.block.y).toBe(1);
+    // Ao redimensionar 'top' de rowSpan 1 para 3, ele cresce e empurra 'bottom' de y=1 para y=3
+    const afterResize = setBlockRowSpan(layout, 'top', 3);
+    expect(findBlock(afterResize, 'top')!.block.rowSpan).toBe(3);
+    expect(findBlock(afterResize, 'bottom')!.block.y).toBe(3);
+
+    // E ao reduzir 'top' de volta para 1, 'bottom' volta para y=1
+    const afterShrink = setBlockRowSpan(afterResize, 'top', 1);
+    expect(findBlock(afterShrink, 'top')!.block.rowSpan).toBe(1);
+    expect(findBlock(afterShrink, 'bottom')!.block.y).toBe(1);
+  });
+
+  it('empurra múltiplos blocos em cascata ao redimensionar pela borda inferior', () => {
+    const layout: PageLayout = {
+      v: 1,
+      blocks: [
+        { id: 'b1', type: 'heading', span: 12, rowSpan: 1, x: 0, y: 0, props: {} },
+        { id: 'b2', type: 'text.rich', span: 12, rowSpan: 2, x: 0, y: 1, props: {} },
+        { id: 'b3', type: 'heading', span: 12, rowSpan: 1, x: 0, y: 3, props: {} },
+        { id: 'b4', type: 'text.rich', span: 12, rowSpan: 3, x: 0, y: 4, props: {} },
+      ],
+    };
+
+    // Redimensiona b2 de rowSpan 2 para rowSpan 4 (+2 linhas)
+    const afterResize = setBlockRowSpan(layout, 'b2', 4);
+    expect(findBlock(afterResize, 'b1')!.block).toMatchObject({ y: 0, rowSpan: 1 });
+    expect(findBlock(afterResize, 'b2')!.block).toMatchObject({ y: 1, rowSpan: 4 });
+    // b3 e b4 são empurrados para baixo
+    expect(findBlock(afterResize, 'b3')!.block).toMatchObject({ y: 5, rowSpan: 1 });
+    expect(findBlock(afterResize, 'b4')!.block).toMatchObject({ y: 6, rowSpan: 3 });
+  });
+
+  it('ao redimensionar bloco na coluna esquerda, empurra apenas a coluna esquerda mantendo a direita intacta', () => {
+    const layout: PageLayout = {
+      v: 1,
+      blocks: [
+        { id: 'l1', type: 'stat.card', span: 6, rowSpan: 2, x: 0, y: 0, props: {} },
+        { id: 'l2', type: 'stat.card', span: 6, rowSpan: 2, x: 0, y: 2, props: {} },
+        { id: 'r1', type: 'stat.card', span: 6, rowSpan: 2, x: 6, y: 0, props: {} },
+        { id: 'r2', type: 'stat.card', span: 6, rowSpan: 2, x: 6, y: 2, props: {} },
+      ],
+    };
+
+    const afterResize = setBlockRowSpan(layout, 'l1', 4);
+    // Coluna esquerda: l1 cresceu para rowSpan 4, l2 empurrado para y=4
+    expect(findBlock(afterResize, 'l1')!.block).toMatchObject({ x: 0, y: 0, rowSpan: 4 });
+    expect(findBlock(afterResize, 'l2')!.block).toMatchObject({ x: 0, y: 4, rowSpan: 2 });
+    // Coluna direita: r1 e r2 permanecem intactos
+    expect(findBlock(afterResize, 'r1')!.block).toMatchObject({ x: 6, y: 0, rowSpan: 2 });
+    expect(findBlock(afterResize, 'r2')!.block).toMatchObject({ x: 6, y: 2, rowSpan: 2 });
   });
 
   it('redimensiona pela alça esquerda (setBlockSpanLeft) e superior (setBlockRowSpanTop) respeitando espaço livre e vizinhos', () => {

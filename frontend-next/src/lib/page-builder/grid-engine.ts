@@ -725,20 +725,10 @@ export function getMaxResizeBounds(
   }
   const maxSpan = normalizeSpan(Math.max(target.span, maxRight - target.x));
 
-  // 2. Limite vertical (maxRowSpan): da linha `target.y` até o limite (8)
-  // ou até encostar no primeiro bloco abaixo que ocupe alguma das mesmas colunas.
-  let maxBottom = target.y + 24;
-  for (const other of others) {
-    const overlapsHorizontally =
-      target.x < other.x + other.span && target.x + target.span > other.x;
-    if (overlapsHorizontally && other.y >= target.y + target.rowSpan) {
-      maxBottom = Math.min(maxBottom, other.y);
-    }
-  }
-  const maxRowSpan = normalizeRowSpan(
-    Math.max(target.rowSpan, maxBottom - target.y),
-    target.block.type,
-  );
+  // 2. Limite vertical (maxRowSpan): da linha `target.y` até o limite (24).
+  // O ajuste de altura pela borda inferior empurra os blocos abaixo para baixo
+  // (comportamento idêntico a quando o conteúdo do bloco cresce), permitindo expansão livre.
+  const maxRowSpan = 24 as BlockRowSpan;
 
   return { maxSpan, maxRowSpan };
 }
@@ -853,8 +843,10 @@ export function resizeBlockSpanInGrid(
 }
 
 /**
- * Redimensiona a altura (`rowSpan`) de um bloco fixando as coordenadas 2D de todos os blocos
- * e limitando o crescimento ao espaço vertical livre até o próximo bloco abaixo.
+ * Redimensiona a altura (`rowSpan`) de um bloco pela borda inferior.
+ * Se o bloco aumentar de tamanho, empurra automaticamente os blocos abaixo para baixo
+ * (mantendo colunas e cascata, idêntico a quando o conteúdo de um bloco cresce).
+ * Se o bloco diminuir de tamanho, puxa os blocos abaixo de volta para cima.
  */
 export function resizeBlockRowSpanInGrid(
   blocks: PageBlock[],
@@ -866,19 +858,104 @@ export function resizeBlockRowSpanInGrid(
   const target = placed.find((p) => p.block.id === id);
   if (!target) return blocks;
 
-  const { maxRowSpan } = getMaxResizeBounds(blocks, id, cols);
+  const minRowSpan = minRowSpanForType(target.block.type);
   const clampedRowSpan = normalizeRowSpan(
-    Math.min(desiredRowSpan, maxRowSpan),
+    Math.max(minRowSpan, desiredRowSpan),
     target.block.type,
   );
 
-  return placed.map((p) => ({
-    ...p.block,
-    x: p.x,
-    y: p.y,
-    span: p.span,
-    rowSpan: p.block.id === id ? clampedRowSpan : p.rowSpan,
-  }));
+  const oldRowSpan = target.rowSpan;
+  const delta = clampedRowSpan - oldRowSpan;
+  if (delta === 0) {
+    return persistPlacedBlocks(placed);
+  }
+
+  const targetBottom = target.y + oldRowSpan;
+  const newTargetBottom = target.y + clampedRowSpan;
+
+  const others = placed.filter((p) => p.block.id !== id);
+  const overlapsTargetHorizontally = (p: PlacedBlock) =>
+    p.x < target.x + target.span && p.x + p.span > target.x;
+
+  let shifted: PageBlock[];
+
+  if (delta > 0) {
+    // Crescimento para baixo:
+    // Identifica se há blocos abaixo na coluna de target
+    const belowTarget = others
+      .filter((o) => overlapsTargetHorizontally(o) && o.y >= targetBottom)
+      .sort((a, b) => a.y - b.y);
+
+    const firstBelow = belowTarget[0];
+    const pushAmount = firstBelow
+      ? Math.max(0, newTargetBottom - firstBelow.y)
+      : 0;
+
+    shifted = placed.map((p) => {
+      if (p.block.id === id) {
+        return {
+          ...p.block,
+          x: p.x,
+          y: p.y,
+          span: p.span,
+          rowSpan: clampedRowSpan,
+        };
+      }
+      if (pushAmount > 0 && overlapsTargetHorizontally(p) && p.y >= targetBottom) {
+        return {
+          ...p.block,
+          x: p.x,
+          y: p.y + pushAmount,
+          span: p.span,
+          rowSpan: p.rowSpan,
+        };
+      }
+      return {
+        ...p.block,
+        x: p.x,
+        y: p.y,
+        span: p.span,
+        rowSpan: p.rowSpan,
+      };
+    });
+  } else {
+    // Redução de altura (delta < 0):
+    // Puxa os blocos abaixo de volta para cima
+    const pullAmount = Math.abs(delta);
+    shifted = placed.map((p) => {
+      if (p.block.id === id) {
+        return {
+          ...p.block,
+          x: p.x,
+          y: p.y,
+          span: p.span,
+          rowSpan: clampedRowSpan,
+        };
+      }
+      if (overlapsTargetHorizontally(p) && p.y >= targetBottom) {
+        return {
+          ...p.block,
+          x: p.x,
+          y: Math.max(newTargetBottom, p.y - pullAmount),
+          span: p.span,
+          rowSpan: p.rowSpan,
+        };
+      }
+      return {
+        ...p.block,
+        x: p.x,
+        y: p.y,
+        span: p.span,
+        rowSpan: p.rowSpan,
+      };
+    });
+  }
+
+  // Ordena por y para garantir que blocos superiores tenham prioridade na resolução
+  const sortedShifted = [...shifted].sort((a, b) => (a.y ?? 0) - (b.y ?? 0) || (a.x ?? 0) - (b.x ?? 0));
+  const resolved = resolveGridLayout(sortedShifted, cols);
+  const compacted = delta < 0 ? compactEmptyRows(resolved, cols) : resolved;
+  return persistPlacedBlocks(compacted);
 }
 
 /** Grava x, y, span e rowSpan nos blocos e ordena de forma estável para leitura/mobile. */

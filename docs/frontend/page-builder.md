@@ -357,6 +357,7 @@ Duas recusas silenciosas em `moveBlock` — no meio de um arrasto não há onde 
 - O chrome envolve o bloco num `<div>`; ele precisa de `h-full` para o `h-full` do `Card` continuar herdando a altura da célula do grid. Sem isso o bloco encolhe para a altura do conteúdo **só** no modo de edição, e desalinha do vizinho.
 - `pointer-events-none` no conteúdo vale para bloco folha (para clicar numa linha da tabela selecionar o bloco), mas **não** para container: o conteúdo dele são os filhos, e desligar o ponteiro ali faz a seleção cair sempre no group.
 - Filho ancora a toolbar **por dentro** do próprio bloco; bloco de topo pendura acima da borda. Senão as duas se sobrepõem no bloco mais à direita de um group.
+- Redimensionamento pela borda inferior (`rowSpan`) empurra os blocos subsequentes para baixo em cascata (respeitando a coluna), idêntico a quando o conteúdo de texto de um bloco cresce. Ao reduzir a altura de volta, os blocos abaixo retornam para cima.
 
 > `ponytail:` o painel é `<aside>` fixo, não `<Sheet>` — Sheet é modal (overlay + focus trap) e o ponto do editor é clicar nos blocos com o painel aberto. Abaixo de `lg` o painel cobre a tela: editor é ferramenta de desktop. Se precisar editar no celular, virar `<Drawer>`, que já está no projeto.
 
