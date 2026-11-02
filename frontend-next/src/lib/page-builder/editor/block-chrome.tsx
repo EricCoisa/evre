@@ -473,7 +473,7 @@ function BlockResizeHandles({
             onPointerDown={(e) => startResize(e, 'bottom')}
             data-testid={`pb-resize-bottom-${block.id}`}
             className={cn(
-              'absolute bottom-0 left-1/2 -translate-x-1/2 z-20 flex h-2.5 w-12 cursor-ns-resize items-center justify-center rounded-t-sm transition-all',
+              'absolute bottom-0 left-1/2 -translate-x-1/2 z-35 flex h-2.5 w-12 cursor-ns-resize items-center justify-center rounded-t-sm transition-all',
               selected
                 ? 'opacity-100 bg-primary/80 hover:bg-primary'
                 : 'opacity-0 group-hover/pb:opacity-70 hover:opacity-100 bg-muted-foreground/40 hover:bg-primary',
@@ -488,7 +488,7 @@ function BlockResizeHandles({
             onPointerDown={(e) => startResize(e, 'corner')}
             data-testid={`pb-resize-corner-${block.id}`}
             className={cn(
-              'absolute bottom-0 right-0 z-25 size-4 cursor-nwse-resize rounded-tl-md rounded-br-xl border-2 border-background transition-all',
+              'absolute bottom-0 right-0 z-35 size-4 cursor-nwse-resize rounded-tl-md rounded-br-xl border-2 border-background transition-all',
               selected
                 ? 'opacity-100 bg-primary hover:scale-125'
                 : 'opacity-0 group-hover/pb:opacity-80 hover:opacity-100 bg-primary/70 hover:scale-125',
@@ -755,6 +755,24 @@ export function BlockChrome({
         <p className="text-muted-foreground pb-2 text-center text-xs">
           {t('editor.emptyContainer', { defaultValue: 'Container vazio. Use o botão + para adicionar blocos.' })}
         </p>
+      ) : null}
+
+      {/* Doodle / Divisor Interativo para Inserir Bloco Abaixo (Entre Blocos) */}
+      {!draggingId ? (
+        <div
+          className={cn(
+            'absolute -bottom-3 right-0 z-30 h-6 flex items-center pointer-events-auto',
+            nested ? '-left-6' : '-left-9 sm:-left-10',
+          )}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <BlockInserter
+            afterBlockId={block.id}
+            variant="doodle"
+            align="left"
+            className="w-full h-full"
+          />
+        </div>
       ) : null}
 
       {/* Zonas de Drop Limpas e Fluidas */}

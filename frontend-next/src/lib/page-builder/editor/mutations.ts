@@ -207,6 +207,98 @@ export function addBlock(
   };
 }
 
+/** Insere `block` logo após um bloco específico (`targetId`), empurrando os blocos abaixo para abrir espaço na grade 2D. */
+export function insertBlockAfter(
+  layout: PageLayout,
+  targetId: string,
+  block: PageBlock,
+  profile?: LayoutProfileName,
+): PageLayout {
+  const located = findBlock(layout, targetId);
+  if (!located) return layout;
+  if (!canAdd(layout, located.parentId, block.type, profile)) return layout;
+
+  const defaultSpan = block.type === 'button.action' ? 3 : 12;
+  const newRowSpan = block.rowSpan ?? defaultRowSpanForType(block.type);
+
+  if (!located.parentId) {
+    const placed = resolveGridLayout(layout.blocks);
+    const placedTarget = placed.find((p) => p.block.id === targetId);
+    const targetY = placedTarget ? placedTarget.y : 0;
+    const targetBottom = placedTarget ? placedTarget.y + placedTarget.rowSpan : 0;
+
+    // Blocos na mesma seção/linha do bloco alvo que terminam em ou após o fim dele
+    const sameSectionBlocks = placed.filter((p) => p.y <= targetY && p.y + p.rowSpan >= targetBottom);
+    const insertY = sameSectionBlocks.length > 0
+      ? Math.max(...sameSectionBlocks.map((p) => p.y + p.rowSpan))
+      : targetBottom;
+
+    // Atualiza as coordenadas dos blocos existentes:
+    // - Blocos estritamente acima de insertY mantêm suas posições
+    // - Blocos em ou abaixo de insertY são empurrados para baixo pelo rowSpan do novo bloco
+    const updatedBlocks = layout.blocks.map((b) => {
+      const p = placed.find((pl) => pl.block.id === b.id);
+      const currentY = p ? p.y : (b.y ?? 0);
+      const currentX = p ? p.x : (b.x ?? 0);
+      if (currentY >= insertY) {
+        return {
+          ...b,
+          x: currentX,
+          y: currentY + newRowSpan,
+        };
+      }
+      return {
+        ...b,
+        x: currentX,
+        y: currentY,
+      };
+    });
+
+    const newBlock: PageBlock = {
+      ...block,
+      x: 0,
+      y: insertY,
+      span: block.span ?? defaultSpan,
+      rowSpan: newRowSpan,
+    };
+
+    const targetIndex = layout.blocks.findIndex((b) => b.id === targetId);
+    const nextBlocks = [...updatedBlocks];
+    nextBlocks.splice(targetIndex + 1, 0, newBlock);
+
+    return {
+      ...layout,
+      blocks: nextBlocks,
+    };
+  }
+
+  // Se estiver dentro de um container (ex: Group):
+  const parent = layout.blocks.find((b) => b.id === located.parentId);
+  if (!parent) return layout;
+
+  const children = parent.children ?? [];
+  const newBlock: PageBlock = {
+    ...block,
+    span: block.type === 'button.action' ? 3 : (block.span ?? located.block.span),
+    rowSpan: newRowSpan,
+  };
+
+  const targetIndex = children.findIndex((c) => c.id === targetId);
+  const nextChildren = [...children];
+  nextChildren.splice(targetIndex + 1, 0, newBlock);
+
+  // Se os filhos do container usavam coordenadas 2D, reempacota sequencialmente
+  const hasGridCoords = children.some((c) => typeof c.x === 'number' || typeof c.y === 'number');
+  const finalChildren = hasGridCoords ? autoPackBlocks(nextChildren) : nextChildren;
+
+  return {
+    ...layout,
+    blocks: layout.blocks.map((b) =>
+      b.id === located.parentId ? { ...b, children: finalChildren } : b,
+    ),
+  };
+}
+
 /** Insere `block` em um índice específico da raiz ou dentro de um container. */
 export function insertBlockAt(
   layout: PageLayout,
@@ -216,7 +308,61 @@ export function insertBlockAt(
   profile?: LayoutProfileName,
 ): PageLayout {
   if (!canAdd(layout, parentId, block.type, profile)) return layout;
-  return insertAt(layout, block, parentId, index);
+
+  if (parentId) {
+    return insertAt(layout, block, parentId, index);
+  }
+
+  if (layout.blocks.length === 0) {
+    const newBlock: PageBlock = {
+      ...block,
+      x: 0,
+      y: 0,
+      span: block.span ?? 12,
+      rowSpan: block.rowSpan ?? defaultRowSpanForType(block.type),
+    };
+    return { ...layout, blocks: [newBlock] };
+  }
+
+  if (index === 0) {
+    const placed = resolveGridLayout(layout.blocks);
+    const newRowSpan = block.rowSpan ?? defaultRowSpanForType(block.type);
+    const updatedBlocks = layout.blocks.map((b) => {
+      const p = placed.find((pl) => pl.block.id === b.id);
+      const currentY = p ? p.y : (b.y ?? 0);
+      const currentX = p ? p.x : (b.x ?? 0);
+      return {
+        ...b,
+        x: currentX,
+        y: currentY + newRowSpan,
+      };
+    });
+    const newBlock: PageBlock = {
+      ...block,
+      x: 0,
+      y: 0,
+      span: block.span ?? 12,
+      rowSpan: newRowSpan,
+    };
+    return { ...layout, blocks: [newBlock, ...updatedBlocks] };
+  }
+
+  if (index >= layout.blocks.length) {
+    const placed = resolveGridLayout(layout.blocks);
+    const maxBottom = Math.max(0, ...placed.map((p) => p.y + p.rowSpan));
+    const newRowSpan = block.rowSpan ?? defaultRowSpanForType(block.type);
+    const newBlock: PageBlock = {
+      ...block,
+      x: 0,
+      y: maxBottom,
+      span: block.span ?? 12,
+      rowSpan: newRowSpan,
+    };
+    return { ...layout, blocks: [...layout.blocks, newBlock] };
+  }
+
+  const targetBlock = layout.blocks[index - 1];
+  return insertBlockAfter(layout, targetBlock.id, block, profile);
 }
 
 /** Insere um bloco diretamente em uma coordenada 2D (x, y, span) de um espaço livre da grade. */

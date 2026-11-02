@@ -13,6 +13,8 @@ import {
   setBlockSource,
   updateBlock,
   canDrop,
+  insertBlockAfter,
+  insertBlockAt,
   moveBlockTo,
 } from './mutations';
 
@@ -330,5 +332,96 @@ describe('canDrop / moveBlockTo — destino explícito', () => {
   it('soltar em si mesmo não faz nada', () => {
     expect(canDrop(nested(), 'b', 'b', 'after')).toBe(false);
     expect(moveBlockTo(nested(), 'b', 'b', 'after')).toEqual(nested());
+  });
+});
+
+describe('insertBlockAfter & insertBlockAt (2D Grid Insertion)', () => {
+  it('insere após um bloco e empurra os blocos subsequentes para baixo', () => {
+    const initial: PageLayout = {
+      v: 1,
+      blocks: [
+        { id: 'b1', type: 'heading', span: 12, rowSpan: 2, x: 0, y: 0, props: { text: 'Header' } },
+        { id: 'b2', type: 'group', span: 6, rowSpan: 3, x: 0, y: 2, props: {}, children: [] },
+        { id: 'b3', type: 'group', span: 6, rowSpan: 3, x: 6, y: 2, props: {}, children: [] },
+        { id: 'b4', type: 'topic', span: 12, rowSpan: 4, x: 0, y: 5, props: { title: 'Milestones' } },
+      ],
+    };
+
+    const newBlock = createBlock('text.rich');
+    newBlock.rowSpan = 2;
+
+    // Inserir após b2 (o card esquerdo na linha de cards que vai até y=5)
+    const result = insertBlockAfter(initial, 'b2', newBlock);
+
+    // O novo bloco deve entrar logo após b2 na ordem sequencial
+    const newIdx = result.blocks.findIndex((b) => b.id === newBlock.id);
+    expect(newIdx).toBe(2);
+
+    // O novo bloco deve ser colocado em y=5 (linha logo abaixo da seção de cards)
+    const placedNew = result.blocks.find((b) => b.id === newBlock.id)!;
+    expect(placedNew.y).toBe(5);
+    expect(placedNew.rowSpan).toBe(2);
+
+    // Os blocos acima mantêm suas posições
+    const placedB1 = result.blocks.find((b) => b.id === 'b1')!;
+    expect(placedB1.y).toBe(0);
+
+    const placedB2 = result.blocks.find((b) => b.id === 'b2')!;
+    expect(placedB2.y).toBe(2);
+
+    const placedB3 = result.blocks.find((b) => b.id === 'b3')!;
+    expect(placedB3.y).toBe(2);
+
+    // O bloco que estava em y=5 (Milestones) foi empurrado para y = 5 + 2 = 7
+    const placedB4 = result.blocks.find((b) => b.id === 'b4')!;
+    expect(placedB4.y).toBe(7);
+  });
+
+  it('insere após um item filho dentro de um container (Group)', () => {
+    const initial: PageLayout = {
+      v: 1,
+      blocks: [
+        {
+          id: 'g1',
+          type: 'group',
+          span: 12,
+          props: {},
+          children: [
+            { id: 'c1', type: 'text.rich', span: 12, props: { content: 'Item 1' } },
+            { id: 'c2', type: 'text.rich', span: 12, props: { content: 'Item 2' } },
+          ],
+        },
+      ],
+    };
+
+    const newChild = createBlock('button.action');
+    const result = insertBlockAfter(initial, 'c1', newChild);
+
+    const group = result.blocks.find((b) => b.id === 'g1')!;
+    expect(group.children?.map((c) => c.id)).toEqual(['c1', newChild.id, 'c2']);
+  });
+
+  it('insertBlockAt(0) insere no topo e empurra todos os blocos existentes para baixo', () => {
+    const initial: PageLayout = {
+      v: 1,
+      blocks: [
+        { id: 'b1', type: 'heading', span: 12, rowSpan: 2, x: 0, y: 0, props: { text: 'Header' } },
+        { id: 'b2', type: 'text.rich', span: 12, rowSpan: 2, x: 0, y: 2, props: { content: 'Text' } },
+      ],
+    };
+
+    const newTop = createBlock('heading');
+    newTop.rowSpan = 3;
+
+    const result = insertBlockAt(initial, newTop, 0);
+
+    expect(result.blocks[0].id).toBe(newTop.id);
+    expect(result.blocks[0].y).toBe(0);
+
+    const placedB1 = result.blocks.find((b) => b.id === 'b1')!;
+    expect(placedB1.y).toBe(3); // 0 + 3
+
+    const placedB2 = result.blocks.find((b) => b.id === 'b2')!;
+    expect(placedB2.y).toBe(5); // 2 + 3
   });
 });

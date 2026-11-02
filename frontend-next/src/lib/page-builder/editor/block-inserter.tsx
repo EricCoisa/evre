@@ -33,7 +33,7 @@ import { cn } from '@/lib/cn';
 import { BLOCK_META, isInlineBlockType, type BlockType } from '../blocks.meta';
 import { LAYOUT_PROFILES } from '../profiles';
 import { useEditorOrThrow } from './context';
-import { isContainerType } from './mutations';
+import { findBlock, isContainerType } from './mutations';
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   AreaChart,
@@ -55,19 +55,28 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
 
 export function BlockInserter({
   index = 0,
+  afterBlockId,
   gridSlot,
   parentId,
   alwaysVisible,
+  variant = 'default',
+  align = 'center',
   className,
 }: {
   /** Posição linear onde o novo bloco será inserido. */
   index?: number;
+  /** Se informado, insere logo após este bloco específico. */
+  afterBlockId?: string;
   /** Se informado, insere exatamente nas coordenadas (x, y) e largura (span) deste espaço livre. */
   gridSlot?: { x: number; y: number; span: number };
   /** Se informado, insere dentro deste container. */
   parentId?: string;
   /** Quando `true`, mantém o botão `+` visível (ex: no espaço livre abaixo de um Texto na mesma célula). */
   alwaysVisible?: boolean;
+  /** Variante visual: 'default' ou 'doodle' (divisor sutil com linha expansiva e botão circular) */
+  variant?: 'default' | 'doodle';
+  /** Alinhamento do botão: 'center' ou 'left' */
+  align?: 'center' | 'left';
   className?: string;
 }) {
   const { t } = useTranslation('page-builder');
@@ -75,11 +84,14 @@ export function BlockInserter({
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
 
-  const canAdd = editor.canAddTo(parentId);
+  const targetLocated = afterBlockId ? findBlock(editor.draft, afterBlockId) : undefined;
+  const effectiveParentId = parentId ?? targetLocated?.parentId;
+
+  const canAdd = editor.canAddTo(effectiveParentId);
   if (!canAdd) return null;
 
-  const parentBlock = parentId
-    ? editor.draft.blocks.find((b) => b.id === parentId)
+  const parentBlock = effectiveParentId
+    ? editor.draft.blocks.find((b) => b.id === effectiveParentId)
     : undefined;
   const parentOnlyAcceptsInline =
     !!parentBlock && !isContainerType(parentBlock.type);
@@ -99,7 +111,7 @@ export function BlockInserter({
       };
     })
     .filter((item) => {
-      if (parentId && isContainerType(item.type)) return false;
+      if (effectiveParentId && isContainerType(item.type)) return false;
       if (parentOnlyAcceptsInline && !isInlineBlockType(item.type)) return false;
 
       const query = search.trim().toLowerCase();
@@ -110,30 +122,40 @@ export function BlockInserter({
     });
 
   const handleSelect = (type: BlockType) => {
-    if (gridSlot) {
-      editor.insertAtGrid(type, gridSlot.x, gridSlot.y, gridSlot.span, parentId);
+    if (afterBlockId) {
+      editor.insertAfter(afterBlockId, type);
+    } else if (gridSlot) {
+      editor.insertAtGrid(type, gridSlot.x, gridSlot.y, gridSlot.span, effectiveParentId);
     } else {
-      editor.insertAt(type, index, parentId);
+      editor.insertAt(type, index, effectiveParentId);
     }
     setOpen(false);
     setSearch('');
   };
 
+  const isDoodle = variant === 'doodle';
+
   return (
     <div
       className={cn(
-        'group/inserter relative flex items-center justify-center transition-all',
-        gridSlot ? 'h-full w-full' : 'col-span-full h-5',
-        open && !gridSlot && 'z-30 h-8',
+        'group/inserter relative flex items-center transition-all',
+        gridSlot ? 'h-full w-full justify-center' : isDoodle ? 'w-full h-full justify-start' : 'col-span-full h-5 justify-center',
+        open && !gridSlot && (isDoodle ? 'z-40' : 'z-30 h-8'),
         className,
       )}
     >
       {/* Linha guia suave (apenas no modo de linha divisória) */}
       {!gridSlot && !alwaysVisible ? (
         <div
+          onClick={() => isDoodle && setOpen(true)}
           className={cn(
-            'absolute inset-x-4 h-0.5 bg-transparent transition-colors group-hover/inserter:bg-primary/40',
-            open && 'bg-primary/50',
+            'absolute transition-all duration-200',
+            isDoodle
+              ? 'left-7 sm:left-8 right-0 h-0.5 rounded-full cursor-pointer pointer-events-auto'
+              : 'inset-x-4 h-0.5 bg-transparent pointer-events-none',
+            open
+              ? 'bg-primary/70 shadow-xs'
+              : 'bg-transparent group-hover/inserter:bg-primary/50',
           )}
         />
       ) : null}
@@ -151,8 +173,13 @@ export function BlockInserter({
                 ? 'h-7 max-w-full gap-1 overflow-hidden rounded-full px-2 text-[11px] opacity-40 group-hover/slot:opacity-100 hover:opacity-100 hover:border-primary'
                 : alwaysVisible
                   ? 'h-7 gap-1 rounded-full px-2.5 text-[11px] opacity-65 hover:opacity-100 hover:border-primary'
-                : 'size-6 rounded-full opacity-0 group-hover/inserter:opacity-100 group-hover/inserter:scale-105',
-              open && 'opacity-100 scale-105 border-primary ring-2 ring-primary/20',
+                : isDoodle
+                  ? cn(
+                      'relative z-10 size-6 sm:size-7 shrink-0 rounded-full border-2 border-primary/60 bg-background text-primary shadow-md',
+                      'opacity-0 group-hover/inserter:opacity-100 group-hover/pb:opacity-30 hover:opacity-100! hover:scale-110 hover:border-primary hover:bg-primary hover:text-primary-foreground',
+                    )
+                  : 'size-6 rounded-full opacity-0 group-hover/inserter:opacity-100 group-hover/inserter:scale-105',
+              open && 'opacity-100! scale-110 border-primary ring-2 ring-primary/30 bg-primary text-primary-foreground',
             )}
             title={t('editor.addBlock', { defaultValue: 'Inserir bloco aqui' })}
             aria-label={t('editor.addBlock', { defaultValue: 'Inserir bloco aqui' })}
@@ -167,8 +194,9 @@ export function BlockInserter({
         </PopoverTrigger>
 
         <PopoverContent
-          className="w-80 p-3 shadow-xl border rounded-xl"
-          align="center"
+          className="w-80 p-3 shadow-xl border rounded-xl z-50"
+          align={align === 'left' ? 'start' : 'center'}
+          side="bottom"
           sideOffset={8}
         >
           <div className="space-y-3">

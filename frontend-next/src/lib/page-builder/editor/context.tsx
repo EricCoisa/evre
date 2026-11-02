@@ -19,6 +19,7 @@ import {
   createBlock,
   duplicateBlock,
   findBlock,
+  insertBlockAfter,
   insertBlockAt,
   insertBlockAtGrid,
   moveBlock,
@@ -68,6 +69,7 @@ export interface EditorContextValue {
   select: (id: string | null) => void;
   add: (type: BlockType, parentId?: string) => void;
   insertAt: (type: BlockType, index: number, parentId?: string) => void;
+  insertAfter: (targetId: string, type: BlockType) => void;
   insertAtGrid: (
     type: BlockType,
     x: number,
@@ -228,6 +230,12 @@ export function EditorProvider({
       insertAt: (type, index, parentId) => {
         const block = createBlock(type, parentId);
         applyChange((d) => insertBlockAt(d, block, index, parentId, profile));
+        setSelectedId(block.id);
+      },
+      insertAfter: (targetId, type) => {
+        const located = findBlock(draft, targetId);
+        const block = createBlock(type, located?.parentId);
+        applyChange((d) => insertBlockAfter(d, targetId, block, profile));
         setSelectedId(block.id);
       },
       insertAtGrid: (type, x, y, span, parentId) => {

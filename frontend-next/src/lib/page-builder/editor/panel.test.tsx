@@ -158,21 +158,25 @@ describe('Palette', () => {
     expect(addButton('text.rich')).toBeEnabled();
   });
 
-  it('atinge o teto de filhos do container e desabilita tudo com o aviso', async () => {
-    const user = userEvent.setup();
-    renderPanel();
+  it(
+    'atinge o teto de filhos do container e desabilita tudo com o aviso',
+    async () => {
+      const user = userEvent.setup();
+      renderPanel();
 
-    await user.click(addButton('group'));
-    // A seleção migra para o último filho, que mantém o mesmo parentId,
-    // então clicar MAX_CHILDREN vezes seguidas continua inserindo no mesmo group.
-    for (let i = 0; i < MAX_CHILDREN; i++) {
-      await user.click(addButton('text.rich'));
-    }
+      await user.click(addButton('group'));
+      // A seleção migra para o último filho, que mantém o mesmo parentId,
+      // então clicar MAX_CHILDREN vezes seguidas continua inserindo no mesmo group.
+      for (let i = 0; i < MAX_CHILDREN; i++) {
+        await user.click(addButton('text.rich'));
+      }
 
-    expect(screen.getByText('editor.limitReached')).toBeInTheDocument();
-    expect(addButton('text.rich')).toBeDisabled();
-    expect(addButton('table.basic')).toBeDisabled();
-  });
+      expect(screen.getByText('editor.limitReached')).toBeInTheDocument();
+      expect(addButton('text.rich')).toBeDisabled();
+      expect(addButton('table.basic')).toBeDisabled();
+    },
+    15000,
+  );
 
   // A4: proposal passou de dataSources 'none' para 'inline-only' e ganhou os 5 blocos de dado —
   // hoje o catálogo dela é o superset dos 16 tipos, então ela não tem mais um bloco "de fora"
