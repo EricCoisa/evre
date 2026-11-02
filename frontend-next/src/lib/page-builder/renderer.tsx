@@ -19,6 +19,7 @@ import { Collector, errorStatus } from '@/lib/api/collector';
 import {
   BLOCK_META,
   canAcceptChildrenType,
+  isAutoHeightBlockType,
   isInlineBlockType,
 } from './blocks.meta';
 import { filterClassName } from './class-names';
@@ -30,7 +31,7 @@ import {
   EmptySlotDropZone,
   SortableList,
 } from './editor/block-chrome';
-import { useEditor } from './editor/context';
+import { useEditor, type EditorContextValue } from './editor/context';
 import { EMPTY_LAYOUT } from './editor/mutations';
 import { buildVariableOptions } from './editor/panel';
 import type { RichTextVariableOption } from '@/components/rich-text-input';
@@ -38,11 +39,11 @@ import {
   compactEmptyRows,
   findEmptyGridSlots,
   resolveGridLayout,
+  type EmptyGridSlot,
   type PlacedBlock,
 } from './grid-engine';
 import { BLOCK_REGISTRY, isKnownBlock } from './registry';
 import type { SourceData } from './types';
-import { isAutoHeightBlockType } from './blocks.meta';
 import {
   COL_START_CLASS,
   PAGE_LAYOUTS_KEY,
@@ -52,11 +53,20 @@ import {
   normalizeSpan,
   resolvePageLayout,
   type PageBlock,
+  GRID_COLS,
   type PageLayout,
 } from './schema';
 
 /** Import dinâmico: quebra o ciclo com o editor e mantém o dnd-kit fora do bundle de quem só visualiza. */
 const PageEditor = dynamic(() => import('./editor/editor'), { ssr: false });
+
+function getEmptySlots(
+  editor: EditorContextValue | null,
+  placedList: ReturnType<typeof resolveGridLayout>,
+): EmptyGridSlot[] {
+  if (!editor || typeof editor.moveToGrid !== 'function') return [];
+  return findEmptyGridSlots(placedList, GRID_COLS, !!editor.draggingId);
+}
 
 /** RolesGuard/ScopeGuard do backend respondem 403 quando o role não alcança o endpoint. */
 const FORBIDDEN = 403;
@@ -211,11 +221,7 @@ export function BlockGrid({ blocks }: { blocks: PageLayout['blocks'] }) {
   const placedById = new Map(
     placedList.map((p) => [p.block.id, p]),
   );
-  const canRenderEmptySlots =
-    !!editor && typeof editor.moveToGrid === 'function';
-  const emptySlots = canRenderEmptySlots
-    ? findEmptyGridSlots(placedList, 12, !!editor.draggingId)
-    : [];
+  const emptySlots = getEmptySlots(editor, placedList);
 
   return (
     <div className="grid grid-cols-1 gap-3 md:gap-4 lg:grid-cols-12 lg:auto-rows-[minmax(44px,auto)] items-stretch">
@@ -436,7 +442,7 @@ function Block({
   if (freeFlow) {
     // Em fluxo livre (dentro de Gráfico, Card ou Tabela),
     // elementos com span === 12 ocupam a linha toda (`w-full`) ou `w-auto` quando menores.
-    gridClass = effectiveSpan >= 12 ? 'w-full' : 'w-auto';
+    gridClass = effectiveSpan >= GRID_COLS ? 'w-full' : 'w-auto';
   } else {
     const colSpan = SPAN_CLASS[effectiveSpan] ?? 'lg:col-span-12';
     const colStart = placed ? COL_START_CLASS[placed.x] : undefined;
@@ -540,7 +546,7 @@ function BlockChildren({
   const mappedValidChildren = validChildren.map((c) => ({
     ...c,
     span: normalizeSpan(
-      Math.max(1, Math.round((parentSpan * normalizeSpan(c.span)) / 12)),
+      Math.max(1, Math.round((parentSpan * normalizeSpan(c.span)) / GRID_COLS)),
     ),
   }));
   const placedChildren = compactEmptyRows(resolveGridLayout(mappedValidChildren));
@@ -548,11 +554,7 @@ function BlockChildren({
     placedChildren.map((p, idx) => [validChildren[idx].id, { ...p, block: validChildren[idx] }]),
   );
   const placedList = [...placedById.values()];
-  const canRenderEmptySlots =
-    !!editor && typeof editor.moveToGrid === 'function';
-  const emptySlots = canRenderEmptySlots
-    ? findEmptyGridSlots(placedList, 12, !!editor.draggingId)
-    : [];
+  const emptySlots = getEmptySlots(editor, placedList);
 
   const rendered = (
     <>

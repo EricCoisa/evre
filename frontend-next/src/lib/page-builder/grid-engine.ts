@@ -1,5 +1,6 @@
 import {
   defaultRowSpanForType,
+  GRID_COLS,
   isAutoHeightBlockType,
   isContainerType,
   minRowSpanForType,
@@ -11,6 +12,10 @@ import {
   type PageLayout,
 } from './schema';
 import { normalizeTextPreset, type TextPreset } from './blocks.meta';
+
+const GRID_ROW_TOLERANCE_PX = 48;
+const GRID_ROW_STEP_PX = 60;
+const MAX_GRID_ROWS = 100;
 
 export interface GridRect {
   x: number;
@@ -49,7 +54,7 @@ export function findFirstAvailableSlot(
   startY = 0,
 ): { x: number; y: number } {
   const safeSpan = Math.min(cols, span) as BlockSpan;
-  for (let y = Math.max(0, startY); y < 100; y++) {
+  for (let y = Math.max(0, startY); y < MAX_GRID_ROWS; y++) {
     for (let x = 0; x <= cols - safeSpan; x++) {
       const candidate: GridRect = { x, y, span: safeSpan, rowSpan };
       if (!occupied.some((r) => rectsOverlap(candidate, r))) {
@@ -180,7 +185,7 @@ export function estimateTextRowSpan(
 
   const charsPerLine = Math.max(
     metric.minChars,
-    Math.round((span / 12) * metric.charsPer12Col),
+    Math.round((span / GRID_COLS) * metric.charsPer12Col),
   );
 
   let visualLinesCount = 0;
@@ -206,11 +211,7 @@ export function estimateTextRowSpan(
     extraPadding +
     (hasHeadingMarkdown && effectivePreset === 'paragraph' ? 18 : 0);
 
-  // Primeira linha de grid tem 44px (tolerância 48px); cada linha extra adiciona 60px (44px + 16px gap).
-  if (totalContentHeight <= 48) return 1;
-  const neededRows = 1 + Math.ceil((totalContentHeight - 48) / 60);
-
-  return normalizeRowSpan(neededRows, 'text.rich');
+  return pixelsToRowSpan(totalContentHeight, 'text.rich');
 }
 
 /**
@@ -249,9 +250,13 @@ export function compactEmptyRows(placed: PlacedBlock[], cols = 12): PlacedBlock[
  * para o número correspondente de linhas de grade (base 44px + 60px por linha adicional).
  */
 export function pixelsToRowSpan(pixels: number, type?: string): BlockRowSpan {
-  if (pixels <= 48) return normalizeRowSpan(1, type);
-  const neededRows = 1 + Math.ceil((pixels - 48) / 60);
+  if (pixels <= GRID_ROW_TOLERANCE_PX) return normalizeRowSpan(1, type);
+  const neededRows = 1 + Math.ceil((pixels - GRID_ROW_TOLERANCE_PX) / GRID_ROW_STEP_PX);
   return normalizeRowSpan(neededRows, type);
+}
+
+function blockHasHeader(block: PageBlock): boolean {
+  return Boolean(block.props?.title || block.props?.description);
 }
 
 /**
@@ -281,7 +286,7 @@ export function extractDataBlockItemCount(block: PageBlock, defaultCount = 5): n
  * Cada item tem título principal + subtítulo de data/hora + espaçamento (~52px).
  */
 export function estimateFeedRowSpan(block: PageBlock): BlockRowSpan {
-  const hasHeader = Boolean(block.props?.title || block.props?.description);
+  const hasHeader = blockHasHeader(block);
   const count = extractDataBlockItemCount(block, 5);
   // Padding do card (48px) + Cabeçalho (64px se existir) + itens (count * 52px)
   const totalHeight = 48 + (hasHeader ? 64 : 0) + count * 52;
@@ -293,7 +298,7 @@ export function estimateFeedRowSpan(block: PageBlock): BlockRowSpan {
  * Cabeçalho do card + thead (~40px) + cada linha (~40px) + paginação (~48px).
  */
 export function estimateTableRowSpan(block: PageBlock): BlockRowSpan {
-  const hasHeader = Boolean(block.props?.title || block.props?.description);
+  const hasHeader = blockHasHeader(block);
   const count = extractDataBlockItemCount(block, 5);
   const totalHeight = 48 + (hasHeader ? 64 : 0) + 40 + count * 40 + 48;
   return pixelsToRowSpan(totalHeight, 'table.basic');
@@ -303,7 +308,7 @@ export function estimateTableRowSpan(block: PageBlock): BlockRowSpan {
  * Estima a altura necessária para o bloco topic (itens de escopo em proposta).
  */
 export function estimateTopicRowSpan(block: PageBlock): BlockRowSpan {
-  const hasHeader = Boolean(block.props?.title || block.props?.description);
+  const hasHeader = blockHasHeader(block);
   const items = Array.isArray(block.props?.items) ? block.props.items : [];
   const count = Math.max(1, items.length);
   const totalHeight = 48 + (hasHeader ? 64 : 0) + count * 36;
@@ -314,7 +319,7 @@ export function estimateTopicRowSpan(block: PageBlock): BlockRowSpan {
  * Estima a altura necessária para o bloco price (tabela de valores em proposta).
  */
 export function estimatePriceRowSpan(block: PageBlock): BlockRowSpan {
-  const hasHeader = Boolean(block.props?.title || block.props?.description);
+  const hasHeader = blockHasHeader(block);
   const rows = Array.isArray(block.props?.rows) ? block.props.rows : [];
   const count = Math.max(1, rows.length);
   const totalHeight = 48 + (hasHeader ? 64 : 0) + count * 40 + 54;
@@ -375,7 +380,7 @@ export function calculateEffectiveRowSpan(block: PageBlock, cols = 12): BlockRow
     const mappedChildren = block.children.map((c) => ({
       ...c,
       span: normalizeSpan(
-        Math.max(1, Math.round((parentSpan * normalizeSpan(c.span)) / 12)),
+        Math.max(1, Math.round((parentSpan * normalizeSpan(c.span)) / cols)),
       ),
       rowSpan: isAutoHeightBlockType(c.type)
         ? (BLOCK_ROW_SPAN_ESTIMATORS[c.type]?.(c, cols) ?? 1)
@@ -446,7 +451,7 @@ export function resolveGridLayout(blocks: PageBlock[], cols = 12): PlacedBlock[]
         // Mantém a coluna desejada e desce até a primeira linha livre nessa coluna
         let testY = clampedY + 1;
         while (
-          testY < 100 &&
+          testY < MAX_GRID_ROWS &&
           occupied.some((r) =>
             rectsOverlap({ x: clampedX, y: testY, span, rowSpan }, r),
           )
@@ -542,9 +547,9 @@ export function findEmptyGridSlots(
 
       // Se a linha inteira (12 colunas) está livre, divide em 2 slots de 6 colunas (esq e dir)
       // para permitir soltar tanto na esquerda quanto na direita!
-      if (freeWidth === 12) {
-        slots.push({ x: 0, y, span: 6, rowSpan: 1 });
-        slots.push({ x: 6, y, span: 6, rowSpan: 1 });
+      if (freeWidth === cols) {
+        slots.push({ x: 0, y, span: (cols / 2) as BlockSpan, rowSpan: 1 });
+        slots.push({ x: cols / 2, y, span: (cols / 2) as BlockSpan, rowSpan: 1 });
       } else if (freeWidth >= 8) {
         const half = Math.floor(freeWidth / 2) as BlockSpan;
         const rest = (freeWidth - half) as BlockSpan;
@@ -574,7 +579,7 @@ export function findEmptyGridSlots(
           slots.push({
             x: startX,
             y,
-            span: Math.max(1, Math.min(12, freeWidth)) as BlockSpan,
+            span: Math.max(1, Math.min(cols, freeWidth)) as BlockSpan,
             rowSpan: 1,
           });
         }
@@ -946,6 +951,21 @@ export function getMaxResizeBounds(
   return { maxSpan, maxRowSpan };
 }
 
+function applyGeometry(
+  placed: PlacedBlock[],
+  id: string,
+  patch: Partial<{ x: number; y: number; span: BlockSpan; rowSpan: BlockRowSpan }>,
+): PageBlock[] {
+  return placed.map((p) => ({
+    ...p.block,
+    x: p.x,
+    y: p.y,
+    span: p.span,
+    rowSpan: p.rowSpan,
+    ...(p.block.id === id ? patch : {}),
+  }));
+}
+
 /**
  * Redimensiona a largura (`span`) de um bloco pela borda ESQUERDA:
  * - Ancora a borda direita (`rightEdge = target.x + target.span`) e desloca `x` para a esquerda/direita.
@@ -977,13 +997,7 @@ export function resizeBlockLeftInGrid(
   const clampedSpan = normalizeSpan(Math.min(Math.max(1, desiredSpan), maxSpanLeft));
   const nextX = Math.max(minLeft, rightEdge - clampedSpan);
 
-  return placed.map((p) => ({
-    ...p.block,
-    x: p.block.id === id ? nextX : p.x,
-    y: p.y,
-    span: p.block.id === id ? clampedSpan : p.span,
-    rowSpan: p.rowSpan,
-  }));
+  return applyGeometry(placed, id, { x: nextX, span: clampedSpan });
 }
 
 /**
@@ -1022,13 +1036,7 @@ export function resizeBlockTopInGrid(
   const clampedY = Math.max(minTop, Math.min(fixedBottom - minRowSpan, newY));
   const clampedRowSpan = normalizeRowSpan(fixedBottom - clampedY, target.block.type);
 
-  return placed.map((p) => ({
-    ...p.block,
-    x: p.x,
-    y: p.block.id === id ? clampedY : p.y,
-    span: p.span,
-    rowSpan: p.block.id === id ? clampedRowSpan : p.rowSpan,
-  }));
+  return applyGeometry(placed, id, { y: clampedY, rowSpan: clampedRowSpan });
 }
 
 /**
@@ -1049,21 +1057,9 @@ export function resizeBlockSpanInGrid(
   const { maxSpan } = getMaxResizeBounds(blocks, id, cols);
   const clampedSpan = normalizeSpan(Math.min(desiredSpan, maxSpan));
 
-  return placed.map((p) => ({
-    ...p.block,
-    x: p.x,
-    y: p.y,
-    span: p.block.id === id ? clampedSpan : p.span,
-    rowSpan: p.rowSpan,
-  }));
+  return applyGeometry(placed, id, { span: clampedSpan });
 }
 
-/**
- * Redimensiona a altura (`rowSpan`) de um bloco pela borda inferior.
- * Se o bloco aumentar de tamanho, empurra automaticamente os blocos abaixo para baixo
- * (mantendo colunas e cascata, idêntico a quando o conteúdo de um bloco cresce).
- * Se o bloco diminuir de tamanho, puxa os blocos abaixo de volta para cima.
- */
 /**
  * Sincroniza a grade quando a altura (rowSpan) de um bloco muda (seja por redimensionamento manual,
  * ou por alteração de preset/conteúdo em blocos de texto/auto-altura).
@@ -1374,7 +1370,7 @@ export function insertBlockIntoGrid(
     .sort((a, b) => a.y - b.y);
 
   const firstBelow = belowTarget[0];
-  const availableSpace = firstBelow ? firstBelow.y - targetY : 999;
+  const availableSpace = firstBelow ? firstBelow.y - targetY : Infinity;
 
   let rowSpan = defaultRowSpan;
   if (availableSpace > 0 && availableSpace < defaultRowSpan) {

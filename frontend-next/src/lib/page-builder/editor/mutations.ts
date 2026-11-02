@@ -27,6 +27,7 @@ import type { LayoutProfileName } from '../profiles';
 import {
   defaultRowSpanForType,
   EMPTY_LAYOUT,
+  GRID_COLS,
   maxBlocksFor,
   maxChildrenFor,
   normalizeRowSpan,
@@ -86,6 +87,34 @@ export function updateBlock(
   return mapBlocks(layout, (b) => (b.id === id ? { ...b, ...patch } : b));
 }
 
+function syncRowSpanIfNeeded(
+  layout: PageLayout,
+  located: Located,
+  id: string,
+  oldRowSpan: number,
+  propName: string,
+): PageLayout {
+  const updatedLocated = findBlock(layout, id);
+  if (!updatedLocated) return layout;
+  const newRowSpan = calculateEffectiveRowSpan(updatedLocated.block, GRID_COLS);
+  if (propName !== 'preset' && propName !== 'content' && oldRowSpan === newRowSpan) return layout;
+
+  if (!located.parentId) {
+    return {
+      ...layout,
+      blocks: syncBlockRowSpanChange(layout.blocks, id, oldRowSpan, newRowSpan, GRID_COLS),
+    };
+  }
+  return {
+    ...layout,
+    blocks: layout.blocks.map((b) =>
+      b.id === located.parentId
+        ? { ...b, children: syncBlockRowSpanChange(b.children ?? [], id, oldRowSpan, newRowSpan, GRID_COLS) }
+        : b,
+    ),
+  };
+}
+
 export function setBlockProp(
   layout: PageLayout,
   id: string,
@@ -93,7 +122,7 @@ export function setBlockProp(
   value: unknown,
 ): PageLayout {
   const located = findBlock(layout, id);
-  const oldRowSpan = located ? calculateEffectiveRowSpan(located.block, 12) : undefined;
+  const oldRowSpan = located ? calculateEffectiveRowSpan(located.block, GRID_COLS) : undefined;
 
   const updated = mapBlocks(layout, (b) => {
     if (b.id !== id) return b;
@@ -108,34 +137,8 @@ export function setBlockProp(
     return { ...b, props: newProps };
   });
 
-  if (located && oldRowSpan !== undefined) {
-    const updatedLocated = findBlock(updated, id);
-    const newRowSpan = updatedLocated
-      ? calculateEffectiveRowSpan(updatedLocated.block, 12)
-      : undefined;
-
-    if (
-      newRowSpan !== undefined &&
-      (name === 'preset' || name === 'content' || oldRowSpan !== newRowSpan)
-    ) {
-      if (!located.parentId) {
-        return {
-          ...updated,
-          blocks: syncBlockRowSpanChange(updated.blocks, id, oldRowSpan, newRowSpan, 12),
-        };
-      }
-      return {
-        ...updated,
-        blocks: updated.blocks.map((b) =>
-          b.id === located.parentId
-            ? { ...b, children: syncBlockRowSpanChange(b.children ?? [], id, oldRowSpan, newRowSpan, 12) }
-            : b,
-        ),
-      };
-    }
-  }
-
-  return updated;
+  if (!located || oldRowSpan === undefined) return updated;
+  return syncRowSpanIfNeeded(updated, located, id, oldRowSpan, name);
 }
 
 /** Troca a fonte de dados e descarta `params` e listas de campo que pertenciam à anterior. */
@@ -192,10 +195,10 @@ export function removeBlock(layout: PageLayout, id: string): PageLayout {
   if (located.parentId) {
     const parent = layout.blocks.find((b) => b.id === located.parentId);
     if (!parent) return layout;
-    const oldRowSpan = calculateEffectiveRowSpan(parent, 12);
-    const updatedChildren = removeBlockFromGrid(parent.children ?? [], id, 12);
+    const oldRowSpan = calculateEffectiveRowSpan(parent, GRID_COLS);
+    const updatedChildren = removeBlockFromGrid(parent.children ?? [], id, GRID_COLS);
     const updatedParent = { ...parent, children: updatedChildren };
-    const newRowSpan = calculateEffectiveRowSpan(updatedParent, 12);
+    const newRowSpan = calculateEffectiveRowSpan(updatedParent, GRID_COLS);
 
     const updatedBlocks = layout.blocks.map((b) =>
       b.id === located.parentId ? updatedParent : b,
@@ -208,7 +211,7 @@ export function removeBlock(layout: PageLayout, id: string): PageLayout {
           parent.id,
           oldRowSpan,
           newRowSpan,
-          12,
+          GRID_COLS,
         ),
       };
     }
@@ -220,7 +223,7 @@ export function removeBlock(layout: PageLayout, id: string): PageLayout {
 
   return {
     ...layout,
-    blocks: removeBlockFromGrid(layout.blocks, id, 12),
+    blocks: removeBlockFromGrid(layout.blocks, id, GRID_COLS),
   };
 }
 
@@ -241,9 +244,14 @@ export function canAdd(
   return isContainerType(parent.type) || isInlineBlockType(childType);
 }
 
+function defaultSpanForType(type: string, parentId?: string): number {
+  if (type === 'button.action') return 3;
+  return parentId ? 6 : GRID_COLS;
+}
+
 export function createBlock(type: BlockType, parentId?: string): PageBlock {
   const meta = BLOCK_META[type];
-  const defaultSpan = type === 'button.action' ? 3 : parentId ? 6 : 12;
+  const defaultSpan = defaultSpanForType(type, parentId);
   const defaultProps: Record<string, unknown> =
     type === 'text.rich'
       ? { content: 'Texto', preset: 'paragraph' }
@@ -288,11 +296,11 @@ export function addBlock(
       if (placedSelected) {
         const rightSpaceX = placedSelected.x + placedSelected.span;
         // Verifica se há espaço livre ao lado direito do bloco selecionado
-        if (rightSpaceX < 12) {
-          const freeSpan = 12 - rightSpaceX;
+        if (rightSpaceX < GRID_COLS) {
+          const freeSpan = GRID_COLS - rightSpaceX;
           const isSlotFree = !placed.some(
             (p) =>
-              p.x < 12 &&
+              p.x < GRID_COLS &&
               p.x + p.span > rightSpaceX &&
               p.y < placedSelected.y + placedSelected.rowSpan &&
               p.y + p.rowSpan > placedSelected.y,
@@ -306,7 +314,7 @@ export function addBlock(
                 rightSpaceX,
                 placedSelected.y,
                 freeSpan,
-                12,
+                GRID_COLS,
               ),
             };
           }
@@ -325,7 +333,7 @@ export function addBlock(
     ...block,
     x: 0,
     y: maxBottom,
-    span: block.span ?? 12,
+    span: block.span ?? GRID_COLS,
     rowSpan: newRowSpan,
   };
   return {
@@ -345,7 +353,7 @@ export function insertBlockAfter(
   if (!located) return layout;
   if (!canAdd(layout, located.parentId, block.type, profile)) return layout;
 
-  const defaultSpan = block.type === 'button.action' ? 3 : 12;
+  const defaultSpan = defaultSpanForType(block.type);
   const newRowSpan = block.rowSpan ?? defaultRowSpanForType(block.type);
 
   if (!located.parentId) {
@@ -445,7 +453,7 @@ export function insertBlockAt(
       ...block,
       x: 0,
       y: 0,
-      span: block.span ?? 12,
+      span: block.span ?? GRID_COLS,
       rowSpan: block.rowSpan ?? defaultRowSpanForType(block.type),
     };
     return { ...layout, blocks: [newBlock] };
@@ -468,7 +476,7 @@ export function insertBlockAt(
       ...block,
       x: 0,
       y: 0,
-      span: block.span ?? 12,
+      span: block.span ?? GRID_COLS,
       rowSpan: newRowSpan,
     };
     return { ...layout, blocks: [newBlock, ...updatedBlocks] };
@@ -482,7 +490,7 @@ export function insertBlockAt(
       ...block,
       x: 0,
       y: maxBottom,
-      span: block.span ?? 12,
+      span: block.span ?? GRID_COLS,
       rowSpan: newRowSpan,
     };
     return { ...layout, blocks: [...layout.blocks, newBlock] };
@@ -507,7 +515,7 @@ export function insertBlockAtGrid(
   if (!parentId) {
     return {
       ...layout,
-      blocks: insertBlockIntoGrid(layout.blocks, block, x, y, span, 12),
+      blocks: insertBlockIntoGrid(layout.blocks, block, x, y, span, GRID_COLS),
     };
   }
 
@@ -518,7 +526,7 @@ export function insertBlockAtGrid(
       const children = b.children ?? [];
       return {
         ...b,
-        children: insertBlockIntoGrid(children, block, x, y, span, 12),
+        children: insertBlockIntoGrid(children, block, x, y, span, GRID_COLS),
       };
     }),
   };
@@ -626,114 +634,50 @@ export function moveBlockToGrid(
   };
 }
 
+function applyToLevel(
+  layout: PageLayout,
+  id: string,
+  fn: (blocks: PageBlock[]) => PageBlock[],
+): PageLayout {
+  const located = findBlock(layout, id);
+  if (!located) return layout;
+  if (!located.parentId) return { ...layout, blocks: fn(layout.blocks) };
+  return {
+    ...layout,
+    blocks: layout.blocks.map((b) =>
+      b.id === located.parentId ? { ...b, children: fn(b.children ?? []) } : b,
+    ),
+  };
+}
+
 /** Move um bloco 1 passo em qualquer direção 2D (left, right, up, down) na grade. */
 export function nudgeBlockGrid(
   layout: PageLayout,
   id: string,
   direction: 'left' | 'right' | 'up' | 'down',
 ): PageLayout {
-  const located = findBlock(layout, id);
-  if (!located) return layout;
-
-  if (!located.parentId) {
-    return {
-      ...layout,
-      blocks: nudgeBlockInGrid(layout.blocks, id, direction),
-    };
-  }
-
-  return {
-    ...layout,
-    blocks: layout.blocks.map((b) =>
-      b.id === located.parentId
-        ? { ...b, children: nudgeBlockInGrid(b.children ?? [], id, direction) }
-        : b,
-    ),
-  };
+  return applyToLevel(layout, id, (blocks) => nudgeBlockInGrid(blocks, id, direction));
 }
 
 /**
  * Altera o span (largura 1..12) do bloco limitando ao espaço disponível até o próximo bloco
  * ou até o final da linha, evitando que o bloco pule para a linha de baixo ou desorganize os vizinhos.
  */
-export function setBlockSpan(
-  layout: PageLayout,
-  id: string,
-  span: number,
-): PageLayout {
-  const located = findBlock(layout, id);
-  if (!located) return layout;
-
-  if (!located.parentId) {
-    return {
-      ...layout,
-      blocks: resizeBlockSpanInGrid(layout.blocks, id, span),
-    };
-  }
-
-  return {
-    ...layout,
-    blocks: layout.blocks.map((b) =>
-      b.id === located.parentId
-        ? { ...b, children: resizeBlockSpanInGrid(b.children ?? [], id, span) }
-        : b,
-    ),
-  };
+export function setBlockSpan(layout: PageLayout, id: string, span: number): PageLayout {
+  return applyToLevel(layout, id, (blocks) => resizeBlockSpanInGrid(blocks, id, span));
 }
 
 /**
  * Altera o rowSpan do bloco pela borda inferior, empurrando automaticamente os blocos abaixo
  * para baixo (comportamento idêntico a quando o conteúdo de um bloco cresce).
  */
-export function setBlockRowSpan(
-  layout: PageLayout,
-  id: string,
-  rowSpan: number,
-): PageLayout {
-  const located = findBlock(layout, id);
-  if (!located) return layout;
-
-  if (!located.parentId) {
-    return {
-      ...layout,
-      blocks: resizeBlockRowSpanInGrid(layout.blocks, id, rowSpan),
-    };
-  }
-
-  return {
-    ...layout,
-    blocks: layout.blocks.map((b) =>
-      b.id === located.parentId
-        ? { ...b, children: resizeBlockRowSpanInGrid(b.children ?? [], id, rowSpan) }
-        : b,
-    ),
-  };
+export function setBlockRowSpan(layout: PageLayout, id: string, rowSpan: number): PageLayout {
+  return applyToLevel(layout, id, (blocks) => resizeBlockRowSpanInGrid(blocks, id, rowSpan));
 }
 
 /** Redimensiona a largura do bloco pela alça lateral esquerda (ancorando a borda direita). */
-export function setBlockSpanLeft(
-  layout: PageLayout,
-  id: string,
-  span: number,
-): PageLayout {
-  const located = findBlock(layout, id);
-  if (!located) return layout;
-
-  if (!located.parentId) {
-    return {
-      ...layout,
-      blocks: resizeBlockLeftInGrid(layout.blocks, id, span),
-    };
-  }
-
-  return {
-    ...layout,
-    blocks: layout.blocks.map((b) =>
-      b.id === located.parentId
-        ? { ...b, children: resizeBlockLeftInGrid(b.children ?? [], id, span) }
-        : b,
-    ),
-  };
+export function setBlockSpanLeft(layout: PageLayout, id: string, span: number): PageLayout {
+  return applyToLevel(layout, id, (blocks) => resizeBlockLeftInGrid(blocks, id, span));
 }
 
 /** Redimensiona a altura do bloco pela alça superior (ancorando a borda inferior). */
@@ -743,24 +687,7 @@ export function setBlockRowSpanTop(
   newY: number,
   newRowSpan: number,
 ): PageLayout {
-  const located = findBlock(layout, id);
-  if (!located) return layout;
-
-  if (!located.parentId) {
-    return {
-      ...layout,
-      blocks: resizeBlockTopInGrid(layout.blocks, id, newY, newRowSpan),
-    };
-  }
-
-  return {
-    ...layout,
-    blocks: layout.blocks.map((b) =>
-      b.id === located.parentId
-        ? { ...b, children: resizeBlockTopInGrid(b.children ?? [], id, newY, newRowSpan) }
-        : b,
-    ),
-  };
+  return applyToLevel(layout, id, (blocks) => resizeBlockTopInGrid(blocks, id, newY, newRowSpan));
 }
 
 export { canAcceptChildrenType, isContainerType, isInlineBlockType };

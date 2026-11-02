@@ -129,6 +129,8 @@ export function useEditorOrThrow(): EditorContextValue {
   return ctx;
 }
 
+const UNDO_HISTORY_SIZE = 30;
+
 export function EditorProvider({
   initial,
   profile = DEFAULT_PROFILE,
@@ -152,7 +154,7 @@ export function EditorProvider({
     setDraft((current) => {
       const next = updater(current);
       if (next === current) return current;
-      setPast((prevPast) => [...prevPast.slice(-30), current]);
+      setPast((prevPast) => [...prevPast.slice(-UNDO_HISTORY_SIZE), current]);
       setFuture([]);
       return next;
     });

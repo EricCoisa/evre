@@ -2,8 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { BLOCK_META } from './blocks.meta';
 import { LAYOUT_PROFILES } from './profiles';
 import {
-  MAX_BLOCKS,
-  MAX_CHILDREN,
   SPANS,
   SPAN_CLASS,
   maxBlocksFor,
@@ -228,11 +226,6 @@ describe('tokens de layout', () => {
 });
 
 describe('tetos por profile', () => {
-  it('as constantes exportadas continuam sendo as do dashboard', () => {
-    expect(MAX_BLOCKS).toBe(LAYOUT_PROFILES.dashboard.maxBlocks);
-    expect(MAX_CHILDREN).toBe(LAYOUT_PROFILES.dashboard.maxChildren);
-  });
-
   it('o teto vem do profile, não de um número fixo', () => {
     expect(maxBlocksFor('dashboard')).toBe(20);
     expect(maxBlocksFor('proposal')).toBe(80);

@@ -10,9 +10,8 @@ import {
 /** labelKey da UserConfigurationDefinition (valueType JSON) que guarda o mapa de layouts. */
 export const PAGE_LAYOUTS_KEY = 'PAGE_LAYOUTS';
 
-// Tetos do profile `dashboard`; o editor desabilita "adicionar" ao atingir o teto.
-export const MAX_BLOCKS = LAYOUT_PROFILES.dashboard.maxBlocks;
-export const MAX_CHILDREN = LAYOUT_PROFILES.dashboard.maxChildren;
+/** Número de colunas da grade. */
+export const GRID_COLS = 12;
 
 export function maxBlocksFor(profile: LayoutProfileName = DEFAULT_PROFILE): number {
   return LAYOUT_PROFILES[profile].maxBlocks;

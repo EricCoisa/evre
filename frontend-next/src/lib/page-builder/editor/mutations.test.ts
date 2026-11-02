@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { PageLayoutSchema, MAX_BLOCKS, MAX_CHILDREN, type PageLayout, type PageBlock } from '../schema';
+import { PageLayoutSchema, maxBlocksFor, maxChildrenFor, type PageLayout, type PageBlock } from '../schema';
+const MAX_BLOCKS = maxBlocksFor('dashboard');
+const MAX_CHILDREN = maxChildrenFor('dashboard');
 import { calculateEffectiveRowSpan, compactEmptyRows, compactLayout, findEmptyGridSlots, resolveGridLayout } from '../grid-engine';
 import {
   EMPTY_LAYOUT,

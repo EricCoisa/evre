@@ -5,7 +5,8 @@ import { EditorPanel } from './panel';
 import { EditorProvider, useEditorOrThrow } from './context';
 import { EMPTY_LAYOUT } from './mutations';
 import type { LayoutProfileName } from '../profiles';
-import { MAX_CHILDREN, type PageLayout } from '../schema';
+import { maxChildrenFor, type PageLayout } from '../schema';
+const MAX_CHILDREN = maxChildrenFor('dashboard');
 
 /** `panel.tsx` só depende de `useEditorOrThrow` (contexto real, sem mock) e `usePageSources`
  * (mockado abaixo) — nada de dnd-kit envolvido, diferente de editor.test.tsx. */
