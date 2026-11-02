@@ -310,6 +310,12 @@ export function isAutoHeightBlockType(type?: string): boolean {
   );
 }
 
+export function isContainerType(type?: string): boolean {
+  if (!type || !(type in BLOCK_META)) return false;
+  const meta = BLOCK_META[type as BlockType];
+  return Boolean(meta && 'container' in meta && meta.container);
+}
+
 export function isInlineBlockType(type: string): boolean {
   const meta = BLOCK_META[type as BlockType];
   return !!meta && 'inline' in meta && !!meta.inline;

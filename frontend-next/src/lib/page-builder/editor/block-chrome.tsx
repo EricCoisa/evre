@@ -30,6 +30,7 @@ import { RichTextFormatButtons } from '@/components/rich-text-input';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/cn';
 import {
+  calculateEffectiveRowSpan,
   getMaxResizeBounds,
   resolveGridLayout,
   type EmptyGridSlot,
@@ -115,6 +116,7 @@ function FloatingBlockToolbar({
   const currentSpan = normalizeSpan(block.span);
 
   const isInline = isInlineBlockType(block.type);
+  const isContainer = isContainerType(block.type);
   const isAutoHeight = isAutoHeightBlockType(block.type);
   const isTextEditable =
     block.type === 'text.rich' ||
@@ -266,45 +268,53 @@ function FloatingBlockToolbar({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Seletor rápido de altura (RowSpan) */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="h-6 gap-1 px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground hover:text-foreground"
-            title={t('editor.changeHeight', { defaultValue: 'Ajustar altura' })}
-          >
-            <MoveVertical className="size-3" />
-            <span>{currentRowSpan}x</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-40 text-xs">
-          <DropdownMenuLabel className="text-[10px] uppercase text-muted-foreground">
-            {t('editor.height', { defaultValue: 'Altura do bloco' })}
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {QUICK_HEIGHTS.map((h) => {
-            const minRowSpan = minRowSpanForType(block.type);
-            const disabledOption = h.rowSpan > maxRowSpan || h.rowSpan < minRowSpan;
-            return (
-              <DropdownMenuItem
-                key={h.rowSpan}
-                disabled={disabledOption}
-                onClick={() => editor.setRowSpan(block.id, h.rowSpan)}
-                className={cn(
-                  'flex items-center justify-between text-xs',
-                  currentRowSpan === h.rowSpan && 'font-semibold text-primary',
-                )}
-              >
-                <span>{h.label}</span>
-                <span className="text-[10px] text-muted-foreground">{h.rowSpan} lin</span>
-              </DropdownMenuItem>
-            );
-          })}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      {/* Seletor rápido de altura (RowSpan) — apenas para blocos com resize manual (não-auto-height) */}
+      {!isAutoHeight ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-6 gap-1 px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground hover:text-foreground"
+              title={t('editor.changeHeight', { defaultValue: 'Ajustar altura' })}
+            >
+              <MoveVertical className="size-3" />
+              <span>{currentRowSpan}x</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-40 text-xs">
+            <DropdownMenuLabel className="text-[10px] uppercase text-muted-foreground">
+              {t('editor.height', { defaultValue: 'Altura do bloco' })}
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {QUICK_HEIGHTS.map((h) => {
+              const minRowSpan =
+                isContainer && (block.children?.length ?? 0) > 0
+                  ? Math.max(
+                      minRowSpanForType(block.type),
+                      calculateEffectiveRowSpan({ ...block, rowSpan: 1 }),
+                    )
+                  : minRowSpanForType(block.type);
+              const disabledOption = h.rowSpan > maxRowSpan || h.rowSpan < minRowSpan;
+              return (
+                <DropdownMenuItem
+                  key={h.rowSpan}
+                  disabled={disabledOption}
+                  onClick={() => editor.setRowSpan(block.id, h.rowSpan)}
+                  className={cn(
+                    'flex items-center justify-between text-xs',
+                    currentRowSpan === h.rowSpan && 'font-semibold text-primary',
+                  )}
+                >
+                  <span>{h.label}</span>
+                  <span className="text-[10px] text-muted-foreground">{h.rowSpan} lin</span>
+                </DropdownMenuItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : null}
 
 
 

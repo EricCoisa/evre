@@ -535,8 +535,16 @@ function BlockChildren({
     return <SortableList ids={children.map((c) => c.id)}>{renderedFree}</SortableList>;
   }
 
+  const parentSpan = normalizeSpan(block.span);
+  const mappedValidChildren = validChildren.map((c) => ({
+    ...c,
+    span: normalizeSpan(
+      Math.max(1, Math.round((parentSpan * normalizeSpan(c.span)) / 12)),
+    ),
+  }));
+  const placedChildren = resolveGridLayout(mappedValidChildren);
   const placedById = new Map(
-    resolveGridLayout(validChildren).map((p) => [p.block.id, p]),
+    placedChildren.map((p, idx) => [validChildren[idx].id, { ...p, block: validChildren[idx] }]),
   );
   const placedList = [...placedById.values()];
   const canRenderEmptySlots =

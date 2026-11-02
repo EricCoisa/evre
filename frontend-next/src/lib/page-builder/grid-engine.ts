@@ -1,5 +1,6 @@
 import {
   isAutoHeightBlockType,
+  isContainerType,
   minRowSpanForType,
   normalizeRowSpan,
   normalizeSpan,
@@ -69,9 +70,8 @@ export function findFirstAvailableSlot(
 export function estimateTextRowSpan(content: string, span = 12): BlockRowSpan {
   if (!content || !content.trim()) return 1;
 
-  // Ignora quebras de linha em branco no final causadas pelo cursor no editor
-  const trimmed = content.replace(/\n+$/, '');
-  const lines = trimmed.split('\n');
+  // Preserva todas as quebras de linha (incluindo quebras extras/vazias criadas com Enter)
+  const lines = content.split('\n');
 
   // Em 12 colunas (~1100px), cabem ~110 caracteres. Em 3 colunas (~270px), cabem ~28 caracteres.
   const charsPerLine = Math.max(26, Math.round((span / 12) * 110));
@@ -79,15 +79,18 @@ export function estimateTextRowSpan(content: string, span = 12): BlockRowSpan {
   let visualLinesCount = 0;
   for (const line of lines) {
     if (line.trim().length === 0) {
-      visualLinesCount += 0.5;
+      // Cada linha vazia (Enter) ocupa uma linha visual completa no editor
+      visualLinesCount += 1;
     } else {
-      visualLinesCount += Math.max(1, Math.ceil(line.length / charsPerLine));
+      const isListItem = /^\s*[-*•]\s/.test(line);
+      const lineWraps = Math.max(1, Math.ceil(line.length / charsPerLine));
+      visualLinesCount += isListItem ? lineWraps * 1.15 : lineWraps;
     }
   }
 
-  const hasHeading = /^#{1,4}\s/m.test(trimmed);
-  // Cada linha de texto visual tem ~22px (font-size 14px + leading 1.6).
-  const totalContentHeight = visualLinesCount * 22 + (hasHeading ? 16 : 0);
+  const hasHeading = /^#{1,4}\s/m.test(content) || /^\s*\*[^*]+\*\s*$/m.test(content);
+  // Cada linha de texto visual tem ~23px (font-size 14px + leading 1.6).
+  const totalContentHeight = visualLinesCount * 23 + (hasHeading ? 18 : 0);
 
   // Primeira linha de grid tem 44px; cada linha extra adiciona 60px (44px + 16px gap).
   if (totalContentHeight <= 48) return 1;
@@ -234,12 +237,25 @@ export function calculateEffectiveRowSpan(block: PageBlock, cols = 12): BlockRow
 
   // 1. Containers (group ou qualquer bloco com children): abraça a altura total dos filhos
   if (block.children && block.children.length > 0) {
-    const placedChildren = resolveGridLayout(block.children, cols);
+    const parentSpan = normalizeSpan(block.span);
+    // Para estimar os filhos com precisão de quebra de linha, passa a largura real que o container oferece aos filhos
+    const mappedChildren = block.children.map((c) => ({
+      ...c,
+      span: normalizeSpan(
+        Math.max(1, Math.round((parentSpan * normalizeSpan(c.span)) / 12)),
+      ),
+    }));
+    const placedChildren = resolveGridLayout(mappedChildren, cols);
     const maxChildBottom = Math.max(0, ...placedChildren.map((c) => c.y + c.rowSpan));
     const hasTitle = Boolean(block.props?.title);
     const hasDesc = Boolean(block.props?.description);
+    // Invólucro do Card:
+    // - Padding py-6 (24px topo + 24px base = 48px) + gap-6 (24px) + inserter no editor (44px) => 1 linha base
+    // - Título: +1 linha
+    // - Descrição: +1 linha adicional
+    const basePaddingRows = 1;
     const headerRows = hasTitle && hasDesc ? 2 : hasTitle || hasDesc ? 1 : 0;
-    const containerNeeded = maxChildBottom + headerRows;
+    const containerNeeded = maxChildBottom + basePaddingRows + headerRows;
     minNeeded = normalizeRowSpan(Math.max(minNeeded, containerNeeded), block.type);
   }
 
@@ -812,7 +828,10 @@ export function resizeBlockTopInGrid(
     }
   }
 
-  const minRowSpan = minRowSpanForType(target.block.type);
+  const minRowSpan =
+    isContainerType(target.block.type) && (target.block.children?.length ?? 0) > 0
+      ? calculateEffectiveRowSpan({ ...target.block, rowSpan: 1 }, cols)
+      : minRowSpanForType(target.block.type);
   const clampedY = Math.max(minTop, Math.min(fixedBottom - minRowSpan, newY));
   const clampedRowSpan = normalizeRowSpan(fixedBottom - clampedY, target.block.type);
 
@@ -868,7 +887,10 @@ export function resizeBlockRowSpanInGrid(
   const target = placed.find((p) => p.block.id === id);
   if (!target) return blocks;
 
-  const minRowSpan = minRowSpanForType(target.block.type);
+  const minRowSpan =
+    isContainerType(target.block.type) && (target.block.children?.length ?? 0) > 0
+      ? calculateEffectiveRowSpan({ ...target.block, rowSpan: 1 }, cols)
+      : minRowSpanForType(target.block.type);
   const clampedRowSpan = normalizeRowSpan(
     Math.max(minRowSpan, desiredRowSpan),
     target.block.type,

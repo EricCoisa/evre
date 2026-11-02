@@ -5,6 +5,7 @@ import {
   findEmptyGridSlots,
   getMaxResizeBounds,
   calculateEffectiveRowSpan,
+  estimateTextRowSpan,
   estimateFeedRowSpan,
   estimateTableRowSpan,
   estimateTopicRowSpan,
@@ -240,6 +241,36 @@ describe('Limitação de redimensionamento ao encostar em outro bloco ou fim da 
       props: { content: 'Linha 1\nLinha 2\nLinha 3\nLinha 4\nLinha 5\nLinha 6' },
     };
     expect(calculateEffectiveRowSpan(longText, 12)).toBeGreaterThanOrEqual(2);
+  });
+
+  it('grupo expande sua altura automaticamente para abraçar os filhos e margens internas sem cortar conteúdo', () => {
+    const groupWithText = {
+      id: 'g1',
+      type: 'group',
+      span: 6 as const,
+      props: { title: 'Montagem de treinos' },
+      children: [
+        {
+          id: 't1',
+          type: 'text.rich',
+          span: 12 as const,
+          props: {
+            content: Array.from({ length: 15 }, (_, i) => `- Item de treino ${i + 1}`).join('\n'),
+          },
+        },
+      ],
+    };
+
+    const effective = calculateEffectiveRowSpan(groupWithText, 12);
+    expect(effective).toBeGreaterThanOrEqual(7);
+  });
+
+  it('reconhece quebras de linha com Enter (inclusive linhas vazias e Enters no final) ocupando espaço', () => {
+    const baseText = 'Texto base';
+    expect(estimateTextRowSpan(baseText, 12)).toBe(1);
+
+    const textWithEnters = 'Texto base\n\n\n\n\n\n\n\n';
+    expect(estimateTextRowSpan(textWithEnters, 12)).toBeGreaterThanOrEqual(3);
   });
 
   it('ao redimensionar bloco na coluna esquerda, empurra apenas a coluna esquerda mantendo a direita intacta', () => {

@@ -2,6 +2,7 @@ import { arrayMove } from '@dnd-kit/sortable';
 import {
   BLOCK_META,
   canAcceptChildrenType,
+  isContainerType,
   isInlineBlockType,
   type BlockType,
 } from '../blocks.meta';
@@ -506,12 +507,7 @@ export function setBlockRowSpanTop(
   };
 }
 
-export function isContainerType(type: string): boolean {
-  const meta = isKnown(type) ? BLOCK_META[type] : undefined;
-  return !!meta && 'container' in meta && meta.container;
-}
-
-export { canAcceptChildrenType, isInlineBlockType };
+export { canAcceptChildrenType, isContainerType, isInlineBlockType };
 
 /** Insere `block` numa posição específica de um dos dois níveis. */
 function insertAt(
