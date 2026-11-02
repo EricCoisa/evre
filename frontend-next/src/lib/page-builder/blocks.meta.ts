@@ -9,12 +9,158 @@ export type BlockPropType =
   | 'string[]'
   | 'storage-file';
 
+export interface BlockPropOption {
+  label: string;
+  value: string;
+}
+
+export type TextPreset =
+  | 'heading1'
+  | 'heading2'
+  | 'heading3'
+  | 'heading4'
+  | 'paragraph'
+  | 'lead'
+  | 'caption'
+  | 'quote';
+
+export function normalizeTextPreset(preset: unknown): TextPreset {
+  if (typeof preset !== 'string') return 'paragraph';
+  const p = preset.toLowerCase().trim();
+  if (p === 'h1' || p === 'heading1') return 'heading1';
+  if (p === 'h2' || p === 'heading2') return 'heading2';
+  if (p === 'h3' || p === 'heading3') return 'heading3';
+  if (p === 'h4' || p === 'heading4') return 'heading4';
+  if (p === 'lead') return 'lead';
+  if (p === 'caption') return 'caption';
+  if (p === 'quote' || p === 'blockquote') return 'quote';
+  return 'paragraph';
+}
+
+export type TextFontSizeClass =
+  | 'text-xs'
+  | 'text-sm'
+  | 'text-base'
+  | 'text-lg'
+  | 'text-xl'
+  | 'text-2xl'
+  | 'text-3xl'
+  | 'text-4xl';
+
+export interface TextPresetConfig {
+  tag: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'blockquote' | 'div';
+  className: string;
+  label: string;
+  fontSize: TextFontSizeClass;
+  bold?: boolean;
+  italic?: boolean;
+}
+
+export const TEXT_PRESET_CONFIG: Record<TextPreset, TextPresetConfig> = {
+  paragraph: {
+    tag: 'div',
+    className: 'text-sm text-muted-foreground leading-relaxed',
+    label: 'Parágrafo',
+    fontSize: 'text-sm',
+    bold: false,
+  },
+  heading1: {
+    tag: 'h1',
+    className: 'text-4xl font-bold tracking-tight text-foreground',
+    label: 'Título 1 (H1)',
+    fontSize: 'text-4xl',
+    bold: true,
+  },
+  heading2: {
+    tag: 'h2',
+    className: 'text-2xl font-semibold tracking-tight text-foreground',
+    label: 'Título 2 (H2)',
+    fontSize: 'text-2xl',
+    bold: true,
+  },
+  heading3: {
+    tag: 'h3',
+    className: 'text-xl font-semibold text-foreground',
+    label: 'Título 3 (H3)',
+    fontSize: 'text-xl',
+    bold: true,
+  },
+  heading4: {
+    tag: 'h4',
+    className: 'text-lg font-medium text-foreground',
+    label: 'Título 4 (H4)',
+    fontSize: 'text-lg',
+    bold: true,
+  },
+  lead: {
+    tag: 'p',
+    className: 'text-base font-normal text-foreground leading-relaxed',
+    label: 'Destaque (Lead)',
+    fontSize: 'text-base',
+    bold: false,
+  },
+  caption: {
+    tag: 'p',
+    className: 'text-xs text-muted-foreground',
+    label: 'Legenda',
+    fontSize: 'text-xs',
+    bold: false,
+  },
+  quote: {
+    tag: 'blockquote',
+    className: 'border-l-2 border-primary/50 pl-4 italic text-muted-foreground',
+    label: 'Citação',
+    fontSize: 'text-sm',
+    italic: true,
+  },
+};
+
+/**
+ * O Preset atua como um atalho configurador para o conjunto de estilos do texto:
+ * - Define a fonte correspondente via [fs:<fontSize>] (ex: text-4xl para H1, text-sm para parágrafo)
+ * - Define negrito quando aplicável (ex: *...* para H1-H4) ou remove negrito global
+ * - Define itálico quando aplicável (ex: _..._ para citação)
+ * Mantém o seletor de tamanho da fonte ativo no editor para que o usuário possa fazer ajustes finos.
+ */
+export function applyPresetToContent(content: string, preset: TextPreset): string {
+  const cfg = TEXT_PRESET_CONFIG[preset];
+  if (!cfg) return content;
+  if (!content || !content.trim()) return content;
+
+  // 1. Remove qualquer marcação anterior de tamanho [fs:...]
+  let clean = content.replace(/\[fs:[^\]]+\]([\s\S]*?)\[\/fs\]/g, '$1');
+
+  // 2. Configura negrito se o preset pedir
+  if (cfg.bold) {
+    clean = clean.replace(/\*([^*]+?)\*/g, '$1');
+    const trimmed = clean.trim();
+    if (trimmed) {
+      clean = `*${clean}*`;
+    }
+  } else if (cfg.bold === false) {
+    clean = clean.replace(/\*([^*]+?)\*/g, '$1');
+  }
+
+  // 3. Configura itálico se for citação
+  if (cfg.italic) {
+    const trimmed = clean.trim();
+    if (trimmed && !(trimmed.startsWith('_') && trimmed.endsWith('_'))) {
+      clean = `_${clean}_`;
+    }
+  }
+
+  // 4. Aplica o tamanho de fonte configurado pelo Preset
+  return `[fs:${cfg.fontSize}]${clean}[/fs]`;
+}
+
 export interface BlockPropMeta {
   name: string;
   type: BlockPropType;
   required: boolean;
   /** Quando `true`, exibe picker de tamanho de fonte no campo RichText deste prop. */
   showFontSize?: boolean;
+  /** Opções para seleção quando o tipo for string (dropdown no painel). */
+  options?: readonly (string | BlockPropOption)[];
 }
 
 export type BlockCategory = 'charts' | 'data' | 'content' | 'structure' | 'media';
@@ -117,11 +263,28 @@ export const BLOCK_META = {
     defaultRowSpan: 1,
     minRowSpan: 1,
     description:
-      'Elemento de texto rico (Rich Text) com suporte opcional a fonte de dados e variáveis dinâmicas (ex: "Bom dia, temos {{total}} usuários hoje").',
+      'Elemento de texto rico (Rich Text) com suporte a presets (títulos h1–h4, parágrafo, destaque, legenda, citação), fonte de dados e variáveis dinâmicas.',
     accepts: ['list', 'count', 'series'],
     optionalSource: true,
     inline: true,
-    props: [{ name: 'content', type: 'rich-text', required: true, showFontSize: true }],
+    props: [
+      { name: 'content', type: 'rich-text', required: true, showFontSize: true },
+      {
+        name: 'preset',
+        type: 'string',
+        required: false,
+        options: [
+          { label: 'Parágrafo', value: 'paragraph' },
+          { label: 'Título 1 (H1)', value: 'heading1' },
+          { label: 'Título 2 (H2)', value: 'heading2' },
+          { label: 'Título 3 (H3)', value: 'heading3' },
+          { label: 'Título 4 (H4)', value: 'heading4' },
+          { label: 'Destaque (Lead)', value: 'lead' },
+          { label: 'Legenda', value: 'caption' },
+          { label: 'Citação', value: 'quote' },
+        ],
+      },
+    ],
   },
   'button.action': {
     profiles: ['dashboard', 'proposal'],
@@ -242,23 +405,6 @@ export const BLOCK_META = {
       { name: 'aspect', type: 'string', required: false },
     ],
   },
-  heading: {
-    profiles: ['dashboard', 'proposal'],
-    category: 'content',
-    icon: 'Heading',
-    defaultRowSpan: 1,
-    minRowSpan: 1,
-    description:
-      'Título de seção com hierarquia semântica real (h1 a h4). Use `level: 1` SOMENTE para o ' +
-      'título da proposta (uma vez, no topo); use `level: 2` para cada seção da proposta ou para ' +
-      'rotular um grupo de cards no dashboard; `level: 3`/`4` para subseção. Não é um card — é a ' +
-      'estrutura da página. Não consome fonte de dados.',
-    accepts: [],
-    props: [
-      { name: 'text', type: 'rich-text', required: true },
-      { name: 'level', type: 'number', required: true },
-    ],
-  },
   divider: {
     profiles: ['dashboard', 'proposal'],
     category: 'structure',
@@ -304,7 +450,6 @@ export function isAutoHeightBlockType(type?: string): boolean {
   if (!type) return false;
   return (
     type === 'text.rich' ||
-    type === 'heading' ||
     type === 'button.action' ||
     type === 'divider'
   );

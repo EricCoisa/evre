@@ -24,6 +24,8 @@ export const FONT_SIZE_CSS: Record<string, string> = {
   'text-lg': '1.125rem',
   'text-xl': '1.25rem',
   'text-2xl': '1.5rem',
+  'text-3xl': '1.875rem',
+  'text-4xl': '2.25rem',
 };
 
 const CSS_TO_TW: Record<string, string> = Object.fromEntries(

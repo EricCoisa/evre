@@ -521,12 +521,24 @@ describe('image', () => {
   });
 });
 
-describe('heading', () => {
-  it('level={2} renderiza um <h2> de verdade (asserção na tag, não na classe)', () => {
-    const HeadingBlock = BLOCK_REGISTRY.heading;
+describe('text.rich — presets (heading1–heading4, quote, lead, caption, paragraph)', () => {
+  it('preset="heading1" ou "h1" renderiza um <h1> de verdade', () => {
+    const RichBlock = BLOCK_REGISTRY['text.rich'];
     render(
-      React.createElement(HeadingBlock, {
-        props: { text: 'Escopo do projeto', level: 2 },
+      React.createElement(RichBlock, {
+        props: { content: 'Título Principal', preset: 'heading1' },
+      }),
+    );
+
+    const heading = screen.getByRole('heading', { level: 1, name: 'Título Principal' });
+    expect(heading.tagName).toBe('H1');
+  });
+
+  it('preset="heading2" ou "h2" renderiza um <h2> de verdade', () => {
+    const RichBlock = BLOCK_REGISTRY['text.rich'];
+    render(
+      React.createElement(RichBlock, {
+        props: { content: 'Escopo do projeto', preset: 'heading2' },
       }),
     );
 
@@ -534,20 +546,55 @@ describe('heading', () => {
     expect(heading.tagName).toBe('H2');
   });
 
-  it('level={1} renderiza <h1>; level inválido cai no default (h2)', () => {
-    const HeadingBlock = BLOCK_REGISTRY.heading;
+  it('preset="heading3" e "heading4" renderizam <h3> e <h4> reais', () => {
+    const RichBlock = BLOCK_REGISTRY['text.rich'];
     const { rerender } = render(
-      React.createElement(HeadingBlock, { props: { text: 'Título', level: 1 } }),
+      React.createElement(RichBlock, {
+        props: { content: 'Subseção 3', preset: 'heading3' },
+      }),
     );
-    expect(screen.getByRole('heading', { level: 1 }).tagName).toBe('H1');
+    expect(screen.getByRole('heading', { level: 3 }).tagName).toBe('H3');
 
-    rerender(React.createElement(HeadingBlock, { props: { text: 'Título', level: 99 } }));
-    expect(screen.getByRole('heading', { level: 2 }).tagName).toBe('H2');
+    rerender(
+      React.createElement(RichBlock, {
+        props: { content: 'Subseção 4', preset: 'heading4' },
+      }),
+    );
+    expect(screen.getByRole('heading', { level: 4 }).tagName).toBe('H4');
+  });
+
+  it('preset="quote" renderiza <blockquote>', () => {
+    const RichBlock = BLOCK_REGISTRY['text.rich'];
+    const { container } = render(
+      React.createElement(RichBlock, {
+        props: { content: 'Uma citação inspiradora', preset: 'quote' },
+      }),
+    );
+
+    expect(container.querySelector('blockquote')).toBeInTheDocument();
+    expect(screen.getByText('Uma citação inspiradora')).toBeInTheDocument();
+  });
+
+  it('preset ausente ou inválido cai no default ("paragraph")', () => {
+    const RichBlock = BLOCK_REGISTRY['text.rich'];
+    const { container } = render(
+      React.createElement(RichBlock, {
+        props: { content: 'Texto comum', preset: 'desconhecido' },
+      }),
+    );
+
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument();
+    expect(container.querySelector('blockquote')).not.toBeInTheDocument();
+    expect(screen.getByText('Texto comum')).toBeInTheDocument();
   });
 
   it('nunca nasce dentro de um Card', () => {
-    const HeadingBlock = BLOCK_REGISTRY.heading;
-    render(React.createElement(HeadingBlock, { props: { text: 'Seção', level: 2 } }));
+    const RichBlock = BLOCK_REGISTRY['text.rich'];
+    render(
+      React.createElement(RichBlock, {
+        props: { content: 'Título de Seção', preset: 'heading2' },
+      }),
+    );
 
     expect(document.querySelector('[data-slot="card"]')).not.toBeInTheDocument();
   });

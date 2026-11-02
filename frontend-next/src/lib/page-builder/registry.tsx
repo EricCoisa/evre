@@ -39,7 +39,17 @@ import { useTranslation } from '@/hooks/use-translation';
 import { usePresignedUrl } from '@/lib/actions/storage/queries';
 import { parseWhatsAppFormat, type FormattedPart } from '@/lib/messaging/format-whatsapp-text';
 import { linkify } from '@/lib/messaging/linkify';
-import { BLOCK_META, type BlockType } from './blocks.meta';
+import {
+  BLOCK_META,
+  normalizeTextPreset,
+  TEXT_PRESET_CONFIG,
+  type BlockType,
+  type TextPreset,
+  type TextPresetConfig,
+  type TextFontSizeClass,
+  applyPresetToContent,
+} from './blocks.meta';
+export { normalizeTextPreset, TEXT_PRESET_CONFIG, type TextPreset, type TextPresetConfig, type TextFontSizeClass, applyPresetToContent };
 import type { ListResponse, SeriesResponse, SourceData } from './types';
 
 export interface BlockProps {
@@ -75,7 +85,6 @@ export const BLOCK_REGISTRY: Record<BlockType, (p: BlockProps) => React.ReactNod
   image: ImageBlock,
   investment: InvestmentBlock,
   iframe: IframeBlock,
-  heading: HeadingBlock,
   divider: DividerBlock,
   price: PriceBlock,
 };
@@ -332,46 +341,7 @@ function ImageBlock({ props, bare, className }: BlockProps) {
   );
 }
 
-const HEADING_CLASS: Record<1 | 2 | 3 | 4, string> = {
-  1: 'text-4xl font-bold tracking-tight',
-  2: 'text-2xl font-semibold tracking-tight',
-  3: 'text-xl font-semibold',
-  4: 'text-lg font-medium',
-};
 
-function normalizeHeadingLevel(value: unknown): 1 | 2 | 3 | 4 {
-  const n = Number(value);
-  return n === 1 || n === 2 || n === 3 || n === 4 ? n : 2;
-}
-
-/** Título de seção com tag semântica real (h1–h4); nunca usa Panel/Card. */
-function HeadingBlock({ props, className, blockId, onPropChange, editing }: BlockProps) {
-  const level = normalizeHeadingLevel(props.level);
-  const Tag = `h${level}` as 'h1' | 'h2' | 'h3' | 'h4';
-  const rawText = str(props.text);
-
-  if (editing && blockId && onPropChange) {
-    return (
-      <div className={cn(HEADING_CLASS[level], className)}>
-        <InlineRichText
-          blockId={blockId}
-          propName="text"
-          value={rawText}
-          onChange={(val) => onPropChange('text', val)}
-          placeholder="Título da seção..."
-          showFontSize={false}
-          singleLine
-        />
-      </div>
-    );
-  }
-
-  return (
-    <Tag className={cn(HEADING_CLASS[level], className)}>
-      <FormattedRichText text={rawText} inline />
-    </Tag>
-  );
-}
 
 const DIVIDER_SPACING_CLASS: Record<'sm' | 'md' | 'lg', string> = {
   sm: 'my-2',
@@ -702,19 +672,25 @@ function RichTextBlock({ props, data, className, children, blockId, onPropChange
   const rawContent = str(props.content);
   const content = editing ? rawContent : interpolateVariables(rawContent, data);
   const inner = innerAlignClass(className);
+  const preset = normalizeTextPreset(props.preset);
+  const presetConfig = TEXT_PRESET_CONFIG[preset];
+  const Tag = presetConfig.tag;
 
   if (editing && blockId && onPropChange) {
     return (
       <div className={cn('flex w-full flex-col justify-start gap-1 min-h-0', inner, className)}>
-        <InlineRichText
-          blockId={blockId}
-          propName="content"
-          value={rawContent}
-          onChange={(val) => onPropChange('content', val)}
-          placeholder="Digite o texto..."
-          showFontSize
-          variables={variables}
-        />
+        <div className={presetConfig.className}>
+          <InlineRichText
+            blockId={blockId}
+            propName="content"
+            value={rawContent}
+            onChange={(val) => onPropChange('content', val)}
+            placeholder="Digite o texto..."
+            showFontSize
+            variables={variables}
+            className={presetConfig.className}
+          />
+        </div>
         {children ? (
           <div className="flex flex-wrap items-center gap-2">{children}</div>
         ) : null}
@@ -724,7 +700,15 @@ function RichTextBlock({ props, data, className, children, blockId, onPropChange
 
   return (
     <div className={cn('flex w-full flex-col justify-start gap-1 min-h-0', inner, className)}>
-      {content ? <FormattedRichText text={content} /> : null}
+      {content ? (
+        <Tag className={presetConfig.className}>
+          <FormattedRichText
+            text={content}
+            inline={Tag !== 'div' && Tag !== 'blockquote'}
+            className={presetConfig.className}
+          />
+        </Tag>
+      ) : null}
       {children ? (
         <div className="flex flex-wrap items-center gap-2">{children}</div>
       ) : null}
@@ -784,20 +768,28 @@ function ButtonActionBlock({ props, className, children, blockId, onPropChange, 
 }
 
 /** Renderiza o texto com a mesma formatação e quebras de linha do RichTextInput. */
-function FormattedRichText({ text, inline }: { text: string; inline?: boolean }) {
+function FormattedRichText({
+  text,
+  inline,
+  className,
+}: {
+  text: string;
+  inline?: boolean;
+  className?: string;
+}) {
   if (!text) return null;
   const parts = parseWhatsAppFormat(text);
 
   if (inline) {
     return (
-      <span className="whitespace-pre-wrap break-words">
+      <span className={cn('whitespace-pre-wrap break-words', className)}>
         {parts.map((part, index) => renderPart(part, index))}
       </span>
     );
   }
 
   return (
-    <div className="text-muted-foreground whitespace-pre-wrap break-words text-sm leading-relaxed">
+    <div className={cn('whitespace-pre-wrap break-words', className ?? 'text-muted-foreground text-sm leading-relaxed')}>
       {parts.map((part, index) => renderPart(part, index))}
     </div>
   );

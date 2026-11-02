@@ -18,9 +18,10 @@ describe('describeBlocks', () => {
     expect(textRich.inline).toBe(true);
     expect(textRich.optionalSource).toBe(true);
     expect(textRich.accepts).toEqual(['list', 'count', 'series']);
+    expect(textRich.props.find((p) => p.name === 'preset')?.options).toBeDefined();
   });
 
-  it('sem argumento lista os 15 blocos do catálogo', () => {
+  it('sem argumento lista os 14 blocos do catálogo (heading absorvido em presets de text.rich)', () => {
     expect(describeBlocks().map((b) => b.type).sort()).toEqual(
       [
         'button.action',
@@ -29,7 +30,6 @@ describe('describeBlocks', () => {
         'chart.line',
         'divider',
         'group',
-        'heading',
         'iframe',
         'image',
         'investment',
@@ -71,7 +71,6 @@ describe('describeBlocks', () => {
       'chart.line',
       'divider',
       'group',
-      'heading',
       'iframe',
       'image',
       'investment',
@@ -91,17 +90,15 @@ describe('describeBlocks', () => {
     expect(dashboardTypes).not.toContain('price');
   });
 
-  it('heading e divider aparecem nos dois profiles — são estrutura de seção, não conteúdo', () => {
+  it('divider aparece nos dois profiles — é estrutura de seção, não conteúdo', () => {
     const proposalTypes = describeBlocks('proposal').map((b) => b.type);
     const dashboardTypes = describeBlocks('dashboard').map((b) => b.type);
 
-    for (const type of ['heading', 'divider']) {
-      expect(proposalTypes).toContain(type);
-      expect(dashboardTypes).toContain(type);
-    }
+    expect(proposalTypes).toContain('divider');
+    expect(dashboardTypes).toContain('divider');
   });
 
-  it('profile dashboard ganhou heading e divider — agora 10 blocos', () => {
+  it('profile dashboard agora possui 9 blocos (heading absorvido em text.rich presets)', () => {
     expect(describeBlocks('dashboard').map((b) => b.type).sort()).toEqual([
       'button.action',
       'chart.area',
@@ -109,7 +106,6 @@ describe('describeBlocks', () => {
       'chart.line',
       'divider',
       'group',
-      'heading',
       'list.feed',
       'table.basic',
       'text.rich',

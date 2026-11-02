@@ -16,6 +16,7 @@ import {
   GripVertical,
   MoveVertical,
   Trash2,
+  Type,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -36,6 +37,7 @@ import {
   type EmptyGridSlot,
 } from '../grid-engine';
 import { isAutoHeightBlockType } from '../blocks.meta';
+import { TEXT_PRESET_CONFIG, normalizeTextPreset } from '../registry';
 import {
   COL_START_CLASS,
   QUICK_HEIGHTS,
@@ -120,7 +122,6 @@ function FloatingBlockToolbar({
   const isAutoHeight = isAutoHeightBlockType(block.type);
   const isTextEditable =
     block.type === 'text.rich' ||
-    block.type === 'heading' ||
     block.type === 'button.action' ||
     block.type === 'topic' ||
     block.type === 'price';
@@ -212,6 +213,48 @@ function FloatingBlockToolbar({
       >
         <ArrowRight className="size-3.5" />
       </Button>
+
+      {block.type === 'text.rich' ? (
+        <>
+          <div className="mx-0.5 h-3.5 w-px bg-border" />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 gap-1 px-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+                title={t('editor.preset', { defaultValue: 'Estilo do texto (Preset)' })}
+              >
+                <Type className="size-3" />
+                <span>{TEXT_PRESET_CONFIG[normalizeTextPreset(block.props?.preset)].label}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-44 text-xs">
+              <DropdownMenuLabel className="text-[10px] uppercase text-muted-foreground">
+                {t('editor.preset', { defaultValue: 'Presets de Texto' })}
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {(Object.keys(TEXT_PRESET_CONFIG) as (keyof typeof TEXT_PRESET_CONFIG)[]).map((presetKey) => {
+                const cfg = TEXT_PRESET_CONFIG[presetKey];
+                const active = normalizeTextPreset(block.props?.preset) === presetKey;
+                return (
+                  <DropdownMenuItem
+                    key={presetKey}
+                    onClick={() => editor.setProp(block.id, 'preset', presetKey)}
+                    className={cn(
+                      'flex items-center justify-between text-xs cursor-pointer',
+                      active && 'font-semibold text-primary',
+                    )}
+                  >
+                    <span className="truncate">{cfg.label}</span>
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </>
+      ) : null}
 
       {isRichTextActive && editor.activeRichText ? (
         <>
@@ -674,7 +717,6 @@ export function BlockChrome({
   const isAutoHeight = isAutoHeightBlockType(block.type);
   const isTextEditable =
     block.type === 'text.rich' ||
-    block.type === 'heading' ||
     block.type === 'button.action' ||
     block.type === 'topic' ||
     block.type === 'price';

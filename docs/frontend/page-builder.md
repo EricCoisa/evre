@@ -152,20 +152,28 @@ Dois arquivos de propósito:
 | `chart.line` | `series` | `ChartContainer` (recharts LineChart), para tendências contínuas |
 | `list.feed` | `list` | Lista compacta em pilha (`primaryField` e `secondaryField`), ideal para feeds e cartões estreitos |
 | `table.basic` | `list` | `Table` (shadcn), somente leitura; paginação aparece quando há mais de uma página e usa skeleton durante a troca |
-| `heading` | — | `<h1>`–`<h4>` reais (semântica de título, não card) — estrutura de seção |
+| `text.rich` | `list`, `count`, `series` (opcional) | Texto rico inline com presets (`heading1`–`heading4`, `paragraph`, `lead`, `caption`, `quote`) e variáveis |
 | `divider` | — | `<hr>` com margem vertical configurável (`spacing`) — separa seções sem precisar de título |
 
 Adicionar um bloco = uma entrada em cada arquivo. **O agente e o editor descobrem sozinhos**: as props declaradas em `BLOCK_META` viram os campos do painel sem ninguém escrever formulário por bloco, e nada é hardcoded em `description` de tool.
 
-### `heading`/`divider` — estrutura de seção, não card
+### `text.rich` com Presets e `divider` — estrutura de seção, não card
 
-`text.rich` renderiza por `FormattedRichText`, que é **sintaxe de ênfase** (negrito, itálico) —
-**não** produz `h1`–`h4`. Sem um bloco dedicado, uma página longa não tem como expressar hierarquia
-de título: só texto corrido. `heading` fecha essa lacuna com níveis 1 a 4 reais (`level: 1` para o
-título da própria página/proposta, uma vez; `level: 2` por seção; `3`/`4` para subseção), e
-`divider` separa seções sem precisar de um título. Os dois nascem em `profiles: ['dashboard',
-'proposal']` — são estrutura de página, não conteúdo de um domínio específico — e **nunca** ganham
-moldura de `Card`: um título dentro de card vira "card com título", não "seção".
+O antigo bloco dedicado `heading` foi removido e unificado no bloco de texto (`text.rich`) através de
+**Presets** tipográficos e semânticos. O autor pode escolher entre:
+- **`heading1`** (`h1` real): título principal da página ou proposta (`text-4xl font-bold tracking-tight`);
+- **`heading2`** (`h2` real): título de seção ou rótulo de grupos (`text-2xl font-semibold tracking-tight`);
+- **`heading3`** (`h3` real): subtítulos (`text-xl font-semibold`);
+- **`heading4`** (`h4` real): títulos menores (`text-lg font-medium`);
+- **`paragraph`** (padrão): corpo de texto corrido (`text-sm text-muted-foreground leading-relaxed`);
+- **`lead`**: texto de destaque introdutório (`text-base font-normal leading-relaxed`);
+- **`caption`**: legendas auxiliares (`text-xs text-muted-foreground`);
+- **`quote`**: citações com destaque lateral (`blockquote` com `border-l-2 border-primary/50 pl-4 italic`).
+
+O usuário pode alternar o preset diretamente pela barra flutuante no canvas (`FloatingBlockToolbar`) ou
+pelo campo `preset` no painel lateral de propriedades. O bloco `divider` continua separando seções
+visualmente com margens verticais ajustáveis (`spacing`). Nenhum dos dois ganha moldura de `Card`:
+são estrutura de página pura.
 
 ### Apresentação livre × bloco preso a um registro
 
@@ -355,8 +363,8 @@ Duas recusas silenciosas em `moveBlock` — no meio de um arrasto não há onde 
 ### Detalhes de layout que já custaram bug
 
 - O chrome envolve o bloco num `<div>`; ele precisa de `h-full` para o `h-full` do `Card` continuar herdando a altura da célula do grid. Sem isso o bloco encolhe para a altura do conteúdo **só** no modo de edição, e desalinha do vizinho.
-- `pointer-events-none` no conteúdo vale para bloco folha de dados (para clicar numa linha da tabela selecionar o bloco), mas **não** para container (cujo conteúdo são os filhos) nem para blocos com texto editável (`text.rich`, `heading`, etc.), permitindo foco imediato e edição direta no canvas.
-- **Edição inline e barra suspensa unificada:** Blocos de texto (`text.rich`, `heading`, botões de ação e cabeçalhos de cards com título/descrição) são editáveis diretamente no canvas via `InlineRichText`. Para não poluir a UI e evitar sobreposição de barras flutuantes, os controles de formatação do rich text ficam integrados diretamente na própria barra flutuante do bloco (`FloatingBlockToolbar`). Ao selecionar ou focar em um editor de texto, os botões de formatação (Negrito, Itálico, Riscado, Código, Tamanho, Variáveis) aparecem na barra do bloco separada por divisores limpos. Ao desselecionar ou interagir com blocos de dados não editáveis (tabelas, gráficos), os botões de rich text permanecem ocultos, mantendo a interface leve e sem conflito visual. Edições no canvas e no painel lateral sincronizam em tempo real.
+- `pointer-events-none` no conteúdo vale para bloco folha de dados (para clicar numa linha da tabela selecionar o bloco), mas **não** para container (cujo conteúdo são os filhos) nem para blocos com texto editável (`text.rich`, etc.), permitindo foco imediato e edição direta no canvas.
+- **Edição inline e barra suspensa unificada:** Blocos de texto (`text.rich`, botões de ação e cabeçalhos de cards com título/descrição) são editáveis diretamente no canvas via `InlineRichText`. Para não poluir a UI e evitar sobreposição de barras flutuantes, os controles de formatação do rich text e o seletor de presets ficam integrados diretamente na própria barra flutuante do bloco (`FloatingBlockToolbar`). Ao selecionar ou focar em um editor de texto, os botões de formatação (Negrito, Itálico, Riscado, Código, Variáveis) e o dropdown de Presets aparecem na barra do bloco separada por divisores limpos. O seletor avulso de tamanho de fonte foi removido em favor dos Presets, que atuam como fonte única da verdade para tamanho, peso e tags tipográficas (`heading1`–`heading4`, `paragraph`, etc.), eliminando conflitos de estilização. Ao desselecionar ou interagir com blocos de dados não editáveis (tabelas, gráficos), os botões de rich text permanecem ocultos, mantendo a interface leve e sem conflito visual. Edições no canvas e no painel lateral sincronizam em tempo real.
 - Filho ancora a toolbar **por dentro** do próprio bloco; bloco de topo pendura acima da borda. Senão as duas se sobrepõem no bloco mais à direita de um group.
 - Redimensionamento pela borda inferior (`rowSpan`) empurra os blocos subsequentes para baixo em cascata (respeitando a coluna), idêntico a quando o conteúdo de texto de um bloco cresce. Ao reduzir a altura de volta, os blocos abaixo retornam para cima.
 

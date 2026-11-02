@@ -76,6 +76,7 @@
     "moveDown": "Mover para baixo",
     "insertVariable": "Variável",
     "clearSource": "Limpar fonte",
+    "preset": "Estilo do texto (Preset)",
     "optionalSourceHint": "Opcional: escolha uma fonte para inserir variáveis {{var}} no texto.",
     "artifactUpload": "Enviar artefato",
     "artifactUploading": "Enviando...",

@@ -696,6 +696,33 @@ function PropField({
     );
   }
 
+  if (meta.options && meta.options.length > 0) {
+    const firstOption = meta.options[0];
+    const firstVal = typeof firstOption === 'string' ? firstOption : firstOption.value;
+    const currentVal = typeof value === 'string' && value ? value : firstVal;
+    return (
+      <div className="space-y-1.5">
+        {label}
+        <Select value={currentVal} onValueChange={(val) => onChange(val)}>
+          <SelectTrigger className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {meta.options.map((opt) => {
+              const optVal = typeof opt === 'string' ? opt : opt.value;
+              const optLabel = typeof opt === 'string' ? opt : opt.label;
+              return (
+                <SelectItem key={optVal} value={optVal}>
+                  {optLabel}
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-1.5">
       {label}

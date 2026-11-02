@@ -340,7 +340,7 @@ describe('insertBlockAfter & insertBlockAt (2D Grid Insertion)', () => {
     const initial: PageLayout = {
       v: 1,
       blocks: [
-        { id: 'b1', type: 'heading', span: 12, rowSpan: 2, x: 0, y: 0, props: { text: 'Header' } },
+        { id: 'b1', type: 'text.rich', span: 12, rowSpan: 2, x: 0, y: 0, props: { content: 'Header', preset: 'heading1' } },
         { id: 'b2', type: 'group', span: 6, rowSpan: 3, x: 0, y: 2, props: {}, children: [] },
         { id: 'b3', type: 'group', span: 6, rowSpan: 3, x: 6, y: 2, props: {}, children: [] },
         { id: 'b4', type: 'topic', span: 12, rowSpan: 4, x: 0, y: 5, props: { title: 'Milestones' } },
@@ -405,12 +405,12 @@ describe('insertBlockAfter & insertBlockAt (2D Grid Insertion)', () => {
     const initial: PageLayout = {
       v: 1,
       blocks: [
-        { id: 'b1', type: 'heading', span: 12, rowSpan: 2, x: 0, y: 0, props: { text: 'Header' } },
+        { id: 'b1', type: 'text.rich', span: 12, rowSpan: 2, x: 0, y: 0, props: { content: 'Header', preset: 'heading1' } },
         { id: 'b2', type: 'text.rich', span: 12, rowSpan: 2, x: 0, y: 2, props: { content: 'Text' } },
       ],
     };
 
-    const newTop = createBlock('heading');
+    const newTop = createBlock('text.rich');
     newTop.rowSpan = 3;
 
     const result = insertBlockAt(initial, newTop, 0);
@@ -423,5 +423,52 @@ describe('insertBlockAfter & insertBlockAt (2D Grid Insertion)', () => {
 
     const placedB2 = result.blocks.find((b) => b.id === 'b2')!;
     expect(placedB2.y).toBe(5); // 2 + 3
+  });
+
+  it('setBlockProp(preset) atua como preset configurando tamanho de fonte [fs:...] e negrito', () => {
+    const initial: PageLayout = {
+      v: 1,
+      blocks: [
+        {
+          id: 'text1',
+          type: 'text.rich',
+          span: 12,
+          rowSpan: 1,
+          x: 0,
+          y: 0,
+          props: { content: '[fs:text-xs]Texto pequeno[/fs]', preset: 'paragraph' },
+        },
+      ],
+    };
+
+    const updated = setBlockProp(initial, 'text1', 'preset', 'heading1');
+    const block = findBlock(updated, 'text1')!.block;
+    expect(block.props.preset).toBe('heading1');
+    expect(block.props.content).toBe('[fs:text-4xl]*Texto pequeno*[/fs]');
+
+    const reverted = setBlockProp(updated, 'text1', 'preset', 'paragraph');
+    const revertedBlock = findBlock(reverted, 'text1')!.block;
+    expect(revertedBlock.props.preset).toBe('paragraph');
+    expect(revertedBlock.props.content).toBe('[fs:text-sm]Texto pequeno[/fs]');
+
+    // Testa também texto com negrito por palavra gerado pelo exportWhatsAppText (ex: *Criar* *plataforma*)
+    const multiWordBoldLayout: PageLayout = {
+      v: 1,
+      blocks: [
+        {
+          id: 'text2',
+          type: 'text.rich',
+          span: 12,
+          rowSpan: 1,
+          x: 0,
+          y: 0,
+          props: { content: '[fs:text-4xl]*Criar* *uma* *plataforma*[/fs]', preset: 'heading1' },
+        },
+      ],
+    };
+    const multiWordReverted = setBlockProp(multiWordBoldLayout, 'text2', 'preset', 'paragraph');
+    const multiWordBlock = findBlock(multiWordReverted, 'text2')!.block;
+    expect(multiWordBlock.props.preset).toBe('paragraph');
+    expect(multiWordBlock.props.content).toBe('[fs:text-sm]Criar uma plataforma[/fs]');
   });
 });

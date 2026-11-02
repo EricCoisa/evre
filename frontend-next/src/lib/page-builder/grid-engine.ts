@@ -8,6 +8,7 @@ import {
   type BlockSpan,
   type PageBlock,
 } from './schema';
+import { normalizeTextPreset, type TextPreset } from './blocks.meta';
 
 export interface GridRect {
   x: number;
@@ -62,19 +63,117 @@ export function findFirstAvailableSlot(
  * - Respeita coordenadas (x, y) já definidas no bloco quando não colidem;
  * - Encaixa automaticamente blocos sem coordenadas no primeiro espaço suficiente (Bento Auto-Pack).
  */
+interface PresetMetric {
+  charsPer12Col: number;
+  minChars: number;
+  lineHeightPx: number;
+  extraPaddingPx: number;
+}
+
+const PRESET_METRICS: Record<TextPreset, PresetMetric> = {
+  heading1: {
+    // text-4xl (36px font, font-bold, leading ~44px)
+    charsPer12Col: 46,
+    minChars: 10,
+    lineHeightPx: 44,
+    extraPaddingPx: 12,
+  },
+  heading2: {
+    // text-2xl (24px font, font-semibold, leading ~34px)
+    charsPer12Col: 62,
+    minChars: 14,
+    lineHeightPx: 34,
+    extraPaddingPx: 8,
+  },
+  heading3: {
+    // text-xl (20px font, font-semibold, leading ~30px)
+    charsPer12Col: 78,
+    minChars: 18,
+    lineHeightPx: 30,
+    extraPaddingPx: 6,
+  },
+  heading4: {
+    // text-lg (18px font, font-medium, leading ~28px)
+    charsPer12Col: 90,
+    minChars: 20,
+    lineHeightPx: 28,
+    extraPaddingPx: 4,
+  },
+  lead: {
+    // text-base (16px font, leading-relaxed ~26px)
+    charsPer12Col: 94,
+    minChars: 22,
+    lineHeightPx: 26,
+    extraPaddingPx: 4,
+  },
+  quote: {
+    // text-sm, italic, pl-4, border-l-2
+    charsPer12Col: 96,
+    minChars: 22,
+    lineHeightPx: 24,
+    extraPaddingPx: 16,
+  },
+  caption: {
+    // text-xs (12px font, leading ~18px)
+    charsPer12Col: 125,
+    minChars: 28,
+    lineHeightPx: 18,
+    extraPaddingPx: 0,
+  },
+  paragraph: {
+    // text-sm (14px font, leading-relaxed ~23px)
+    charsPer12Col: 110,
+    minChars: 26,
+    lineHeightPx: 23,
+    extraPaddingPx: 0,
+  },
+};
+
 /**
  * Estima o número exato de linhas de grade (44px + 16px gap) necessárias para acomodar o texto
- * com base na quantidade real de caracteres por linha da coluna e quebras de linha,
- * evitando sobrar espaço vazio excessivo.
+ * com base no preset selecionado (títulos h1–h4, parágrafo, etc.), quantidade real de caracteres
+ * por linha e quebras de linha, garantindo que o bloco não invada nem sobreponha os blocos abaixo.
  */
-export function estimateTextRowSpan(content: string, span = 12): BlockRowSpan {
+export function estimateTextRowSpan(
+  content: string,
+  span = 12,
+  preset?: string,
+): BlockRowSpan {
   if (!content || !content.trim()) return 1;
 
-  // Preserva todas as quebras de linha (incluindo quebras extras/vazias criadas com Enter)
-  const lines = content.split('\n');
+  // Se o conteúdo tiver [fs:text-4xl], [fs:text-2xl], etc., detecta o tamanho real configurado
+  const fsMatch = /\[fs:(text-[^\]]+)\]/.exec(content);
+  const inlineSize = fsMatch ? fsMatch[1] : undefined;
 
-  // Em 12 colunas (~1100px), cabem ~110 caracteres. Em 3 colunas (~270px), cabem ~28 caracteres.
-  const charsPerLine = Math.max(26, Math.round((span / 12) * 110));
+  let effectivePreset = normalizeTextPreset(preset);
+  if (inlineSize === 'text-4xl' || inlineSize === 'text-3xl') {
+    effectivePreset = 'heading1';
+  } else if (inlineSize === 'text-2xl') {
+    effectivePreset = 'heading2';
+  } else if (inlineSize === 'text-xl') {
+    effectivePreset = 'heading3';
+  } else if (inlineSize === 'text-lg') {
+    effectivePreset = 'heading4';
+  } else if (inlineSize === 'text-base') {
+    effectivePreset = 'lead';
+  } else if (inlineSize === 'text-sm') {
+    effectivePreset = 'paragraph';
+  } else if (inlineSize === 'text-xs') {
+    effectivePreset = 'caption';
+  }
+
+  const metric = PRESET_METRICS[effectivePreset] ?? PRESET_METRICS.paragraph;
+
+  // Remove marcações [fs:...] para que as tags não contem como caracteres visuais
+  const cleanContent = content.replace(/\[fs:[^\]]+\]/g, '').replace(/\[\/fs\]/g, '');
+
+  // Preserva todas as quebras de linha (incluindo quebras extras/vazias criadas com Enter)
+  const lines = cleanContent.split('\n');
+
+  const charsPerLine = Math.max(
+    metric.minChars,
+    Math.round((span / 12) * metric.charsPer12Col),
+  );
 
   let visualLinesCount = 0;
   for (const line of lines) {
@@ -88,11 +187,17 @@ export function estimateTextRowSpan(content: string, span = 12): BlockRowSpan {
     }
   }
 
-  const hasHeading = /^#{1,4}\s/m.test(content) || /^\s*\*[^*]+\*\s*$/m.test(content);
-  // Cada linha de texto visual tem ~23px (font-size 14px + leading 1.6).
-  const totalContentHeight = visualLinesCount * 23 + (hasHeading ? 18 : 0);
+  const isSingleLine = visualLinesCount <= 1 && lines.length <= 1;
+  const extraPadding = isSingleLine ? 0 : metric.extraPaddingPx;
+  const hasHeadingMarkdown =
+    /^#{1,4}\s/m.test(content) || /^\s*\*[^*]+\*\s*$/m.test(content);
 
-  // Primeira linha de grid tem 44px; cada linha extra adiciona 60px (44px + 16px gap).
+  const totalContentHeight =
+    visualLinesCount * metric.lineHeightPx +
+    extraPadding +
+    (hasHeadingMarkdown && effectivePreset === 'paragraph' ? 18 : 0);
+
+  // Primeira linha de grid tem 44px (tolerância 48px); cada linha extra adiciona 60px (44px + 16px gap).
   if (totalContentHeight <= 48) return 1;
   const neededRows = 1 + Math.ceil((totalContentHeight - 48) / 60);
 
@@ -112,8 +217,9 @@ export function compactEmptyRows(placed: PlacedBlock[], cols = 12): PlacedBlock[
     const hasAnyBlockInRow = current.some(
       (p) => y >= p.y && y < p.y + p.rowSpan,
     );
+    const hasBlockAbove = current.some((p) => p.y + p.rowSpan <= y);
     const hasBlockBelow = current.some((p) => p.y > y);
-    if (!hasAnyBlockInRow && hasBlockBelow) {
+    if (!hasAnyBlockInRow && hasBlockAbove && hasBlockBelow) {
       current = current.map((p) => (p.y > y ? { ...p, y: p.y - 1 } : p));
     }
   }
@@ -208,7 +314,8 @@ export const BLOCK_ROW_SPAN_ESTIMATORS: Record<string, BlockRowSpanEstimator> = 
     const content = typeof block.props?.content === 'string' ? block.props.content : '';
     if (!content) return 1;
     const span = normalizeSpan(block.span);
-    return estimateTextRowSpan(content, span);
+    const preset = typeof block.props?.preset === 'string' ? block.props.preset : undefined;
+    return estimateTextRowSpan(content, span, preset);
   },
   'list.feed': estimateFeedRowSpan,
   'table.basic': estimateTableRowSpan,
@@ -224,7 +331,7 @@ export const BLOCK_ROW_SPAN_ESTIMATORS: Record<string, BlockRowSpanEstimator> = 
  * - Respeita o rowSpan explicitamente definido pelo usuário quando for maior.
  */
 export function calculateEffectiveRowSpan(block: PageBlock, cols = 12): BlockRowSpan {
-  // Para blocos de conteúdo textual/inline, a altura é 100% automática com base no conteúdo real
+  // Para blocos de conteúdo textual/inline, a altura é 100% automática com base no conteúdo real e preset
   if (isAutoHeightBlockType(block.type)) {
     const estimator = BLOCK_ROW_SPAN_ESTIMATORS[block.type];
     if (estimator) {
@@ -271,9 +378,22 @@ export function calculateEffectiveRowSpan(block: PageBlock, cols = 12): BlockRow
 
 export function resolveGridLayout(blocks: PageBlock[], cols = 12): PlacedBlock[] {
   const occupied: GridRect[] = [];
-  const result: PlacedBlock[] = [];
+  const placedMap = new Map<string, PlacedBlock>();
 
-  for (const block of blocks) {
+  // Processa blocos ordenados por posição vertical (y) para que elementos superiores
+  // empurrem os inferiores para baixo naturalmente, evitando sobreposições
+  const indexed = blocks.map((b, idx) => ({ b, idx }));
+  indexed.sort((a, b) => {
+    const aY = typeof a.b.y === 'number' ? a.b.y : 999;
+    const bY = typeof b.b.y === 'number' ? b.b.y : 999;
+    if (aY !== bY) return aY - bY;
+    const aX = typeof a.b.x === 'number' ? a.b.x : 0;
+    const bX = typeof b.b.x === 'number' ? b.b.x : 0;
+    if (aX !== bX) return aX - bX;
+    return a.idx - b.idx;
+  });
+
+  for (const { b: block } of indexed) {
     const span = normalizeSpan(block.span);
     const rowSpan = calculateEffectiveRowSpan(block, cols);
     const hasExplicitCoords =
@@ -315,10 +435,20 @@ export function resolveGridLayout(blocks: PageBlock[], cols = 12): PlacedBlock[]
 
     const placed: PlacedBlock = { block, x, y, span, rowSpan };
     occupied.push({ x, y, span, rowSpan });
-    result.push(placed);
+    placedMap.set(block.id, placed);
   }
 
-  return result;
+  // Devolve preservando a mesma ordem do array original de blocos
+  return blocks.map(
+    (b) =>
+      placedMap.get(b.id) ?? {
+        block: b,
+        x: b.x ?? 0,
+        y: b.y ?? 0,
+        span: normalizeSpan(b.span),
+        rowSpan: calculateEffectiveRowSpan(b, cols),
+      },
+  );
 }
 
 /**
@@ -877,33 +1007,32 @@ export function resizeBlockSpanInGrid(
  * (mantendo colunas e cascata, idêntico a quando o conteúdo de um bloco cresce).
  * Se o bloco diminuir de tamanho, puxa os blocos abaixo de volta para cima.
  */
-export function resizeBlockRowSpanInGrid(
+/**
+ * Sincroniza a grade quando a altura (rowSpan) de um bloco muda (seja por redimensionamento manual,
+ * ou por alteração de preset/conteúdo em blocos de texto/auto-altura).
+ * - Se a altura aumentou (delta > 0): empurra os blocos abaixo para evitar invasão.
+ * - Se a altura diminuiu (delta < 0): puxa os blocos abaixo para cima para colapsar o vácuo.
+ * - Compacta linhas vazias órfãs ao final.
+ */
+export function syncBlockRowSpanChange(
   blocks: PageBlock[],
   id: string,
-  desiredRowSpan: number,
+  oldRowSpan: number,
+  newRowSpan: number,
   cols = 12,
 ): PageBlock[] {
   const placed = resolveGridLayout(blocks, cols);
   const target = placed.find((p) => p.block.id === id);
   if (!target) return blocks;
 
-  const minRowSpan =
-    isContainerType(target.block.type) && (target.block.children?.length ?? 0) > 0
-      ? calculateEffectiveRowSpan({ ...target.block, rowSpan: 1 }, cols)
-      : minRowSpanForType(target.block.type);
-  const clampedRowSpan = normalizeRowSpan(
-    Math.max(minRowSpan, desiredRowSpan),
-    target.block.type,
-  );
-
-  const oldRowSpan = target.rowSpan;
-  const delta = clampedRowSpan - oldRowSpan;
+  const delta = newRowSpan - oldRowSpan;
   if (delta === 0) {
-    return persistPlacedBlocks(placed);
+    const compacted = compactEmptyRows(placed, cols);
+    return persistPlacedBlocks(compacted);
   }
 
   const targetBottom = target.y + oldRowSpan;
-  const newTargetBottom = target.y + clampedRowSpan;
+  const newTargetBottom = target.y + newRowSpan;
 
   const others = placed.filter((p) => p.block.id !== id);
   const overlapsTargetHorizontally = (p: PlacedBlock) =>
@@ -912,8 +1041,7 @@ export function resizeBlockRowSpanInGrid(
   let shifted: PageBlock[];
 
   if (delta > 0) {
-    // Crescimento para baixo:
-    // Identifica se há blocos abaixo na coluna de target
+    // Crescimento para baixo: empurra blocos subsequentes
     const belowTarget = others
       .filter((o) => overlapsTargetHorizontally(o) && o.y >= targetBottom)
       .sort((a, b) => a.y - b.y);
@@ -921,7 +1049,7 @@ export function resizeBlockRowSpanInGrid(
     const firstBelow = belowTarget[0];
     const pushAmount = firstBelow
       ? Math.max(0, newTargetBottom - firstBelow.y)
-      : 0;
+      : delta;
 
     shifted = placed.map((p) => {
       if (p.block.id === id) {
@@ -930,7 +1058,7 @@ export function resizeBlockRowSpanInGrid(
           x: p.x,
           y: p.y,
           span: p.span,
-          rowSpan: clampedRowSpan,
+          rowSpan: newRowSpan,
         };
       }
       if (pushAmount > 0 && overlapsTargetHorizontally(p) && p.y >= targetBottom) {
@@ -951,8 +1079,7 @@ export function resizeBlockRowSpanInGrid(
       };
     });
   } else {
-    // Redução de altura (delta < 0):
-    // Puxa os blocos abaixo de volta para cima
+    // Redução de altura (delta < 0): puxa os blocos abaixo para cima para colapsar o vácuo
     const pullAmount = Math.abs(delta);
     shifted = placed.map((p) => {
       if (p.block.id === id) {
@@ -961,10 +1088,10 @@ export function resizeBlockRowSpanInGrid(
           x: p.x,
           y: p.y,
           span: p.span,
-          rowSpan: clampedRowSpan,
+          rowSpan: newRowSpan,
         };
       }
-      if (overlapsTargetHorizontally(p) && p.y >= targetBottom) {
+      if (overlapsTargetHorizontally(p) && p.y >= newTargetBottom) {
         return {
           ...p.block,
           x: p.x,
@@ -986,8 +1113,30 @@ export function resizeBlockRowSpanInGrid(
   // Ordena por y para garantir que blocos superiores tenham prioridade na resolução
   const sortedShifted = [...shifted].sort((a, b) => (a.y ?? 0) - (b.y ?? 0) || (a.x ?? 0) - (b.x ?? 0));
   const resolved = resolveGridLayout(sortedShifted, cols);
-  const compacted = delta < 0 ? compactEmptyRows(resolved, cols) : resolved;
+  const compacted = compactEmptyRows(resolved, cols);
   return persistPlacedBlocks(compacted);
+}
+
+export function resizeBlockRowSpanInGrid(
+  blocks: PageBlock[],
+  id: string,
+  desiredRowSpan: number,
+  cols = 12,
+): PageBlock[] {
+  const placed = resolveGridLayout(blocks, cols);
+  const target = placed.find((p) => p.block.id === id);
+  if (!target) return blocks;
+
+  const minRowSpan =
+    isContainerType(target.block.type) && (target.block.children?.length ?? 0) > 0
+      ? calculateEffectiveRowSpan({ ...target.block, rowSpan: 1 }, cols)
+      : minRowSpanForType(target.block.type);
+  const clampedRowSpan = normalizeRowSpan(
+    Math.max(minRowSpan, desiredRowSpan),
+    target.block.type,
+  );
+
+  return syncBlockRowSpanChange(blocks, id, target.rowSpan, clampedRowSpan, cols);
 }
 
 /** Grava x, y, span e rowSpan nos blocos e ordena de forma estável para leitura/mobile. */

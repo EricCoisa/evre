@@ -76,6 +76,7 @@
     "moveDown": "Move down",
     "insertVariable": "Variable",
     "clearSource": "Clear source",
+    "preset": "Text Style (Preset)",
     "optionalSourceHint": "Optional: pick a source to insert {{var}} variables into the text.",
     "artifactUpload": "Upload artifact",
     "artifactUploading": "Uploading...",

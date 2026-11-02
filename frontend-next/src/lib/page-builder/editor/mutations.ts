@@ -1,13 +1,16 @@
 import { arrayMove } from '@dnd-kit/sortable';
 import {
+  applyPresetToContent,
   BLOCK_META,
   canAcceptChildrenType,
   isContainerType,
   isInlineBlockType,
+  normalizeTextPreset,
   type BlockType,
 } from '../blocks.meta';
 import {
   autoPackBlocks,
+  calculateEffectiveRowSpan,
   moveBlockToCell,
   nudgeBlockInGrid,
   resizeBlockLeftInGrid,
@@ -16,6 +19,7 @@ import {
   resizeBlockTopInGrid,
   resolveGridLayout,
   swapBlocksInGrid,
+  syncBlockRowSpanChange,
 } from '../grid-engine';
 import type { LayoutProfileName } from '../profiles';
 import {
@@ -86,9 +90,50 @@ export function setBlockProp(
   name: string,
   value: unknown,
 ): PageLayout {
-  return mapBlocks(layout, (b) =>
-    b.id === id ? { ...b, props: { ...b.props, [name]: value } } : b,
-  );
+  const located = findBlock(layout, id);
+  const oldRowSpan = located ? calculateEffectiveRowSpan(located.block, 12) : undefined;
+
+  const updated = mapBlocks(layout, (b) => {
+    if (b.id !== id) return b;
+    const newProps = { ...b.props, [name]: value };
+    if (name === 'preset') {
+      const nextPreset = normalizeTextPreset(value);
+      const currentContent = typeof newProps.content === 'string' ? newProps.content : '';
+      if (currentContent.trim()) {
+        newProps.content = applyPresetToContent(currentContent, nextPreset);
+      }
+    }
+    return { ...b, props: newProps };
+  });
+
+  if (located && oldRowSpan !== undefined) {
+    const updatedLocated = findBlock(updated, id);
+    const newRowSpan = updatedLocated
+      ? calculateEffectiveRowSpan(updatedLocated.block, 12)
+      : undefined;
+
+    if (
+      newRowSpan !== undefined &&
+      (name === 'preset' || name === 'content' || oldRowSpan !== newRowSpan)
+    ) {
+      if (!located.parentId) {
+        return {
+          ...updated,
+          blocks: syncBlockRowSpanChange(updated.blocks, id, oldRowSpan, newRowSpan, 12),
+        };
+      }
+      return {
+        ...updated,
+        blocks: updated.blocks.map((b) =>
+          b.id === located.parentId
+            ? { ...b, children: syncBlockRowSpanChange(b.children ?? [], id, oldRowSpan, newRowSpan, 12) }
+            : b,
+        ),
+      };
+    }
+  }
+
+  return updated;
 }
 
 /** Troca a fonte de dados e descarta `params` e listas de campo que pertenciam à anterior. */
@@ -173,12 +218,10 @@ export function createBlock(type: BlockType, parentId?: string): PageBlock {
   const defaultSpan = type === 'button.action' ? 3 : parentId ? 6 : 12;
   const defaultProps: Record<string, unknown> =
     type === 'text.rich'
-      ? { content: 'Texto' }
+      ? { content: 'Texto', preset: 'paragraph' }
       : type === 'button.action'
         ? { label: 'Botão', url: '/' }
-        : type === 'heading'
-          ? { text: 'Título', level: 2 }
-          : {};
+        : {};
 
   return {
     // Id legível: ele aparece nas mensagens de recusa do backend ("bloco table-basic-a1b2: …").

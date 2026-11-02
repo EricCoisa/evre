@@ -580,7 +580,7 @@ describe('LayoutBody — layout injetado', () => {
         layout={{
           v: 1,
           blocks: [
-            pageBlock({ id: 'b1', type: 'heading', props: { text: 'Fica', level: 2 } }),
+            pageBlock({ id: 'b1', type: 'text.rich', props: { content: 'Fica' } }),
             pageBlock({
               id: 'b2',
               type: 'topic',

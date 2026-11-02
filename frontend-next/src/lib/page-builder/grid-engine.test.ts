@@ -20,6 +20,7 @@ import {
   setBlockSpanLeft,
   setBlockRowSpan,
   setBlockRowSpanTop,
+  setBlockProp,
 } from './editor/mutations';
 
 describe('2D Bento Grid Engine — movimentação livre em espaços disponíveis', () => {
@@ -224,7 +225,7 @@ describe('Limitação de redimensionamento ao encostar em outro bloco ou fim da 
     expect(findBlock(afterResize, 'b4')!.block).toMatchObject({ y: 6, rowSpan: 3 });
   });
 
-  it('calcula altura automática para blocos de texto (text.rich, heading) sem gerar vácuos manuais', () => {
+  it('calcula altura automática para blocos de texto (text.rich) sem gerar vácuos manuais', () => {
     const textBlock = {
       id: 't1',
       type: 'text.rich',
@@ -352,7 +353,7 @@ describe('Limitação de redimensionamento ao encostar em outro bloco ou fim da 
               { id: 'chart1', type: 'chart.area', span: 6, rowSpan: 4, props: {} },
             ],
           },
-          { id: 'nextHeading', type: 'heading', span: 12, props: { text: 'Gestão de usuários' } },
+          { id: 'nextHeading', type: 'text.rich', span: 12, props: { content: 'Gestão de usuários', preset: 'heading2' } },
         ],
       };
 
@@ -464,9 +465,9 @@ describe('Limitação de redimensionamento ao encostar em outro bloco ou fim da 
           },
           {
             id: 'afterFeed',
-            type: 'heading',
+            type: 'text.rich',
             span: 12,
-            props: { text: 'Próxima Seção' },
+            props: { content: 'Próxima Seção', preset: 'heading2' },
           },
         ],
       };
@@ -485,7 +486,7 @@ describe('Limitação de redimensionamento ao encostar em outro bloco ou fim da 
     const layout: PageLayout = {
       v: 1,
       blocks: [
-        { id: 'visao-geral', type: 'heading', span: 12, rowSpan: 1, x: 0, y: 0, props: { text: 'Visão geral' } },
+        { id: 'visao-geral', type: 'text.rich', span: 12, rowSpan: 1, x: 0, y: 0, props: { content: 'Visão geral', preset: 'heading2' } },
         { id: 'divider', type: 'divider', span: 12, rowSpan: 1, x: 0, y: 1, props: {} },
         { id: 'grupo', type: 'group', span: 12, rowSpan: 6, x: 0, y: 2, props: { title: 'Indicadores de usuários' }, children: [] },
       ],
@@ -509,5 +510,76 @@ describe('Limitação de redimensionamento ao encostar em outro bloco ou fim da 
 
     // Ordem no array deve ser rigorosamente: divider -> visao-geral -> grupo
     expect(next.blocks.map((b) => b.id)).toEqual(['divider', 'visao-geral', 'grupo']);
+  });
+
+  it('calcula rowSpan com base no preset de text.rich e empurra blocos subsequentes sem sobreposição', () => {
+    const longHeadingText =
+      'Criar uma plataforma responsiva, acessível pelo computador e celular, centralizando a gestão dos alunos e a prescrição de treinos. O personal terá autonomia para cadastrar alunos, manter uma biblioteca de exercícios e montar fichas de treinamento. Cada aluno poderá acessar sua conta, visualizar os exercícios prescritos e acompanhar sua rotina de treinamento.';
+
+    // Em paragraph (14px), 338 caracteres precisam de ~2 linhas de grid
+    const paragraphRows = estimateTextRowSpan(longHeadingText, 12, 'paragraph');
+    expect(paragraphRows).toBe(2);
+
+    // Em heading1 (36px text-4xl font-bold), o mesmo texto precisa de ~7 linhas de grid
+    const heading1Rows = estimateTextRowSpan(longHeadingText, 12, 'heading1');
+    expect(heading1Rows).toBeGreaterThanOrEqual(6);
+
+    // Layout com texto e um card logo abaixo
+    const initialLayout: PageLayout = {
+      v: 1,
+      blocks: [
+        {
+          id: 'intro',
+          type: 'text.rich',
+          span: 12,
+          x: 0,
+          y: 0,
+          props: { content: longHeadingText, preset: 'paragraph' },
+        },
+        {
+          id: 'card1',
+          type: 'topic',
+          span: 12,
+          rowSpan: 4,
+          x: 0,
+          y: 2,
+          props: { title: 'Painel do Personal Trainer' },
+        },
+      ],
+    };
+
+    // Ao mudar o preset para heading1 via setBlockProp
+    const updatedLayout = setBlockProp(initialLayout, 'intro', 'preset', 'heading1');
+
+    const placed = resolveGridLayout(updatedLayout.blocks);
+    const placedIntro = placed.find((p) => p.block.id === 'intro')!;
+    const placedCard = placed.find((p) => p.block.id === 'card1')!;
+
+    // O intro deve ter rowSpan maior ou igual a 6
+    expect(placedIntro.rowSpan).toBeGreaterThanOrEqual(6);
+
+    // O card de baixo DEVE começar estritamente após o término do intro (sem invasão visual)
+    expect(placedCard.y).toBeGreaterThanOrEqual(placedIntro.y + placedIntro.rowSpan);
+
+    // No draft sincronizado, o card também deve ter seu y atualizado
+    const cardInDraft = updatedLayout.blocks.find((b) => b.id === 'card1')!;
+    expect(cardInDraft.y).toBeGreaterThanOrEqual(placedIntro.y + placedIntro.rowSpan);
+
+    // Ao reduzir de volta para paragraph via setBlockProp (colapsando o vácuo)
+    const revertedLayout = setBlockProp(updatedLayout, 'intro', 'preset', 'paragraph');
+
+    const placedReverted = resolveGridLayout(revertedLayout.blocks);
+    const revertedIntro = placedReverted.find((p) => p.block.id === 'intro')!;
+    const revertedCard = placedReverted.find((p) => p.block.id === 'card1')!;
+
+    // O intro volta a ter rowSpan 2
+    expect(revertedIntro.rowSpan).toBe(2);
+
+    // O card de baixo NÃO DEVE deixar vácuo: deve colar imediatamente após o intro (y = 2)
+    expect(revertedCard.y).toBe(2);
+
+    // No draft sincronizado, o card também volta para y = 2 sem vácuos
+    const cardInRevertedDraft = revertedLayout.blocks.find((b) => b.id === 'card1')!;
+    expect(cardInRevertedDraft.y).toBe(2);
   });
 });

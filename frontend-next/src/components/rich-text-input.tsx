@@ -37,6 +37,8 @@ const FONT_SIZES = [
   { label: 'LG', tw: 'text-lg', css: FONT_SIZE_CSS['text-lg'] },
   { label: 'XL', tw: 'text-xl', css: FONT_SIZE_CSS['text-xl'] },
   { label: '2XL', tw: 'text-2xl', css: FONT_SIZE_CSS['text-2xl'] },
+  { label: '3XL', tw: 'text-3xl', css: FONT_SIZE_CSS['text-3xl'] },
+  { label: '4XL', tw: 'text-4xl', css: FONT_SIZE_CSS['text-4xl'] },
 ] as const;
 
 const CSS_TO_TW: Record<string, string> = Object.fromEntries(
