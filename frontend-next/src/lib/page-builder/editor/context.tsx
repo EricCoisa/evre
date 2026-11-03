@@ -6,6 +6,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import type { LexicalEditor } from 'lexical';
@@ -149,6 +150,21 @@ export function EditorProvider({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeRichText, setActiveRichText] = useState<ActiveRichTextInfo | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
+
+  // ponytail: refs permitem callbacks estáveis sem draft/selectedId nos deps
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+  const selectedIdRef = useRef(selectedId);
+  selectedIdRef.current = selectedId;
+
+  // ponytail: JSON.stringify fora do useMemo — não bloqueia o path de digitação
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setIsDirty(JSON.stringify(draft) !== JSON.stringify(normalizedInitial));
+    }, 300);
+    return () => clearTimeout(id);
+  }, [draft, normalizedInitial]);
 
   const applyChange = useCallback((updater: (current: PageLayout) => PageLayout) => {
     setDraft((current) => {
@@ -160,27 +176,30 @@ export function EditorProvider({
     });
   }, []);
 
+  // ponytail: draftRef.current → undo/redo estáveis sem draft nos deps
   const undo = useCallback(() => {
     setPast((p) => {
       if (p.length === 0) return p;
       const previous = p[p.length - 1];
       const newPast = p.slice(0, -1);
-      setFuture((f) => [draft, ...f]);
+      setFuture((f) => [draftRef.current, ...f]);
       setDraft(previous);
       return newPast;
     });
-  }, [draft]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const redo = useCallback(() => {
     setFuture((f) => {
       if (f.length === 0) return f;
       const next = f[0];
       const newFuture = f.slice(1);
-      setPast((p) => [...p, draft]);
+      setPast((p) => [...p, draftRef.current]);
       setDraft(next);
       return newFuture;
     });
-  }, [draft]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Atalhos de teclado universais: Ctrl+Z / Cmd+Z e Ctrl+Y / Cmd+Shift+Z
   useEffect(() => {
@@ -209,18 +228,19 @@ export function EditorProvider({
   }, [undo, redo]);
 
   const value = useMemo<EditorContextValue>(() => {
-    const selected = selectedId ? findBlock(draft, selectedId) : undefined;
-
     return {
-      draft,
+      // ponytail: getter lê draftRef.current → draft nunca está nos deps; objeto não recria por keystroke
+      get draft() { return draftRef.current; },
+      get selected() {
+        return selectedIdRef.current ? findBlock(draftRef.current, selectedIdRef.current) : undefined;
+      },
       profile,
       recordId,
-      dirty: JSON.stringify(draft) !== JSON.stringify(normalizedInitial),
+      dirty: isDirty,
       selectedId,
       activeRichText,
       draggingId,
       setDraggingId,
-      selected,
       setActiveRichText,
       select: (id) => {
         setSelectedId(id);
@@ -228,7 +248,7 @@ export function EditorProvider({
       },
       add: (type, parentId) => {
         const block = createBlock(type, parentId);
-        applyChange((d) => addBlock(d, block, parentId, profile, selectedId));
+        applyChange((d) => addBlock(d, block, parentId, profile, selectedIdRef.current));
         setSelectedId(block.id);
       },
       insertAt: (type, index, parentId) => {
@@ -237,7 +257,7 @@ export function EditorProvider({
         setSelectedId(block.id);
       },
       insertAfter: (targetId, type) => {
-        const located = findBlock(draft, targetId);
+        const located = findBlock(draftRef.current, targetId);
         const block = createBlock(type, located?.parentId);
         applyChange((d) => insertBlockAfter(d, targetId, block, profile));
         setSelectedId(block.id);
@@ -292,26 +312,25 @@ export function EditorProvider({
       setSource: (id, source) => applyChange((d) => setBlockSource(d, id, source)),
       setInline: (id, inline) => applyChange((d) => setBlockInline(d, id, inline)),
       setParam: (id, name, v) => applyChange((d) => setBlockParam(d, id, name, v)),
-      canAddTo: (parentId) => canAdd(draft, parentId, undefined, profile),
+      canAddTo: (parentId) => canAdd(draftRef.current, parentId, undefined, profile),
       canUndo: past.length > 0,
       canRedo: future.length > 0,
       undo,
       redo,
       setLayout: (layout) => applyChange(() => compactLayout(layout)),
     };
+  // ponytail: draft/undo/redo excluídos — getters+refs; past/future como boolean → recria só quando canUndo/canRedo muda
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    draft,
     profile,
     recordId,
-    normalizedInitial,
+    isDirty,
     selectedId,
-      activeRichText,
+    activeRichText,
     draggingId,
-    past.length,
-    future.length,
+    past.length === 0,
+    future.length === 0,
     applyChange,
-    undo,
-    redo,
   ]);
 
   return (
