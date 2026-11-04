@@ -357,6 +357,7 @@ export const BLOCK_META = {
       'Bloco de escopo: título, descrição opcional e uma lista de itens. Use para "o que entra" ' +
       'numa proposta — fases, entregáveis, stack técnica. Não consome fonte de dados.',
     accepts: [],
+    container: true,
     textEditable: true,
     props: [
       { name: 'title', type: 'rich-text', required: false },

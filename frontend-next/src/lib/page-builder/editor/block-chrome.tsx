@@ -52,6 +52,7 @@ import {
 import { BlockInserter } from './block-inserter';
 import { useEditorOrThrow } from './context';
 import {
+  canAcceptChildrenType,
   canDrop,
   isContainerType,
 } from './mutations';
@@ -713,7 +714,9 @@ export function BlockChrome({
   const isTextEditable = isTextEditableBlockType(block.type);
 
   const hasInteractiveChildren = isContainer || (block.children?.length ?? 0) > 0;
-  const showChildInserter = isContainer;
+  const canReceiveChildren = !nested && canAcceptChildrenType(block.type);
+  const showChildInserter =
+    isContainer || (!isContainer && canReceiveChildren && selected);
 
   const handleSelect = (e: React.MouseEvent) => {
     e.stopPropagation();
