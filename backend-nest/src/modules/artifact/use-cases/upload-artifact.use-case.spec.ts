@@ -208,13 +208,34 @@ describe('UploadArtifactUseCase', () => {
       expect(mockStorage.upload).not.toHaveBeenCalled();
     });
 
-    it('recusa .zip sem index.html', async () => {
+    it('recusa .zip sem nenhum .html raiz', async () => {
       mockZip([buildZipEntry({ path: 'style.css' })]);
 
       await expect(useCase.execute(buildZipFile(), admin)).rejects.toThrow(
         BadRequestException,
       );
       expect(mockStorage.upload).not.toHaveBeenCalled();
+    });
+
+    it('aceita único .html raiz como entry point quando não há index.html', async () => {
+      mockZip([
+        buildZipEntry({ path: 'page.html', uncompressedSize: 10 }),
+        buildZipEntry({ path: 'style.css', uncompressedSize: 5 }),
+      ]);
+
+      const created = await useCase.execute(buildZipFile(), admin);
+      expect(created.entryFileName).toBe('page.html');
+    });
+
+    it('recusa quando há múltiplos .html raiz e nenhum é index.html', async () => {
+      mockZip([
+        buildZipEntry({ path: 'page.html', uncompressedSize: 10 }),
+        buildZipEntry({ path: 'about.html', uncompressedSize: 10 }),
+      ]);
+
+      await expect(useCase.execute(buildZipFile(), admin)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('ignora .DS_Store silenciosamente', async () => {
@@ -225,6 +246,19 @@ describe('UploadArtifactUseCase', () => {
 
       const created = await useCase.execute(buildZipFile(), admin);
       expect((created.files as unknown[]).length).toBe(1);
+    });
+
+    it('strip de pasta wrapper quando todas as entradas compartilham prefixo', async () => {
+      mockZip([
+        buildZipEntry({ path: 'Main-html/index.html', uncompressedSize: 10 }),
+        buildZipEntry({ path: 'Main-html/vendor/react.js', uncompressedSize: 5 }),
+      ]);
+
+      const created = await useCase.execute(buildZipFile(), admin);
+
+      expect(created.kind).toBe('FOLDER');
+      const files = created.files as Array<{ path: string }>;
+      expect(files.map((f) => f.path).sort()).toEqual(['index.html', 'vendor/react.js']);
     });
 
     it('sobe cada entrada válida e grava kind FOLDER', async () => {

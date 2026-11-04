@@ -48,6 +48,19 @@ function normalizeZipEntryPath(rawPath: string): string | null {
   return normalized;
 }
 
+/** Se todas as entradas do zip compartilham um prefixo de diretório comum (pasta wrapper gerada
+ * quando o usuário comprime "a pasta" em vez de "o conteúdo da pasta"), devolve o prefixo para
+ * strip — ex.: `Main-html/` → strip, `Main-html/vendor/react.js` → `vendor/react.js`. */
+function detectWrapperPrefix(paths: string[]): string {
+  if (paths.length === 0) return '';
+  const first = paths[0];
+  const slashIdx = first.indexOf('/');
+  if (slashIdx === -1) return '';
+  const candidate = first.slice(0, slashIdx + 1);
+  if (paths.every((p) => p.startsWith(candidate))) return candidate;
+  return '';
+}
+
 /** Sobe um artefato — arquivo único, ou pasta de arquivos (site estático) via .zip extraído em
  * memória. Agnóstico de quem consome: não conhece Proposal nem nenhuma outra feature. */
 @Injectable()
@@ -159,20 +172,31 @@ export class UploadArtifactUseCase {
       throw new BadRequestException(this.i18n.t('artifact.folder_too_large'));
     }
 
-    const manifest: Array<
-      ArtifactManifestEntry & { source: (typeof fileEntries)[number] }
-    > = [];
-
+    const rawNormalized: string[] = [];
     for (const entry of fileEntries) {
       const baseName = entry.path.split(/[/\\]/).pop() ?? '';
       if (ARTIFACT_ZIP_IGNORED_ENTRIES.has(baseName)) continue;
-
-      const normalized = normalizeZipEntryPath(entry.path);
-      if (!normalized) {
+      const n = normalizeZipEntryPath(entry.path);
+      if (!n) {
         throw new BadRequestException(
           this.i18n.t('artifact.invalid_entry_path'),
         );
       }
+      rawNormalized.push(n);
+    }
+    const wrapperPrefix = detectWrapperPrefix(rawNormalized);
+
+    const manifest: Array<
+      ArtifactManifestEntry & { source: (typeof fileEntries)[number] }
+    > = [];
+
+    let rawIdx = 0;
+    for (const entry of fileEntries) {
+      const baseName = entry.path.split(/[/\\]/).pop() ?? '';
+      if (ARTIFACT_ZIP_IGNORED_ENTRIES.has(baseName)) continue;
+
+      const normalized = rawNormalized[rawIdx++].slice(wrapperPrefix.length);
+      if (!normalized) continue;
 
       // bits altos de externalFileAttributes carregam o unix mode; S_IFLNK = 0xA000 = symlink.
       const unixMode = entry.externalFileAttributes >>> 16;
@@ -203,7 +227,18 @@ export class UploadArtifactUseCase {
     if (!manifest.length) {
       throw new BadRequestException(this.i18n.t('artifact.empty_folder'));
     }
-    if (!manifest.some((entry) => entry.path === ARTIFACT_DEFAULT_ENTRY_FILE_NAME)) {
+
+    // ponytail: entry point — index.html exato, ou o único .html raiz do zip.
+    let entryFile = manifest.find(
+      (e) => e.path === ARTIFACT_DEFAULT_ENTRY_FILE_NAME,
+    );
+    if (!entryFile) {
+      const rootHtmlFiles = manifest.filter(
+        (e) => !e.path.includes('/') && e.contentType === 'text/html',
+      );
+      if (rootHtmlFiles.length === 1) entryFile = rootHtmlFiles[0];
+    }
+    if (!entryFile) {
       throw new BadRequestException(
         this.i18n.t('artifact.missing_entry_file'),
       );
@@ -225,7 +260,7 @@ export class UploadArtifactUseCase {
       data: {
         kind: 'FOLDER',
         storageKey: folderKey,
-        entryFileName: ARTIFACT_DEFAULT_ENTRY_FILE_NAME,
+        entryFileName: entryFile.path,
         fileName: file.originalname,
         files: manifest.map(({ path, contentType, sizeBytes }) => ({
           path,
