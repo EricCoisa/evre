@@ -221,17 +221,6 @@ export function estimateTopicRowSpan(block: PageBlock): BlockRowSpan {
 }
 
 /**
- * Estima a altura necessária para o bloco price (tabela de valores em proposta).
- */
-export function estimatePriceRowSpan(block: PageBlock): BlockRowSpan {
-  const hasHeader = blockHasHeader(block);
-  const rows = Array.isArray(block.props?.rows) ? block.props.rows : [];
-  const count = Math.max(1, rows.length);
-  const totalHeight = 48 + (hasHeader ? 64 : 0) + count * 40 + 54;
-  return pixelsToRowSpan(totalHeight, 'price');
-}
-
-/**
  * Registro extensível e agnóstico de estimadores de altura por tipo de bloco.
  */
 export type BlockRowSpanEstimator = (block: PageBlock, cols?: number) => BlockRowSpan;
@@ -247,5 +236,4 @@ export const BLOCK_ROW_SPAN_ESTIMATORS: Record<string, BlockRowSpanEstimator> = 
   'list.feed': estimateFeedRowSpan,
   'table.basic': estimateTableRowSpan,
   topic: estimateTopicRowSpan,
-  price: estimatePriceRowSpan,
 };

@@ -12,7 +12,6 @@ import {
   estimateFeedRowSpan,
   estimateTableRowSpan,
   estimateTopicRowSpan,
-  estimatePriceRowSpan,
 } from './block-height-estimators';
 import {
   findBlock,
@@ -475,20 +474,13 @@ describe('Limitação de redimensionamento ao encostar em outro bloco ou fim da 
       expect(estimated).toBe(11);
     });
 
-    it('ajusta a altura de topic e price com base nos itens e linhas das props', () => {
+    it('ajusta a altura de topic com base nos itens das props', () => {
       const topicBlock = {
         id: 't1',
         type: 'topic',
         props: { title: 'Escopo', items: ['Item 1', 'Item 2', 'Item 3', 'Item 4'] },
       };
       expect(estimateTopicRowSpan(topicBlock)).toBeGreaterThanOrEqual(4);
-
-      const priceBlock = {
-        id: 'p1',
-        type: 'price',
-        props: { title: 'Valores', rows: ['Plano 1|1000', 'Plano 2|2000', 'Plano 3|3000'] },
-      };
-      expect(estimatePriceRowSpan(priceBlock)).toBeGreaterThanOrEqual(5);
     });
 
     it('expande list.feed no layout completo e posiciona blocos seguintes sem sobreposição', () => {

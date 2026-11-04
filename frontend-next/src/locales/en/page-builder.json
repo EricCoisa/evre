@@ -6,22 +6,9 @@
   "blockWithoutSource": "This block needs a data source and has no valid one.",
   "blockDataError": "Could not load this block's data.",
   "blockForbidden": "You don't have access to this block's data source. It stays hidden for you outside edit mode.",
-  "investmentEmpty": "Investment not filled in.",
-  "investmentTerm": "Term",
-  "investmentDays": "days",
-  "investmentValidUntil": "Valid until",
-  "investmentIncluded": "Included items",
-  "investmentOptional": "Optional items",
-  "investmentRecurrence": {
-    "ONE_TIME": "One-time payment",
-    "MONTHLY": "Monthly",
-    "QUARTERLY": "Quarterly",
-    "YEARLY": "Yearly"
-  },
   "iframeMissingArtifact": "This block has no uploaded artifact yet.",
   "iframeOpen": "Open fullscreen",
   "iframeModalTitle": "Demo",
-  "priceTotalDefault": "Total",
   "editor": {
     "edit": "Edit page",
     "title": "Edit page",

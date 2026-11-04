@@ -61,8 +61,8 @@ export default function PageEditor({
   onSave?: (layout: PageLayout) => void;
   /** Pending do `onSave` externo — mantém "Salvar" desabilitado durante o PUT do registro. */
   saving?: boolean;
-  /** Envelope comercial que o bloco `investment` lê por contexto no preview — mesmo dado que a
-   * página pública recebe. `undefined` fora do profile `proposal`. */
+  /** Envelope comercial lido por contexto no preview (ex: iframe público vs rascunho).
+   * `undefined` fora do profile `proposal`. */
   proposalTerms?: ProposalTerms;
 }) {
   return (

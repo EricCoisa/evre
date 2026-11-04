@@ -89,7 +89,7 @@ export function PageRenderer(props: PageRendererProps) {
 
 /** Renderiza um layout JÁ resolvido. Não busca config, não depende de sessão nem de
  * `AsyncBoundary` externo — é o que a página pública monta a partir de um layout publicado.
- * `proposalTerms` monta o envelope comercial que o bloco `investment` lê por contexto; sem ele
+ * `proposalTerms` monta o envelope comercial lido por contexto (ex: iframe público); sem ele
  * (ex: profile `dashboard`) nenhum provider é montado. */
 export function LayoutBody({
   layout,

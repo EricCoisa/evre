@@ -379,24 +379,6 @@ export const BLOCK_META = {
       { name: 'caption', type: 'rich-text', required: false },
     ],
   },
-  investment: {
-    profiles: ['proposal'],
-    category: 'data',
-    icon: 'Coins',
-    defaultRowSpan: 3,
-    minRowSpan: 1,
-    description:
-      'Espelha o ENVELOPE comercial da proposta (registro único: o que soma no funil e vai para ' +
-      'o contrato) — valor, recorrência, prazo, validade e itens inclusos (e opcionais, se ' +
-      'habilitado). Não recebe o preço por props — lê o envelope por contexto, nunca duplicado no ' +
-      'JSON do layout. Para valor LIVRE (mais de um preço na mesma proposta: projeto + ' +
-      'mensalidade, planos alternativos), use o bloco `price` em vez deste.',
-    accepts: [],
-    props: [
-      { name: 'title', type: 'rich-text', required: false },
-      { name: 'showOptional', type: 'boolean', required: false },
-    ],
-  },
   iframe: {
     profiles: ['proposal'],
     category: 'media',
@@ -427,32 +409,6 @@ export const BLOCK_META = {
     accepts: [],
     autoHeight: true,
     props: [{ name: 'spacing', type: 'string', required: false }],
-  },
-  price: {
-    profiles: ['proposal'],
-    category: 'data',
-    icon: 'DollarSign',
-    defaultRowSpan: 3,
-    minRowSpan: 1,
-    description:
-      'Tabela de valores LIVRE — apresentação, não registro (não soma no funil, não vai para o ' +
-      'contrato; quem faz isso é o envelope/`investment`). `rows` é uma linha "Rótulo|12000" por ' +
-      'item, valor SEMPRE em centavos. `totalCents` (também em centavos) mostra um total em ' +
-      'destaque com `totalLabel`. **Várias instâncias de `price` na mesma proposta são normais** ' +
-      '— ex. um para o projeto fechado e outro para a mensalidade, cada um com seu `recurrence`. ' +
-      '`highlight` destaca a opção recomendada quando há mais de uma. Não consome fonte de dados.',
-    accepts: [],
-    textEditable: true,
-    props: [
-      { name: 'title', type: 'rich-text', required: false },
-      { name: 'description', type: 'rich-text', required: false },
-      { name: 'rows', type: 'string[]', required: true },
-      { name: 'totalLabel', type: 'string', required: false },
-      { name: 'totalCents', type: 'number', required: false },
-      { name: 'currency', type: 'string', required: false },
-      { name: 'recurrence', type: 'string', required: false },
-      { name: 'highlight', type: 'boolean', required: false },
-    ],
   },
 } as const satisfies Record<string, BlockMeta>;
 

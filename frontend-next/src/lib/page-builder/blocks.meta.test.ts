@@ -21,7 +21,7 @@ describe('describeBlocks', () => {
     expect(textRich.props.find((p) => p.name === 'preset')?.options).toBeDefined();
   });
 
-  it('sem argumento lista os 14 blocos do catálogo (heading absorvido em presets de text.rich)', () => {
+  it('sem argumento lista os 12 blocos do catálogo (heading absorvido em presets de text.rich)', () => {
     expect(describeBlocks().map((b) => b.type).sort()).toEqual(
       [
         'button.action',
@@ -32,9 +32,7 @@ describe('describeBlocks', () => {
         'group',
         'iframe',
         'image',
-        'investment',
         'list.feed',
-        'price',
         'table.basic',
         'text.rich',
         'topic',
@@ -56,11 +54,11 @@ describe('describeBlocks', () => {
     ]);
   });
 
-  it('topic, image e investment aparecem em proposal e não em dashboard', () => {
+  it('topic e image aparecem em proposal e não em dashboard', () => {
     const proposalTypes = describeBlocks('proposal').map((b) => b.type);
     const dashboardTypes = describeBlocks('dashboard').map((b) => b.type);
 
-    for (const type of ['topic', 'image', 'investment']) {
+    for (const type of ['topic', 'image']) {
       expect(proposalTypes).toContain(type);
       expect(dashboardTypes).not.toContain(type);
     }
@@ -73,21 +71,11 @@ describe('describeBlocks', () => {
       'group',
       'iframe',
       'image',
-      'investment',
       'list.feed',
-      'price',
       'table.basic',
       'text.rich',
       'topic',
     ]);
-  });
-
-  it('price só existe no profile proposal — é apresentação da proposta, não do dashboard', () => {
-    const proposalTypes = describeBlocks('proposal').map((b) => b.type);
-    const dashboardTypes = describeBlocks('dashboard').map((b) => b.type);
-
-    expect(proposalTypes).toContain('price');
-    expect(dashboardTypes).not.toContain('price');
   });
 
   it('divider aparece nos dois profiles — é estrutura de seção, não conteúdo', () => {
