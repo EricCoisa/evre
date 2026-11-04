@@ -438,8 +438,7 @@ export function isInlineBlockType(type: string): boolean {
 }
 
 export function canAcceptChildrenType(type: string): boolean {
-  if (!(type in BLOCK_META)) return false;
-  return !isInlineBlockType(type);
+  return isContainerType(type);
 }
 
 /** Devolve a lista de tipos de bloco suportados por um determinado profile. */
