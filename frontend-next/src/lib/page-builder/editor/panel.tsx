@@ -484,7 +484,7 @@ function ArtifactStorageKeyField({
           {t('editor.artifactStorageDisabled')}
         </p>
       ) : null}
-      <ArtifactPwickerDialog
+      <ArtifactPickerDialog
         open={pickerOpen}
         onOpenChange={setPickerOpen}
         onSelect={(artifact) => onChange(artifact.id)}

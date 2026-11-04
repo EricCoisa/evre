@@ -585,12 +585,12 @@ function IframeBlock({ props, bare, className }: BlockProps) {
         onOpenChange={setOpen}
         title={title || t('iframeModalTitle', { defaultValue: 'Demonstração' })}
         size="full"
-        className="h-[90vh]! max-h-[90vh]! w-[98vw]! max-w-[98vw]!"
+        className="!flex !flex-col h-[90vh] max-h-[90vh] w-[98vw] max-w-[98vw]"
       >
         <iframe
           src={url}
           title={title || 'Artefato'}
-          className="h-full w-full border-0"
+          className="flex-1 min-h-0 w-full border-0"
           sandbox={ARTIFACT_SANDBOX}
           scrolling="yes"
         />
