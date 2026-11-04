@@ -3,6 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { Plus, X } from 'lucide-react';
 import { InlineRichText } from './editor/inline-rich-text';
 import type { RichTextVariableOption } from '@/components/rich-text-input';
 import { innerAlignClass } from './class-names';
@@ -277,6 +278,65 @@ function ChartBlock({
 function TopicBlock({ props, bare, className, children, blockId, onPropChange, editing }: BlockProps) {
   const items = toStringArray(props.items);
   const editMeta = editMetaFor(editing, blockId, onPropChange);
+
+  if (editing && blockId && onPropChange) {
+    const updateItem = (index: number, value: string) => {
+      const next = [...items];
+      next[index] = value;
+      onPropChange('items', next);
+    };
+    const removeItem = (index: number) => {
+      onPropChange('items', items.filter((_, i) => i !== index));
+    };
+    const addItem = () => onPropChange('items', [...items, '']);
+
+    return (
+      <Panel
+        bare={bare}
+        className={className}
+        header={renderBlockHeader(props.title, props.description, children, editMeta)}
+        editing={editing}
+      >
+        <div className="space-y-2">
+          <ul className="space-y-1 pl-5 text-sm text-muted-foreground list-disc">
+            {items.map((item, index) => (
+              <li key={index} className="group/item">
+                <div className="flex items-start gap-1">
+                  <div className="flex-1 min-w-0">
+                    <InlineRichText
+                      blockId={blockId}
+                      propName={`items.${index}`}
+                      value={item}
+                      onChange={(val) => updateItem(index, val)}
+                      placeholder="Item..."
+                      showFontSize={false}
+                      singleLine
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeItem(index)}
+                    className="mt-0.5 shrink-0 rounded p-0.5 opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover/item:opacity-100"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            onClick={addItem}
+            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Item
+          </button>
+        </div>
+      </Panel>
+    );
+  }
+
   return (
     <Panel
       bare={bare}
@@ -287,7 +347,9 @@ function TopicBlock({ props, bare, className, children, blockId, onPropChange, e
         {items.length > 0 ? (
           <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
             {items.map((item, index) => (
-              <li key={index}>{item}</li>
+              <li key={index}>
+                <FormattedRichText text={item} inline />
+              </li>
             ))}
           </ul>
         ) : null}
