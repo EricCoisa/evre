@@ -97,6 +97,12 @@ export class StorageService {
     return `${process.env.APP_NAME}/${prefix}/${randomUUID()}.${ext}`;
   }
 
+  /** Prefixo de pasta, sem extensão, terminado em "/" — cada arquivo sobe via `upload()` normal
+   * com a key `${folderKey}${caminhoRelativo}`. S3 e LOCAL já tratam "/" na key como path. */
+  buildFolderKey(prefix: string): string {
+    return `${process.env.APP_NAME}/${prefix}/${randomUUID()}/`;
+  }
+
   async resolveKeyFromUrl(
     url: string | null | undefined,
   ): Promise<string | null> {
@@ -184,11 +190,14 @@ export class StorageService {
     return cfg;
   }
 
-  // findByLabelKey throws NotFoundException when key missing — catch and return null for graceful fallback
+  // findByLabelKey throws NotFoundException when key missing — catch and return null for graceful
+  // fallback. String vazia conta como "não configurado" também — senão o `??` dos callers nunca
+  // cai no fallback de env/default quando o seed grava a chave como placeholder em branco.
   private async readConfigValue(labelKey: string): Promise<string | null> {
     try {
       const record = await this.systemConfig.findByLabelKey(labelKey);
-      return (record?.value as string) ?? null;
+      const value = record?.value as string | undefined;
+      return value ? value : null;
     } catch (err) {
       if (err instanceof NotFoundException) return null;
       throw err;

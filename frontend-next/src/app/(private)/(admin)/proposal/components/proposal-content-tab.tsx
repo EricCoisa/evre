@@ -25,6 +25,7 @@ function toProposalTerms(proposal: Proposal): ProposalTerms {
     validUntil: proposal.validUntil,
     includedItems: proposal.includedItems,
     optionalItems: proposal.optionalItems,
+    published: false,
   };
 }
 

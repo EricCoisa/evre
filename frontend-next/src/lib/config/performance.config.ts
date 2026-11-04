@@ -17,6 +17,9 @@ export const QUERY_CONFIG = {
     PROPOSAL: 5 * 60 * 1000, // 5 minutos - Proposal
     PROPOSALS: 5 * 60 * 1000, // 5 minutos - Proposals
 
+    ARTIFACT: 5 * 60 * 1000, // 5 minutos - Artifact
+    ARTIFACTS: 5 * 60 * 1000, // 5 minutos - Artifacts
+
   },
   
   // Garbage Collection Times (tempo que dados ficam no cache após stale)
@@ -32,6 +35,9 @@ export const QUERY_CONFIG = {
 
     PROPOSAL: 10 * 60 * 1000, // 10 minutos - Proposal
     PROPOSALS: 10 * 60 * 1000, // 10 minutos - Proposals
+
+    ARTIFACT: 10 * 60 * 1000, // 10 minutos - Artifact
+    ARTIFACTS: 10 * 60 * 1000, // 10 minutos - Artifacts
 
   },
   

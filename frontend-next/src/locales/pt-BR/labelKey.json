@@ -1,6 +1,7 @@
 {
     "ROUTE_PROPOSAL": "Propostas",
     "ROUTE_COMPANY": "Empresas",
+    "ROUTE_ARTIFACT": "Artefatos",
     "ROUTE_DASHBOARD": "Dashboard",
     "ROUTE_USERS": "Usuários",
     "ROUTE_PROFILE": "Perfil",

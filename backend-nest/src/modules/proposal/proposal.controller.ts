@@ -1,15 +1,7 @@
-import {
-  Body,
-  Controller,
-  Param,
-  Query,
-  UseInterceptors,
-  UploadedFile,
-} from '@nestjs/common';
+import { Body, Controller, Param, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { plainToInstance } from 'class-transformer';
-import { FileInterceptor } from '@nestjs/platform-express';
 import {
   DeleteApi,
   GetApi,
@@ -23,7 +15,6 @@ import { UpdateProposalLayoutDto } from './dto/update-proposal-layout.dto';
 import { UpdateProposalTermsDto } from './dto/update-proposal-terms.dto';
 import { UpdateProposalStatusDto } from './dto/update-proposal-status.dto';
 import { ProposalDto } from './dto/proposal.dto';
-import { ProposalArtifactDto } from './dto/proposal-artifact.dto';
 import { ProposalVersionDto } from './dto/proposal-version.dto';
 import { PublishProposalResponseDto } from './dto/publish-proposal-response.dto';
 import { RevokeProposalPublicationResponseDto } from './dto/revoke-proposal-publication-response.dto';
@@ -41,9 +32,6 @@ import { UpdateProposalLayoutUseCase } from './use-cases/update-proposal-layout.
 import { UpdateProposalTermsUseCase } from './use-cases/update-proposal-terms.use-case';
 import { UpdateProposalStatusUseCase } from './use-cases/update-proposal-status.use-case';
 import { DuplicateProposalUseCase } from './use-cases/duplicate-proposal.use-case';
-import { UploadProposalArtifactUseCase } from './use-cases/upload-proposal-artifact.use-case';
-import { ArchiveProposalArtifactUseCase } from './use-cases/archive-proposal-artifact.use-case';
-import { ListProposalArtifactsUseCase } from './use-cases/list-proposal-artifacts.use-case';
 import { PublishProposalUseCase } from './use-cases/publish-proposal.use-case';
 import { RevokeProposalPublicationUseCase } from './use-cases/revoke-proposal-publication.use-case';
 import { ListProposalVersionsUseCase } from './use-cases/list-proposal-versions.use-case';
@@ -59,7 +47,6 @@ import {
   PaginationQuerySchema,
 } from 'src/common/schemas/pagination.schema';
 import { PaginatedResponse } from 'src/common/types/pagination.types';
-import { PROPOSAL_ARTIFACT_UPLOAD_HARD_LIMIT_BYTES } from 'src/domain/proposal/proposal-artifact.const';
 
 /** Todas as rotas são `roles: ['ADMIN']` — a página pública que consome o token é F1-06. */
 @ApiTags('proposal')
@@ -75,9 +62,6 @@ export class ProposalController {
     private readonly updateProposalTerms: UpdateProposalTermsUseCase,
     private readonly updateProposalStatus: UpdateProposalStatusUseCase,
     private readonly duplicateProposal: DuplicateProposalUseCase,
-    private readonly uploadProposalArtifact: UploadProposalArtifactUseCase,
-    private readonly archiveProposalArtifact: ArchiveProposalArtifactUseCase,
-    private readonly listProposalArtifacts: ListProposalArtifactsUseCase,
     private readonly publishProposal: PublishProposalUseCase,
     private readonly revokeProposalPublication: RevokeProposalPublicationUseCase,
     private readonly listProposalVersions: ListProposalVersionsUseCase,
@@ -302,73 +286,6 @@ export class ProposalController {
     @CurrentUser() currentUser: AuthenticatedUser,
   ) {
     return this.updateProposalStatus.execute(id, dto, currentUser);
-  }
-
-  @GetApi({
-    path: ':id/artifacts',
-    summary: 'proposal.artifact.list.title',
-    status: 'OK',
-    authenticated: true,
-    roles: ['ADMIN'],
-    response: {
-      success: [
-        {
-          status: 'OK',
-          description: 'Artifacts of the proposal',
-          schema: { dto: ProposalArtifactDto, isArray: true },
-        },
-      ],
-    },
-  })
-  async listArtifacts(
-    @Param('id') id: string,
-    @CurrentUser() currentUser: AuthenticatedUser,
-  ) {
-    return this.listProposalArtifacts.execute(id, currentUser);
-  }
-
-  @PostApi({
-    path: ':id/artifacts',
-    summary: 'proposal.artifact.upload.title',
-    status: 'CREATED',
-    authenticated: true,
-    roles: ['ADMIN'],
-    response: {
-      success: [
-        {
-          status: 'CREATED',
-          description: 'Artifact uploaded',
-          schema: { dto: ProposalArtifactDto },
-        },
-      ],
-    },
-  })
-  @UseInterceptors(
-    FileInterceptor('file', {
-      limits: { fileSize: PROPOSAL_ARTIFACT_UPLOAD_HARD_LIMIT_BYTES },
-    }),
-  )
-  async uploadArtifact(
-    @Param('id') id: string,
-    @CurrentUser() currentUser: AuthenticatedUser,
-    @UploadedFile() file?: Express.Multer.File,
-  ) {
-    return this.uploadProposalArtifact.execute(id, file, currentUser);
-  }
-
-  @DeleteApi({
-    path: ':id/artifacts/:artifactId',
-    summary: 'proposal.artifact.delete.title',
-    status: 'OK',
-    authenticated: true,
-    roles: ['ADMIN'],
-  })
-  async archiveArtifact(
-    @Param('id') id: string,
-    @Param('artifactId') artifactId: string,
-    @CurrentUser() currentUser: AuthenticatedUser,
-  ) {
-    return this.archiveProposalArtifact.execute(id, artifactId, currentUser);
   }
 
   @PostApi({

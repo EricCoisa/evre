@@ -51,10 +51,9 @@ model Proposal {
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
 
-  company   Company?           @relation(fields: [companyId], references: [id], onDelete: SetNull)
-  owner     User               @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-  versions  ProposalVersion[]
-  artifacts ProposalArtifact[]
+  company  Company?          @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  owner    User              @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  versions ProposalVersion[]
 
   @@index([companyId])
   @@index([status])
@@ -112,7 +111,7 @@ model ProposalSend {
   succeeded Boolean
   detail    String?
   sentById  String?
-  createdAt DateTime @default(now())
+  createdAt DateTime            @default(now())
 
   version ProposalVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
   sentBy  User?           @relation(fields: [sentById], references: [id], onDelete: SetNull)
@@ -135,27 +134,5 @@ model ProposalOpenEvent {
 
   @@index([versionId])
   @@map("proposal_open_events")
-  @@schema("public")
-}
-
-/// Arquivo de demonstração (HTML/imagem) anexado a uma proposta — `storageKey` é imutável, nunca
-/// sobrescrita; substituir o artefato cria uma linha nova. Ver docs/architecture/data-model.md.
-model ProposalArtifact {
-  id          String    @id @default(uuid())
-  proposalId  String
-  storageKey  String
-  fileName    String
-  contentType String
-  sizeBytes   Int
-  createdById String?
-  archivedAt  DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  proposal  Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
-  createdBy User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
-
-  @@index([proposalId])
-  @@map("proposal_artifacts")
   @@schema("public")
 }

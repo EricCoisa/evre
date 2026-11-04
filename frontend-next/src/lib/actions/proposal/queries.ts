@@ -23,7 +23,6 @@ import {
   updateProposalLayout,
   updateProposalStatus,
   updateProposalTerms,
-  uploadProposalArtifact,
 } from './api';
 import type {
   AcceptProposalOfflineDto,
@@ -208,13 +207,5 @@ export function useProposalSends(id: string) {
     queryFn: Collector(() => listProposalSends(id)),
     enabled: !!id,
     ...getQueryConfig('PROPOSAL'),
-  });
-}
-
-/** Sobe o artefato do bloco `iframe`; o chamador grava a `storageKey` devolvida na prop do bloco. */
-export function useUploadProposalArtifact() {
-  return useMutation({
-    mutationFn: ({ proposalId, file }: { proposalId: string; file: File }) =>
-      Alive(() => uploadProposalArtifact(proposalId, file))(),
   });
 }

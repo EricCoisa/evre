@@ -19,7 +19,6 @@
     "YEARLY": "Yearly"
   },
   "iframeMissingArtifact": "This block has no uploaded artifact yet.",
-  "iframeLoadError": "Could not load this artifact.",
   "iframeOpen": "Open fullscreen",
   "iframeModalTitle": "Demo",
   "priceTotalDefault": "Total",
@@ -82,7 +81,6 @@
     "artifactUploading": "Uploading...",
     "artifactUploadError": "Failed to upload the artifact.",
     "artifactStorageDisabled": "Upload disabled: storage is currently unavailable.",
-    "artifactMissingRecord": "Save the proposal before uploading the artifact.",
     "tabVisual": "Visual",
     "tabJson": "JSON",
     "jsonHint": "Valid edits are applied in real time.",

@@ -8,6 +8,7 @@ import { ResourceAccessService } from 'src/common/infrastructure/resource-access
 import type { AuthenticatedUser } from 'src/common/types/auth.types';
 import { PublishProposalUseCase } from './publish-proposal.use-case';
 import { FindOneProposalUseCase } from './find-one.use-case';
+import { PublishReferencedArtifactsUseCase } from '../../artifact/use-cases/publish-referenced-artifacts.use-case';
 
 const admin: AuthenticatedUser = {
   id: 'admin-1',
@@ -44,6 +45,7 @@ const mockTx = {
     create: vi.fn(),
   },
   proposal: { update: vi.fn() },
+  artifact: { findUnique: vi.fn(), update: vi.fn() },
 };
 
 const mockPrisma = {
@@ -66,6 +68,7 @@ describe('PublishProposalUseCase', () => {
       providers: [
         PublishProposalUseCase,
         FindOneProposalUseCase,
+        PublishReferencedArtifactsUseCase,
         { provide: PrismaService, useValue: mockPrisma },
         { provide: ConfigService, useValue: mockConfig },
         { provide: I18nService, useValue: mockI18n },
@@ -88,6 +91,8 @@ describe('PublishProposalUseCase', () => {
       publishedAt: new Date('2026-01-01T00:00:00Z'),
     });
     mockTx.proposal.update.mockResolvedValue({ ...row, status: 'SENT' });
+    mockTx.artifact.findUnique.mockResolvedValue(null);
+    mockTx.artifact.update.mockResolvedValue(null);
   });
 
   it('recusa publicar proposta arquivada', async () => {
@@ -203,5 +208,57 @@ describe('PublishProposalUseCase', () => {
 
     expect(mockTx.proposalVersion.findUnique).toHaveBeenCalledTimes(2);
     expect(mockTx.proposalVersion.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('cascateia publicação de artefato referenciado por bloco iframe e troca o id pelo publicToken', async () => {
+    mockPrisma.proposal.findUnique.mockResolvedValue({
+      ...row,
+      layout: {
+        v: 1,
+        blocks: [
+          { id: 'a', type: 'iframe', props: { artifactId: 'artifact-1' } },
+        ],
+      },
+    });
+    mockTx.artifact.findUnique.mockImplementation(({ where }) =>
+      where.id === 'artifact-1'
+        ? Promise.resolve({
+            id: 'artifact-1',
+            archivedAt: null,
+            published: false,
+            publicToken: null,
+          })
+        : Promise.resolve(null),
+    );
+
+    await useCase.execute('id-1', admin);
+
+    expect(mockTx.artifact.update).toHaveBeenCalledWith({
+      where: { id: 'artifact-1' },
+      data: { published: true, publicToken: expect.any(String) },
+    });
+    const createdLayout = (mockTx.proposalVersion.create as ReturnType<typeof vi.fn>)
+      .mock.calls[0][0].data.layout as {
+      blocks: Array<{ props: { artifactId: string } }>;
+    };
+    expect(createdLayout.blocks[0].props.artifactId).not.toBe('artifact-1');
+    expect(createdLayout.blocks[0].props.artifactId).toMatch(/^[a-zA-Z0-9]{16}$/);
+  });
+
+  it('recusa publicar quando o artefato referenciado não existe ou está arquivado', async () => {
+    mockPrisma.proposal.findUnique.mockResolvedValue({
+      ...row,
+      layout: {
+        v: 1,
+        blocks: [
+          { id: 'a', type: 'iframe', props: { artifactId: 'missing' } },
+        ],
+      },
+    });
+    mockTx.artifact.findUnique.mockResolvedValue(null);
+
+    await expect(useCase.execute('id-1', admin)).rejects.toThrow(
+      BadRequestException,
+    );
   });
 });

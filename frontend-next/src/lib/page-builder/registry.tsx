@@ -36,7 +36,6 @@ import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
 import Modal from '@/components/modal';
 import { cn } from '@/lib/cn';
 import { useTranslation } from '@/hooks/use-translation';
-import { usePresignedUrl } from '@/lib/actions/storage/queries';
 import { parseWhatsAppFormat, type FormattedPart } from '@/lib/messaging/format-whatsapp-text';
 import { linkify } from '@/lib/messaging/linkify';
 import {
@@ -526,21 +525,24 @@ const ARTIFACT_SANDBOX = 'allow-scripts allow-popups allow-modals allow-forms';
 
 /** Demonstração HTML/imagem em sandbox: preview capturado por uma camada de clique (sem scroll
  * nem interação própria), toque abre modal 98vw×90vh com scroll e interação liberados. */
+/** `NEXT_PUBLIC_*` é inlined no bundle do client — mesmo valor de `lib/api/orval-instance.ts`,
+ * sem poder importar de lá (módulo `"use server"`, só exporta função async pro client). */
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
+
 function IframeBlock({ props, bare, className }: BlockProps) {
   const { t } = useTranslation('page-builder');
   const [open, setOpen] = React.useState(false);
-  const storageKey = typeof props.storageKey === 'string' ? props.storageKey : undefined;
+  const terms = useProposalTerms();
+  const artifactId = typeof props.artifactId === 'string' ? props.artifactId : undefined;
   const title = str(props.title);
   const height = typeof props.height === 'number' ? props.height : 400;
   const aspect = props.aspect === 'video' || props.aspect === 'square' ? props.aspect : undefined;
 
-  const { data, isLoading, isError } = usePresignedUrl(storageKey);
-  const url = data?.url;
   const previewStyle: React.CSSProperties = aspect
     ? { aspectRatio: aspect === 'video' ? '16 / 9' : '1 / 1' }
     : { height };
 
-  if (!storageKey) {
+  if (!artifactId) {
     return (
       <Panel bare={bare} className={className}>
         <Alert variant="destructive">
@@ -550,41 +552,33 @@ function IframeBlock({ props, bare, className }: BlockProps) {
     );
   }
 
-  if (isError) {
-    return (
-      <Panel bare={bare} className={className}>
-        <Alert variant="destructive">
-          <AlertDescription>{t('iframeLoadError')}</AlertDescription>
-        </Alert>
-      </Panel>
-    );
-  }
+  // Publicado: visualização anônima por publicToken. Rascunho/preview: autenticado por id,
+  // mesmo guard de roles do resto do admin. Redirect 302 pra presigned URL — iframe segue nativo.
+  const url = terms?.published
+    ? `${API_BASE_URL}/artifacts/public/${artifactId}`
+    : `${API_BASE_URL}/artifacts/${artifactId}/view`;
 
   return (
     <Panel bare={bare} className={className}>
-      {isLoading || !url ? (
-        <LoadingSkeleton className="w-full" style={previewStyle} />
-      ) : (
-        <div className="relative w-full overflow-hidden rounded-lg border" style={previewStyle}>
-          <iframe
-            src={url}
-            title={title || 'Artefato'}
-            className="h-full w-full border-0"
-            sandbox={ARTIFACT_SANDBOX}
-            scrolling="no"
-            loading="lazy"
-          />
-          {/* Camada transparente por cima: captura o toque/clique sem deixar o iframe
-           * interagir ou rolar sozinho em linha — é isso que resolve o scroll sequestrado
-           * no mobile. Interação real só dentro do modal. */}
-          <button
-            type="button"
-            aria-label={t('iframeOpen', { defaultValue: 'Abrir em tela cheia' })}
-            className="absolute inset-0 cursor-pointer bg-transparent"
-            onClick={() => setOpen(true)}
-          />
-        </div>
-      )}
+      <div className="relative w-full overflow-hidden rounded-lg border" style={previewStyle}>
+        <iframe
+          src={url}
+          title={title || 'Artefato'}
+          className="h-full w-full border-0"
+          sandbox={ARTIFACT_SANDBOX}
+          scrolling="no"
+          loading="lazy"
+        />
+        {/* Camada transparente por cima: captura o toque/clique sem deixar o iframe
+         * interagir ou rolar sozinho em linha — é isso que resolve o scroll sequestrado
+         * no mobile. Interação real só dentro do modal. */}
+        <button
+          type="button"
+          aria-label={t('iframeOpen', { defaultValue: 'Abrir em tela cheia' })}
+          className="absolute inset-0 cursor-pointer bg-transparent"
+          onClick={() => setOpen(true)}
+        />
+      </div>
 
       <Modal
         open={open}
@@ -593,15 +587,13 @@ function IframeBlock({ props, bare, className }: BlockProps) {
         size="full"
         className="h-[90vh]! max-h-[90vh]! w-[98vw]! max-w-[98vw]!"
       >
-        {url ? (
-          <iframe
-            src={url}
-            title={title || 'Artefato'}
-            className="h-full w-full border-0"
-            sandbox={ARTIFACT_SANDBOX}
-            scrolling="yes"
-          />
-        ) : null}
+        <iframe
+          src={url}
+          title={title || 'Artefato'}
+          className="h-full w-full border-0"
+          sandbox={ARTIFACT_SANDBOX}
+          scrolling="yes"
+        />
       </Modal>
     </Panel>
   );

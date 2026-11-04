@@ -47,9 +47,10 @@ enum LogModule {
   NOTIFICATION
   VERIFICATION
   COMPANY
+  ARTIFACT
+  PROPOSAL
 
   @@schema("public")
-  PROPOSAL
 }
 
 enum FeatureFlagCategory {

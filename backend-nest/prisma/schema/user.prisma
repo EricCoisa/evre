@@ -50,8 +50,8 @@ model User {
   shortLinks             ShortLink[]
   memberships            Membership[]
   proposals              Proposal[]
-  proposalArtifacts      ProposalArtifact[]
   proposalSends          ProposalSend[]
+  artifacts              Artifact[]
 
   @@index([deletedAt])
   @@map("users")

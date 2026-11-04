@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ProposalModule } from './modules/proposal/proposal.module';
+import { ArtifactModule } from './modules/artifact/artifact.module';
 import { CompanyModule } from './modules/company/company.module';
 import { ConfigModule } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
@@ -119,6 +120,7 @@ const redisConnection = new RedisMockCtor();
     NotificationModule,
     ShortUrlModule,
     CompanyModule,
+    ArtifactModule,
     ProposalModule,
   ],
 })

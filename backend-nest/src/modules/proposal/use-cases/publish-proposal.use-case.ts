@@ -13,6 +13,7 @@ import { LogActions } from 'src/domain/logging/log-actions';
 import { ProposalStatusConst } from 'src/domain/proposal/proposalStatus.const';
 import type { AuthenticatedUser } from 'src/common/types/auth.types';
 import { FindOneProposalUseCase } from './find-one.use-case';
+import { PublishReferencedArtifactsUseCase } from '../../artifact/use-cases/publish-referenced-artifacts.use-case';
 
 const BASE62_ALPHABET =
   'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -37,6 +38,7 @@ export class PublishProposalUseCase {
     private readonly configService: ConfigService,
     private readonly loggingService: LoggingService,
     private readonly findOne: FindOneProposalUseCase,
+    private readonly publishReferencedArtifacts: PublishReferencedArtifactsUseCase,
   ) {}
 
   async execute(
@@ -65,12 +67,16 @@ export class PublishProposalUseCase {
       const nextVersion = (last?.version ?? 0) + 1;
 
       const publicToken = await this.generateUniquePublicToken(tx);
+      const resolvedLayout = await this.publishReferencedArtifacts.execute(
+        found.layout,
+        tx,
+      );
 
       const version = await tx.proposalVersion.create({
         data: {
           proposalId: id,
           version: nextVersion,
-          layout: found.layout as Prisma.InputJsonValue,
+          layout: resolvedLayout as Prisma.InputJsonValue,
           totalCents: found.totalCents,
           currency: found.currency,
           recurrence: found.recurrence,

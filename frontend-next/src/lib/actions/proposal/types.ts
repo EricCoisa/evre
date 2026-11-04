@@ -6,7 +6,6 @@ export type {
   UpdateProposalLayoutDto,
   UpdateProposalTermsDto,
   UpdateProposalStatusDto,
-  ProposalArtifactDto,
   ProposalVersionDto,
   PublishProposalResponseDto,
   RevokeProposalPublicationResponseDto,

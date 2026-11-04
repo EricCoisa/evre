@@ -61,20 +61,6 @@
       "title": "Atualizar status da proposta"
     }
   },
-  "artifact": {
-    "upload": {
-      "title": "Enviar artefato da proposta"
-    },
-    "list": {
-      "title": "Listar artefatos da proposta"
-    },
-    "delete": {
-      "title": "Arquivar artefato da proposta"
-    },
-    "not_found": "Artefato não encontrado",
-    "invalid_content_type": "Tipo de arquivo não permitido para artefato",
-    "too_large": "Arquivo excede o tamanho máximo permitido"
-  },
   "not_found": "Proposta não encontrada",
   "cannot_edit_non_draft": "Só é possível editar proposta com status DRAFT",
   "lost_reason_required": "lostReason é obrigatório quando o status é LOST",

@@ -44,10 +44,13 @@ import ptBRCompany from '../locales/pt-BR/company.json';
 import enCompany from '../locales/en/company.json';
 import ptBRProposal from '../locales/pt-BR/proposal.json';
 import enProposal from '../locales/en/proposal.json';
+import ptBRArtifact from '../locales/pt-BR/artifact.json';
+import enArtifact from '../locales/en/artifact.json';
 export const resources = {
 	'pt-BR': {
 		proposal: ptBRProposal,
 		company: ptBRCompany,
+		artifact: ptBRArtifact,
 		common: ptBRCommon,
 		access: ptBRAccess,
 		dashboard: ptBRDashboard,
@@ -72,6 +75,7 @@ export const resources = {
 	en: {
 		proposal: enProposal,
 		company: enCompany,
+		artifact: enArtifact,
 		common: enCommon,
 		access: enAccess,
 		dashboard: enDashboard,

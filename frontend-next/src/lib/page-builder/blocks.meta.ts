@@ -404,12 +404,12 @@ export const BLOCK_META = {
     defaultRowSpan: 4,
     minRowSpan: 2,
     description:
-      'Demonstração HTML interativa (protótipo, apresentação) isolada em sandbox. O conteúdo vem ' +
-      'do storage por `storageKey` — nunca HTML inline no layout. Preview estático; o toque abre ' +
+      'Demonstração HTML/imagem ou pasta (site estático) isolada em sandbox. O conteúdo vem de um ' +
+      '`Artifact` por `artifactId` — nunca HTML inline no layout. Preview estático; o toque abre ' +
       'um modal com a interação liberada. Não consome fonte de dados.',
     accepts: [],
     props: [
-      { name: 'storageKey', type: 'storage-file', required: true },
+      { name: 'artifactId', type: 'storage-file', required: true },
       { name: 'title', type: 'rich-text', required: false },
       { name: 'height', type: 'number', required: false },
       { name: 'aspect', type: 'string', required: false },

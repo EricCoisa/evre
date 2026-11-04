@@ -7546,6 +7546,174 @@
         ]
       }
     },
+    "/artifacts": {
+      "get": {
+        "operationId": "ArtifactController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Número da página",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Quantidade de itens por página (máximo 100)",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "pagination",
+            "required": false,
+            "in": "query",
+            "description": "Habilitar/desabilitar paginação",
+            "schema": {
+              "example": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Termo de busca",
+            "schema": {
+              "example": "",
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "required": false,
+            "in": "query",
+            "description": "Filtros adicionais",
+            "schema": {
+              "example": {},
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/Object"
+                }
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista paginada de artefatos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ArtifactDto"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "number"
+                        },
+                        "page": {
+                          "type": "number"
+                        },
+                        "limit": {
+                          "type": "number"
+                        },
+                        "totalPages": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "artifact.list.title",
+        "tags": [
+          "artifact"
+        ]
+      },
+      "post": {
+        "operationId": "ArtifactController_upload",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Artefato enviado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "artifact.upload.title",
+        "tags": [
+          "artifact"
+        ]
+      }
+    },
+    "/artifacts/{id}": {
+      "delete": {
+        "operationId": "ArtifactController_archive",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Artefato arquivado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "artifact.delete.title",
+        "tags": [
+          "artifact"
+        ]
+      }
+    },
     "/proposal": {
       "post": {
         "description": "proposal.create.description",
@@ -7965,116 +8133,6 @@
           }
         ],
         "summary": "proposal.status.update.title",
-        "tags": [
-          "proposal"
-        ]
-      }
-    },
-    "/proposal/{id}/artifacts": {
-      "get": {
-        "operationId": "ProposalController_listArtifacts",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Artifacts of the proposal",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ProposalArtifactDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "proposal.artifact.list.title",
-        "tags": [
-          "proposal"
-        ]
-      },
-      "post": {
-        "operationId": "ProposalController_uploadArtifact",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Artifact uploaded",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProposalArtifactDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "proposal.artifact.upload.title",
-        "tags": [
-          "proposal"
-        ]
-      }
-    },
-    "/proposal/{id}/artifacts/{artifactId}": {
-      "delete": {
-        "operationId": "ProposalController_archiveArtifact",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "artifactId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "proposal.artifact.delete.title",
         "tags": [
           "proposal"
         ]
@@ -12612,7 +12670,7 @@
                       "type": "integer",
                       "minimum": 1,
                       "exclusiveMinimum": false,
-                      "maximum": 8,
+                      "maximum": 24,
                       "exclusiveMaximum": false
                     },
                     "x": {
@@ -12676,7 +12734,7 @@
                             "type": "integer",
                             "minimum": 1,
                             "exclusiveMinimum": false,
-                            "maximum": 8,
+                            "maximum": 24,
                             "exclusiveMaximum": false
                           },
                           "x": {
@@ -13030,7 +13088,8 @@
           "phone": {
             "description": "Phone (MessagingContact identity)",
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "maxLength": 32
           },
           "name": {
             "description": "Contact name; set on MessagingContact when creating",
@@ -13085,6 +13144,102 @@
             "type": "string"
           }
         }
+      },
+      "ArtifactDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "FILE",
+              "FOLDER"
+            ]
+          },
+          "storageKey": {
+            "type": "string"
+          },
+          "entryFileName": {
+            "type": "string",
+            "nullable": true
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "contentType": {
+            "type": "string",
+            "nullable": true
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "contentType": {
+                  "type": "string"
+                },
+                "sizeBytes": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "path",
+                "contentType",
+                "sizeBytes"
+              ]
+            }
+          },
+          "sizeBytes": {
+            "type": "integer"
+          },
+          "published": {
+            "type": "boolean"
+          },
+          "publicToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdById": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "archivedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "storageKey",
+          "entryFileName",
+          "fileName",
+          "contentType",
+          "files",
+          "sizeBytes",
+          "published",
+          "publicToken",
+          "createdById",
+          "archivedAt",
+          "createdAt",
+          "updatedAt"
+        ]
       },
       "CreateProposalDto": {
         "type": "object",
@@ -13319,61 +13474,6 @@
         },
         "required": [
           "status"
-        ]
-      },
-      "ProposalArtifactDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "proposalId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "storageKey": {
-            "type": "string"
-          },
-          "fileName": {
-            "type": "string"
-          },
-          "contentType": {
-            "type": "string"
-          },
-          "sizeBytes": {
-            "type": "integer"
-          },
-          "createdById": {
-            "type": "string",
-            "format": "uuid",
-            "nullable": true
-          },
-          "archivedAt": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "id",
-          "proposalId",
-          "storageKey",
-          "fileName",
-          "contentType",
-          "sizeBytes",
-          "createdById",
-          "archivedAt",
-          "createdAt",
-          "updatedAt"
         ]
       },
       "PublishProposalResponseDto": {

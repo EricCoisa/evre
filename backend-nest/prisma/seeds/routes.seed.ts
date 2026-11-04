@@ -125,6 +125,17 @@ export async function seedRoutes(
       isActive: true,
     },
   });
+  const artifactRoute = await prisma.route.upsert({
+    where: { path: RoutePathConst.ARTIFACT },
+    update: {},
+    create: {
+      path: RoutePathConst.ARTIFACT,
+      labelKey: 'ROUTE_ARTIFACT',
+      icon: 'Files',
+      ordem: 14,
+      isActive: true,
+    },
+  });
   const featureFlagsRoute = await prisma.route.upsert({
     where: { path: RoutePathConst.FEATURE_FLAGS },
     update: {},
@@ -194,7 +205,7 @@ export async function seedRoutes(
     agentRoute,
     communicationRoute,
     communicationTemplatesRoute,
-    companyRoute, proposalRoute];
+    companyRoute, proposalRoute, artifactRoute];
   for (const route of adminRoutes) {
     await prisma.roleRouteAccess.upsert({
       where: {
@@ -212,6 +223,7 @@ export async function seedRoutes(
     profileRoute,
     logsRoute,
     cmsRoute,
+    artifactRoute,
   ];
   for (const route of moderatorRoutes) {
     await prisma.roleRouteAccess.upsert({

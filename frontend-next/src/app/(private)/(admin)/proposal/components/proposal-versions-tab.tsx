@@ -20,6 +20,7 @@ function toProposalTerms(version: ProposalVersionDto): ProposalTerms {
     validUntil: version.validUntil,
     includedItems: version.includedItems,
     optionalItems: version.optionalItems,
+    published: true,
   };
 }
 

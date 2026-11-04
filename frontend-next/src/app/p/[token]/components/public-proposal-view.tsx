@@ -28,6 +28,7 @@ export function PublicProposalView({
     validUntil: proposal.envelope.validUntil,
     includedItems: proposal.envelope.includedItems,
     optionalItems: proposal.envelope.optionalItems,
+    published: true,
   };
 
   return (

@@ -1,14 +1,11 @@
 "use server";
 // Thin adapter — wraps generated functions, preserves ApiResponse<T> shape
 import type { ApiResponse } from "../../api/api";
-import { customInstance } from "@/lib/api/orval-instance";
-import { API_PATHS } from "@/lib/generated/paths";
 import { getProposal as getProposalFactory } from "@/lib/generated/proposal/proposal";
 import type {
   AcceptProposalOfflineDto,
   AcceptProposalVersionResponseDto,
   CreateProposalDto,
-  ProposalArtifactDto,
   ProposalControllerFindAllParams,
   ProposalSendDto,
   ProposalVersionDto,
@@ -120,19 +117,3 @@ export async function listProposalSends(
   return wrap(() => api.proposalControllerListSends(id));
 }
 
-/** Multipart puro (sem DTO de body) — o Orval não gera client para isso, mesma saída de
- * `updateProfile` em `lib/actions/user/api.ts` para o upload de avatar. */
-export async function uploadProposalArtifact(
-  proposalId: string,
-  file: File,
-): Promise<ApiResponse<ProposalArtifactDto>> {
-  const formData = new FormData();
-  formData.append("file", file, file.name);
-  return wrap(() =>
-    customInstance<ProposalArtifactDto>({
-      url: API_PATHS.PROPOSAL_BY_ID_ARTIFACTS(proposalId),
-      method: "POST",
-      data: formData,
-    }),
-  );
-}

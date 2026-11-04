@@ -29,7 +29,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/hooks/use-translation';
 import { usePageSources } from '@/lib/actions/pageBuilder/queries';
-import { useUploadProposalArtifact } from '@/lib/actions/proposal/queries';
+import { useUploadArtifact } from '@/lib/actions/artifact/queries';
 import { useStorageHealth } from '@/lib/actions/user/queries';
 import type { PageSourceDto } from '@/lib/generated/schemas';
 import {
@@ -443,10 +443,10 @@ function ContentRichField({
   );
 }
 
-/** Campo de `storageKey` do bloco `iframe`: sobe o arquivo em vez de pedir a chave como texto —
- * o conteúdo nunca mora no layout (ver docs/frontend/page-builder.md). Desabilita com motivo
- * visível quando o storage está fora do ar ([[service-health-gate]]) ou a proposta ainda não
- * existe (`editor.recordId` ausente — rascunho novo que ainda não foi salvo). */
+/** Campo de `artifactId` do bloco `iframe`: sobe o arquivo (ou `.zip` de uma pasta/site estático)
+ * em vez de pedir o id como texto — o conteúdo nunca mora no layout (ver
+ * docs/frontend/page-builder.md). Upload é standalone (módulo `Artifact`, agnóstico de
+ * proposta) — desabilita só quando o storage está fora do ar ([[service-health-gate]]). */
 function ArtifactStorageKeyField({
   value,
   onChange,
@@ -455,21 +455,16 @@ function ArtifactStorageKeyField({
   onChange: (value: unknown) => void;
 }) {
   const { t } = useTranslation('page-builder');
-  const editor = useEditorOrThrow();
   const { data: health } = useStorageHealth();
-  const upload = useUploadProposalArtifact();
-  const recordId = editor.recordId;
+  const upload = useUploadArtifact();
   const storageDisabled = health?.operational === false;
-  const isDisabled = !recordId || storageDisabled || upload.isPending;
+  const isDisabled = storageDisabled || upload.isPending;
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
-    if (!file || !recordId) return;
-    upload.mutate(
-      { proposalId: recordId, file },
-      { onSuccess: (artifact) => onChange(artifact.storageKey) },
-    );
+    if (!file) return;
+    upload.mutate(file, { onSuccess: (artifact) => onChange(artifact.id) });
   };
 
   return (
@@ -485,17 +480,11 @@ function ArtifactStorageKeyField({
       ) : null}
       <Input
         type="file"
-        accept=".html,image/png,image/jpeg,image/svg+xml,image/webp"
+        accept=".html,image/png,image/jpeg,image/svg+xml,image/webp,.zip,application/zip"
         disabled={isDisabled}
         onChange={handleFile}
       />
-      {!recordId ? (
-        <p className="text-muted-foreground text-xs">
-          {t('editor.artifactMissingRecord', {
-            defaultValue: 'Salve a proposta antes de enviar o artefato.',
-          })}
-        </p>
-      ) : storageDisabled ? (
+      {storageDisabled ? (
         <p className="text-destructive text-xs">
           {t('editor.artifactStorageDisabled')}
         </p>

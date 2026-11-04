@@ -8,6 +8,7 @@ import { SystemConfigurationModule } from '../system-configuration/system-config
 import { NotificationModule } from '../notification/notification.module';
 import { ShortUrlModule } from '../short-url/short-url.module';
 import { MessagingModule } from '../messaging/messaging.module';
+import { ArtifactModule } from '../artifact/artifact.module';
 import { FindAllProposalUseCase } from './use-cases/find-all.use-case';
 import { FindOneProposalUseCase } from './use-cases/find-one.use-case';
 import { CreateProposalUseCase } from './use-cases/create.use-case';
@@ -17,9 +18,6 @@ import { UpdateProposalLayoutUseCase } from './use-cases/update-proposal-layout.
 import { UpdateProposalTermsUseCase } from './use-cases/update-proposal-terms.use-case';
 import { UpdateProposalStatusUseCase } from './use-cases/update-proposal-status.use-case';
 import { DuplicateProposalUseCase } from './use-cases/duplicate-proposal.use-case';
-import { UploadProposalArtifactUseCase } from './use-cases/upload-proposal-artifact.use-case';
-import { ArchiveProposalArtifactUseCase } from './use-cases/archive-proposal-artifact.use-case';
-import { ListProposalArtifactsUseCase } from './use-cases/list-proposal-artifacts.use-case';
 import { PublishProposalUseCase } from './use-cases/publish-proposal.use-case';
 import { RevokeProposalPublicationUseCase } from './use-cases/revoke-proposal-publication.use-case';
 import { ListProposalVersionsUseCase } from './use-cases/list-proposal-versions.use-case';
@@ -44,9 +42,6 @@ const USE_CASES = [
   UpdateProposalTermsUseCase,
   UpdateProposalStatusUseCase,
   DuplicateProposalUseCase,
-  UploadProposalArtifactUseCase,
-  ArchiveProposalArtifactUseCase,
-  ListProposalArtifactsUseCase,
   PublishProposalUseCase,
   RevokeProposalPublicationUseCase,
   ListProposalVersionsUseCase,
@@ -70,6 +65,7 @@ const USE_CASES = [
     NotificationModule,
     ShortUrlModule,
     MessagingModule,
+    ArtifactModule,
   ],
   controllers: [ProposalController, ProposalPublicController],
   providers: [...USE_CASES, ProposalRouteCeiling],

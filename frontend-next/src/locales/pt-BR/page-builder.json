@@ -19,7 +19,6 @@
     "YEARLY": "Anual"
   },
   "iframeMissingArtifact": "Este bloco ainda não tem um artefato enviado.",
-  "iframeLoadError": "Não foi possível carregar este artefato.",
   "iframeOpen": "Abrir em tela cheia",
   "iframeModalTitle": "Demonstração",
   "priceTotalDefault": "Total",
@@ -82,7 +81,6 @@
     "artifactUploading": "Enviando...",
     "artifactUploadError": "Falha ao enviar o artefato.",
     "artifactStorageDisabled": "Upload desabilitado: o storage está indisponível no momento.",
-    "artifactMissingRecord": "Salve a proposta antes de enviar o artefato.",
     "tabVisual": "Visual",
     "tabJson": "JSON",
     "jsonHint": "Edições válidas são aplicadas em tempo real.",

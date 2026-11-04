@@ -1,0 +1,36 @@
+enum ArtifactKind {
+  FILE
+  FOLDER
+
+  @@schema("public")
+}
+
+/// Arquivo ou pasta de arquivos (site estático) salvo via StorageService, agnóstico de quem usa —
+/// quem consome (ex. bloco iframe do page-builder) guarda só o `id`, sem relação Prisma real.
+/// Ver docs/architecture/data-model.md.
+model Artifact {
+  id            String       @id @default(uuid())
+  kind          ArtifactKind
+  storageKey    String
+  /// FOLDER: prefixo terminado em "/". FILE: key completa do arquivo.
+  entryFileName String?
+  /// só FOLDER; default lógico "index.html" quando ausente no upload.
+  fileName      String
+  contentType   String?
+  /// FILE: contentType do arquivo. FOLDER: null (cada entrada tem o seu em `files`).
+  files         Json
+  /// [{ path, contentType, sizeBytes }] — manifesto conhecido no upload; valida sub-path na view.
+  sizeBytes     Int
+  published     Boolean      @default(false)
+  publicToken   String?      @unique
+  /// gerado uma vez na 1ª publicação, reusado em publish/unpublish seguintes — nunca regenerado.
+  archivedAt    DateTime?
+  createdById   String?
+  createdBy     User?        @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([archivedAt])
+  @@map("artifacts")
+  @@schema("public")
+}

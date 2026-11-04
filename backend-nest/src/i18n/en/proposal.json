@@ -61,20 +61,6 @@
       "title": "Update proposal status"
     }
   },
-  "artifact": {
-    "upload": {
-      "title": "Upload proposal artifact"
-    },
-    "list": {
-      "title": "List proposal artifacts"
-    },
-    "delete": {
-      "title": "Archive proposal artifact"
-    },
-    "not_found": "Artifact not found",
-    "invalid_content_type": "File type not allowed for artifact",
-    "too_large": "File exceeds the maximum allowed size"
-  },
   "not_found": "Proposal not found",
   "cannot_edit_non_draft": "Only a proposal in DRAFT status can be edited",
   "lost_reason_required": "lostReason is required when status is LOST",

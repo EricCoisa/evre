@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ProposalModule } from './modules/proposal/proposal.module';
+import { ArtifactModule } from './modules/artifact/artifact.module';
 import { CompanyModule } from './modules/company/company.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { APP_GUARD } from '@nestjs/core';
@@ -137,6 +138,7 @@ import { SentryModule } from '@sentry/nestjs/setup';
     NotificationModule,
     ShortUrlModule,
     CompanyModule,
+    ArtifactModule,
     ProposalModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

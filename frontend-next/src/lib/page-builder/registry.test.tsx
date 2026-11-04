@@ -9,19 +9,6 @@ vi.mock('@/hooks/use-translation', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
-/** `iframe` resolve a URL via `usePresignedUrl` (react-query + server action) — mockado direto
- * em vez de montar QueryClientProvider, igual o padrão de `renderer.test.tsx` para os hooks de ação. */
-const mockPresignedUrl = vi.hoisted(() => ({
-  current: { data: undefined, isLoading: false, isError: false } as {
-    data?: { url: string };
-    isLoading: boolean;
-    isError: boolean;
-  },
-}));
-vi.mock('@/lib/actions/storage/queries', () => ({
-  usePresignedUrl: () => mockPresignedUrl.current,
-}));
-
 // ResponsiveContainer nunca ganha tamanho real no jsdom, então o recharts de verdade não
 // desenha nada — troca pelos data-testid que expõem o que cada bloco recebeu (mesmo padrão de
 // chart-area-interactive.test.tsx).
@@ -634,6 +621,7 @@ describe('investment', () => {
       validUntil: null,
       includedItems: [],
       optionalItems: [],
+      published: false,
     };
 
     render(
@@ -656,6 +644,7 @@ describe('investment', () => {
       validUntil: null,
       includedItems: ['Suporte'],
       optionalItems: ['Manutenção extra'],
+      published: false,
     };
 
     render(
@@ -755,16 +744,18 @@ describe('price', () => {
 
 describe('iframe', () => {
   const NO_SAME_ORIGIN_SANDBOX = 'allow-scripts allow-popups allow-modals allow-forms';
+  const baseTerms: ProposalTerms = {
+    totalCents: null,
+    currency: 'BRL',
+    recurrence: 'ONE_TIME',
+    termDays: null,
+    validUntil: null,
+    includedItems: [],
+    optionalItems: [],
+    published: false,
+  };
 
-  beforeEach(() => {
-    mockPresignedUrl.current = {
-      data: { url: 'https://cdn.example.com/artifacts/demo.html' },
-      isLoading: false,
-      isError: false,
-    };
-  });
-
-  it('sem storageKey mostra aviso em vez do iframe', () => {
+  it('sem artifactId mostra aviso em vez do iframe', () => {
     const IframeBlock = BLOCK_REGISTRY.iframe;
     render(React.createElement(IframeBlock, { props: {} }));
 
@@ -772,11 +763,30 @@ describe('iframe', () => {
     expect(document.querySelector('iframe')).toBeNull();
   });
 
-  it('colapsado: iframe não é interativo — scrolling="no" e camada de clique por cima, sandbox sem allow-same-origin', () => {
+  it('rascunho (sem contexto publicado): src aponta pra rota autenticada por id', () => {
+    const IframeBlock = BLOCK_REGISTRY.iframe;
+    render(React.createElement(IframeBlock, { props: { artifactId: 'artifact-1' } }));
+
+    const iframe = document.querySelector('iframe');
+    expect(iframe).toHaveAttribute('src', expect.stringContaining('/artifacts/artifact-1/view'));
+  });
+
+  it('versão publicada: src aponta pra rota pública por token', () => {
     const IframeBlock = BLOCK_REGISTRY.iframe;
     render(
-      React.createElement(IframeBlock, { props: { storageKey: 'proposals/p1/artifacts/x.html' } }),
+      React.createElement(ProposalTermsProvider, {
+        terms: { ...baseTerms, published: true },
+        children: React.createElement(IframeBlock, { props: { artifactId: 'public-token-1' } }),
+      }),
     );
+
+    const iframe = document.querySelector('iframe');
+    expect(iframe).toHaveAttribute('src', expect.stringContaining('/artifacts/public/public-token-1'));
+  });
+
+  it('colapsado: iframe não é interativo — scrolling="no" e camada de clique por cima, sandbox sem allow-same-origin', () => {
+    const IframeBlock = BLOCK_REGISTRY.iframe;
+    render(React.createElement(IframeBlock, { props: { artifactId: 'artifact-1' } }));
 
     const iframe = document.querySelector('iframe');
     expect(iframe).not.toBeNull();
@@ -792,9 +802,7 @@ describe('iframe', () => {
 
   it('clique/toque abre o modal com scrolling="yes" e sandbox igual, sem allow-same-origin', () => {
     const IframeBlock = BLOCK_REGISTRY.iframe;
-    render(
-      React.createElement(IframeBlock, { props: { storageKey: 'proposals/p1/artifacts/x.html' } }),
-    );
+    render(React.createElement(IframeBlock, { props: { artifactId: 'artifact-1' } }));
 
     fireEvent.click(screen.getByRole('button', { name: 'iframeOpen' }));
 
@@ -808,17 +816,6 @@ describe('iframe', () => {
     // o preview continua com o mesmo sandbox restrito — liberar no modal não afrouxa o resto
     const previewIframe = iframes[0];
     expect(previewIframe.getAttribute('sandbox')).toBe(NO_SAME_ORIGIN_SANDBOX);
-  });
-
-  it('falha ao resolver a URL mostra aviso no lugar do bloco, sem derrubar o componente', () => {
-    mockPresignedUrl.current = { data: undefined, isLoading: false, isError: true };
-    const IframeBlock = BLOCK_REGISTRY.iframe;
-    render(
-      React.createElement(IframeBlock, { props: { storageKey: 'proposals/p1/artifacts/x.html' } }),
-    );
-
-    expect(screen.getByText('iframeLoadError')).toBeInTheDocument();
-    expect(document.querySelector('iframe')).toBeNull();
   });
 });
 
