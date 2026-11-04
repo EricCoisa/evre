@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Alive, Collector } from '@/lib/api/collector';
 import { getQueryConfig } from '../../utils';
 import type { PaginationParams } from '../../types/pagination.types';
-import { archiveArtifact, getArtifacts, uploadArtifact } from './api';
+import { archiveArtifact, deleteArtifactPermanently, getArtifacts, uploadArtifact } from './api';
 
 export function useArtifacts(params?: PaginationParams) {
   return useQuery({
@@ -30,6 +30,16 @@ export function useArchiveArtifact() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => Alive(() => archiveArtifact(id))(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['artifacts'] });
+    },
+  });
+}
+
+export function useDeleteArtifact() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => Alive(() => deleteArtifactPermanently(id))(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['artifacts'] });
     },

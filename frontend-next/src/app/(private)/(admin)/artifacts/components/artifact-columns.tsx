@@ -3,7 +3,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Artifact } from "@/lib/actions/artifact/types";
 import { Button } from "@/components/ui/button";
-import { ArrowDown, ArrowUp, ArrowUpDown, Archive, ExternalLink } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Archive, ExternalLink, Trash2 } from "lucide-react";
 import { DataCell, TableHead } from "@/components/table-utils";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
@@ -20,9 +20,10 @@ function formatFileSize(bytes: number): string {
 interface GetArtifactColumnsProps {
   t: TFunc;
   onArchive?: (item: Artifact) => void;
+  onDelete?: (item: Artifact) => void;
 }
 
-export function getArtifactColumns({ t, onArchive }: GetArtifactColumnsProps): ColumnDef<Artifact>[] {
+export function getArtifactColumns({ t, onArchive, onDelete }: GetArtifactColumnsProps): ColumnDef<Artifact>[] {
   return [
     {
       accessorKey: "name",
@@ -147,6 +148,17 @@ export function getArtifactColumns({ t, onArchive }: GetArtifactColumnsProps): C
                   className="h-6 p-0 min-h-0 text-destructive hover:text-destructive"
                 >
                   <Archive className="h-4 w-4" />
+                </Button>
+              )}
+              {onDelete && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onDelete(item)}
+                  title={t("deleteTooltip")}
+                  className="h-6 p-0 min-h-0 text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
                 </Button>
               )}
             </div>

@@ -27,6 +27,15 @@ export async function archiveArtifact(id: string): Promise<ApiResponse<Artifact>
   return wrapAs(() => api.artifactControllerArchive(id));
 }
 
+export async function deleteArtifactPermanently(id: string): Promise<ApiResponse<Artifact>> {
+  return wrapAs(() =>
+    customInstance<Artifact>({
+      url: API_PATHS.ARTIFACTS_BY_ID_PERMANENT(id),
+      method: "DELETE",
+    }),
+  );
+}
+
 /** Multipart puro (sem DTO de body) — o Orval não gera client para isso, mesmo caso de
  * `updateProfile` em `lib/actions/user/api.ts` para o upload de avatar. Aceita arquivo único
  * (html/imagem) ou `.zip` (pasta/site estático), extraído no backend. */

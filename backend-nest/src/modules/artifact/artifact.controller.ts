@@ -38,10 +38,12 @@ import { ArtifactDto } from './dto/artifact.dto';
 import { UploadArtifactUseCase } from './use-cases/upload-artifact.use-case';
 import { ListArtifactsUseCase } from './use-cases/list-artifacts.use-case';
 import { ArchiveArtifactUseCase } from './use-cases/archive-artifact.use-case';
+import { DeleteArtifactUseCase } from './use-cases/delete-artifact.use-case';
 import { ViewArtifactUseCase } from './use-cases/view-artifact.use-case';
 import { normalizeWildcardPath } from './wildcard-path.util';
 
 const ARTIFACT_ROLES = [UserRoleConst.ADMIN, UserRoleConst.MODERATOR];
+const ARTIFACT_DELETE_ROLES = [UserRoleConst.ADMIN];
 
 /** Gestão de artefatos (arquivo ou pasta de arquivos), agnóstico de quem consome — hoje: bloco
  * `iframe` do page-builder. Ver docs/architecture/data-model.md. */
@@ -52,6 +54,7 @@ export class ArtifactController {
     private readonly uploadArtifact: UploadArtifactUseCase,
     private readonly listArtifacts: ListArtifactsUseCase,
     private readonly archiveArtifact: ArchiveArtifactUseCase,
+    private readonly deleteArtifact: DeleteArtifactUseCase,
     private readonly viewArtifact: ViewArtifactUseCase,
   ) {}
 
@@ -124,6 +127,28 @@ export class ArtifactController {
     @CurrentUser() currentUser: AuthenticatedUser,
   ): Promise<Artifact> {
     return this.archiveArtifact.execute(id, currentUser);
+  }
+
+  @DeleteApi({
+    path: ':id/permanent',
+    summary: 'artifact.deletePermanent.title',
+    status: 'OK',
+    roles: ARTIFACT_DELETE_ROLES,
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Artefato excluído permanentemente',
+          schema: { dto: ArtifactDto },
+        },
+      ],
+    },
+  })
+  async deletePermanently(
+    @Param('id') id: string,
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ): Promise<Artifact> {
+    return this.deleteArtifact.execute(id, currentUser);
   }
 
   // Redirect puro (302): GetApi só aceita um `path`, e esta rota precisa de dois patterns pro

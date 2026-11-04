@@ -8,6 +8,9 @@
   "delete": {
     "title": "Archive artifact"
   },
+  "deletePermanent": {
+    "title": "Permanently delete artifact"
+  },
   "not_found": "Artifact not found",
   "invalid_content_type": "File type not allowed for artifact",
   "too_large": "File exceeds the maximum allowed size",

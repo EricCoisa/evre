@@ -8,6 +8,9 @@
   "delete": {
     "title": "Arquivar artefato"
   },
+  "deletePermanent": {
+    "title": "Excluir artefato permanentemente"
+  },
   "not_found": "Artefato não encontrado",
   "invalid_content_type": "Tipo de arquivo não permitido para artefato",
   "too_large": "Arquivo excede o tamanho máximo permitido",

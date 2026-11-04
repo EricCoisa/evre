@@ -8,6 +8,7 @@ import { SystemConfigurationModule } from '../system-configuration/system-config
 import { UploadArtifactUseCase } from './use-cases/upload-artifact.use-case';
 import { ListArtifactsUseCase } from './use-cases/list-artifacts.use-case';
 import { ArchiveArtifactUseCase } from './use-cases/archive-artifact.use-case';
+import { DeleteArtifactUseCase } from './use-cases/delete-artifact.use-case';
 import { ViewArtifactUseCase } from './use-cases/view-artifact.use-case';
 import { ViewPublicArtifactUseCase } from './use-cases/view-public-artifact.use-case';
 import { PublishReferencedArtifactsUseCase } from './use-cases/publish-referenced-artifacts.use-case';
@@ -17,6 +18,7 @@ const USE_CASES = [
   UploadArtifactUseCase,
   ListArtifactsUseCase,
   ArchiveArtifactUseCase,
+  DeleteArtifactUseCase,
   ViewArtifactUseCase,
   ViewPublicArtifactUseCase,
   PublishReferencedArtifactsUseCase,

@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { useTranslation } from "@/hooks/use-translation";
-import { useArtifacts, useArchiveArtifact } from "@/lib/actions/artifact/queries";
+import { useArtifacts, useArchiveArtifact, useDeleteArtifact } from "@/lib/actions/artifact/queries";
 import { useStorageHealth } from '@/lib/actions/user/queries';
 import { DataTable } from "@/components/data-table";
 import { getArtifactColumns } from "./artifact-columns";
@@ -18,6 +18,7 @@ export function ArtifactTab() {
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
   const [globalFilter, setGlobalFilter] = useState('');
   const [archivingArtifact, setArchivingArtifact] = useState<Artifact | null>(null);
+  const [deletingArtifact, setDeletingArtifact] = useState<Artifact | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -26,6 +27,10 @@ export function ArtifactTab() {
 
   const handleArchive = useCallback((item: Artifact) => {
     setArchivingArtifact(item);
+  }, []);
+
+  const handleDelete = useCallback((item: Artifact) => {
+    setDeletingArtifact(item);
   }, []);
 
   const queryParams = {
@@ -37,8 +42,9 @@ export function ArtifactTab() {
 
   const { data, error } = useArtifacts(queryParams);
   const archiveArtifactMutation = useArchiveArtifact();
+  const deleteArtifactMutation = useDeleteArtifact();
 
-  const columns = getArtifactColumns({ t, onArchive: handleArchive });
+  const columns = getArtifactColumns({ t, onArchive: handleArchive, onDelete: handleDelete });
 
   return (
     <>
@@ -90,6 +96,21 @@ export function ArtifactTab() {
           await archiveArtifactMutation.mutateAsync(archivingArtifact.id);
           queryClient.invalidateQueries({ queryKey: ['artifacts'] });
           setArchivingArtifact(null);
+        }}
+      />
+
+      <ConfirmDialog
+        open={!!deletingArtifact}
+        onOpenChange={(open) => !open && setDeletingArtifact(null)}
+        title={t('deleteConfirm')}
+        description={deletingArtifact ? `${t('deleteConfirmDescription')} "${deletingArtifact.name || deletingArtifact.fileName}"?` : ''}
+        confirmLabel={t('deletePermanent')}
+        confirmVariant="destructive"
+        onConfirm={async () => {
+          if (!deletingArtifact) return;
+          await deleteArtifactMutation.mutateAsync(deletingArtifact.id);
+          queryClient.invalidateQueries({ queryKey: ['artifacts'] });
+          setDeletingArtifact(null);
         }}
       />
     </>

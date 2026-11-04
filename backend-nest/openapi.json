@@ -7714,6 +7714,42 @@
         ]
       }
     },
+    "/artifacts/{id}/permanent": {
+      "delete": {
+        "operationId": "ArtifactController_deletePermanently",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Artefato excluído permanentemente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "artifact.deletePermanent.title",
+        "tags": [
+          "artifact"
+        ]
+      }
+    },
     "/proposal": {
       "post": {
         "description": "proposal.create.description",
