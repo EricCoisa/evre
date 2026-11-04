@@ -41,5 +41,8 @@
   "searchPlaceholder": "Search by file name...",
   "searchText": "Search",
   "empty": "No artifacts found",
-  "storageDisabled": "Upload disabled: storage is currently unavailable."
+  "storageDisabled": "Upload disabled: storage is currently unavailable.",
+  "pickerTitle": "Select artifact",
+  "pickerExisting": "Existing",
+  "pickerUpload": "Upload new"
 }

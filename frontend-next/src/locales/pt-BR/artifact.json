@@ -41,5 +41,8 @@
   "searchPlaceholder": "Buscar por nome do arquivo...",
   "searchText": "Buscar",
   "empty": "Nenhum artefato encontrado",
-  "storageDisabled": "Upload desabilitado: o storage está indisponível no momento."
+  "storageDisabled": "Upload desabilitado: o storage está indisponível no momento.",
+  "pickerTitle": "Selecionar artefato",
+  "pickerExisting": "Existente",
+  "pickerUpload": "Enviar novo"
 }

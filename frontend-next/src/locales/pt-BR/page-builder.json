@@ -77,6 +77,7 @@
     "clearSource": "Limpar fonte",
     "preset": "Estilo do texto (Preset)",
     "optionalSourceHint": "Opcional: escolha uma fonte para inserir variáveis {{var}} no texto.",
+    "artifactSelect": "Selecionar artefato",
     "artifactUpload": "Enviar artefato",
     "artifactUploading": "Enviando...",
     "artifactUploadError": "Falha ao enviar o artefato.",

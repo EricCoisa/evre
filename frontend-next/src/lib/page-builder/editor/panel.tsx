@@ -30,7 +30,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/hooks/use-translation';
 import { usePageSources } from '@/lib/actions/pageBuilder/queries';
 import { useStorageHealth } from '@/lib/actions/user/queries';
-import { UploadArtifactDialog } from '@/components/upload-artifact-dialog';
+import { ArtifactPickerDialog } from '@/components/artifact-picker-dialog';
 import type { PageSourceDto } from '@/lib/generated/schemas';
 import {
   BLOCK_META,
@@ -443,10 +443,9 @@ function ContentRichField({
   );
 }
 
-/** Campo de `artifactId` do bloco `iframe`: sobe o arquivo (ou `.zip` de uma pasta/site estático)
- * em vez de pedir o id como texto — o conteúdo nunca mora no layout (ver
- * docs/frontend/page-builder.md). Upload é standalone (módulo `Artifact`, agnóstico de
- * proposta) — desabilita só quando o storage está fora do ar ([[service-health-gate]]). */
+/** Campo de `artifactId` do bloco `iframe`: seleciona um artefato existente ou sobe um novo —
+ * o conteúdo nunca mora no layout (ver docs/frontend/page-builder.md). Desabilita só quando o
+ * storage está fora do ar ([[service-health-gate]]). */
 function ArtifactStorageKeyField({
   value,
   onChange,
@@ -456,13 +455,13 @@ function ArtifactStorageKeyField({
 }) {
   const { t } = useTranslation('page-builder');
   const { data: health } = useStorageHealth();
-  const [uploadOpen, setUploadOpen] = React.useState(false);
+  const [pickerOpen, setPickerOpen] = React.useState(false);
   const storageDisabled = health?.operational === false;
 
   return (
     <div className="space-y-1.5">
       <Label className="text-xs">
-        {t('editor.artifactUpload')}
+        {t('editor.artifactSelect')}
         <span className="text-destructive">*</span>
       </Label>
       {typeof value === 'string' && value ? (
@@ -475,20 +474,20 @@ function ArtifactStorageKeyField({
         size="sm"
         className="w-full"
         disabled={storageDisabled}
-        onClick={() => setUploadOpen(true)}
+        onClick={() => setPickerOpen(true)}
       >
         <Upload className="h-3.5 w-3.5 mr-1.5" />
-        {t('editor.artifactUpload')}
+        {t('editor.artifactSelect')}
       </Button>
       {storageDisabled ? (
         <p className="text-destructive text-xs">
           {t('editor.artifactStorageDisabled')}
         </p>
       ) : null}
-      <UploadArtifactDialog
-        open={uploadOpen}
-        onOpenChange={setUploadOpen}
-        onSuccess={(artifact) => onChange(artifact.id)}
+      <ArtifactPwickerDialog
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        onSelect={(artifact) => onChange(artifact.id)}
       />
     </div>
   );
