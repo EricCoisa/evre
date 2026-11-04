@@ -25,7 +25,6 @@ import {
   insertBlockAt,
   insertBlockAtGrid,
   moveBlock,
-  moveBlockStep,
   moveBlockTo,
   moveBlockToGrid,
   nudgeBlockGrid,
@@ -80,7 +79,6 @@ export interface EditorContextValue {
     parentId?: string,
   ) => void;
   duplicate: (id: string) => void;
-  moveStep: (id: string, direction: 'up' | 'down') => void;
   moveToGrid: (
     activeId: string,
     x: number,
@@ -131,6 +129,8 @@ export function useEditorOrThrow(): EditorContextValue {
 }
 
 const UNDO_HISTORY_SIZE = 30;
+/** Pausa de digitação que encerra o agrupamento de undo de uma edição de texto em andamento. */
+const COALESCE_IDLE_MS = 800;
 
 export function EditorProvider({
   initial,
@@ -152,10 +152,16 @@ export function EditorProvider({
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
 
-  // ponytail: refs permitem callbacks estáveis sem draft/selectedId nos deps
+  // ponytail: `undo`/`redo` são `useCallback` com deps `[]` (identidade estável entre renders) mas
+  // precisam do draft/selectedId mais recentes no momento em que são chamados — por isso leem a
+  // ref em vez de capturar a variável. Mutação síncrona durante o render (não num useEffect) é
+  // proposital: um useEffect só atualizaria a ref depois do commit, deixando a própria chamada de
+  // `undo`/`redo` neste commit (ex.: atalho de teclado) ler um valor de uma tecla atrás.
   const draftRef = useRef(draft);
+  // eslint-disable-next-line react-hooks/refs
   draftRef.current = draft;
   const selectedIdRef = useRef(selectedId);
+  // eslint-disable-next-line react-hooks/refs
   selectedIdRef.current = selectedId;
 
   // ponytail: JSON.stringify fora do useMemo — não bloqueia o path de digitação
@@ -166,15 +172,46 @@ export function EditorProvider({
     return () => clearTimeout(id);
   }, [draft, normalizedInitial]);
 
-  const applyChange = useCallback((updater: (current: PageLayout) => PageLayout) => {
-    setDraft((current) => {
-      const next = updater(current);
-      if (next === current) return current;
-      setPast((prevPast) => [...prevPast.slice(-UNDO_HISTORY_SIZE), current]);
-      setFuture([]);
-      return next;
-    });
+  // Edição de texto dispara `applyChange` a cada tecla: sem agrupar, cada caractere viraria uma
+  // entrada de undo própria. `coalesceKey` (mesmo blockId+prop) funde edições consecutivas em uma
+  // única entrada; uma pausa de digitação (COALESCE_IDLE_MS) ou uma mudança sem `coalesceKey`
+  // (qualquer outra ação do editor) encerra o agrupamento.
+  const coalesceKeyRef = useRef<{ id: string; name: string } | null>(null);
+  const coalesceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (coalesceTimerRef.current) clearTimeout(coalesceTimerRef.current);
   }, []);
+
+  const applyChange = useCallback(
+    (
+      updater: (current: PageLayout) => PageLayout,
+      coalesceKey?: { id: string; name: string },
+    ) => {
+      setDraft((current) => {
+        const next = updater(current);
+        if (next === current) return current;
+        const continuesPending =
+          !!coalesceKey &&
+          coalesceKeyRef.current?.id === coalesceKey.id &&
+          coalesceKeyRef.current?.name === coalesceKey.name;
+        if (!continuesPending) {
+          setPast((prevPast) => [...prevPast.slice(-UNDO_HISTORY_SIZE), current]);
+          setFuture([]);
+        }
+        coalesceKeyRef.current = coalesceKey ?? null;
+        return next;
+      });
+
+      if (coalesceTimerRef.current) clearTimeout(coalesceTimerRef.current);
+      if (coalesceKey) {
+        coalesceTimerRef.current = setTimeout(() => {
+          coalesceKeyRef.current = null;
+        }, COALESCE_IDLE_MS);
+      }
+    },
+    [],
+  );
 
   // ponytail: draftRef.current → undo/redo estáveis sem draft nos deps
   const undo = useCallback(() => {
@@ -186,7 +223,6 @@ export function EditorProvider({
       setDraft(previous);
       return newPast;
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const redo = useCallback(() => {
@@ -198,7 +234,6 @@ export function EditorProvider({
       setDraft(next);
       return newFuture;
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Atalhos de teclado universais: Ctrl+Z / Cmd+Z e Ctrl+Y / Cmd+Shift+Z
@@ -227,13 +262,13 @@ export function EditorProvider({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [undo, redo]);
 
+  const hasNoPast = past.length === 0;
+  const hasNoFuture = future.length === 0;
+
   const value = useMemo<EditorContextValue>(() => {
     return {
-      // ponytail: getter lê draftRef.current → draft nunca está nos deps; objeto não recria por keystroke
-      get draft() { return draftRef.current; },
-      get selected() {
-        return selectedIdRef.current ? findBlock(draftRef.current, selectedIdRef.current) : undefined;
-      },
+      draft,
+      selected: selectedId ? findBlock(draft, selectedId) : undefined,
       profile,
       recordId,
       dirty: isDirty,
@@ -279,9 +314,6 @@ export function EditorProvider({
         });
         if (createdId) setSelectedId(createdId);
       },
-      moveStep: (id, direction) => {
-        applyChange((d) => moveBlockStep(d, id, direction));
-      },
       moveToGrid: (activeId, x, y, parentId) => {
         applyChange((d) => moveBlockToGrid(d, activeId, x, y, parentId));
       },
@@ -308,7 +340,8 @@ export function EditorProvider({
       moveTo: (activeId, targetId, placement) =>
         applyChange((d) => moveBlockTo(d, activeId, targetId, placement)),
       patch: (id, p) => applyChange((d) => updateBlock(d, id, p)),
-      setProp: (id, name, v) => applyChange((d) => setBlockProp(d, id, name, v)),
+      setProp: (id, name, v) =>
+        applyChange((d) => setBlockProp(d, id, name, v), { id, name }),
       setSource: (id, source) => applyChange((d) => setBlockSource(d, id, source)),
       setInline: (id, inline) => applyChange((d) => setBlockInline(d, id, inline)),
       setParam: (id, name, v) => applyChange((d) => setBlockParam(d, id, name, v)),
@@ -319,17 +352,19 @@ export function EditorProvider({
       redo,
       setLayout: (layout) => applyChange(() => compactLayout(layout)),
     };
-  // ponytail: draft/undo/redo excluídos — getters+refs; past/future como boolean → recria só quando canUndo/canRedo muda
+  // ponytail: undo/redo excluídos — identidade estável via useCallback([]), leem draftRef/coalesceKeyRef
+  // por fora do recompute; past/future como boolean → recria só quando canUndo/canRedo muda, não a cada push
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
+    draft,
     profile,
     recordId,
     isDirty,
     selectedId,
     activeRichText,
     draggingId,
-    past.length === 0,
-    future.length === 0,
+    hasNoPast,
+    hasNoFuture,
     applyChange,
   ]);
 

@@ -201,6 +201,14 @@ export const ROW_START_CLASS: Record<number, string> = {
   59: 'lg:row-start-60',
 } as const;
 
+const MAX_ROW_START = Math.max(...Object.keys(ROW_START_CLASS).map(Number));
+
+/** Classe `row-start` para `y`, saturando no maior valor conhecido em vez de voltar `undefined`
+ * (e perder o posicionamento) quando `y` excede o que a tabela cobre. */
+export function rowStartClass(y: number): string {
+  return ROW_START_CLASS[Math.min(y, MAX_ROW_START)];
+}
+
 export const SPANS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
 export type BlockSpan = (typeof SPANS)[number];
 

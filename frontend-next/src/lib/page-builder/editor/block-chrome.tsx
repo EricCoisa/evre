@@ -5,7 +5,6 @@ import { SortableContext, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useDroppable } from '@dnd-kit/core';
 import {
-  Pencil,
   ArrowDown,
   ArrowLeft,
   ArrowLeftRight,
@@ -36,18 +35,18 @@ import {
   resolveGridLayout,
   type EmptyGridSlot,
 } from '../grid-engine';
-import { isAutoHeightBlockType } from '../blocks.meta';
+import { isAutoHeightBlockType, isTextEditableBlockType } from '../blocks.meta';
 import { TEXT_PRESET_CONFIG, normalizeTextPreset } from '../registry';
 import {
   COL_START_CLASS,
   QUICK_HEIGHTS,
   QUICK_WIDTHS,
   ROW_SPAN_CLASS,
-  ROW_START_CLASS,
   SPAN_CLASS,
   minRowSpanForType,
   normalizeRowSpan,
   normalizeSpan,
+  rowStartClass,
   type PageBlock,
 } from '../schema';
 import { BlockInserter } from './block-inserter';
@@ -56,7 +55,6 @@ import {
   canAcceptChildrenType,
   canDrop,
   isContainerType,
-  isInlineBlockType,
 } from './mutations';
 
 export type DropPlacement = 'before' | 'after' | 'inside' | 'swap';
@@ -102,13 +100,11 @@ export function parseGridSlotId(
 /** Toolbar flutuante contextual inspirada no WordPress Gutenberg e Excalidraw */
 function FloatingBlockToolbar({
   block,
-  nested,
   selected,
   attributes,
   listeners,
 }: {
   block: PageBlock;
-  nested?: boolean;
   selected: boolean;
   attributes: Record<string, unknown>;
   listeners: Record<string, unknown> | undefined;
@@ -117,14 +113,8 @@ function FloatingBlockToolbar({
   const editor = useEditorOrThrow();
   const currentSpan = normalizeSpan(block.span);
 
-  const isInline = isInlineBlockType(block.type);
   const isContainer = isContainerType(block.type);
   const isAutoHeight = isAutoHeightBlockType(block.type);
-  const isTextEditable =
-    block.type === 'text.rich' ||
-    block.type === 'button.action' ||
-    block.type === 'topic' ||
-    block.type === 'price';
 
   const located = editor.draft.blocks.some((b) => b.id === block.id)
     ? editor.draft.blocks
@@ -568,7 +558,7 @@ export function EmptySlotDropZone({
   const gridClass = cn(
     COL_START_CLASS[slot.x] ?? 'lg:col-start-1',
     SPAN_CLASS[slot.span] ?? 'lg:col-span-6',
-    ROW_START_CLASS[slot.y] ?? '',
+    rowStartClass(slot.y),
     ROW_SPAN_CLASS[slot.rowSpan] ?? 'lg:row-span-1',
   );
 
@@ -713,15 +703,9 @@ export function BlockChrome({
 
   const selected = editor.selectedId === block.id;
   const isContainer = isContainerType(block.type);
-  const isInline = isInlineBlockType(block.type);
   const isAutoHeight = isAutoHeightBlockType(block.type);
-  const isTextEditable =
-    block.type === 'text.rich' ||
-    block.type === 'button.action' ||
-    block.type === 'topic' ||
-    block.type === 'price';
-  
-  const isChildSelected = (block.children ?? []).some((c) => c.id === editor.selectedId);
+  const isTextEditable = isTextEditableBlockType(block.type);
+
   const hasInteractiveChildren = isContainer || (block.children?.length ?? 0) > 0;
   const canReceiveChildren = !nested && canAcceptChildrenType(block.type);
   const showChildInserter =
@@ -769,7 +753,6 @@ export function BlockChrome({
       {/* Toolbar Flutuante Contextual — renderizada por último para sobrepor as alças e bordas */}
       <FloatingBlockToolbar
         block={block}
-        nested={nested}
         selected={selected}
         attributes={attributes as unknown as Record<string, unknown>}
         listeners={listeners as unknown as Record<string, unknown>}

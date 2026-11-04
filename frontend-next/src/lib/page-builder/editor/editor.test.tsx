@@ -263,7 +263,11 @@ describe('PageEditor', () => {
 
     await user.click(addButton('chart.area'));
 
-    expect(screen.getByRole('button', { name: 'editor.save' })).toBeEnabled();
+    // `dirty` é recalculado num debounce de 300ms (ver context.tsx) — espera o botão habilitar
+    // em vez de checar sincronamente.
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'editor.save' })).toBeEnabled();
+    });
   });
 });
 
@@ -337,6 +341,9 @@ describe('EditorShell — salvar, salvar como padrão e cancelar', () => {
     const { onExit } = renderEditor();
 
     await user.click(addButton('chart.area'));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'editor.save' })).toBeEnabled();
+    });
     await user.click(screen.getByRole('button', { name: 'editor.save' }));
 
     expect(mockSave.mutate).toHaveBeenCalledTimes(1);
@@ -396,6 +403,11 @@ describe('EditorShell — salvar, salvar como padrão e cancelar', () => {
     const { onExit } = renderEditor();
 
     await user.click(addButton('chart.area'));
+    // Espera `dirty` virar true (debounce de 300ms) antes de cancelar — senão `handleCancel`
+    // encontra `editor.dirty` ainda falso e sai sem pedir confirmação.
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'editor.save' })).toBeEnabled();
+    });
     await user.click(screen.getByRole('button', { name: 'editor.cancel' }));
 
     expect(confirmSpy).toHaveBeenCalledWith('editor.discardConfirm');

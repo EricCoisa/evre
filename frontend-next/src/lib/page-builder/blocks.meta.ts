@@ -176,6 +176,11 @@ export interface BlockMeta {
   container?: boolean;
   /** Micro-elemento sem grade pesada (ex: Texto, Botão) — ocupa só o espaço do seu conteúdo. */
   inline?: boolean;
+  /** Altura cresce com o conteúdo via CSS (`auto-rows-[minmax(44px,auto)]`), não pela grade JS. */
+  autoHeight?: boolean;
+  /** Tem conteúdo editável diretamente no canvas (`InlineRichText` ou lista de itens) — define
+   * se a casca do editor libera `pointer-events` e mostra os controles de texto na toolbar. */
+  textEditable?: boolean;
   /** Quando `true`, a fonte de dados (`data.source`) é opcional (ex: `text.rich` só usa fonte quando quer mesclar `{{variavel}}`). */
   optionalSource?: boolean;
   /** Altura padrão em linhas de grade (1 a 8). */
@@ -267,6 +272,8 @@ export const BLOCK_META = {
     accepts: ['list', 'count', 'series'],
     optionalSource: true,
     inline: true,
+    autoHeight: true,
+    textEditable: true,
     props: [
       { name: 'content', type: 'rich-text', required: true, showFontSize: true },
       {
@@ -296,6 +303,8 @@ export const BLOCK_META = {
       'Elemento compacto de botão clicável com texto (Rich Text) e link. Combine com blocos de Texto dentro de qualquer bloco ou Grupo.',
     accepts: [],
     inline: true,
+    autoHeight: true,
+    textEditable: true,
     props: [
       { name: 'label', type: 'rich-text', required: true },
       { name: 'url', type: 'string', required: true },
@@ -348,6 +357,7 @@ export const BLOCK_META = {
       'Bloco de escopo: título, descrição opcional e uma lista de itens. Use para "o que entra" ' +
       'numa proposta — fases, entregáveis, stack técnica. Não consome fonte de dados.',
     accepts: [],
+    textEditable: true,
     props: [
       { name: 'title', type: 'rich-text', required: false },
       { name: 'description', type: 'rich-text', required: false },
@@ -415,6 +425,7 @@ export const BLOCK_META = {
       'Linha divisória horizontal, para separar seções sem precisar de um título. `spacing` ' +
       'controla a margem vertical (sm, md ou lg; padrão md). Não consome fonte de dados.',
     accepts: [],
+    autoHeight: true,
     props: [{ name: 'spacing', type: 'string', required: false }],
   },
   price: {
@@ -431,6 +442,7 @@ export const BLOCK_META = {
       '— ex. um para o projeto fechado e outro para a mensalidade, cada um com seu `recurrence`. ' +
       '`highlight` destaca a opção recomendada quando há mais de uma. Não consome fonte de dados.',
     accepts: [],
+    textEditable: true,
     props: [
       { name: 'title', type: 'rich-text', required: false },
       { name: 'description', type: 'rich-text', required: false },
@@ -447,12 +459,15 @@ export const BLOCK_META = {
 export type BlockType = keyof typeof BLOCK_META;
 
 export function isAutoHeightBlockType(type?: string): boolean {
-  if (!type) return false;
-  return (
-    type === 'text.rich' ||
-    type === 'button.action' ||
-    type === 'divider'
-  );
+  if (!type || !(type in BLOCK_META)) return false;
+  const meta = BLOCK_META[type as BlockType];
+  return Boolean(meta && 'autoHeight' in meta && meta.autoHeight);
+}
+
+export function isTextEditableBlockType(type?: string): boolean {
+  if (!type || !(type in BLOCK_META)) return false;
+  const meta = BLOCK_META[type as BlockType];
+  return Boolean(meta && 'textEditable' in meta && meta.textEditable);
 }
 
 export function isContainerType(type?: string): boolean {

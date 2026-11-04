@@ -64,7 +64,9 @@ function ActiveSyncPlugin({
   const [lexicalEditor] = useLexicalComposerContext();
   const editor = useEditor();
   const editorRef = useRef(editor);
-  editorRef.current = editor;
+  useEffect(() => {
+    editorRef.current = editor;
+  }, [editor]);
 
   // Sincroniza quando a seleção do bloco muda no contexto do PageBuilder
   useEffect(() => {
@@ -131,7 +133,7 @@ function ActiveSyncPlugin({
     if (editor && editor.selectedId !== blockId && isFocused) {
       setIsFocused(false);
     }
-  }, [editor?.selectedId, blockId, isFocused, setIsFocused]);
+  }, [editor, blockId, isFocused, setIsFocused]);
 
   return null;
 }

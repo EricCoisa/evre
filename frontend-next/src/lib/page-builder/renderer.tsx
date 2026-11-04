@@ -48,10 +48,10 @@ import {
   COL_START_CLASS,
   PAGE_LAYOUTS_KEY,
   ROW_SPAN_CLASS,
-  ROW_START_CLASS,
   SPAN_CLASS,
   normalizeSpan,
   resolvePageLayout,
+  rowStartClass,
   type PageBlock,
   GRID_COLS,
   type PageLayout,
@@ -436,7 +436,6 @@ function Block({
   const Component = BLOCK_REGISTRY[block.type];
   const isInline = isInlineBlockType(block.type);
   const effectiveSpan = placed?.span ?? normalizeSpan(block.span);
-  const effectiveRowSpan = placed?.rowSpan ?? (block.rowSpan ?? 1);
 
   let gridClass: string;
   if (freeFlow) {
@@ -446,7 +445,7 @@ function Block({
   } else {
     const colSpan = SPAN_CLASS[effectiveSpan] ?? 'lg:col-span-12';
     const colStart = placed ? COL_START_CLASS[placed.x] : undefined;
-    const rowStart = placed ? ROW_START_CLASS[placed.y] : undefined;
+    const rowStart = placed ? rowStartClass(placed.y) : undefined;
     const isAutoHeight = isAutoHeightBlockType(block.type);
     const rowSpan = placed ? ROW_SPAN_CLASS[placed.rowSpan] : undefined;
     const alignSelf = isAutoHeight ? 'h-auto self-start' : 'h-full';

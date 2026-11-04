@@ -6,12 +6,14 @@ import {
   getMaxResizeBounds,
   calculateEffectiveRowSpan,
   resizeBlockRowSpanInGrid,
+} from './grid-engine';
+import {
   estimateTextRowSpan,
   estimateFeedRowSpan,
   estimateTableRowSpan,
   estimateTopicRowSpan,
   estimatePriceRowSpan,
-} from './grid-engine';
+} from './block-height-estimators';
 import {
   findBlock,
   moveBlockTo,

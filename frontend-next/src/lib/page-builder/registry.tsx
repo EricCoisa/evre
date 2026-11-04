@@ -74,9 +74,9 @@ export interface BlockProps {
 /** Mapa de componentes dos blocos do page builder, amarrado a BLOCK_META. */
 export const BLOCK_REGISTRY: Record<BlockType, (p: BlockProps) => React.ReactNode> = {
   group: Group,
-  'chart.area': AreaChartBlock,
-  'chart.bar': BarChartBlock,
-  'chart.line': LineChartBlock,
+  'chart.area': (p) => <ChartBlock {...p} kind="chart.area" />,
+  'chart.bar': (p) => <ChartBlock {...p} kind="chart.bar" />,
+  'chart.line': (p) => <ChartBlock {...p} kind="chart.line" />,
   'text.rich': RichTextBlock,
   'button.action': ButtonActionBlock,
   'list.feed': ListFeed,
@@ -91,6 +91,16 @@ export const BLOCK_REGISTRY: Record<BlockType, (p: BlockProps) => React.ReactNod
 
 export function isKnownBlock(type: string): type is BlockType {
   return type in BLOCK_META;
+}
+
+/** Monta o par `{ blockId, onPropChange }` que liga um bloco à edição inline, ou `undefined`
+ * fora do modo de edição — repetido por quase todo bloco com título/conteúdo editável. */
+function editMetaFor(
+  editing: boolean | undefined,
+  blockId: string | undefined,
+  onPropChange: ((name: string, value: unknown) => void) | undefined,
+): { blockId: string; onPropChange: (name: string, value: unknown) => void } | undefined {
+  return editing && blockId && onPropChange ? { blockId, onPropChange } : undefined;
 }
 
 /** Casca única de todo bloco; em `bare` (dentro de um group) dispensa Card e padding lateral. */
@@ -191,7 +201,7 @@ function renderBlockHeader(
 }
 
 function Group({ props, bare, className, children, blockId, onPropChange, editing }: BlockProps) {
-  const editMeta = editing && blockId && onPropChange ? { blockId, onPropChange } : undefined;
+  const editMeta = editMetaFor(editing, blockId, onPropChange);
   return (
     <Panel
       bare={bare}
@@ -208,57 +218,31 @@ const chartConfig = {
   value: { label: 'Total', color: 'var(--primary)' },
 } satisfies ChartConfig;
 
-function AreaChartBlock({ props, data, bare, className, children, blockId, onPropChange, editing }: BlockProps) {
-  const points = (data as SeriesResponse | undefined)?.data ?? [];
-  const editMeta = editing && blockId && onPropChange ? { blockId, onPropChange } : undefined;
-  return (
-    <Panel
-      bare={bare}
-      className={className}
-      header={renderBlockHeader(props.title, props.description, children, editMeta)}
-    >
-      <ChartContainer config={chartConfig} className="aspect-auto h-full min-h-[120px] w-full flex-1">
-        <AreaChart data={points}>
-          <CartesianGrid vertical={false} />
-          <XAxis dataKey="date" tickLine={false} axisLine={false} minTickGap={24} />
-          <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
-          <Area
-            dataKey="value"
-            type="natural"
-            fill="var(--color-value)"
-            fillOpacity={0.3}
-            stroke="var(--color-value)"
-          />
-        </AreaChart>
-      </ChartContainer>
-    </Panel>
-  );
-}
+type ChartKind = 'chart.area' | 'chart.bar' | 'chart.line';
 
-function BarChartBlock({ props, data, bare, className, children, blockId, onPropChange, editing }: BlockProps) {
+/** Eixo/grid/tooltip são idênticos nos três tipos de gráfico — só a série (`Area`/`Bar`/`Line`)
+ * e o componente recharts que a hospeda mudam. */
+function ChartBlock({
+  kind,
+  props,
+  data,
+  bare,
+  className,
+  children,
+  blockId,
+  onPropChange,
+  editing,
+}: BlockProps & { kind: ChartKind }) {
   const points = (data as SeriesResponse | undefined)?.data ?? [];
-  const editMeta = editing && blockId && onPropChange ? { blockId, onPropChange } : undefined;
-  return (
-    <Panel
-      bare={bare}
-      className={className}
-      header={renderBlockHeader(props.title, props.description, children, editMeta)}
-    >
-      <ChartContainer config={chartConfig} className="aspect-auto h-full min-h-[120px] w-full flex-1">
-        <BarChart data={points}>
-          <CartesianGrid vertical={false} />
-          <XAxis dataKey="date" tickLine={false} axisLine={false} minTickGap={24} />
-          <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
-          <Bar dataKey="value" fill="var(--color-value)" radius={4} />
-        </BarChart>
-      </ChartContainer>
-    </Panel>
+  const editMeta = editMetaFor(editing, blockId, onPropChange);
+  const axis = (
+    <>
+      <CartesianGrid vertical={false} />
+      <XAxis dataKey="date" tickLine={false} axisLine={false} minTickGap={24} />
+      <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
+    </>
   );
-}
 
-function LineChartBlock({ props, data, bare, className, children, blockId, onPropChange, editing }: BlockProps) {
-  const points = (data as SeriesResponse | undefined)?.data ?? [];
-  const editMeta = editing && blockId && onPropChange ? { blockId, onPropChange } : undefined;
   return (
     <Panel
       bare={bare}
@@ -266,18 +250,28 @@ function LineChartBlock({ props, data, bare, className, children, blockId, onPro
       header={renderBlockHeader(props.title, props.description, children, editMeta)}
     >
       <ChartContainer config={chartConfig} className="aspect-auto h-full min-h-[120px] w-full flex-1">
-        <LineChart data={points}>
-          <CartesianGrid vertical={false} />
-          <XAxis dataKey="date" tickLine={false} axisLine={false} minTickGap={24} />
-          <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
-          <Line
-            dataKey="value"
-            type="natural"
-            stroke="var(--color-value)"
-            strokeWidth={2}
-            dot={false}
-          />
-        </LineChart>
+        {kind === 'chart.area' ? (
+          <AreaChart data={points}>
+            {axis}
+            <Area
+              dataKey="value"
+              type="natural"
+              fill="var(--color-value)"
+              fillOpacity={0.3}
+              stroke="var(--color-value)"
+            />
+          </AreaChart>
+        ) : kind === 'chart.bar' ? (
+          <BarChart data={points}>
+            {axis}
+            <Bar dataKey="value" fill="var(--color-value)" radius={4} />
+          </BarChart>
+        ) : (
+          <LineChart data={points}>
+            {axis}
+            <Line dataKey="value" type="natural" stroke="var(--color-value)" strokeWidth={2} dot={false} />
+          </LineChart>
+        )}
       </ChartContainer>
     </Panel>
   );
@@ -285,7 +279,7 @@ function LineChartBlock({ props, data, bare, className, children, blockId, onPro
 
 function TopicBlock({ props, bare, className, children, blockId, onPropChange, editing }: BlockProps) {
   const items = toStringArray(props.items);
-  const editMeta = editing && blockId && onPropChange ? { blockId, onPropChange } : undefined;
+  const editMeta = editMetaFor(editing, blockId, onPropChange);
   return (
     <Panel
       bare={bare}
@@ -379,7 +373,7 @@ function formatDate(value: string): string {
 function InvestmentBlock({ props, bare, className, blockId, onPropChange, editing }: BlockProps) {
   const { t } = useTranslation('page-builder');
   const terms = useProposalTerms();
-  const editMeta = editing && blockId && onPropChange ? { blockId, onPropChange } : undefined;
+  const editMeta = editMetaFor(editing, blockId, onPropChange);
 
   if (!terms) {
     return (
@@ -486,7 +480,7 @@ function PriceBlock({ props, bare, className, children, blockId, onPropChange, e
   const currency = resolveCurrency(props.currency);
   const hasTotal = typeof props.totalCents === 'number';
   const highlight = props.highlight === true;
-  const editMeta = editing && blockId && onPropChange ? { blockId, onPropChange } : undefined;
+  const editMeta = editMetaFor(editing, blockId, onPropChange);
 
   return (
     <Panel
@@ -964,7 +958,7 @@ function BasicTable({
   const columns = toStringArray(props.columns);
   const { data: rows = [], meta } = (data as ListResponse | undefined) ?? {};
   const { limit: skeletonRows = 5, page = 1, totalPages = 1 } = meta ?? {};
-  const editMeta = editing && blockId && onPropChange ? { blockId, onPropChange } : undefined;
+  const editMeta = editMetaFor(editing, blockId, onPropChange);
   return (
     <Panel
       bare={bare}

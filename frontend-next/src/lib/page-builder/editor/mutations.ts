@@ -30,8 +30,6 @@ import {
   GRID_COLS,
   maxBlocksFor,
   maxChildrenFor,
-  normalizeRowSpan,
-  normalizeSpan,
   type PageBlock,
   type PageLayout,
 } from '../schema';
@@ -92,12 +90,14 @@ function syncRowSpanIfNeeded(
   located: Located,
   id: string,
   oldRowSpan: number,
-  propName: string,
 ): PageLayout {
   const updatedLocated = findBlock(layout, id);
   if (!updatedLocated) return layout;
   const newRowSpan = calculateEffectiveRowSpan(updatedLocated.block, GRID_COLS);
-  if (propName !== 'preset' && propName !== 'content' && oldRowSpan === newRowSpan) return layout;
+  // Recalcula o grid 2D inteiro (resolveGridLayout + cascata de push/pull) só quando a altura
+  // efetiva de fato mudou — digitar em `content`/`preset` sem mudar o rowSpan (comum: bloco
+  // full-width cresce via CSS, não via grid) não precisa reprocessar a página inteira a cada tecla.
+  if (oldRowSpan === newRowSpan) return layout;
 
   if (!located.parentId) {
     return {
@@ -138,7 +138,7 @@ export function setBlockProp(
   });
 
   if (!located || oldRowSpan === undefined) return updated;
-  return syncRowSpanIfNeeded(updated, located, id, oldRowSpan, name);
+  return syncRowSpanIfNeeded(updated, located, id, oldRowSpan);
 }
 
 /** Troca a fonte de dados e descarta `params` e listas de campo que pertenciam à anterior. */
@@ -556,36 +556,6 @@ export function duplicateBlock(
 
   const nextLayout = insertAt(layout, clonedBlock, located.parentId, located.index + 1);
   return { layout: nextLayout, newId: cloneId };
-}
-
-/** Move um bloco um passo para cima ou para baixo. */
-export function moveBlockStep(
-  layout: PageLayout,
-  id: string,
-  direction: 'up' | 'down',
-): PageLayout {
-  const located = findBlock(layout, id);
-  if (!located) return layout;
-
-  const targetIndex = direction === 'up' ? located.index - 1 : located.index + 1;
-  const listLength = located.parentId
-    ? (findBlock(layout, located.parentId)?.block.children?.length ?? 0)
-    : layout.blocks.length;
-
-  if (targetIndex < 0 || targetIndex >= listLength) return layout;
-
-  if (!located.parentId) {
-    return { ...layout, blocks: arrayMove(layout.blocks, located.index, targetIndex) };
-  }
-
-  return {
-    ...layout,
-    blocks: layout.blocks.map((b) =>
-      b.id === located.parentId
-        ? { ...b, children: arrayMove(b.children ?? [], located.index, targetIndex) }
-        : b,
-    ),
-  };
 }
 
 /** Move um bloco para uma coordenada (x, y) da grade 2D (inclusive espaços vazios). */
