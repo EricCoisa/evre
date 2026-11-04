@@ -9,6 +9,7 @@ const ArtifactFileEntrySchema = z.object({
 
 export const ArtifactSchema = z.object({
   id: z.string().uuid(),
+  name: z.string().optional().nullable(),
   kind: z.enum(['FILE', 'FOLDER']),
   storageKey: z.string(),
   entryFileName: z.string().optional().nullable(),

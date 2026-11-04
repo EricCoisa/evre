@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Plus, X } from 'lucide-react';
+import { Plus, Upload, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -29,8 +29,8 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/hooks/use-translation';
 import { usePageSources } from '@/lib/actions/pageBuilder/queries';
-import { useUploadArtifact } from '@/lib/actions/artifact/queries';
 import { useStorageHealth } from '@/lib/actions/user/queries';
+import { UploadArtifactDialog } from '@/components/upload-artifact-dialog';
 import type { PageSourceDto } from '@/lib/generated/schemas';
 import {
   BLOCK_META,
@@ -456,16 +456,8 @@ function ArtifactStorageKeyField({
 }) {
   const { t } = useTranslation('page-builder');
   const { data: health } = useStorageHealth();
-  const upload = useUploadArtifact();
+  const [uploadOpen, setUploadOpen] = React.useState(false);
   const storageDisabled = health?.operational === false;
-  const isDisabled = storageDisabled || upload.isPending;
-
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-    upload.mutate(file, { onSuccess: (artifact) => onChange(artifact.id) });
-  };
 
   return (
     <div className="space-y-1.5">
@@ -478,25 +470,26 @@ function ArtifactStorageKeyField({
           {value}
         </p>
       ) : null}
-      <Input
-        type="file"
-        accept=".html,image/png,image/jpeg,image/svg+xml,image/webp,.zip,application/zip"
-        disabled={isDisabled}
-        onChange={handleFile}
-      />
+      <Button
+        variant="outline"
+        size="sm"
+        className="w-full"
+        disabled={storageDisabled}
+        onClick={() => setUploadOpen(true)}
+      >
+        <Upload className="h-3.5 w-3.5 mr-1.5" />
+        {t('editor.artifactUpload')}
+      </Button>
       {storageDisabled ? (
         <p className="text-destructive text-xs">
           {t('editor.artifactStorageDisabled')}
         </p>
-      ) : upload.isPending ? (
-        <p className="text-muted-foreground text-xs">
-          {t('editor.artifactUploading')}
-        </p>
-      ) : upload.isError ? (
-        <p className="text-destructive text-xs">
-          {t('editor.artifactUploadError')}
-        </p>
       ) : null}
+      <UploadArtifactDialog
+        open={uploadOpen}
+        onOpenChange={setUploadOpen}
+        onSuccess={(artifact) => onChange(artifact.id)}
+      />
     </div>
   );
 }

@@ -17,7 +17,7 @@
   "symlink_entry_rejected": "O .zip contém um link simbólico, não permitido",
   "invalid_entry_content_type": "O .zip contém um arquivo de tipo não permitido",
   "empty_folder": "O .zip não contém nenhum arquivo válido",
-  "missing_entry_file": "A pasta precisa conter um arquivo index.html",
+  "missing_entry_file": "A pasta precisa conter um arquivo .html na raiz (ou index.html)",
   "referenced_missing_or_archived": "Um artefato referenciado no layout não existe ou foi arquivado",
   "public_token_generation_failed": "Não foi possível gerar um token público único para o artefato"
 }

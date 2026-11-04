@@ -18,7 +18,8 @@ export function useArtifacts(params?: PaginationParams) {
 export function useUploadArtifact() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (file: File) => Alive(() => uploadArtifact(file))(),
+    mutationFn: ({ file, name }: { file: File; name: string }) =>
+      Alive(() => uploadArtifact(file, name))(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['artifacts'] });
     },

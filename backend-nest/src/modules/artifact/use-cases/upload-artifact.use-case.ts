@@ -76,6 +76,7 @@ export class UploadArtifactUseCase {
   async execute(
     file: UploadArtifactFile | undefined,
     user: AuthenticatedUser,
+    name?: string,
   ): Promise<Artifact> {
     if (!file) {
       throw new BadRequestException(
@@ -88,8 +89,8 @@ export class UploadArtifactUseCase {
       file.originalname.toLowerCase().endsWith('.zip');
 
     const created = isZip
-      ? await this.uploadFolder(file, user)
-      : await this.uploadFile(file, user);
+      ? await this.uploadFolder(file, user, name)
+      : await this.uploadFile(file, user, name);
 
     await this.loggingService.create(
       {
@@ -107,6 +108,7 @@ export class UploadArtifactUseCase {
   private async uploadFile(
     file: UploadArtifactFile,
     user: AuthenticatedUser,
+    name?: string,
   ): Promise<Artifact> {
     if (!ARTIFACT_FILE_MIME_TYPES.has(file.mimetype)) {
       throw new BadRequestException(
@@ -135,6 +137,7 @@ export class UploadArtifactUseCase {
     return this.prisma.artifact.create({
       data: {
         kind: 'FILE',
+        name: name ?? null,
         storageKey: key,
         fileName: file.originalname,
         contentType: file.mimetype,
@@ -148,6 +151,7 @@ export class UploadArtifactUseCase {
   private async uploadFolder(
     file: UploadArtifactFile,
     user: AuthenticatedUser,
+    name?: string,
   ): Promise<Artifact> {
     const zipMaxSizeBytes = await this.readConfiguredSize(
       ARTIFACT_CONFIG_KEYS.zipMaxSizeBytes,
@@ -259,6 +263,7 @@ export class UploadArtifactUseCase {
     return this.prisma.artifact.create({
       data: {
         kind: 'FOLDER',
+        name: name ?? null,
         storageKey: folderKey,
         entryFileName: entryFile.path,
         fileName: file.originalname,

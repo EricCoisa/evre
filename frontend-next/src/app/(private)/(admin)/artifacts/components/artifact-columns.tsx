@@ -25,9 +25,12 @@ interface GetArtifactColumnsProps {
 export function getArtifactColumns({ t, onArchive }: GetArtifactColumnsProps): ColumnDef<Artifact>[] {
   return [
     {
-      accessorKey: "fileName",
-      header: () => <TableHead>{t("fileName")}</TableHead>,
-      cell: ({ row }) => <DataCell className="font-medium">{row.getValue("fileName")}</DataCell>,
+      accessorKey: "name",
+      header: () => <TableHead>{t("name")}</TableHead>,
+      cell: ({ row }) => {
+        const item = row.original as Artifact & { name?: string | null };
+        return <DataCell className="font-medium">{item.name || item.fileName}</DataCell>;
+      },
       meta: {
         mobileOrder: 1,
         mobileWidth: "full",

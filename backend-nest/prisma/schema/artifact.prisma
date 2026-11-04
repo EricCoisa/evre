@@ -10,6 +10,7 @@ enum ArtifactKind {
 /// Ver docs/architecture/data-model.md.
 model Artifact {
   id            String       @id @default(uuid())
+  name          String?
   kind          ArtifactKind
   storageKey    String
   /// FOLDER: prefixo terminado em "/". FILE: key completa do arquivo.

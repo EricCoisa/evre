@@ -1,16 +1,16 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from "@/hooks/use-translation";
-import { useArtifacts, useArchiveArtifact, useUploadArtifact } from "@/lib/actions/artifact/queries";
+import { useArtifacts, useArchiveArtifact } from "@/lib/actions/artifact/queries";
 import { useStorageHealth } from '@/lib/actions/user/queries';
 import { DataTable } from "@/components/data-table";
 import { getArtifactColumns } from "./artifact-columns";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { UploadArtifactDialog } from "@/components/upload-artifact-dialog";
 import type { Artifact } from "@/lib/actions/artifact/types";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Upload } from 'lucide-react';
 
 export function ArtifactTab() {
@@ -18,8 +18,8 @@ export function ArtifactTab() {
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
   const [globalFilter, setGlobalFilter] = useState('');
   const [archivingArtifact, setArchivingArtifact] = useState<Artifact | null>(null);
+  const [uploadOpen, setUploadOpen] = useState(false);
   const queryClient = useQueryClient();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: health } = useStorageHealth();
   const storageDisabled = health?.operational === false;
@@ -36,18 +36,7 @@ export function ArtifactTab() {
   };
 
   const { data, error } = useArtifacts(queryParams);
-
-  const uploadArtifactMutation = useUploadArtifact();
   const archiveArtifactMutation = useArchiveArtifact();
-
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-    uploadArtifactMutation.mutate(file, {
-      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['artifacts'] }),
-    });
-  };
 
   const columns = getArtifactColumns({ t, onArchive: handleArchive });
 
@@ -74,22 +63,20 @@ export function ArtifactTab() {
         />
         <DataTable.Actions className="sm:justify-end sm:w-full">
           <Button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={storageDisabled || uploadArtifactMutation.isPending}
-            title={storageDisabled ? t('storageDisabled') : t('uploadAccept')}
+            onClick={() => setUploadOpen(true)}
+            disabled={storageDisabled}
+            title={storageDisabled ? t('storageDisabled') : t('upload')}
           >
-            <Upload /> {uploadArtifactMutation.isPending ? t('uploading') : t('upload')}
+            <Upload /> {t('upload')}
           </Button>
-          <Input
-            ref={fileInputRef}
-            type="file"
-            className="hidden"
-            accept=".html,image/png,image/jpeg,image/svg+xml,image/webp,.zip,application/zip"
-            disabled={storageDisabled || uploadArtifactMutation.isPending}
-            onChange={handleFile}
-          />
         </DataTable.Actions>
       </DataTable>
+
+      <UploadArtifactDialog
+        open={uploadOpen}
+        onOpenChange={setUploadOpen}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ['artifacts'] })}
+      />
 
       <ConfirmDialog
         open={!!archivingArtifact}

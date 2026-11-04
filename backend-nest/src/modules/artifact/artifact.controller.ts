@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   HttpStatus,
@@ -97,9 +98,10 @@ export class ArtifactController {
   )
   async upload(
     @CurrentUser() currentUser: AuthenticatedUser,
+    @Body('name') name?: string,
     @UploadedFile() file?: Express.Multer.File,
   ): Promise<Artifact> {
-    return this.uploadArtifact.execute(file, currentUser);
+    return this.uploadArtifact.execute(file, currentUser, name?.trim() || undefined);
   }
 
   @DeleteApi({

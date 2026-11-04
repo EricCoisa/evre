@@ -8555,7 +8555,8 @@
               "NOTIFICATION",
               "VERIFICATION",
               "COMPANY",
-              "PROPOSAL"
+              "PROPOSAL",
+              "ARTIFACT"
             ],
             "example": "USER"
           },
@@ -13152,6 +13153,10 @@
             "type": "string",
             "format": "uuid"
           },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
           "kind": {
             "type": "string",
             "enum": [
@@ -13226,6 +13231,7 @@
         },
         "required": [
           "id",
+          "name",
           "kind",
           "storageKey",
           "entryFileName",

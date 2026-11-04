@@ -1,0 +1,99 @@
+'use client';
+
+import { useState } from 'react';
+import { useTranslation } from '@/hooks/use-translation';
+import { useUploadArtifact } from '@/lib/actions/artifact/queries';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Upload } from 'lucide-react';
+import type { Artifact } from '@/lib/actions/artifact/types';
+
+interface UploadArtifactDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess?: (artifact: Artifact) => void;
+}
+
+export function UploadArtifactDialog({ open, onOpenChange, onSuccess }: UploadArtifactDialogProps) {
+  const { t } = useTranslation('artifact');
+  const [name, setName] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const upload = useUploadArtifact();
+
+  const reset = () => {
+    setName('');
+    setFile(null);
+  };
+
+  const handleOpenChange = (next: boolean) => {
+    if (!next) reset();
+    onOpenChange(next);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0];
+    e.target.value = '';
+    if (!selected) return;
+    setFile(selected);
+    if (!name) setName(selected.name.replace(/\.[^.]+$/, ''));
+  };
+
+  const handleSubmit = () => {
+    if (!file || !name.trim()) return;
+    upload.mutate(
+      { file, name: name.trim() },
+      {
+        onSuccess: (artifact) => {
+          reset();
+          onOpenChange(false);
+          onSuccess?.(artifact);
+        },
+      },
+    );
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t('uploadTitle')}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>{t('uploadName')}</Label>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={t('uploadNamePlaceholder')}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>{t('uploadFile')}</Label>
+            <Input
+              type="file"
+              accept=".html,image/png,image/jpeg,image/svg+xml,image/webp,.zip,application/zip"
+              onChange={handleFileSelect}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button
+            onClick={handleSubmit}
+            disabled={!file || !name.trim() || upload.isPending}
+          >
+            <Upload />
+            {upload.isPending ? t('uploading') : t('upload')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

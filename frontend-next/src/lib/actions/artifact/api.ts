@@ -30,9 +30,10 @@ export async function archiveArtifact(id: string): Promise<ApiResponse<Artifact>
 /** Multipart puro (sem DTO de body) — o Orval não gera client para isso, mesmo caso de
  * `updateProfile` em `lib/actions/user/api.ts` para o upload de avatar. Aceita arquivo único
  * (html/imagem) ou `.zip` (pasta/site estático), extraído no backend. */
-export async function uploadArtifact(file: File): Promise<ApiResponse<Artifact>> {
+export async function uploadArtifact(file: File, name: string): Promise<ApiResponse<Artifact>> {
   const formData = new FormData();
   formData.append("file", file, file.name);
+  formData.append("name", name);
   return wrap(() =>
     customInstance<Artifact>({
       url: API_PATHS.ARTIFACTS,
