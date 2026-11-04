@@ -145,6 +145,12 @@ export function EditorProvider({
 }) {
   const normalizedInitial = useMemo(() => compactLayout(initial), [initial]);
   const [draft, setDraft] = useState<PageLayout>(normalizedInitial);
+  // ponytail: dispara o recompute de `value` (abaixo) em toda edição, EXCETO teclas digitadas no
+  // editor rich-text atualmente focado (ver `applyChange`) — o Lexical já mostra o texto na hora,
+  // então recriar `value` (e re-renderizar todo bloco que usa `useEditor()`) a cada tecla só
+  // adiciona trabalho sem efeito visível. Qualquer outra edição (resize, preset, fonte, checkbox,
+  // mover) sempre dispara, mesmo que repetida rápido no mesmo campo (coalescing de undo é outro eixo).
+  const [draftVersion, setDraftVersion] = useState(0);
   const [past, setPast] = useState<PageLayout[]>([]);
   const [future, setFuture] = useState<PageLayout[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -163,6 +169,9 @@ export function EditorProvider({
   const selectedIdRef = useRef(selectedId);
   // eslint-disable-next-line react-hooks/refs
   selectedIdRef.current = selectedId;
+  const activeRichTextRef = useRef(activeRichText);
+  // eslint-disable-next-line react-hooks/refs
+  activeRichTextRef.current = activeRichText;
 
   // ponytail: JSON.stringify fora do useMemo — não bloqueia o path de digitação
   useEffect(() => {
@@ -183,6 +192,11 @@ export function EditorProvider({
     if (coalesceTimerRef.current) clearTimeout(coalesceTimerRef.current);
   }, []);
 
+  const matchesKey = (
+    target: { id: string; name: string } | null | undefined,
+    key: { id: string; name: string } | undefined,
+  ) => !!key && target?.id === key.id && target?.name === key.name;
+
   const applyChange = useCallback(
     (
       updater: (current: PageLayout) => PageLayout,
@@ -191,15 +205,25 @@ export function EditorProvider({
       setDraft((current) => {
         const next = updater(current);
         if (next === current) return current;
-        const continuesPending =
-          !!coalesceKey &&
-          coalesceKeyRef.current?.id === coalesceKey.id &&
-          coalesceKeyRef.current?.name === coalesceKey.name;
+        const continuesPending = matchesKey(coalesceKeyRef.current, coalesceKey);
         if (!continuesPending) {
           setPast((prevPast) => [...prevPast.slice(-UNDO_HISTORY_SIZE), current]);
           setFuture([]);
         }
         coalesceKeyRef.current = coalesceKey ?? null;
+
+        // Tecla digitada no editor rich-text focado: o Lexical já mostra o resultado no próprio
+        // DOM, então pular o recompute de `value` aqui é invisível pro usuário — ao contrário de
+        // "não continua um coalesce" (que só decide se é uma entrada de undo nova), isso tem que
+        // valer pra TODA tecla da rajada, não só pela última, daí checar contra `activeRichText`
+        // em vez de `continuesPending`.
+        const activeKey = activeRichTextRef.current
+          ? { id: activeRichTextRef.current.blockId, name: activeRichTextRef.current.propName }
+          : null;
+        const isLiveRichTextEdit = matchesKey(activeKey, coalesceKey);
+        if (!isLiveRichTextEdit) {
+          setDraftVersion((v) => v + 1);
+        }
         return next;
       });
 
@@ -353,10 +377,12 @@ export function EditorProvider({
       setLayout: (layout) => applyChange(() => compactLayout(layout)),
     };
   // ponytail: undo/redo excluídos — identidade estável via useCallback([]), leem draftRef/coalesceKeyRef
-  // por fora do recompute; past/future como boolean → recria só quando canUndo/canRedo muda, não a cada push
+  // por fora do recompute; past/future como boolean → recria só quando canUndo/canRedo muda, não a cada
+  // push; `draft` → `draftVersion` → recria em toda edição "de borda" (ver comentário na declaração dele),
+  // não em cada tecla de uma rajada coalescida.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    draft,
+    draftVersion,
     profile,
     recordId,
     isDirty,
