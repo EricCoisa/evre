@@ -40,6 +40,16 @@
   letter-spacing: 0.05em;
 }
 
+/* PageBuilder 2D Grid — posicionamento vertical ilimitado e responsivo via variáveis CSS.
+   No mobile (< 1024px), os blocos seguem o fluxo natural de coluna única;
+   no desktop (>= 1024px), posicionam-se com precisão na linha (--row-start) e altura (--row-span). */
+@media (min-width: 1024px) {
+  .pb-grid-row {
+    grid-row-start: var(--row-start);
+    grid-row-end: span var(--row-span, 1);
+  }
+}
+
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";

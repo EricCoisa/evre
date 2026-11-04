@@ -558,15 +558,19 @@ export function EmptySlotDropZone({
   const gridClass = cn(
     COL_START_CLASS[slot.x] ?? 'lg:col-start-1',
     SPAN_CLASS[slot.span] ?? 'lg:col-span-6',
-    rowStartClass(slot.y),
-    ROW_SPAN_CLASS[slot.rowSpan] ?? 'lg:row-span-1',
+    'pb-grid-row',
   );
+  const gridStyle: React.CSSProperties = {
+    '--row-start': slot.y + 1,
+    '--row-span': slot.rowSpan,
+  } as React.CSSProperties;
 
   if (isDragging) {
     return (
       <div
         ref={setNodeRef}
         data-testid={`pb-grid-slot-${slot.x}-${slot.y}`}
+        style={gridStyle}
         className={cn(
           gridClass,
           'min-h-[40px]',
@@ -593,6 +597,7 @@ export function EmptySlotDropZone({
   return (
     <div
       data-testid={`pb-grid-slot-${slot.x}-${slot.y}`}
+      style={gridStyle}
       className={cn(
         gridClass,
         'group/slot min-h-[40px] overflow-hidden',
@@ -689,11 +694,13 @@ export function BlockChrome({
   spanClass,
   nested,
   children,
+  style,
 }: {
   block: PageBlock;
   spanClass: string;
   nested?: boolean;
   children: React.ReactNode;
+  style?: React.CSSProperties;
 }) {
   const { t } = useTranslation('page-builder');
   const editor = useEditorOrThrow();
@@ -720,6 +727,7 @@ export function BlockChrome({
     <div
       ref={setNodeRef}
       style={{
+        ...style,
         transform: isDragging ? undefined : CSS.Translate.toString(transform),
         transition,
       }}

@@ -47,11 +47,9 @@ import type { SourceData } from './types';
 import {
   COL_START_CLASS,
   PAGE_LAYOUTS_KEY,
-  ROW_SPAN_CLASS,
   SPAN_CLASS,
   normalizeSpan,
   resolvePageLayout,
-  rowStartClass,
   type PageBlock,
   GRID_COLS,
   type PageLayout,
@@ -438,6 +436,7 @@ function Block({
   const effectiveSpan = placed?.span ?? normalizeSpan(block.span);
 
   let gridClass: string;
+  let gridStyle: React.CSSProperties | undefined;
   if (freeFlow) {
     // Em fluxo livre (dentro de Gráfico, Card ou Tabela),
     // elementos com span === 12 ocupam a linha toda (`w-full`) ou `w-auto` quando menores.
@@ -445,13 +444,18 @@ function Block({
   } else {
     const colSpan = SPAN_CLASS[effectiveSpan] ?? 'lg:col-span-12';
     const colStart = placed ? COL_START_CLASS[placed.x] : undefined;
-    const rowStart = placed ? rowStartClass(placed.y) : undefined;
     const isAutoHeight = isAutoHeightBlockType(block.type);
-    const rowSpan = placed ? ROW_SPAN_CLASS[placed.rowSpan] : undefined;
     const alignSelf = isAutoHeight ? 'h-auto self-start' : 'h-full';
-    gridClass = [colStart, colSpan, rowStart, rowSpan, alignSelf]
+    gridClass = [colStart, colSpan, placed ? 'pb-grid-row' : undefined, alignSelf]
       .filter(Boolean)
       .join(' ');
+
+    if (placed) {
+      gridStyle = {
+        '--row-start': placed.y + 1,
+        '--row-span': placed.rowSpan,
+      } as React.CSSProperties;
+    }
   }
 
   const content = (
@@ -474,11 +478,11 @@ function Block({
   );
 
   return editor ? (
-    <BlockChrome block={block} spanClass={gridClass} nested={bare}>
+    <BlockChrome block={block} spanClass={gridClass} style={gridStyle} nested={bare}>
       {content}
     </BlockChrome>
   ) : (
-    <div className={gridClass}>{content}</div>
+    <div className={gridClass} style={gridStyle}>{content}</div>
   );
 }
 
