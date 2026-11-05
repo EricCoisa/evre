@@ -194,6 +194,38 @@ export class MessagingService {
     }
   }
 
+  /** `sendTemplate` síncrono: resolve o template e envia inline (sem fila), aguardando o resultado do provider. */
+  async sendTemplateNow(
+    input: ResolveTemplateInput,
+    options: SendOptions = {},
+  ): Promise<SendResult> {
+    const { resolved, bypassOptOut, templateId } =
+      await this.templates.resolve(input);
+    return this.sendNow(
+      { type: 'TEMPLATE', phone: input.phone, template: resolved },
+      {
+        ...options,
+        bypassOptOut: options.bypassOptOut ?? bypassOptOut,
+        templateId,
+      },
+    );
+  }
+
+  /** `sendTemplateNow` para quem a mensagem é um extra: devolve `null` em vez de lançar. */
+  async trySendTemplateNow(
+    input: ResolveTemplateInput,
+    options: SendOptions = {},
+  ): Promise<SendResult | null> {
+    try {
+      return await this.sendTemplateNow(input, options);
+    } catch (error) {
+      this.logger.warn(
+        `Template para ${maskPhone(input.phone)} não enviado: ${String((error as Error)?.message ?? error)}`,
+      );
+      return null;
+    }
+  }
+
   private isRedacted(input: SendMessageInput): boolean {
     return input.type === 'TEMPLATE' && !!input.template.redacted;
   }

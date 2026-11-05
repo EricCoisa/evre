@@ -28,14 +28,13 @@ const activeVersion = {
 
 const mockPrisma = {
   proposalVersion: { findFirst: vi.fn() },
-  contact: { findFirst: vi.fn() },
-  company: { findUnique: vi.fn() },
+  companyContact: { findFirst: vi.fn() },
   proposalSend: { create: vi.fn() },
 };
 const mockI18n = { t: vi.fn((key: string) => key) };
 const mockFindOne = { execute: vi.fn() };
 const mockBuildLink = { execute: vi.fn() };
-const mockMessaging = { trySendTemplate: vi.fn() };
+const mockMessaging = { trySendTemplateNow: vi.fn() };
 
 describe('SendProposalUseCase', () => {
   let useCase: SendProposalUseCase;
@@ -60,18 +59,16 @@ describe('SendProposalUseCase', () => {
       name: 'Proposta Exemplo',
     });
     mockPrisma.proposalVersion.findFirst.mockResolvedValue({ ...activeVersion });
-    mockPrisma.contact.findFirst.mockResolvedValue({
+    mockPrisma.companyContact.findFirst.mockResolvedValue({
       id: 'contact-1',
-      name: 'Ana Souza',
-      phone: '5511999999999',
       isPrimary: true,
+      messagingContact: { name: 'Ana Souza', phone: '5511999999999' },
     });
-    mockPrisma.company.findUnique.mockResolvedValue({ name: 'Empresa Exemplo' });
     mockBuildLink.execute.mockResolvedValue({
       code: 'short1',
       shortUrl: 'http://localhost:3000/s/short1',
     });
-    mockMessaging.trySendTemplate.mockResolvedValue('message-1');
+    mockMessaging.trySendTemplateNow.mockResolvedValue({ providerMessageId: 'message-1', acceptedAt: new Date() });
     mockPrisma.proposalSend.create.mockResolvedValue({});
   });
 
@@ -81,7 +78,7 @@ describe('SendProposalUseCase', () => {
     await expect(
       useCase.execute({ proposalId: 'proposal-1' }, admin),
     ).rejects.toThrow(BadRequestException);
-    expect(mockMessaging.trySendTemplate).not.toHaveBeenCalled();
+    expect(mockMessaging.trySendTemplateNow).not.toHaveBeenCalled();
     expect(mockPrisma.proposalSend.create).not.toHaveBeenCalled();
   });
 
@@ -97,17 +94,17 @@ describe('SendProposalUseCase', () => {
   });
 
   it('recusa sem phone e sem contato principal, com a chave i18n certa', async () => {
-    mockPrisma.contact.findFirst.mockResolvedValue(null);
+    mockPrisma.companyContact.findFirst.mockResolvedValue(null);
 
     await expect(
       useCase.execute({ proposalId: 'proposal-1' }, admin),
     ).rejects.toThrow(BadRequestException);
     expect(mockI18n.t).toHaveBeenCalledWith('proposal.send_no_contact');
-    expect(mockMessaging.trySendTemplate).not.toHaveBeenCalled();
+    expect(mockMessaging.trySendTemplateNow).not.toHaveBeenCalled();
   });
 
   it('telefone informado dispensa o contato principal', async () => {
-    mockPrisma.contact.findFirst.mockResolvedValue(null);
+    mockPrisma.companyContact.findFirst.mockResolvedValue(null);
 
     const result = await useCase.execute(
       { proposalId: 'proposal-1', phone: '5511888888888' },
@@ -115,11 +112,11 @@ describe('SendProposalUseCase', () => {
     );
 
     expect(result.toPhone).toBe('5511888888888');
-    expect(mockMessaging.trySendTemplate).toHaveBeenCalled();
+    expect(mockMessaging.trySendTemplateNow).toHaveBeenCalled();
   });
 
-  it('trySendTemplate devolvendo null grava ProposalSend com succeeded:false e a rota não lança', async () => {
-    mockMessaging.trySendTemplate.mockResolvedValue(null);
+  it('trySendTemplateNow devolvendo null grava ProposalSend com succeeded:false e a rota não lança', async () => {
+    mockMessaging.trySendTemplateNow.mockResolvedValue(null);
 
     const result = await useCase.execute({ proposalId: 'proposal-1' }, admin);
 
@@ -137,7 +134,7 @@ describe('SendProposalUseCase', () => {
   it('buttons.open leva o publicToken e o reservado opt_out', async () => {
     await useCase.execute({ proposalId: 'proposal-1' }, admin);
 
-    expect(mockMessaging.trySendTemplate).toHaveBeenCalledWith(
+    expect(mockMessaging.trySendTemplateNow).toHaveBeenCalledWith(
       expect.objectContaining({
         buttons: {
           open: activeVersion.publicToken,
@@ -151,7 +148,7 @@ describe('SendProposalUseCase', () => {
   it('correlation leva { type: "proposal", id }', async () => {
     await useCase.execute({ proposalId: 'proposal-1' }, admin);
 
-    expect(mockMessaging.trySendTemplate).toHaveBeenCalledWith(
+    expect(mockMessaging.trySendTemplateNow).toHaveBeenCalledWith(
       expect.anything(),
       { correlation: { type: 'proposal', id: 'proposal-1' } },
     );
@@ -170,6 +167,7 @@ describe('SendProposalUseCase', () => {
         versionId: 'version-1',
         toPhone: '5511999999999',
         succeeded: true,
+        detail: 'message-1',
         sentById: admin.id,
       }),
     });

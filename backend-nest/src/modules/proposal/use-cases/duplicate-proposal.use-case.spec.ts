@@ -43,7 +43,7 @@ const mockPrisma = {
 
 const mockI18n = { t: vi.fn().mockReturnValue('mensagem') };
 const mockLogging = { create: vi.fn() };
-const mockResourceAccess = { assertCanRead: vi.fn() };
+const mockResourceAccess = { assertCanRead: vi.fn(), canSeeCommercials: vi.fn() };
 
 describe('DuplicateProposalUseCase', () => {
   let useCase: DuplicateProposalUseCase;
@@ -70,6 +70,7 @@ describe('DuplicateProposalUseCase', () => {
       status: 'DRAFT',
     });
     mockResourceAccess.assertCanRead.mockResolvedValue(undefined);
+    mockResourceAccess.canSeeCommercials.mockResolvedValue(true);
   });
 
   it('copia nome, layout e envelope, e nasce DRAFT sem versão nem token', async () => {

@@ -28,8 +28,8 @@ export interface SendProposalOutput {
 
 
 /** Fecha o ciclo "publicou → manda": monta/reusa o link curto e envia o template `PROPOSAL_SENT` por
- * WhatsApp. `trySendTemplate` nunca lança — canal indisponível grava `ProposalSend.succeeded: false`
- * em vez de derrubar a rota; envio manual segue sendo caminho de primeira classe. */
+ * WhatsApp inline (sem fila). `trySendTemplateNow` nunca lança — canal indisponível grava
+ * `ProposalSend.succeeded: false` em vez de derrubar a rota. */
 @Injectable()
 export class SendProposalUseCase {
   constructor(
@@ -79,7 +79,7 @@ export class SendProposalUseCase {
       createdById: user.id,
     });
 
-    const messageId = await this.messaging.trySendTemplate(
+    const result = await this.messaging.trySendTemplateNow(
       {
         key: PROPOSAL_SENT_TEMPLATE_KEY,
         phone,
@@ -102,8 +102,8 @@ export class SendProposalUseCase {
         versionId: version.id,
         channel: ProposalSendChannelConst.WHATSAPP,
         toPhone: phone,
-        succeeded: !!messageId,
-        detail: messageId ?? this.i18n.t('proposal.send_channel_unavailable'),
+        succeeded: !!result,
+        detail: result?.providerMessageId ?? this.i18n.t('proposal.send_channel_unavailable'),
         sentById: user.id,
       },
     });
@@ -111,7 +111,7 @@ export class SendProposalUseCase {
     return {
       proposalId: input.proposalId,
       versionId: version.id,
-      succeeded: !!messageId,
+      succeeded: !!result,
       toPhone: phone,
       shortUrl: link.shortUrl,
     };
