@@ -246,6 +246,7 @@ export function canAdd(
 
 function defaultSpanForType(type: string, parentId?: string): number {
   if (type === 'button.action') return 3;
+  if (type === 'iframe') return 6;
   return parentId ? 6 : GRID_COLS;
 }
 

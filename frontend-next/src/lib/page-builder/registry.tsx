@@ -438,12 +438,14 @@ function IframeBlock({ props, bare, className }: BlockProps) {
   const terms = useProposalTerms();
   const artifactId = typeof props.artifactId === 'string' ? props.artifactId : undefined;
   const title = str(props.title);
-  const height = typeof props.height === 'number' ? props.height : 400;
+  const height = typeof props.height === 'number' && props.height > 0 ? props.height : undefined;
   const aspect = props.aspect === 'video' || props.aspect === 'square' ? props.aspect : undefined;
 
   const previewStyle: React.CSSProperties = aspect
     ? { aspectRatio: aspect === 'video' ? '16 / 9' : '1 / 1' }
-    : { height };
+    : height
+      ? { height }
+      : { height: '100%', minHeight: 140 };
 
   if (!artifactId) {
     return (
@@ -462,8 +464,8 @@ function IframeBlock({ props, bare, className }: BlockProps) {
     : `${API_BASE_URL}/artifacts/${artifactId}/view`;
 
   return (
-    <Panel bare={bare} className={className} autoHeight>
-      <div className="relative w-full overflow-hidden rounded-lg border" style={previewStyle}>
+    <Panel bare={bare} className={className}>
+      <div className="relative h-full w-full min-h-[140px] overflow-hidden rounded-lg border" style={previewStyle}>
         <iframe
           src={url}
           title={title || 'Artefato'}

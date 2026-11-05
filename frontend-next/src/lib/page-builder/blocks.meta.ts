@@ -306,7 +306,7 @@ export const BLOCK_META = {
       'Elemento compacto de botão clicável com texto (Rich Text) e link. Combine com blocos de Texto dentro de qualquer bloco ou Grupo.',
     accepts: [],
     inline: true,
-    autoHeight: true,
+    autoHeight: false,
     textEditable: true,
     props: [
       { name: 'label', type: 'rich-text', required: true },
@@ -390,9 +390,10 @@ export const BLOCK_META = {
     profiles: ['proposal'],
     category: 'media',
     icon: 'Globe',
-    defaultRowSpan: 1,
+    defaultRowSpan: 3,
     minRowSpan: 1,
-    autoHeight: true,
+    inline: true,
+    autoHeight: false,
     description:
       'Demonstração HTML/imagem ou pasta (site estático) isolada em sandbox. O conteúdo vem de um ' +
       '`Artifact` por `artifactId` — nunca HTML inline no layout. Preview estático; o toque abre ' +
@@ -402,7 +403,16 @@ export const BLOCK_META = {
       { name: 'artifactId', type: 'storage-file', required: true },
       { name: 'title', type: 'rich-text', required: false },
       { name: 'height', type: 'number', required: false },
-      { name: 'aspect', type: 'string', required: false },
+      {
+        name: 'aspect',
+        type: 'string',
+        required: false,
+        options: [
+          { label: 'Automático (Preencher)', value: 'auto' },
+          { label: '16:9 (Widescreen)', value: 'video' },
+          { label: '1:1 (Quadrado)', value: 'square' },
+        ],
+      },
     ],
   },
   divider: {

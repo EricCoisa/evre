@@ -260,5 +260,5 @@ export const BLOCK_ROW_SPAN_ESTIMATORS: Record<string, BlockRowSpanEstimator> = 
   'table.basic': estimateTableRowSpan,
   topic: estimateTopicRowSpan,
   image: () => 3,
-  iframe: () => 4,
+  iframe: () => 3,
 };
