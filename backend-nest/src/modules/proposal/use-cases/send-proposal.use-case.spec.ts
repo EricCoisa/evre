@@ -131,11 +131,12 @@ describe('SendProposalUseCase', () => {
     });
   });
 
-  it('buttons.open leva o publicToken e o reservado opt_out', async () => {
+  it('values.link leva a shortUrl e buttons.open leva o publicToken', async () => {
     await useCase.execute({ proposalId: 'proposal-1' }, admin);
 
     expect(mockMessaging.trySendTemplateNow).toHaveBeenCalledWith(
       expect.objectContaining({
+        values: expect.objectContaining({ link: 'http://localhost:3000/s/short1' }),
         buttons: {
           open: activeVersion.publicToken,
           [ReservedButtonKey.OPT_OUT]: true,

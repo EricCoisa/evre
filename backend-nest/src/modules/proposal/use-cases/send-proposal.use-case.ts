@@ -85,6 +85,7 @@ export class SendProposalUseCase {
         phone,
         values: {
           title: proposal.name,
+          link: link.shortUrl,
         },
         ...(contact?.messagingContact.name
           ? { reserved: { [ReservedVariableKey.FIRST_NAME]: contact.messagingContact.name } }

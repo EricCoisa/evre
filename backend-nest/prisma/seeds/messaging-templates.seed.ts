@@ -105,13 +105,13 @@ export async function seedMessagingTemplates(prisma: PrismaClient) {
   console.log('✅ Messaging template VERIFICATION_CODE created');
 
   // PROPOSAL_SENT: enviado por SendProposalUseCase (módulo proposal).
-  // Variável custom: title (obrigatória).
+  // Variáveis custom: title (obrigatória), link (obrigatória, URL encurtada no body).
   // Reservada: first_name — cai no fallback 'cliente' sem contato cadastrado.
-  // Botão open: URL, sufixo = publicToken (credencial pública do link, não segredo interno).
-  // Botão opt_out: QUICK_REPLY reservado.
+  // Botão open: URL do sistema com sufixo dinâmico (publicToken); opt_out: QUICK_REPLY reservado.
   const frontendUrl = 'https://evre.com.br';
   const proposalSentVariables = [
     { name: 'title', type: 'STRING', required: true },
+    { name: 'link', type: 'STRING', required: true },
     { name: 'first_name', type: 'STRING', required: false, reserved: true },
   ];
   const proposalSentTypeButtons = [
@@ -141,7 +141,7 @@ export async function seedMessagingTemplates(prisma: PrismaClient) {
       language: 'pt-BR',
       category: 'MARKETING',
       typeId: proposalSentType.id,
-      body: 'Olá {{ first_name }}! A proposta *{{ title }}* está disponível para você.\n\nClique no link abaixo para visualizar todos os detalhes.',
+      body: 'Olá {{ first_name }}! A proposta *{{ title }}* está disponível para você.\n\nAcesse os detalhes pelo link: {{ link }}\n\nEstamos à disposição para qualquer dúvida.',
       buttons: [
         {
           kind: 'URL',
