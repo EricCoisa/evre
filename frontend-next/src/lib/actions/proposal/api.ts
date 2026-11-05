@@ -86,6 +86,11 @@ export async function publishProposal(id: string): Promise<ApiResponse<PublishPr
   return wrap(() => api.proposalControllerPublish(id));
 }
 
+/** Devolve a proposta para DRAFT de qualquer status; revoga a versão pública vigente. */
+export async function reopenProposal(id: string): Promise<ApiResponse<Proposal>> {
+  return wrapAs(() => api.proposalControllerReopen(id));
+}
+
 /** Idempotente no servidor — revogar duas vezes não é erro. */
 export async function revokeProposalPublication(id: string): Promise<ApiResponse<RevokeProposalPublicationResponseDto>> {
   return wrap(() => api.proposalControllerRevoke(id));

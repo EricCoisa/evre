@@ -17,6 +17,7 @@ import {
   listProposalSends,
   listProposalVersions,
   publishProposal,
+  reopenProposal,
   revokeProposalPublication,
   sendProposal,
   updateProposal,
@@ -159,6 +160,17 @@ export function usePublishProposal() {
     mutationFn: (id: string) => Alive(() => publishProposal(id))(),
     onSuccess: (_, id) => {
       sync([['proposal', id], ['proposal', id, 'versions']]);
+    },
+  });
+}
+
+/** Devolve a proposta para DRAFT de qualquer status; revoga a versão pública vigente. */
+export function useReopenProposal() {
+  const sync = useProposalSync();
+  return useMutation({
+    mutationFn: (id: string) => Alive(() => reopenProposal(id))(),
+    onSuccess: (_, id) => {
+      sync([['proposals'], ['proposal', id], ['proposal', id, 'versions']]);
     },
   });
 }

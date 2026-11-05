@@ -39,6 +39,7 @@ import { ResolveCurrentProposalVersionUseCase } from './use-cases/resolve-curren
 import { AcceptProposalVersionUseCase } from './use-cases/accept-proposal-version.use-case';
 import { SendProposalUseCase } from './use-cases/send-proposal.use-case';
 import { ListProposalSendsUseCase } from './use-cases/list-proposal-sends.use-case';
+import { ReopenProposalUseCase } from './use-cases/reopen-proposal.use-case';
 import { ProposalAcceptanceSourceConst } from 'src/domain/proposal/proposalAcceptanceSource.const';
 import { commonPaginationQueries } from '../../common/swagger/pagination-queries';
 import type { AuthenticatedUser } from '../../common/types/auth.types';
@@ -69,6 +70,7 @@ export class ProposalController {
     private readonly acceptProposalVersion: AcceptProposalVersionUseCase,
     private readonly sendProposal: SendProposalUseCase,
     private readonly listProposalSends: ListProposalSendsUseCase,
+    private readonly reopenProposal: ReopenProposalUseCase,
   ) {}
 
   @PostApi({
@@ -309,6 +311,29 @@ export class ProposalController {
     @CurrentUser() currentUser: AuthenticatedUser,
   ) {
     return this.publishProposal.execute(id, currentUser);
+  }
+
+  @PostApi({
+    path: ':id/reopen',
+    summary: 'proposal.reopen.title',
+    status: 'OK',
+    authenticated: true,
+    roles: ['ADMIN'],
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Proposal returned to DRAFT; active public version revoked',
+          schema: { dto: ProposalDto },
+        },
+      ],
+    },
+  })
+  async reopen(
+    @Param('id') id: string,
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ) {
+    return this.reopenProposal.execute(id, currentUser);
   }
 
   @PostApi({

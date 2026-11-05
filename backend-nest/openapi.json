@@ -8210,6 +8210,42 @@
         ]
       }
     },
+    "/proposal/{id}/reopen": {
+      "post": {
+        "operationId": "ProposalController_reopen",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Proposal returned to DRAFT; active public version revoked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "proposal.reopen.title",
+        "tags": [
+          "proposal"
+        ]
+      }
+    },
     "/proposal/{id}/revoke": {
       "post": {
         "operationId": "ProposalController_revoke",

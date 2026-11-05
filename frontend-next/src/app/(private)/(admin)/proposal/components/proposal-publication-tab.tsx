@@ -26,9 +26,9 @@ import {
   useProposalSends,
   useProposalVersions,
   usePublishProposal,
+  useReopenProposal,
   useRevokeProposalPublication,
   useSendProposal,
-  useUpdateProposalStatus,
 } from '@/lib/actions/proposal/queries';
 import { formatDate } from '@/lib/utils';
 import type { Proposal, ProposalVersionDto } from '@/lib/actions/proposal/types';
@@ -67,11 +67,11 @@ export function ProposalPublicationTab({ proposal }: { proposal: Proposal }) {
   const revoke = useRevokeProposalPublication();
   const acceptOffline = useAcceptProposalOffline();
   const send = useSendProposal();
-  const updateStatus = useUpdateProposalStatus();
+  const reopen = useReopenProposal();
 
   const { state, canRevoke, publicUrl, shortUrl } = toPublicationView(versions[0]);
   const alreadyAccepted = proposal.status === 'ACCEPTED';
-  const canReopen = proposal.status === 'SENT';
+  const canReopen = proposal.status !== 'DRAFT';
   const sendableContacts = contacts.filter((contact) => !!contact.phone);
 
   async function handleRegisterAcceptance() {
@@ -103,7 +103,7 @@ export function ProposalPublicationTab({ proposal }: { proposal: Proposal }) {
   }
 
   async function handleReopen() {
-    await updateStatus.mutateAsync({ id: proposal.id, data: { status: 'DRAFT' } });
+    await reopen.mutateAsync(proposal.id);
     setReopenOpen(false);
   }
 
@@ -130,7 +130,7 @@ export function ProposalPublicationTab({ proposal }: { proposal: Proposal }) {
           <Button
             variant="outline"
             onClick={() => setReopenOpen(true)}
-            disabled={!canReopen || updateStatus.isPending}
+            disabled={!canReopen || reopen.isPending}
           >
             <Undo2 className="size-4 mr-1.5" />
             {t('reopenDraft')}
@@ -213,10 +213,10 @@ export function ProposalPublicationTab({ proposal }: { proposal: Proposal }) {
         description={t('reopenDraftConfirmDescription')}
       >
         <div className="flex gap-2 justify-end">
-          <Button variant="outline" onClick={() => setReopenOpen(false)} disabled={updateStatus.isPending}>
+          <Button variant="outline" onClick={() => setReopenOpen(false)} disabled={reopen.isPending}>
             {t('cancel')}
           </Button>
-          <Button onClick={handleReopen} disabled={updateStatus.isPending}>
+          <Button onClick={handleReopen} disabled={reopen.isPending}>
             {t('reopenDraftConfirm')}
           </Button>
         </div>

@@ -30,6 +30,7 @@ import { AcceptProposalVersionUseCase } from './use-cases/accept-proposal-versio
 import { BuildProposalPublicLinkUseCase } from './use-cases/build-proposal-public-link.use-case';
 import { SendProposalUseCase } from './use-cases/send-proposal.use-case';
 import { ListProposalSendsUseCase } from './use-cases/list-proposal-sends.use-case';
+import { ReopenProposalUseCase } from './use-cases/reopen-proposal.use-case';
 import { ProposalRouteCeiling } from './proposal.route-ceiling';
 
 const USE_CASES = [
@@ -54,6 +55,7 @@ const USE_CASES = [
   BuildProposalPublicLinkUseCase,
   SendProposalUseCase,
   ListProposalSendsUseCase,
+  ReopenProposalUseCase,
 ];
 
 @Module({
