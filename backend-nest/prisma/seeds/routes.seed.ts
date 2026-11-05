@@ -161,6 +161,18 @@ export async function seedRoutes(
     },
   });
 
+  const projectRoute = await prisma.route.upsert({
+    where: { path: RoutePathConst.PROJECT },
+    update: {},
+    create: {
+      path: RoutePathConst.PROJECT,
+      labelKey: 'ROUTE_PROJECT',
+      icon: 'FolderKanban',
+      ordem: 15,
+      isActive: true,
+    },
+  });
+
   const communicationRoute = await prisma.route.upsert({
     where: { path: RoutePathConst.COMMUNICATION },
     update: {},
@@ -205,7 +217,7 @@ export async function seedRoutes(
     agentRoute,
     communicationRoute,
     communicationTemplatesRoute,
-    companyRoute, proposalRoute, artifactRoute];
+    companyRoute, proposalRoute, artifactRoute, projectRoute];
   for (const route of adminRoutes) {
     await prisma.roleRouteAccess.upsert({
       where: {
@@ -224,6 +236,7 @@ export async function seedRoutes(
     logsRoute,
     cmsRoute,
     artifactRoute,
+    projectRoute,
   ];
   for (const route of moderatorRoutes) {
     await prisma.roleRouteAccess.upsert({
@@ -235,7 +248,7 @@ export async function seedRoutes(
     });
   }
 
-  const userRoutes = [homeRoute, profileRoute];
+  const userRoutes = [homeRoute, profileRoute, projectRoute];
   for (const route of userRoutes) {
     await prisma.roleRouteAccess.upsert({
       where: { roleId_routeId: { roleId: roleMap['USER'], routeId: route.id } },

@@ -7,4 +7,5 @@ export type InviteTokenPayload = {
   createdAt: string;
   /** Nome opcional informado ao criar o convite. */
   name?: string | null;
+  companyId?: string | null;
 };

@@ -4,13 +4,14 @@ import { useRouter } from "next/navigation";
 import {
   getCompanys, createCompany, updateCompany, archiveCompany,
   getCompanyContacts, createCompanyContact, updateCompanyContact, archiveCompanyContact,
+  getCompanyMembers, addCompanyMember, inviteCompanyMember, removeCompanyMember, updateCompanyMember, getCompanyInvites,
 } from "./api";
 import { PaginationParams } from "../../types/pagination.types";
 import { getQueryConfig } from '../../utils';
 import { Collector } from "@/lib/api/collector";
 import { toast } from "sonner";
 import { useTranslation } from "@/hooks/use-translation";
-import { CreateCompanyDto, UpdateCompanyDto, CreateContactDto, UpdateContactDto } from "./types";
+import { CreateCompanyDto, UpdateCompanyDto, CreateContactDto, UpdateContactDto, AddCompanyMemberDto, InviteCompanyMemberDto, UpdateCompanyMemberDto } from "./types";
 
 export function useCompanys(params?: PaginationParams) {
   return useQuery({
@@ -119,5 +120,69 @@ export function useArchiveCompanyContact(companyId: string) {
       queryClient.invalidateQueries({ queryKey: ['company', companyId, 'contacts'] });
       toast.success(t('contacts.archivedSuccess'));
     }
+  });
+}
+
+export function useCompanyMembers(companyId: string, params?: PaginationParams) {
+  return useQuery({
+    queryKey: ['company', companyId, 'members', params],
+    queryFn: Collector(() => getCompanyMembers(companyId, params)),
+    enabled: !!companyId,
+    ...getQueryConfig('COMPANY'),
+  });
+}
+
+export function useCompanyInvites(companyId: string) {
+  return useQuery({
+    queryKey: ['company', companyId, 'invites'],
+    queryFn: Collector(() => getCompanyInvites(companyId)),
+    enabled: !!companyId,
+    ...getQueryConfig('COMPANY'),
+  });
+}
+
+export function useAddCompanyMember(companyId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: AddCompanyMemberDto) => addCompanyMember(companyId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['company', companyId, 'members'] });
+      toast.success('Membro adicionado');
+    },
+  });
+}
+
+export function useInviteCompanyMember(companyId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: InviteCompanyMemberDto) => inviteCompanyMember(companyId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['company', companyId, 'members'] });
+      queryClient.invalidateQueries({ queryKey: ['company', companyId, 'invites'] });
+      toast.success('Convite enviado');
+    },
+  });
+}
+
+export function useUpdateCompanyMember(companyId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ membershipId, data }: { membershipId: string; data: UpdateCompanyMemberDto }) =>
+      updateCompanyMember(companyId, membershipId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['company', companyId, 'members'] });
+      toast.success('Permissão atualizada');
+    },
+  });
+}
+
+export function useRemoveCompanyMember(companyId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (membershipId: string) => removeCompanyMember(companyId, membershipId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['company', companyId, 'members'] });
+      toast.success('Membro removido');
+    },
   });
 }

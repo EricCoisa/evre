@@ -10,7 +10,8 @@ import { CompanyProposalsTab } from "./components/company-proposals-tab";
 import { CompanyProjectsTab } from "./components/company-projects-tab";
 import { CompanyContractsTab } from "./components/company-contracts-tab";
 import { CompanyContactsTab } from "../components/company-contacts-tab";
-import { Building2, FileText, FolderKanban, FileSignature, Users } from "lucide-react";
+import { CompanyMembersTab } from "./components/company-members-tab";
+import { Building2, FileText, FolderKanban, FileSignature, Users, UserPlus } from "lucide-react";
 
 const companyDetailSections: SubNavSection[] = [
   {
@@ -34,6 +35,11 @@ const companyDetailSections: SubNavSection[] = [
         id: "projetos",
         label: <LangLabel text="tabProjects" langJson="company" />,
         icon: <FolderKanban className="size-4" />,
+      },
+      {
+        id: "membros",
+        label: <LangLabel text="tabMembers" langJson="company" />,
+        icon: <UserPlus className="size-4" />,
       },
       {
         id: "contratos",
@@ -79,7 +85,10 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
           <CompanyProposalsTab companyId={company.id} />
         </TabsContent>
         <TabsContent value="projetos" className="mt-0 space-y-4">
-          <CompanyProjectsTab />
+          <CompanyProjectsTab companyId={company.id} />
+        </TabsContent>
+        <TabsContent value="membros" className="mt-0 space-y-4">
+          <CompanyMembersTab companyId={company.id} />
         </TabsContent>
         <TabsContent value="contratos" className="mt-0 space-y-4">
           <CompanyContractsTab />

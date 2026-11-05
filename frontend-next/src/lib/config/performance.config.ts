@@ -20,6 +20,9 @@ export const QUERY_CONFIG = {
     ARTIFACT: 5 * 60 * 1000, // 5 minutos - Artifact
     ARTIFACTS: 5 * 60 * 1000, // 5 minutos - Artifacts
 
+    PROJECT: 5 * 60 * 1000,
+    PROJECTS: 5 * 60 * 1000,
+
   },
   
   // Garbage Collection Times (tempo que dados ficam no cache após stale)
@@ -38,6 +41,9 @@ export const QUERY_CONFIG = {
 
     ARTIFACT: 10 * 60 * 1000, // 10 minutos - Artifact
     ARTIFACTS: 10 * 60 * 1000, // 10 minutos - Artifacts
+
+    PROJECT: 10 * 60 * 1000,
+    PROJECTS: 10 * 60 * 1000,
 
   },
   

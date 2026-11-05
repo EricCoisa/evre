@@ -269,6 +269,19 @@ export class SignupUseCase {
             data: { usedAt: now },
           });
           if (consumedInvite.count !== 1) throw this.invalidConfirmation();
+          if (invite.companyId) {
+            const hasMembership = await tx.membership.findFirst({
+              where: { userId: existing.id, companyId: invite.companyId },
+            });
+            if (!hasMembership) {
+              await tx.membership.create({
+                data: {
+                  userId: existing.id,
+                  companyId: invite.companyId,
+                },
+              });
+            }
+          }
           return {
             user: updated,
             created: false,
@@ -289,6 +302,14 @@ export class SignupUseCase {
           data: { usedAt: now },
         });
         if (consumedInvite.count !== 1) throw this.invalidConfirmation();
+        if (invite.companyId) {
+          await tx.membership.create({
+            data: {
+              userId: user.id,
+              companyId: invite.companyId,
+            },
+          });
+        }
         return {
           user,
           created: true,
@@ -512,6 +533,14 @@ export class SignupUseCase {
         termsAcceptedAt: now,
         termsVersion: String(termsVersion),
       });
+      if (invite.companyId) {
+        await tx.membership.create({
+          data: {
+            userId: user.id,
+            companyId: invite.companyId,
+          },
+        });
+      }
       return { user, roleName: invite.role.name };
     });
 

@@ -50,6 +50,7 @@ import { MessagingModule } from './modules/messaging/messaging.module';
 import { VerificationModule } from './modules/verification/verification.module';
 import { ShortUrlModule } from './modules/short-url/short-url.module';
 import { SentryModule } from '@sentry/nestjs/setup';
+import { ProjectModule } from './modules/project/project.module';
 
 @Module({
   imports: [
@@ -140,6 +141,7 @@ import { SentryModule } from '@sentry/nestjs/setup';
     CompanyModule,
     ArtifactModule,
     ProposalModule,
+    ProjectModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

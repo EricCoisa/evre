@@ -48,6 +48,7 @@ import { MessagingModule } from './modules/messaging/messaging.module';
 import { VerificationModule } from './modules/verification/verification.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { ShortUrlModule } from './modules/short-url/short-url.module';
+import { ProjectModule } from './modules/project/project.module';
 
 // Openapi-only module — ioredis-mock replaces Redis so BullMQ registers
 // all queue tokens without a real connection; ThrottlerModule uses in-memory storage.
@@ -122,6 +123,7 @@ const redisConnection = new RedisMockCtor();
     CompanyModule,
     ArtifactModule,
     ProposalModule,
+    ProjectModule,
   ],
 })
 export class AppOpenApiModule {}

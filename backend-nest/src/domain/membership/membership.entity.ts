@@ -1,5 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-import type { MembershipScopeRoleValue } from './membershipScopeRole.const';
 
 export class Membership {
   @ApiProperty()
@@ -14,11 +13,11 @@ export class Membership {
   @ApiProperty({ required: false })
   projectId?: string | null;
 
-  @ApiProperty({ enum: ['OWNER', 'COLLABORATOR', 'VIEWER'] })
-  scopeRole: MembershipScopeRoleValue;
-
   @ApiProperty()
   canSeeCommercials: boolean;
+
+  @ApiProperty()
+  canComment: boolean;
 
   @ApiProperty()
   createdAt: Date;

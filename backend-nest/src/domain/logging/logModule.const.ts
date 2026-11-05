@@ -20,6 +20,7 @@ export const LogModuleConst = {
   COMPANY: 'COMPANY', // Adicionado pelo Plop
   PROPOSAL: 'PROPOSAL', // Adicionado pelo Plop
   ARTIFACT: 'ARTIFACT',
+  PROJECT: 'PROJECT',
 };
 
 export type LogModule = keyof typeof LogModuleConst;

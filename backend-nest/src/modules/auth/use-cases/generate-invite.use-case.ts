@@ -38,6 +38,7 @@ export class GenerateInviteUseCase {
     roleId: string;
     createdById: string;
     name?: string | null;
+    companyId?: string | null;
   }) {
     const health = await this.emailService.checkHealth();
     if (!health.operational) {
@@ -55,6 +56,7 @@ export class GenerateInviteUseCase {
     }
 
     const email = dto.email.trim().toLowerCase();
+    const companyId = dto.companyId ?? null;
     const payload: InviteTokenPayload = {
       email,
       role: role.name,
@@ -62,6 +64,7 @@ export class GenerateInviteUseCase {
       createdById: dto.createdById,
       createdAt: new Date().toISOString(),
       name: dto.name ?? null,
+      companyId,
     };
     const token = await this.jwtService.signAsync(payload, {
       secret: this.configService.get<string>('JWT_INVITE_SECRET'),
@@ -103,36 +106,44 @@ export class GenerateInviteUseCase {
         )
         SELECT 1::int FROM lock
       `;
-      const previous = await tx.invite.findUnique({
-        where: { email },
+      const previous = await tx.invite.findFirst({
+        where: { email, companyId },
         select: {
+          id: true,
           roleId: true,
           createdById: true,
           expiresAt: true,
           actionUrl: true,
           tokenHash: true,
           usedAt: true,
+          companyId: true,
         },
       });
-      await tx.invite.upsert({
-        where: { email },
-        update: {
-          roleId: dto.roleId,
-          createdById: dto.createdById,
-          expiresAt,
-          actionUrl: null,
-          tokenHash: inviteTokenHash,
-          usedAt: null,
-        },
-        create: {
-          email,
-          roleId: dto.roleId,
-          createdById: dto.createdById,
-          expiresAt,
-          actionUrl: null,
-          tokenHash: inviteTokenHash,
-        },
-      });
+      if (previous) {
+        await tx.invite.update({
+          where: { id: previous.id },
+          data: {
+            roleId: dto.roleId,
+            createdById: dto.createdById,
+            expiresAt,
+            actionUrl: null,
+            tokenHash: inviteTokenHash,
+            usedAt: null,
+          },
+        });
+      } else {
+        await tx.invite.create({
+          data: {
+            email,
+            roleId: dto.roleId,
+            createdById: dto.createdById,
+            expiresAt,
+            actionUrl: null,
+            tokenHash: inviteTokenHash,
+            companyId,
+          },
+        });
+      }
       return previous;
     });
 
@@ -170,9 +181,10 @@ export class GenerateInviteUseCase {
           SELECT 1::int FROM lock
         `;
         if (previousInvite) {
+          const { id: _id, companyId: _cid, ...restoreData } = previousInvite;
           await tx.invite.updateMany({
             where: { email, tokenHash: inviteTokenHash },
-            data: previousInvite,
+            data: { ...restoreData, companyId: previousInvite.companyId },
           });
         } else {
           await tx.invite.deleteMany({
@@ -256,6 +268,7 @@ export class GenerateInviteUseCase {
       createdById: currentInvite.createdById,
       createdAt: invitePayload.createdAt,
       name: invitePayload.name ?? null,
+      companyId: currentInvite.companyId ?? null,
       inviteId: currentInvite.id,
       tokenHash: currentInvite.tokenHash,
       userExists: existingUser !== null,
@@ -312,6 +325,19 @@ export class GenerateInviteUseCase {
         where: { id: user.id },
         data: { roleId: invite.roleId },
       });
+      if (invite.companyId) {
+        const existingMembership = await tx.membership.findFirst({
+          where: { userId: user.id, companyId: invite.companyId },
+        });
+        if (!existingMembership) {
+          await tx.membership.create({
+            data: {
+              userId: user.id,
+              companyId: invite.companyId,
+            },
+          });
+        }
+      }
     });
 
     return { created: 'user_updated' };

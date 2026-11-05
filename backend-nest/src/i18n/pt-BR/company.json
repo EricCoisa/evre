@@ -19,6 +19,9 @@
   "cannot_archive_with_active_proposals": "Não é possível arquivar: a empresa tem proposta em andamento",
   "contact_not_found": "Contato não encontrado",
   "contact_already_linked": "Este contato já está vinculado a esta empresa",
+  "member_user_not_found": "Usuário não encontrado",
+  "member_already_exists": "Este usuário já é membro desta empresa",
+  "member_not_found": "Membro não encontrado",
   "contacts": {
     "list": {
       "title": "Listar contatos da empresa"
@@ -32,5 +35,13 @@
     "delete": {
       "title": "Arquivar contato da empresa"
     }
+  },
+  "members": {
+    "list": { "title": "Listar membros da empresa" },
+    "add": { "title": "Adicionar membro à empresa" },
+    "invite": { "title": "Convidar cliente para a empresa" },
+    "remove": { "title": "Remover membro da empresa" },
+    "update": { "title": "Atualizar permissão do membro" },
+    "invites": { "title": "Listar convites da empresa" }
   }
 }

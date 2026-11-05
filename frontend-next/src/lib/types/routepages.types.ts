@@ -2,6 +2,7 @@
 import { getUser } from "../actions/user/api";
 import { getProposal } from "../actions/proposal/api";
 import { getCompany } from "../actions/company/api";
+import { getProject } from "../actions/project/api";
 
 export interface RoutePageQuery<T> {
     queryKey: (id?: string) => unknown[];
@@ -31,6 +32,14 @@ export const RoutePagesList: RoutePage<unknown>[] = [
         getBreadName: (id?: string) => ({
             queryKey: () => ["proposal", id],
             queryFn: (id?: string) => getProposal(id as string),
+        }),
+    },
+    {
+        path: '/project',
+        key: 'data.name',
+        getBreadName: (id?: string) => ({
+            queryKey: () => ["project", id],
+            queryFn: (id?: string) => getProject(id as string),
         }),
     }
 ]

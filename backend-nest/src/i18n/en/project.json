@@ -1,0 +1,58 @@
+{
+  "not_found": "Project not found",
+  "milestone_not_found": "Milestone not found",
+  "task_not_found": "Task not found",
+  "comment_not_found": "Comment not found",
+  "approval_not_found": "Approval not found",
+  "approval_already_responded": "This approval has already been responded to",
+  "info_request_not_found": "Info request not found",
+  "info_request_already_answered": "This info request has already been answered",
+  "create": {
+    "title": "Create project",
+    "description": "Create a new project for a company"
+  },
+  "list": {
+    "title": "List projects"
+  },
+  "find": {
+    "title": "Find project"
+  },
+  "update": {
+    "title": "Update project"
+  },
+  "delete": {
+    "title": "Archive project"
+  },
+  "board": {
+    "title": "Get project board"
+  },
+  "milestone": {
+    "create": { "title": "Create milestone" },
+    "update": { "title": "Update milestone" },
+    "delete": { "title": "Delete milestone" },
+    "reorder": { "title": "Reorder milestones" }
+  },
+  "task": {
+    "create": { "title": "Create task" },
+    "update": { "title": "Update task" },
+    "delete": { "title": "Delete task" },
+    "move": { "title": "Move task between milestones" },
+    "reorder": { "title": "Reorder tasks" }
+  },
+  "comment": {
+    "create": { "title": "Add comment" },
+    "list": { "title": "List comments" },
+    "delete": { "title": "Delete comment" }
+  },
+  "approval": {
+    "request": { "title": "Request milestone approval" },
+    "respond": { "title": "Respond to milestone approval" },
+    "list": { "title": "List milestone approvals" }
+  },
+  "infoRequest": {
+    "create": { "title": "Create info request" },
+    "answer": { "title": "Answer info request" },
+    "list": { "title": "List info requests" },
+    "getValue": { "title": "Get decrypted info request value" }
+  }
+}

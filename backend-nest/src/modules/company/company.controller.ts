@@ -15,6 +15,7 @@ import { CompanyDto } from './dto/company.dto';
 import { CreateContactDto } from './dto/create-contact.dto';
 import { UpdateContactDto } from './dto/update-contact.dto';
 import { ContactDto } from './dto/contact.dto';
+import { AddCompanyMemberDto, InviteCompanyMemberDto, UpdateCompanyMemberDto } from './dto/add-member.dto';
 import { FindAllCompanyUseCase } from './use-cases/find-all.use-case';
 import { FindOneCompanyUseCase } from './use-cases/find-one.use-case';
 import { CreateCompanyUseCase } from './use-cases/create.use-case';
@@ -24,6 +25,12 @@ import { ListCompanyContactsUseCase } from './use-cases/list-company-contacts.us
 import { CreateCompanyContactUseCase } from './use-cases/create-company-contact.use-case';
 import { UpdateCompanyContactUseCase } from './use-cases/update-company-contact.use-case';
 import { ArchiveCompanyContactUseCase } from './use-cases/archive-company-contact.use-case';
+import { ListCompanyMembersUseCase } from './use-cases/list-company-members.use-case';
+import { AddCompanyMemberUseCase } from './use-cases/add-company-member.use-case';
+import { RemoveCompanyMemberUseCase } from './use-cases/remove-company-member.use-case';
+import { UpdateCompanyMemberUseCase } from './use-cases/update-company-member.use-case';
+import { InviteCompanyMemberUseCase } from './use-cases/invite-company-member.use-case';
+import { ListCompanyInvitesUseCase } from './use-cases/list-company-invites.use-case';
 import { commonPaginationQueries } from '../../common/swagger/pagination-queries';
 import type { AuthenticatedUser } from '../../common/types/auth.types';
 import {
@@ -45,6 +52,12 @@ export class CompanyController {
     private readonly createCompanyContact: CreateCompanyContactUseCase,
     private readonly updateCompanyContact: UpdateCompanyContactUseCase,
     private readonly archiveCompanyContact: ArchiveCompanyContactUseCase,
+    private readonly listCompanyMembers: ListCompanyMembersUseCase,
+    private readonly addCompanyMember: AddCompanyMemberUseCase,
+    private readonly removeCompanyMember: RemoveCompanyMemberUseCase,
+    private readonly updateCompanyMember: UpdateCompanyMemberUseCase,
+    private readonly inviteCompanyMember: InviteCompanyMemberUseCase,
+    private readonly listCompanyInvites: ListCompanyInvitesUseCase,
   ) {}
 
   @PostApi({
@@ -271,5 +284,92 @@ export class CompanyController {
     @CurrentUser() currentUser: AuthenticatedUser,
   ) {
     return this.archiveCompanyContact.execute(id, contactId, currentUser);
+  }
+
+  @GetApi({
+    path: ':id/members',
+    summary: 'company.members.list.title',
+    status: 'OK',
+    authenticated: true,
+    roles: ['ADMIN', 'MODERATOR'],
+    queries: commonPaginationQueries,
+  })
+  async listMembers(
+    @Param('id') id: string,
+    @Query(new ZodValidationPipe(PaginationQuerySchema)) query: PaginationQuery,
+  ) {
+    return this.listCompanyMembers.execute(id, query);
+  }
+
+  @PostApi({
+    path: ':id/members',
+    summary: 'company.members.add.title',
+    body: AddCompanyMemberDto,
+    status: 'CREATED',
+    authenticated: true,
+    roles: ['ADMIN'],
+  })
+  async addMember(
+    @Param('id') id: string,
+    @Body() dto: AddCompanyMemberDto,
+  ) {
+    return this.addCompanyMember.execute(id, dto);
+  }
+
+  @PostApi({
+    path: ':id/members/invite',
+    summary: 'company.members.invite.title',
+    body: InviteCompanyMemberDto,
+    status: 'CREATED',
+    authenticated: true,
+    roles: ['ADMIN'],
+  })
+  async inviteMember(
+    @Param('id') id: string,
+    @Body() dto: InviteCompanyMemberDto,
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ) {
+    return this.inviteCompanyMember.execute(id, dto, currentUser.id);
+  }
+
+  @PatchApi({
+    path: ':id/members/:membershipId',
+    summary: 'company.members.update.title',
+    body: UpdateCompanyMemberDto,
+    status: 'OK',
+    authenticated: true,
+    roles: ['ADMIN'],
+  })
+  async updateMember(
+    @Param('id') id: string,
+    @Param('membershipId') membershipId: string,
+    @Body() dto: UpdateCompanyMemberDto,
+  ) {
+    return this.updateCompanyMember.execute(id, membershipId, dto);
+  }
+
+  @DeleteApi({
+    path: ':id/members/:membershipId',
+    summary: 'company.members.remove.title',
+    status: 'NO_CONTENT',
+    authenticated: true,
+    roles: ['ADMIN'],
+  })
+  async removeMember(
+    @Param('id') id: string,
+    @Param('membershipId') membershipId: string,
+  ) {
+    return this.removeCompanyMember.execute(id, membershipId);
+  }
+
+  @GetApi({
+    path: ':id/invites',
+    summary: 'company.members.invites.title',
+    status: 'OK',
+    authenticated: true,
+    roles: ['ADMIN', 'MODERATOR'],
+  })
+  async listInvites(@Param('id') id: string) {
+    return this.listCompanyInvites.execute(id);
   }
 }

@@ -19,6 +19,9 @@
   "cannot_archive_with_active_proposals": "Cannot archive: the company has a proposal in progress",
   "contact_not_found": "Contact not found",
   "contact_already_linked": "This contact is already linked to this company",
+  "member_user_not_found": "User not found",
+  "member_already_exists": "This user is already a member of this company",
+  "member_not_found": "Member not found",
   "contacts": {
     "list": {
       "title": "List company contacts"
@@ -32,5 +35,13 @@
     "delete": {
       "title": "Archive company contact"
     }
+  },
+  "members": {
+    "list": { "title": "List company members" },
+    "add": { "title": "Add member to company" },
+    "invite": { "title": "Invite client to company" },
+    "remove": { "title": "Remove company member" },
+    "update": { "title": "Update member permission" },
+    "invites": { "title": "List company invites" }
   }
 }

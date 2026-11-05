@@ -49,6 +49,7 @@ enum LogModule {
   COMPANY
   ARTIFACT
   PROPOSAL
+  PROJECT
 
   @@schema("public")
 }

@@ -14,6 +14,7 @@ export const RoutePathConst = {
   COMPANY: '/company',
   PROPOSAL: '/proposal',
   ARTIFACT: '/artifacts',
+  PROJECT: '/project',
 } as const;
 
 export type RoutePath = (typeof RoutePathConst)[keyof typeof RoutePathConst];
