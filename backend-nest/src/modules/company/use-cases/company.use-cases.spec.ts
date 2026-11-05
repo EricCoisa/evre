@@ -37,6 +37,13 @@ const user: AuthenticatedUser = {
   roleName: 'USER',
 };
 
+const moderator: AuthenticatedUser = {
+  id: 'mod-1',
+  email: 'mod@example.com',
+  roleId: 'role-mod',
+  roleName: 'MODERATOR',
+};
+
 const mockPrisma = {
   company: {
     findMany: vi.fn(),
@@ -44,6 +51,10 @@ const mockPrisma = {
     count: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
+  },
+  membership: {
+    findFirst: vi.fn(),
+    create: vi.fn(),
   },
   proposal: {
     findFirst: vi.fn(),
@@ -92,6 +103,7 @@ describe('Company use-cases', () => {
     mockPrisma.company.create.mockResolvedValue(row);
     mockPrisma.company.update.mockResolvedValue({ ...row, archivedAt: new Date() });
     mockPrisma.proposal.findFirst.mockResolvedValue(null);
+    mockPrisma.membership.findFirst.mockResolvedValue(null);
     mockResourceAccess.assertCanRead.mockResolvedValue(undefined);
     mockResourceAccess.scopeFilter.mockResolvedValue(undefined);
   });
@@ -164,15 +176,34 @@ describe('Company use-cases', () => {
 
   describe('CreateCompanyUseCase', () => {
     it('grava só com nome e registra no audit trail', async () => {
-      await create.execute({ name: 'Exemplo' } as never, 'user-1');
+      await create.execute({ name: 'Exemplo' } as never, admin);
 
       expect(mockPrisma.company.create).toHaveBeenCalledWith({
         data: { name: 'Exemplo' },
       });
       expect(mockLogging.create).toHaveBeenCalledWith(
         expect.objectContaining({ module: 'COMPANY' }),
-        'user-1',
+        admin.id,
       );
+    });
+
+    it('ADMIN não cria membership', async () => {
+      await create.execute({ name: 'Exemplo' } as never, admin);
+
+      expect(mockPrisma.membership.create).not.toHaveBeenCalled();
+    });
+
+    it('MODERATOR cria membership com flags habilitadas', async () => {
+      await create.execute({ name: 'Exemplo' } as never, moderator);
+
+      expect(mockPrisma.membership.create).toHaveBeenCalledWith({
+        data: {
+          userId: moderator.id,
+          companyId: 'id-1',
+          canSeeCommercials: true,
+          canComment: true,
+        },
+      });
     });
   });
 

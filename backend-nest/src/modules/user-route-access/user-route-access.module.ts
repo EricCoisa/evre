@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { UserRouteAccessController } from './user-route-access.controller';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { LoggingModule } from '../logging/logging.module';
@@ -16,6 +16,7 @@ import { CheckMyRouteAccessTool } from './ai-tools/check-my-route-access.tool';
 import { RevokeUserRouteAccessTool } from './ai-tools/revoke-user-route-access.tool';
 import { RevokeAllUserRouteAccessTool } from './ai-tools/revoke-all-user-route-access.tool';
 
+@Global()
 @Module({
   imports: [PrismaModule, LoggingModule],
   controllers: [UserRouteAccessController],

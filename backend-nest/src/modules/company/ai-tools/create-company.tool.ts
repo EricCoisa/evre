@@ -3,10 +3,11 @@ import { z } from 'zod';
 import { AiToolDef } from 'src/domain/ai/ai-tool.decorator';
 import { McpScopes } from 'src/domain/api-key/mcp-scopes.const';
 import { InvalidationTags } from 'src/domain/ai/invalidation-tags.const';
-import type {
-  IAiTool,
-  AiToolDefinition,
-  AiToolContext,
+import {
+  toAuthenticatedUser,
+  type IAiTool,
+  type AiToolDefinition,
+  type AiToolContext,
 } from 'src/domain/ai/ai-tool.types';
 import { CreateCompanyUseCase } from '../use-cases/create.use-case';
 import { CreateCompanySchema } from '../dto/create-company.dto';
@@ -29,6 +30,6 @@ export class CreateCompanyTool implements IAiTool {
   constructor(private readonly createCompany: CreateCompanyUseCase) {}
 
   execute(input: CreateCompanyInput, ctx: AiToolContext) {
-    return this.createCompany.execute(input, ctx.userId);
+    return this.createCompany.execute(input, toAuthenticatedUser(ctx));
   }
 }

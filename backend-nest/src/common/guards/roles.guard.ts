@@ -9,7 +9,8 @@ import { ROLES_KEY } from '../decorators/roles.decorator';
 import { I18nContext } from 'nestjs-i18n';
 import { Request } from 'express';
 import type { AuthenticatedUser } from '../types/auth.types';
-import { UserRole } from 'src/domain/auth/userRole.const';
+import { UserRole, UserRoleConst } from 'src/domain/auth/userRole.const';
+import { CheckAccessUseCase } from 'src/modules/user-route-access/use-cases/check-access.use-case';
 
 interface RequestWithUser extends Request {
   user: AuthenticatedUser;
@@ -17,9 +18,12 @@ interface RequestWithUser extends Request {
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
+  constructor(
+    private reflector: Reflector,
+    private readonly checkAccess: CheckAccessUseCase,
+  ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(
       ROLES_KEY,
       [context.getHandler(), context.getClass()],
@@ -48,6 +52,25 @@ export class RolesGuard implements CanActivate {
           args: { roles: requiredRoles.join(', ') },
         }) ?? `Acesso negado. Roles necessárias: ${requiredRoles.join(', ')}`,
       );
+    }
+
+    if (request.user.roleName !== UserRoleConst.ADMIN) {
+      const controllerPath = this.reflector.get<string>('path', context.getClass());
+      const routePath = controllerPath ? `/${controllerPath}` : null;
+      if (routePath) {
+        const allowed = await this.checkAccess.execute(
+          request.user.id,
+          routePath,
+          request.user.roleId,
+        );
+        if (!allowed) {
+          throw new ForbiddenException(
+            i18n?.t('common.errors.forbidden', {
+              args: { roles: requiredRoles.join(', ') },
+            }) ?? 'Acesso negado.',
+          );
+        }
+      }
     }
 
     return true;

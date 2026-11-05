@@ -66,7 +66,7 @@ export class CompanyController {
     body: CreateCompanyDto,
     status: 'CREATED',
     authenticated: true,
-    roles: ['ADMIN'],
+    roles: ['ADMIN', 'MODERATOR'],
     response: {
       success: [
         {
@@ -81,7 +81,7 @@ export class CompanyController {
     @Body() dto: CreateCompanyDto,
     @CurrentUser() currentUser: AuthenticatedUser,
   ) {
-    return this.createCompany.execute(dto, currentUser.id);
+    return this.createCompany.execute(dto, currentUser);
   }
 
   @GetApi({
