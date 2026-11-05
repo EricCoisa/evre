@@ -92,7 +92,7 @@ export class ProposalController {
     summary: 'proposal.list.title',
     status: 'OK',
     authenticated: true,
-    roles: ['ADMIN'],
+    roles: ['ADMIN', 'MODERATOR'],
     queries: commonPaginationQueries,
     response: {
       success: [
@@ -126,7 +126,7 @@ export class ProposalController {
     summary: 'proposal.find.title',
     status: 'OK',
     authenticated: true,
-    roles: ['ADMIN'],
+    roles: ['ADMIN', 'MODERATOR'],
     response: {
       success: [
         {

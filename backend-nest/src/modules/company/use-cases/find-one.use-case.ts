@@ -13,7 +13,10 @@ export class FindOneCompanyUseCase {
     private readonly resourceAccess: ResourceAccessService,
   ) {}
 
-  async execute(id: string, user: AuthenticatedUser): Promise<Company> {
+  async execute(
+    id: string,
+    user: AuthenticatedUser,
+  ): Promise<Company & { myMembership?: { canSeeCommercials: boolean; canComment: boolean } }> {
     const found = await this.prisma.company.findUnique({
       where: { id },
     });
@@ -24,6 +27,14 @@ export class FindOneCompanyUseCase {
 
     await this.resourceAccess.assertCanRead(user, { companyId: found.id });
 
-    return found;
+    const membership = await this.prisma.membership.findFirst({
+      where: { userId: user.id, companyId: found.id },
+      select: { canSeeCommercials: true, canComment: true },
+    });
+
+    return {
+      ...found,
+      ...(membership && { myMembership: membership }),
+    };
   }
 }

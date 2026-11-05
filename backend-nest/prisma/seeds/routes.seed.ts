@@ -1,5 +1,5 @@
 import { PrismaClient, User } from '@prisma/client';
-import { RoutePathConst } from '../../dist/src/domain/route/route-path.const';
+import { RoutePathConst } from '../../src/domain/route/route-path.const';
 
 export async function seedRoutes(
   prisma: PrismaClient,
@@ -104,23 +104,27 @@ export async function seedRoutes(
   });
 
   const proposalRoute = await prisma.route.upsert({
-    where: { path: '/proposal' },
-    update: {},
+    where: { path: RoutePathConst.PROPOSAL },
+    update: {
+      icon: 'FileText',
+    },
     create: {
-      path: '/proposal',
+      path: RoutePathConst.PROPOSAL,
       labelKey: 'ROUTE_PROPOSAL',
-      icon: 'Box',
+      icon: 'FileText',
       ordem: 13,
       isActive: true,
     },
   });
   const companyRoute = await prisma.route.upsert({
     where: { path: RoutePathConst.COMPANY },
-    update: {},
+    update: {
+      icon: 'Building2',
+    },
     create: {
       path: RoutePathConst.COMPANY,
       labelKey: 'ROUTE_COMPANY',
-      icon: 'Box',
+      icon: 'Building2',
       ordem: 12,
       isActive: true,
     },

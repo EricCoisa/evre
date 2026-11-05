@@ -88,7 +88,7 @@ export class CompanyController {
     summary: 'company.list.title',
     status: 'OK',
     authenticated: true,
-    roles: ['ADMIN'],
+    roles: ['ADMIN', 'MODERATOR'],
     queries: commonPaginationQueries,
     response: {
       success: [
@@ -122,7 +122,7 @@ export class CompanyController {
     summary: 'company.find.title',
     status: 'OK',
     authenticated: true,
-    roles: ['ADMIN'],
+    roles: ['ADMIN', 'MODERATOR'],
     response: {
       success: [
         {
@@ -193,7 +193,7 @@ export class CompanyController {
     summary: 'company.contacts.list.title',
     status: 'OK',
     authenticated: true,
-    roles: ['ADMIN'],
+    roles: ['ADMIN', 'MODERATOR'],
     response: {
       success: [
         {

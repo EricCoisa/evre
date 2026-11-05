@@ -7706,6 +7706,51 @@
       }
     },
     "/company/{id}/members/{membershipId}": {
+      "patch": {
+        "operationId": "CompanyController_updateMember",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "membershipId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCompanyMemberDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "company.members.update.title",
+        "tags": [
+          "company"
+        ]
+      },
       "delete": {
         "operationId": "CompanyController_removeMember",
         "parameters": [
@@ -10144,6 +10189,10 @@
           "name": {
             "type": "string",
             "description": "Nome opcional informado ao gerar o convite"
+          },
+          "companyName": {
+            "type": "string",
+            "description": "Nome da empresa quando o convite é para membership"
           }
         },
         "required": [
@@ -14277,6 +14326,22 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "myMembership": {
+            "type": "object",
+            "properties": {
+              "canSeeCommercials": {
+                "type": "boolean"
+              },
+              "canComment": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "canSeeCommercials",
+              "canComment"
+            ],
+            "x-nestjs_zod-self-required": false
           }
         },
         "required": [
@@ -14519,13 +14584,11 @@
             "type": "string",
             "format": "uuid"
           },
-          "scopeRole": {
-            "type": "string",
-            "enum": [
-              "OWNER",
-              "COLLABORATOR",
-              "VIEWER"
-            ]
+          "canSeeCommercials": {
+            "type": "boolean"
+          },
+          "canComment": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -14548,6 +14611,17 @@
         "required": [
           "email"
         ]
+      },
+      "UpdateCompanyMemberDto": {
+        "type": "object",
+        "properties": {
+          "canSeeCommercials": {
+            "type": "boolean"
+          },
+          "canComment": {
+            "type": "boolean"
+          }
+        }
       },
       "ArtifactDto": {
         "type": "object",

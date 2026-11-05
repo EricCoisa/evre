@@ -1,6 +1,11 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
+const MyMembershipSchema = z.object({
+  canSeeCommercials: z.boolean(),
+  canComment: z.boolean(),
+});
+
 export const CompanySchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
@@ -12,6 +17,7 @@ export const CompanySchema = z.object({
   archivedAt: z.string().datetime().optional().nullable(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
+  myMembership: MyMembershipSchema.optional(),
 });
 
 export class CompanyDto extends createZodDto(CompanySchema) {}
