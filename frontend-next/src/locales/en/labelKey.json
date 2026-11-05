@@ -3,6 +3,7 @@
     "ROUTE_COMPANY": "Company",
     "ROUTE_ARTIFACT": "Artifacts",
     "ROUTE_PROJECT": "Projects",
+    "ROUTE_MY_PROJECT": "My Projects",
     "ROUTE_DASHBOARD": "Dashboard",
     "ROUTE_USERS": "Users",
     "ROUTE_PROFILE": "Profile",

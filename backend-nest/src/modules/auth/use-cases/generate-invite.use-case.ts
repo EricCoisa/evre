@@ -212,6 +212,7 @@ export class GenerateInviteUseCase {
   /** Valida contra o convite vigente; claims assinadas não são fonte de role nem revogação. */
   async validateInviteToken(token: string): Promise<
     InviteTokenPayload & {
+      companyName: string | null;
       userExists: boolean;
       inviteId: string;
       tokenHash: string;
@@ -238,7 +239,10 @@ export class GenerateInviteUseCase {
         usedAt: null,
         expiresAt: { gt: new Date() },
       },
-      include: { role: { select: { id: true, name: true } } },
+      include: {
+        role: { select: { id: true, name: true } },
+        company: { select: { name: true } },
+      },
     });
     if (!currentInvite) {
       throw new UnauthorizedException(this.i18n.t('auth.invite.already_used'));
@@ -256,7 +260,7 @@ export class GenerateInviteUseCase {
 
     if (existingUser) {
       const alreadyHasRole = existingUser.roleId === currentInvite.roleId;
-      if (alreadyHasRole) {
+      if (alreadyHasRole && !currentInvite.companyId) {
         throw new ConflictException(this.i18n.t('auth.invite.already_member'));
       }
     }
@@ -269,6 +273,7 @@ export class GenerateInviteUseCase {
       createdAt: invitePayload.createdAt,
       name: invitePayload.name ?? null,
       companyId: currentInvite.companyId ?? null,
+      companyName: currentInvite.company?.name ?? null,
       inviteId: currentInvite.id,
       tokenHash: currentInvite.tokenHash,
       userExists: existingUser !== null,

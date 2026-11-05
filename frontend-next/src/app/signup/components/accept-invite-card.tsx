@@ -76,7 +76,9 @@ export function AcceptInviteCard({
       <CardHeader>
         <CardTitle>{t("acceptInviteTitle")}</CardTitle>
         <CardDescription>
-          {t("acceptInviteDescription", { email: inviteResponse.email })}
+          {inviteResponse.companyName
+            ? t("acceptInviteDescription", { companyName: inviteResponse.companyName })
+            : t("acceptInviteDescriptionGeneric")}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

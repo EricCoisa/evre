@@ -41,6 +41,14 @@ export const RoutePagesList: RoutePage<unknown>[] = [
             queryKey: () => ["project", id],
             queryFn: (id?: string) => getProject(id as string),
         }),
+    },
+    {
+        path: '/my-project',
+        key: 'data.name',
+        getBreadName: (id?: string) => ({
+            queryKey: () => ["project", id],
+            queryFn: (id?: string) => getProject(id as string),
+        }),
     }
 ]
 

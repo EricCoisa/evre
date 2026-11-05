@@ -58,6 +58,11 @@ export class ValidateInviteResponseDto {
     description: 'Nome opcional informado ao gerar o convite',
   })
   name?: string;
+  @ApiProperty({
+    required: false,
+    description: 'Nome da empresa quando o convite é para membership',
+  })
+  companyName?: string;
 }
 
 export class InviteTokenResponseDto {

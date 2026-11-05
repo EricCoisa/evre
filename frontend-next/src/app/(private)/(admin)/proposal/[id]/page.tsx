@@ -34,14 +34,6 @@ export default async function ProposalDetailPage({ params }: { params: Promise<{
             <LangLabel text={proposalStatusLabelKey(proposal.status)} langJson="vocabulary" />
           </Badge>
         }
-        actions={
-          <Button asChild variant="outline" size="sm">
-            <Link href="/proposal">
-              <ArrowLeft className="size-4 mr-1.5" />
-              <LangLabel text="backToList" langJson="proposal" />
-            </Link>
-          </Button>
-        }
       />
       <ProposalDetailTabs proposal={proposal} />
     </Container>

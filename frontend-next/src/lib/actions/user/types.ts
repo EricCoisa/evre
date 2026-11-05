@@ -32,6 +32,8 @@ export interface ValidateInviteResponse {
   userExists: boolean;
   /** Nome opcional informado ao gerar o convite. */
   name?: string;
+  /** Nome da empresa quando o convite é para membership. */
+  companyName?: string;
 }
 
 export interface CreateUserDto {

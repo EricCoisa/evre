@@ -160,8 +160,8 @@ export class AuthController {
       token: token,
       email: payload?.email,
       userExists: payload.userExists,
-      // Nome eventualmente informado pelo administrador ao emitir o convite.
       name: payload?.name ?? undefined,
+      companyName: payload?.companyName ?? undefined,
     };
   }
 

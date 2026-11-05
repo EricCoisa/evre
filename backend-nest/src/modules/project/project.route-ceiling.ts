@@ -11,6 +11,9 @@ export class ProjectRouteCeiling implements OnModuleInit {
     this.routeCeilings.register(RoutePathConst.PROJECT, [
       UserRoleConst.ADMIN,
       UserRoleConst.MODERATOR,
+    ]);
+    this.routeCeilings.register(RoutePathConst.MY_PROJECT, [
+      UserRoleConst.ADMIN,
       UserRoleConst.USER,
     ]);
   }
