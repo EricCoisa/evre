@@ -217,8 +217,9 @@ export const BLOCK_META = {
     profiles: ['dashboard', 'proposal'],
     category: 'charts',
     icon: 'AreaChart',
-    defaultRowSpan: 4,
-    minRowSpan: 2,
+    defaultRowSpan: 1,
+    minRowSpan: 1,
+    autoHeight: true,
     description:
       'Gráfico de área ao longo do tempo. No dashboard, precisa de uma fonte do tipo series; na ' +
       'proposta, o dado vem colado em `data.inline` no formato series: ' +
@@ -233,8 +234,9 @@ export const BLOCK_META = {
     profiles: ['dashboard', 'proposal'],
     category: 'charts',
     icon: 'BarChart',
-    defaultRowSpan: 4,
-    minRowSpan: 2,
+    defaultRowSpan: 1,
+    minRowSpan: 1,
+    autoHeight: true,
     description:
       'Gráfico de barras para dados discretos ao longo do tempo. No dashboard, precisa de uma ' +
       'fonte do tipo series; na proposta, o dado vem colado em `data.inline` no formato series: ' +
@@ -249,8 +251,9 @@ export const BLOCK_META = {
     profiles: ['dashboard', 'proposal'],
     category: 'charts',
     icon: 'LineChart',
-    defaultRowSpan: 4,
-    minRowSpan: 2,
+    defaultRowSpan: 1,
+    minRowSpan: 1,
+    autoHeight: true,
     description:
       'Gráfico de linhas para tendências ao longo do tempo. No dashboard, precisa de uma fonte ' +
       'do tipo series; na proposta, o dado vem colado em `data.inline` no formato series: ' +
@@ -314,8 +317,9 @@ export const BLOCK_META = {
     profiles: ['dashboard', 'proposal'],
     category: 'data',
     icon: 'List',
-    defaultRowSpan: 4,
-    minRowSpan: 2,
+    defaultRowSpan: 1,
+    minRowSpan: 1,
+    autoHeight: true,
     description:
       'Lista compacta de itens em formato feed (ex: atividades recentes). No dashboard, em ' +
       '`columns` informe [campo_principal, campo_secundário] da fonte escolhida. Na proposta, o ' +
@@ -332,8 +336,9 @@ export const BLOCK_META = {
     profiles: ['dashboard', 'proposal'],
     category: 'data',
     icon: 'Table',
-    defaultRowSpan: 4,
-    minRowSpan: 2,
+    defaultRowSpan: 1,
+    minRowSpan: 1,
+    autoHeight: true,
     description:
       'Tabela simples e somente leitura de uma lista paginada. No dashboard, em `columns` use ' +
       'SOMENTE nomes que aparecem em `fields` da fonte escolhida — campo inventado vira coluna ' +
@@ -351,13 +356,13 @@ export const BLOCK_META = {
     profiles: ['proposal'],
     category: 'content',
     icon: 'ListChecks',
-    defaultRowSpan: 2,
+    defaultRowSpan: 1,
     minRowSpan: 1,
     description:
       'Bloco de escopo: título, descrição opcional e uma lista de itens. Use para "o que entra" ' +
       'numa proposta — fases, entregáveis, stack técnica. Não consome fonte de dados.',
     accepts: [],
-    container: true,
+    autoHeight: true,
     textEditable: true,
     props: [
       { name: 'title', type: 'rich-text', required: false },
@@ -369,8 +374,9 @@ export const BLOCK_META = {
     profiles: ['proposal'],
     category: 'media',
     icon: 'ImageIcon',
-    defaultRowSpan: 3,
+    defaultRowSpan: 1,
     minRowSpan: 1,
+    autoHeight: true,
     description:
       'Imagem com legenda opcional (mockup, print de tela, diagrama). Não consome fonte de dados.',
     accepts: [],
@@ -384,8 +390,9 @@ export const BLOCK_META = {
     profiles: ['proposal'],
     category: 'media',
     icon: 'Globe',
-    defaultRowSpan: 4,
-    minRowSpan: 2,
+    defaultRowSpan: 1,
+    minRowSpan: 1,
+    autoHeight: true,
     description:
       'Demonstração HTML/imagem ou pasta (site estático) isolada em sandbox. O conteúdo vem de um ' +
       '`Artifact` por `artifactId` — nunca HTML inline no layout. Preview estático; o toque abre ' +

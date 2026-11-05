@@ -212,11 +212,31 @@ export function estimateTableRowSpan(block: PageBlock): BlockRowSpan {
 /**
  * Estima a altura necessária para o bloco topic (itens de escopo em proposta).
  */
-export function estimateTopicRowSpan(block: PageBlock): BlockRowSpan {
-  const hasHeader = blockHasHeader(block);
+export function estimateTopicRowSpan(block: PageBlock, cols = 12): BlockRowSpan {
+  const hasTitle = Boolean(block.props?.title);
+  const hasDesc = Boolean(block.props?.description);
+  const hasHeader = hasTitle || hasDesc;
+  // CardHeader: title (~28px) + desc (~24px) + gap-6 do Card (24px)
+  const headerHeight = hasTitle && hasDesc ? 76 : hasHeader ? 52 : 0;
+
+  const span = normalizeSpan(block.span);
+  const charsPerLine = Math.max(25, Math.round((span / cols) * 100));
+
   const items = Array.isArray(block.props?.items) ? block.props.items : [];
-  const count = Math.max(1, items.length);
-  const totalHeight = 48 + (hasHeader ? 64 : 0) + count * 36;
+  let itemsHeight = 0;
+  if (items.length === 0) {
+    itemsHeight = 24;
+  } else {
+    for (const item of items) {
+      const text = typeof item === 'string' ? item.trim() : '';
+      const lines = Math.max(1, Math.ceil(text.length / charsPerLine));
+      // Cada item text-sm tem line-height ~20px + space-y-1 (4px). O botão "+ Item" do editor não faz parte do conteúdo.
+      itemsHeight += lines * 20 + 4;
+    }
+  }
+
+  // Padding do card py-6 (24px topo + 24px base = 48px)
+  const totalHeight = 48 + headerHeight + itemsHeight;
   return pixelsToRowSpan(totalHeight, 'topic');
 }
 
@@ -233,7 +253,12 @@ export const BLOCK_ROW_SPAN_ESTIMATORS: Record<string, BlockRowSpanEstimator> = 
     const preset = typeof block.props?.preset === 'string' ? block.props.preset : undefined;
     return estimateTextRowSpan(content, span, preset);
   },
+  'chart.area': () => 4,
+  'chart.bar': () => 4,
+  'chart.line': () => 4,
   'list.feed': estimateFeedRowSpan,
   'table.basic': estimateTableRowSpan,
   topic: estimateTopicRowSpan,
+  image: () => 3,
+  iframe: () => 4,
 };

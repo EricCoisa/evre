@@ -105,7 +105,10 @@ export function calculateEffectiveRowSpan(block: PageBlock, cols = 12): BlockRow
   // Blocos auto-height de largura total (span >= cols) ocupam a linha inteira da grade;
   // com auto-rows minmax(44px, auto), essa linha da grade se ajusta de forma fluida e contínua pixel a pixel
   // a cada caractere e quebra de linha digitada, sem saltos discretos de 60px nem vácuos vazios.
-  if (isAutoHeightBlockType(block.type)) {
+  // Blocos textuais fluidos sem estrutura de dados rígida (text.rich, topic, divider)
+  // expandem suavemente via CSS minmax(44px, auto) ocupando 1 linha na grade quando largura total.
+  const isFluidText = block.type === 'text.rich' || block.type === 'topic' || block.type === 'divider';
+  if (isFluidText) {
     const span = normalizeSpan(block.span);
     if (span >= cols) {
       return 1;

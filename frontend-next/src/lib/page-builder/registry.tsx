@@ -108,28 +108,30 @@ function Panel({
   header,
   children,
   editing,
+  autoHeight,
 }: {
   bare?: boolean;
   className?: string;
   header?: React.ReactNode;
   children?: React.ReactNode;
   editing?: boolean;
+  autoHeight?: boolean;
 }) {
   // `cn` por último: o className do layout vence o default do bloco quando conflita
   // (ex.: `p-0` sobre o padding do Card), que é o ponto de deixar o usuário customizar.
   const inner = innerAlignClass(className);
   if (bare) {
     return (
-      <div className={cn('flex h-full flex-col gap-4', className)}>
+      <div className={cn('flex flex-col gap-4', autoHeight ? 'h-auto' : 'h-full', className)}>
         {header ? <div className={cn('grid w-full auto-rows-min gap-2', inner)}>{header}</div> : null}
         {children ? <div className={cn('w-full', inner)}>{children}</div> : null}
       </div>
     );
   }
   return (
-    <Card className={cn('h-full flex flex-col', editing ? 'overflow-visible' : 'overflow-hidden', className)}>
+    <Card className={cn(autoHeight ? 'h-auto' : 'h-full', 'flex flex-col', editing ? 'overflow-visible' : 'overflow-hidden', className)}>
       {header ? <CardHeader className={cn('w-full shrink-0', inner)}>{header}</CardHeader> : null}
-      <CardContent className={cn('w-full flex-1 min-h-0 flex flex-col justify-start', editing ? 'overflow-visible' : 'overflow-y-auto', inner)}>{children}</CardContent>
+      <CardContent className={cn('w-full min-h-0 flex flex-col justify-start', autoHeight ? 'flex-none' : 'flex-1', editing ? 'overflow-visible' : 'overflow-y-auto', inner)}>{children}</CardContent>
     </Card>
   );
 }
@@ -236,7 +238,7 @@ function ChartBlock({
   const axis = (
     <>
       <CartesianGrid vertical={false} />
-      <XAxis dataKey="date" tickLine={false} axisLine={false} minTickGap={24} />
+      <XAxis dataKey="date" tickLine={false} axisLine={false} minTickGap={24} tickMargin={6} height={24} />
       <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
     </>
   );
@@ -246,10 +248,14 @@ function ChartBlock({
       bare={bare}
       className={className}
       header={renderBlockHeader(props.title, props.description, children, editMeta)}
+      autoHeight
     >
-      <ChartContainer config={chartConfig} className="aspect-auto h-full min-h-[120px] w-full flex-1">
+      <ChartContainer
+        config={chartConfig}
+        className="aspect-auto h-[220px] sm:h-[260px] w-full"
+      >
         {kind === 'chart.area' ? (
-          <AreaChart data={points}>
+          <AreaChart data={points} margin={{ top: 8, right: 12, left: 12, bottom: 0 }}>
             {axis}
             <Area
               dataKey="value"
@@ -260,12 +266,12 @@ function ChartBlock({
             />
           </AreaChart>
         ) : kind === 'chart.bar' ? (
-          <BarChart data={points}>
+          <BarChart data={points} margin={{ top: 8, right: 12, left: 12, bottom: 0 }}>
             {axis}
             <Bar dataKey="value" fill="var(--color-value)" radius={4} />
           </BarChart>
         ) : (
-          <LineChart data={points}>
+          <LineChart data={points} margin={{ top: 8, right: 12, left: 12, bottom: 0 }}>
             {axis}
             <Line dataKey="value" type="natural" stroke="var(--color-value)" strokeWidth={2} dot={false} />
           </LineChart>
@@ -296,6 +302,7 @@ function TopicBlock({ props, bare, className, children, blockId, onPropChange, e
         className={className}
         header={renderBlockHeader(props.title, props.description, children, editMeta)}
         editing={editing}
+        autoHeight
       >
         <div className="space-y-2">
           <ul className="space-y-1 pl-5 text-sm text-muted-foreground list-disc">
@@ -342,6 +349,7 @@ function TopicBlock({ props, bare, className, children, blockId, onPropChange, e
       bare={bare}
       className={className}
       header={renderBlockHeader(props.title, props.description, children, editMeta)}
+      autoHeight
     >
       <div className="space-y-2">
         {items.length > 0 ? (
@@ -368,7 +376,7 @@ function ImageBlock({ props, bare, className }: BlockProps) {
   const caption = str(props.caption);
 
   return (
-    <Panel bare={bare} className={className}>
+    <Panel bare={bare} className={className} autoHeight>
       <figure className="space-y-2">
         {url ? (
           <Image
@@ -454,7 +462,7 @@ function IframeBlock({ props, bare, className }: BlockProps) {
     : `${API_BASE_URL}/artifacts/${artifactId}/view`;
 
   return (
-    <Panel bare={bare} className={className}>
+    <Panel bare={bare} className={className} autoHeight>
       <div className="relative w-full overflow-hidden rounded-lg border" style={previewStyle}>
         <iframe
           src={url}
@@ -802,6 +810,7 @@ function ListFeed({
       bare={bare}
       className={className}
       header={renderBlockHeader(props.title, props.description, children)}
+      autoHeight
     >
       <div className="divide-y divide-border" aria-busy={isLoading}>
         {isLoading ? (
@@ -851,6 +860,7 @@ function BasicTable({
       bare={bare}
       className={className}
       header={renderBlockHeader(props.title, props.description, children, editMeta)}
+      autoHeight
     >
       <Table aria-busy={isLoading}>
         <TableHeader>
