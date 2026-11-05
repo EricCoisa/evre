@@ -52,25 +52,33 @@ export function useProposal(id: string) {
   });
 }
 
-/** Invalida as chaves passadas e força um novo render do servidor — `proposal/[id]` é Server
- * Component e passa o registro como prop estática, então `invalidateQueries` sozinho é no-op
- * sobre o que a página já renderizou. */
+/** Invalida as chaves passadas (`refetchType: 'all'`: a lista afetada costuma estar desmontada e o
+ * `refetchOnMount: false` global não a recarregaria) e força um novo render do servidor —
+ * `proposal/[id]` é Server Component e passa o registro como prop estática, então
+ * `invalidateQueries` sozinho é no-op sobre o que a página já renderizou. */
 function useProposalSync() {
   const queryClient = useQueryClient();
   const router = useRouter();
 
   return (keys: QueryKey[]) => {
-    keys.forEach((key) => queryClient.invalidateQueries({ queryKey: key }));
+    keys.forEach((key) => queryClient.invalidateQueries({ queryKey: key, refetchType: 'all' }));
     router.refresh();
   };
 }
 
+/** Cria a proposta e, com `companyId`, a vincula à empresa antes de invalidar. */
 export function useCreateProposal() {
-  const queryClient = useQueryClient();
+  const sync = useProposalSync();
   return useMutation({
-    mutationFn: (data: CreateProposalDto) => Alive(() => createProposal(data))(),
+    mutationFn: async ({ companyId, ...data }: CreateProposalDto & { companyId?: string }) => {
+      const proposal = await Alive(() => createProposal(data))();
+      if (companyId) {
+        await Alive(() => updateProposal(proposal.id, { companyId }))().catch(() => undefined);
+      }
+      return proposal;
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['proposals'] });
+      sync([['proposals'], ['companys']]);
     },
   });
 }
@@ -88,12 +96,12 @@ export function useUpdateProposal() {
 
 /** "Excluir" uma proposta arquiva no servidor — nada é apagado. */
 export function useArchiveProposal() {
-  const queryClient = useQueryClient();
+  const sync = useProposalSync();
   const { t } = useTranslation('proposal');
   return useMutation({
     mutationFn: (id: string) => Alive(() => archiveProposal(id))(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['proposals'] });
+      sync([['proposals']]);
       toast.success(t('archivedSuccess'));
     },
   });
@@ -101,11 +109,11 @@ export function useArchiveProposal() {
 
 /** Alavanca "não comece do zero" — cópia nasce DRAFT, sem versão nem token. */
 export function useDuplicateProposal() {
-  const queryClient = useQueryClient();
+  const sync = useProposalSync();
   return useMutation({
     mutationFn: (id: string) => Alive(() => duplicateProposal(id))(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['proposals'] });
+      sync([['proposals']]);
     },
   });
 }

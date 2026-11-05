@@ -3,7 +3,6 @@
 import { useTranslation } from "@/hooks/use-translation";
 import type { Company } from "@/lib/actions/company/types";
 import { CompanyEdit } from "../../components/company-edit";
-import { CompanyContactsTab } from "../../components/company-contacts-tab";
 
 interface CompanyConfigTabProps {
   company: Company;
@@ -18,10 +17,6 @@ export function CompanyConfigTab({ company }: CompanyConfigTabProps) {
       <div className="space-y-4">
         <h3 className="text-sm font-medium text-muted-foreground">{t('tabData')}</h3>
         <CompanyEdit company={company} />
-      </div>
-      <div className="space-y-4">
-        <h3 className="text-sm font-medium text-muted-foreground">{t('tabContacts')}</h3>
-        <CompanyContactsTab companyId={company.id} />
       </div>
     </div>
   );

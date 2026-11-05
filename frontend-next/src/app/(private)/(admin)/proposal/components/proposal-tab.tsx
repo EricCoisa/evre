@@ -4,7 +4,6 @@ import { useTranslation } from "@/hooks/use-translation";
 import {
   useProposals,
   useCreateProposal,
-  useUpdateProposal,
   useArchiveProposal,
   useDuplicateProposal,
 } from "@/lib/actions/proposal/queries";
@@ -24,7 +23,12 @@ import { PROPOSAL_STATUSES, proposalStatusLabelKey } from "@/lib/vocabulary";
 // um valor não-vazio próprio, convertido de volta a `undefined` no submit.
 const NO_COMPANY = '__none__';
 
-export function ProposalTab() {
+interface ProposalTabProps {
+  /** Quando informado, lista e cria propostas apenas dessa empresa. */
+  companyId?: string;
+}
+
+export function ProposalTab({ companyId }: ProposalTabProps = {}) {
   const { t } = useTranslation('proposal');
   const { t: tVocabulary } = useTranslation('vocabulary');
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
@@ -38,7 +42,9 @@ export function ProposalTab() {
     limit: pagination.pageSize,
     pagination: true,
     ...(globalFilter && { search: globalFilter }),
-    ...(Object.keys(filters).length > 0 && { filter: JSON.stringify(filters) }),
+    ...((companyId || Object.keys(filters).length > 0) && {
+      filter: JSON.stringify({ ...filters, ...(companyId && { companyId }) }),
+    }),
   };
 
   const { data, error } = useProposals(queryParams);
@@ -49,7 +55,6 @@ export function ProposalTab() {
   );
 
   const createProposalMutation = useCreateProposal();
-  const updateProposalMutation = useUpdateProposal();
   const archiveProposalMutation = useArchiveProposal();
   const duplicateProposalMutation = useDuplicateProposal();
 
@@ -73,7 +78,7 @@ export function ProposalTab() {
 
   const createProposalFields = useMemo<FormBuilderField[]>(() => [
     { name: 'name', label: t('name'), placeholder: t('namePlaceholder') },
-    {
+    ...(companyId ? [] : [{
       name: 'companyId',
       label: t('company'),
       type: 'select',
@@ -82,8 +87,8 @@ export function ProposalTab() {
         { value: NO_COMPANY, label: t('noCompany') },
         ...companies.map((company) => ({ value: company.id, label: company.name })),
       ],
-    },
-  ], [t, companies]);
+    } as FormBuilderField]),
+  ], [t, companies, companyId]);
 
   const columns = useMemo(() =>
     getProposalColumns({ t, tVocabulary, onDuplicate: handleDuplicate, onArchive: handleArchive }),
@@ -138,21 +143,12 @@ export function ProposalTab() {
         schema={createProposalSchema}
         fields={createProposalFields}
         mode="create"
-        onSubmit={async (data) => {
-          const proposal = await createProposalMutation.mutateAsync({ name: data.name });
-
-          if (data.companyId && data.companyId !== NO_COMPANY) {
-            try {
-              await updateProposalMutation.mutateAsync({
-                id: proposal.id,
-                data: { companyId: data.companyId },
-              });
-            } catch {
-              // Nada é porta — a proposta já existe, segue sem empresa.
-            }
-          }
-
-          return proposal;
+        onSubmit={(data) => {
+          const targetCompanyId = companyId ?? data.companyId;
+          return createProposalMutation.mutateAsync({
+            name: data.name,
+            companyId: targetCompanyId === NO_COMPANY ? undefined : targetCompanyId,
+          });
         }}
         onError={(error) => {
           console.error('Error creating proposal:', error);
