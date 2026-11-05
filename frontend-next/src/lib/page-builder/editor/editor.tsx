@@ -8,6 +8,7 @@ import {
   pointerWithin,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
@@ -77,6 +78,16 @@ export default function PageEditor({
     </EditorProvider>
   );
 }
+
+// Faixas antes/depois têm prioridade sobre a zona de troca/dentro, que cobre quase o bloco todo.
+const edgeFirstCollision: CollisionDetection = (args) => {
+  const hits = pointerWithin(args);
+  const edges = hits.filter((h) => {
+    const placement = parseDropId(String(h.id))?.placement;
+    return placement === 'before' || placement === 'after';
+  });
+  return edges.length ? edges : hits;
+};
 
 function EditorShell({
   pageKey,
@@ -241,7 +252,7 @@ function EditorShell({
         <div className="mx-auto max-w-7xl space-y-4">
           <DndContext
             sensors={sensors}
-            collisionDetection={pointerWithin}
+            collisionDetection={edgeFirstCollision}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
             onDragCancel={handleDragCancel}

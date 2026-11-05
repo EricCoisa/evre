@@ -878,7 +878,8 @@ export function moveBlockTo(
 
   const parentId = placement === 'inside' ? to.block.id : to.parentId;
   const detached = removeBlock(layout, activeId);
-  if (!canAdd(detached, parentId)) return layout;
+  // Mover não cria bloco: o teto de blocos do topo (depende do profile) não se aplica.
+  if (parentId && !canAdd(detached, parentId)) return layout;
 
   if (placement === 'inside') {
     const cleanBlock: PageBlock = { ...from.block, x: undefined, y: undefined };

@@ -770,3 +770,17 @@ describe('insertBlockAfter & insertBlockAt (2D Grid Insertion)', () => {
   });
 });
 
+
+describe('moveBlockTo com layout acima do teto do profile padrão', () => {
+  it('reordena antes/depois mesmo com mais blocos que o maxBlocks do dashboard', () => {
+    const blocks = Array.from({ length: maxBlocksFor() + 5 }, (_, i) => ({
+      id: `b${i}`,
+      type: 'text.rich',
+      span: 12,
+    }));
+    const layout = { blocks } as PageLayout;
+    const last = blocks[blocks.length - 1].id;
+    expect(moveBlockTo(layout, last, 'b0', 'before').blocks[0].id).toBe(last);
+    expect(moveBlockTo(layout, 'b0', last, 'after').blocks.at(-1)!.id).toBe('b0');
+  });
+});
