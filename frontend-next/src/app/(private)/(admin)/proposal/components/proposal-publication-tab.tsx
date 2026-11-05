@@ -72,7 +72,7 @@ export function ProposalPublicationTab({ proposal }: { proposal: Proposal }) {
   const { state, canRevoke, publicUrl, shortUrl } = toPublicationView(versions[0]);
   const alreadyAccepted = proposal.status === 'ACCEPTED';
   const canReopen = proposal.status !== 'DRAFT';
-  const sendableContacts = contacts.filter((contact) => !!contact.phone);
+  const sendableContacts = contacts.filter((contact) => !!contact.messagingContact?.phone);
 
   async function handleRegisterAcceptance() {
     if (!note.trim()) {
@@ -98,7 +98,7 @@ export function ProposalPublicationTab({ proposal }: { proposal: Proposal }) {
   // Sempre pergunta — nunca envia direto para o contato principal sem confirmar, e nunca exige
   // empresa: sem contato nenhum, o diálogo ainda deixa digitar um número manualmente.
   function handleSendClick() {
-    setSelectedPhone(sendableContacts.length === 1 ? (sendableContacts[0].phone as string) : '');
+    setSelectedPhone(sendableContacts.length === 1 ? sendableContacts[0].messagingContact.phone : '');
     setSendOpen(true);
   }
 
@@ -268,8 +268,8 @@ export function ProposalPublicationTab({ proposal }: { proposal: Proposal }) {
               </SelectTrigger>
               <SelectContent>
                 {sendableContacts.map((contact) => (
-                  <SelectItem key={contact.id} value={contact.phone as string}>
-                    {contact.name} — {contact.phone}
+                  <SelectItem key={contact.id} value={contact.messagingContact.phone}>
+                    {contact.messagingContact.name ?? contact.messagingContact.pushName} — {contact.messagingContact.phone}
                   </SelectItem>
                 ))}
               </SelectContent>

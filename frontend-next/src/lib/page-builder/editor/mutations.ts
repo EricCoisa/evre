@@ -390,8 +390,9 @@ export function insertBlockAfter(
       };
     });
 
+    const { x: _x, y: _y, ...rest } = block;
     const newBlock: PageBlock = {
-      ...block,
+      ...rest,
       x: 0,
       y: insertY,
       span: block.span ?? defaultSpan,
@@ -399,7 +400,7 @@ export function insertBlockAfter(
     };
 
     const targetIndex = layout.blocks.findIndex((b) => b.id === targetId);
-    const nextBlocks = [...updatedBlocks];
+    const nextBlocks: PageBlock[] = [...updatedBlocks];
     nextBlocks.splice(targetIndex + 1, 0, newBlock);
 
     return {

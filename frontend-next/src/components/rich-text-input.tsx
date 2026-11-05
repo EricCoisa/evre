@@ -7,6 +7,7 @@ import {
   $getSelection,
   $isRangeSelection,
   FORMAT_TEXT_COMMAND,
+  type LexicalEditor,
   type TextFormatType,
 } from 'lexical';
 import { $getSelectionStyleValueForProperty, $patchStyleText } from '@lexical/selection';

@@ -32,6 +32,7 @@ import { usePageSources } from '@/lib/actions/pageBuilder/queries';
 import { useStorageHealth } from '@/lib/actions/user/queries';
 import { ArtifactPickerDialog } from '@/components/artifact-picker-dialog';
 import type { PageSourceDto } from '@/lib/generated/schemas';
+import type { SourceKind } from '../types';
 import {
   BLOCK_META,
   canAcceptChildrenType,
