@@ -32,6 +32,22 @@ import { SendProposalUseCase } from './use-cases/send-proposal.use-case';
 import { ListProposalSendsUseCase } from './use-cases/list-proposal-sends.use-case';
 import { ReopenProposalUseCase } from './use-cases/reopen-proposal.use-case';
 import { ProposalRouteCeiling } from './proposal.route-ceiling';
+import { ListProposalsTool } from './ai-tools/list-proposals.tool';
+import { GetProposalTool } from './ai-tools/get-proposal.tool';
+import { CreateProposalTool } from './ai-tools/create-proposal.tool';
+import { UpdateProposalTool } from './ai-tools/update-proposal.tool';
+import { RemoveProposalTool } from './ai-tools/remove-proposal.tool';
+import { DuplicateProposalTool } from './ai-tools/duplicate-proposal.tool';
+import { UpdateProposalLayoutTool } from './ai-tools/update-proposal-layout.tool';
+import { UpdateProposalTermsTool } from './ai-tools/update-proposal-terms.tool';
+import { UpdateProposalStatusTool } from './ai-tools/update-proposal-status.tool';
+import { PublishProposalTool } from './ai-tools/publish-proposal.tool';
+import { ReopenProposalTool } from './ai-tools/reopen-proposal.tool';
+import { RevokeProposalPublicationTool } from './ai-tools/revoke-proposal-publication.tool';
+import { ListProposalVersionsTool } from './ai-tools/list-proposal-versions.tool';
+import { AcceptProposalOfflineTool } from './ai-tools/accept-proposal-offline.tool';
+import { SendProposalTool } from './ai-tools/send-proposal.tool';
+import { ListProposalSendsTool } from './ai-tools/list-proposal-sends.tool';
 
 const USE_CASES = [
   FindAllProposalUseCase,
@@ -58,6 +74,25 @@ const USE_CASES = [
   ReopenProposalUseCase,
 ];
 
+const AI_TOOLS = [
+  ListProposalsTool,
+  GetProposalTool,
+  CreateProposalTool,
+  UpdateProposalTool,
+  RemoveProposalTool,
+  DuplicateProposalTool,
+  UpdateProposalLayoutTool,
+  UpdateProposalTermsTool,
+  UpdateProposalStatusTool,
+  PublishProposalTool,
+  ReopenProposalTool,
+  RevokeProposalPublicationTool,
+  ListProposalVersionsTool,
+  AcceptProposalOfflineTool,
+  SendProposalTool,
+  ListProposalSendsTool,
+];
+
 @Module({
   imports: [
     PrismaModule,
@@ -70,7 +105,7 @@ const USE_CASES = [
     ArtifactModule,
   ],
   controllers: [ProposalController, ProposalPublicController],
-  providers: [...USE_CASES, ProposalRouteCeiling],
+  providers: [...USE_CASES, ...AI_TOOLS, ProposalRouteCeiling],
   // Exporte só o que outro módulo injetar.
   exports: [FindOneProposalUseCase],
 })

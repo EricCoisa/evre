@@ -13,6 +13,9 @@ import { ViewArtifactUseCase } from './use-cases/view-artifact.use-case';
 import { ViewPublicArtifactUseCase } from './use-cases/view-public-artifact.use-case';
 import { PublishReferencedArtifactsUseCase } from './use-cases/publish-referenced-artifacts.use-case';
 import { ArtifactRouteCeiling } from './artifact.route-ceiling';
+import { ListArtifactsTool } from './ai-tools/list-artifacts.tool';
+import { ArchiveArtifactTool } from './ai-tools/archive-artifact.tool';
+import { DeleteArtifactTool } from './ai-tools/delete-artifact.tool';
 
 const USE_CASES = [
   UploadArtifactUseCase,
@@ -24,6 +27,8 @@ const USE_CASES = [
   PublishReferencedArtifactsUseCase,
 ];
 
+const AI_TOOLS = [ListArtifactsTool, ArchiveArtifactTool, DeleteArtifactTool];
+
 @Module({
   imports: [
     PrismaModule,
@@ -32,7 +37,7 @@ const USE_CASES = [
     SystemConfigurationModule,
   ],
   controllers: [ArtifactController, ArtifactPublicController],
-  providers: [...USE_CASES, ArtifactRouteCeiling],
+  providers: [...USE_CASES, ...AI_TOOLS, ArtifactRouteCeiling],
   // Dependência unidirecional: Artifact nunca importa nada de quem o consome.
   exports: [PublishReferencedArtifactsUseCase],
 })

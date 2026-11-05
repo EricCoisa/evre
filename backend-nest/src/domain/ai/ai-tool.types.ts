@@ -1,11 +1,18 @@
 import { z } from 'zod';
 import type { McpScope } from '../api-key/mcp-scopes.const';
 import type { InvalidationTag } from './invalidation-tags.const';
+import type { AuthenticatedUser } from '../../common/types/auth.types';
 
 export interface AiToolContext {
   userId: string;
   roleName: string;
   approvedScopes: string[];
+}
+
+/** Ponte para use-cases que pedem `AuthenticatedUser` (ex.: `ResourceAccessService`), que só lêem
+ * `id`/`roleName` — campos que o `AiToolContext` não carrega (`email`, `roleId`) ficam vazios. */
+export function toAuthenticatedUser(ctx: AiToolContext): AuthenticatedUser {
+  return { id: ctx.userId, roleName: ctx.roleName, email: '', roleId: null };
 }
 
 export interface AiToolDefinition {

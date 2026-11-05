@@ -18,6 +18,9 @@ export const InvalidationTags = {
   CAPTCHA: 'captcha',
   MESSAGING: 'messaging',
   NOTIFICATION: 'notification',
+  COMPANY: 'company',
+  PROPOSAL: 'proposal',
+  ARTIFACT: 'artifact',
 } as const;
 export type InvalidationTag =
   (typeof InvalidationTags)[keyof typeof InvalidationTags];

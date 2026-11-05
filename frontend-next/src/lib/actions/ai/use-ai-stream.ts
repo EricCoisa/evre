@@ -26,6 +26,9 @@ const INVALIDATION_TAG_QUERY_KEYS: Record<string, string[]> = {
   // query key real é plural ('notifications'); sem esta entrada o fallback por nome
   // exato ('notification') não bate com nada e a invalidação vira no-op.
   notification: ['notifications'],
+  company: ['companys', 'company'],
+  proposal: ['proposals', 'proposal'],
+  artifact: ['artifacts'],
 };
 
 interface AiStreamEvent {

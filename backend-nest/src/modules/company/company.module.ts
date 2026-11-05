@@ -13,6 +13,15 @@ import { CreateCompanyContactUseCase } from './use-cases/create-company-contact.
 import { UpdateCompanyContactUseCase } from './use-cases/update-company-contact.use-case';
 import { ArchiveCompanyContactUseCase } from './use-cases/archive-company-contact.use-case';
 import { CompanyRouteCeiling } from './company.route-ceiling';
+import { ListCompaniesTool } from './ai-tools/list-companies.tool';
+import { GetCompanyTool } from './ai-tools/get-company.tool';
+import { CreateCompanyTool } from './ai-tools/create-company.tool';
+import { UpdateCompanyTool } from './ai-tools/update-company.tool';
+import { RemoveCompanyTool } from './ai-tools/remove-company.tool';
+import { ListCompanyContactsTool } from './ai-tools/list-company-contacts.tool';
+import { CreateCompanyContactTool } from './ai-tools/create-company-contact.tool';
+import { UpdateCompanyContactTool } from './ai-tools/update-company-contact.tool';
+import { ArchiveCompanyContactTool } from './ai-tools/archive-company-contact.tool';
 
 const USE_CASES = [
   FindAllCompanyUseCase,
@@ -26,10 +35,22 @@ const USE_CASES = [
   ArchiveCompanyContactUseCase,
 ];
 
+const AI_TOOLS = [
+  ListCompaniesTool,
+  GetCompanyTool,
+  CreateCompanyTool,
+  UpdateCompanyTool,
+  RemoveCompanyTool,
+  ListCompanyContactsTool,
+  CreateCompanyContactTool,
+  UpdateCompanyContactTool,
+  ArchiveCompanyContactTool,
+];
+
 @Module({
   imports: [PrismaModule, LoggingModule, MessagingModule],
   controllers: [CompanyController],
-  providers: [...USE_CASES, CompanyRouteCeiling],
+  providers: [...USE_CASES, ...AI_TOOLS, CompanyRouteCeiling],
   // Exporte só o que outro módulo injetar.
   exports: [FindOneCompanyUseCase],
 })

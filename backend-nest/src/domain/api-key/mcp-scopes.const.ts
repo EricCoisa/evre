@@ -18,5 +18,8 @@ export const McpScopes = {
   MESSAGING_READ: 'messaging:read',
   MESSAGING_WRITE: 'messaging:write',
   NOTIFICATION_WRITE: 'notification:write',
+  COMPANY_WRITE: 'company:write',
+  PROPOSAL_WRITE: 'proposal:write',
+  ARTIFACT_WRITE: 'artifact:write',
 } as const;
 export type McpScope = (typeof McpScopes)[keyof typeof McpScopes];
