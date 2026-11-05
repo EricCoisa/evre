@@ -253,6 +253,8 @@ export async function seedRoutes(
     cmsRoute,
     artifactRoute,
     projectRoute,
+    companyRoute,
+    proposalRoute,
   ];
   for (const route of moderatorRoutes) {
     await prisma.roleRouteAccess.upsert({

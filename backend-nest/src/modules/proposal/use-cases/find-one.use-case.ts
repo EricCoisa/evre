@@ -22,9 +22,14 @@ export class FindOneProposalUseCase {
       throw new NotFoundException(this.i18n.t('proposal.not_found'));
     }
 
-    await this.resourceAccess.assertCanRead(user, {
-      companyId: found.companyId,
-    });
+    if (found.companyId) {
+      const allowed = await this.resourceAccess.canSeeCommercials(user, {
+        companyId: found.companyId,
+      });
+      if (!allowed) {
+        throw new NotFoundException(this.i18n.t('proposal.not_found'));
+      }
+    }
 
     return found as unknown as Proposal;
   }

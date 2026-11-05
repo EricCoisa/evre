@@ -8,6 +8,6 @@ export class ProposalRouteCeiling implements OnModuleInit {
   constructor(private readonly routeCeilings: RouteCeilingRegistry) {}
 
   onModuleInit(): void {
-    this.routeCeilings.register(RoutePathConst.PROPOSAL, [UserRoleConst.ADMIN]);
+    this.routeCeilings.register(RoutePathConst.PROPOSAL, [UserRoleConst.ADMIN, UserRoleConst.MODERATOR]);
   }
 }

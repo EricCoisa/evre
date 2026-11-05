@@ -53,12 +53,16 @@ const mockPrisma = {
     update: vi.fn(),
     delete: vi.fn(),
   },
+  membership: {
+    findMany: vi.fn(),
+  },
 };
 
 const mockI18n = { t: vi.fn().mockReturnValue('mensagem') };
 const mockLogging = { create: vi.fn() };
 const mockResourceAccess = {
   assertCanRead: vi.fn(),
+  canSeeCommercials: vi.fn(),
   scopeFilter: vi.fn(),
 };
 
@@ -98,7 +102,9 @@ describe('Proposal use-cases', () => {
     mockPrisma.proposal.update.mockResolvedValue({ ...row, archivedAt: new Date() });
     mockPrisma.proposal.delete.mockResolvedValue(row);
     mockResourceAccess.assertCanRead.mockResolvedValue(undefined);
+    mockResourceAccess.canSeeCommercials.mockResolvedValue(true);
     mockResourceAccess.scopeFilter.mockResolvedValue(undefined);
+    mockPrisma.membership.findMany.mockResolvedValue([]);
   });
 
   describe('FindAllProposalUseCase', () => {
@@ -159,37 +165,49 @@ describe('Proposal use-cases', () => {
       );
     });
 
-    it('aplica o scopeFilter do usuário no where', async () => {
-      mockResourceAccess.scopeFilter.mockResolvedValue({
-        OR: [{ companyId: { in: ['company-1'] } }, { projectId: { in: [] } }],
-      });
+    it('filtra por memberships com canSeeCommercials para não-ADMIN', async () => {
+      mockPrisma.membership.findMany.mockResolvedValue([
+        { companyId: 'company-1' },
+      ]);
 
       await findAll.execute({ page: 1, limit: 10, pagination: false }, user);
 
-      expect(mockResourceAccess.scopeFilter).toHaveBeenCalledWith(user);
+      expect(mockPrisma.membership.findMany).toHaveBeenCalledWith({
+        where: { userId: user.id, canSeeCommercials: true },
+        select: { companyId: true },
+      });
       const where = mockPrisma.proposal.findMany.mock.calls[0][0].where as {
         AND?: unknown[];
       };
       expect(where.AND).toEqual(
-        expect.arrayContaining([{ companyId: { in: ['company-1'] } }]),
+        expect.arrayContaining([
+          { OR: [{ companyId: { in: ['company-1'] } }, { companyId: null }] },
+        ]),
       );
     });
   });
 
   describe('FindOneProposalUseCase', () => {
     it('libera para ADMIN mesmo sem Membership', async () => {
+      mockPrisma.proposal.findUnique.mockResolvedValue({ ...row, companyId: 'c1' });
       const result = await findOne.execute('id-1', admin);
 
       expect(result).toEqual(expect.objectContaining({ id: 'id-1' }));
-      expect(mockResourceAccess.assertCanRead).toHaveBeenCalledWith(admin, {
-        companyId: null,
+      expect(mockResourceAccess.canSeeCommercials).toHaveBeenCalledWith(admin, {
+        companyId: 'c1',
       });
     });
 
-    it('nega com NotFoundException para não-ADMIN sem vínculo', async () => {
-      mockResourceAccess.assertCanRead.mockRejectedValue(
-        new NotFoundException('mensagem'),
-      );
+    it('libera proposta sem empresa para qualquer role', async () => {
+      const result = await findOne.execute('id-1', user);
+
+      expect(result).toEqual(expect.objectContaining({ id: 'id-1' }));
+      expect(mockResourceAccess.canSeeCommercials).not.toHaveBeenCalled();
+    });
+
+    it('nega com NotFoundException para não-ADMIN sem canSeeCommercials', async () => {
+      mockPrisma.proposal.findUnique.mockResolvedValue({ ...row, companyId: 'c1' });
+      mockResourceAccess.canSeeCommercials.mockResolvedValue(false);
 
       await expect(findOne.execute('id-1', user)).rejects.toThrow(
         NotFoundException,
@@ -202,7 +220,7 @@ describe('Proposal use-cases', () => {
       await expect(findOne.execute('nao-existe', admin)).rejects.toThrow(
         NotFoundException,
       );
-      expect(mockResourceAccess.assertCanRead).not.toHaveBeenCalled();
+      expect(mockResourceAccess.canSeeCommercials).not.toHaveBeenCalled();
     });
   });
 

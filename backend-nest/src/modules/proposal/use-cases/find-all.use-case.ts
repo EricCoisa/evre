@@ -4,7 +4,6 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import type { PaginationQuery } from '../../../common/schemas/pagination.schema';
 import type { PaginatedResponse } from '../../../common/types/pagination.types';
 import { paginate } from '../../../common/utils/paginate.util';
-import { ResourceAccessService } from 'src/common/infrastructure/resource-access/resource-access.service';
 import type { AuthenticatedUser } from 'src/common/types/auth.types';
 import type { Proposal } from 'src/domain/proposal/proposal.entity';
 
@@ -17,10 +16,7 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 @Injectable()
 export class FindAllProposalUseCase {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly resourceAccess: ResourceAccessService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async execute(
     query: PaginationQuery,
@@ -41,14 +37,17 @@ export class FindAllProposalUseCase {
       and.push({ companyId: filter.companyId });
     }
 
-    // Membership por projectId não abre a proposta — só companyId concede a linha-pai.
-    const scope = await this.resourceAccess.scopeFilter(user);
-    if (scope) {
-      const companyIds = scope.OR.filter(
-        (clause): clause is { companyId: { in: string[] } } =>
-          'companyId' in clause,
-      ).flatMap((clause) => clause.companyId.in);
-      and.push({ companyId: { in: companyIds } });
+    if (user.roleName !== 'ADMIN') {
+      const memberships = await this.prisma.membership.findMany({
+        where: { userId: user.id, canSeeCommercials: true },
+        select: { companyId: true },
+      });
+      const companyIds = memberships
+        .map((m) => m.companyId)
+        .filter((id): id is string => id !== null);
+      and.push({
+        OR: [{ companyId: { in: companyIds } }, { companyId: null }],
+      });
     }
 
     const where: Prisma.ProposalWhereInput = {

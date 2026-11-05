@@ -49,7 +49,7 @@ import {
 } from 'src/common/schemas/pagination.schema';
 import { PaginatedResponse } from 'src/common/types/pagination.types';
 
-/** Todas as rotas são `roles: ['ADMIN']` — a página pública que consome o token é F1-06. */
+/** A página pública que consome o token é F1-06. */
 @ApiTags('proposal')
 @Controller('proposal')
 export class ProposalController {
@@ -79,7 +79,7 @@ export class ProposalController {
     body: CreateProposalDto,
     status: 'CREATED',
     authenticated: true,
-    roles: ['ADMIN'],
+    roles: ['ADMIN', 'MODERATOR'],
   })
   async create(
     @Body() dto: CreateProposalDto,
@@ -150,7 +150,7 @@ export class ProposalController {
     body: UpdateProposalDto,
     status: 'OK',
     authenticated: true,
-    roles: ['ADMIN'],
+    roles: ['ADMIN', 'MODERATOR'],
     response: {
       success: [
         {
@@ -174,7 +174,7 @@ export class ProposalController {
     summary: 'proposal.delete.title',
     status: 'OK',
     authenticated: true,
-    roles: ['ADMIN'],
+    roles: ['ADMIN', 'MODERATOR'],
     response: {
       success: [
         {
@@ -197,7 +197,7 @@ export class ProposalController {
     summary: 'proposal.duplicate.title',
     status: 'CREATED',
     authenticated: true,
-    roles: ['ADMIN'],
+    roles: ['ADMIN', 'MODERATOR'],
     response: {
       success: [
         {
@@ -221,7 +221,7 @@ export class ProposalController {
     body: UpdateProposalLayoutDto,
     status: 'OK',
     authenticated: true,
-    roles: ['ADMIN'],
+    roles: ['ADMIN', 'MODERATOR'],
     response: {
       success: [
         {
@@ -246,7 +246,7 @@ export class ProposalController {
     body: UpdateProposalTermsDto,
     status: 'OK',
     authenticated: true,
-    roles: ['ADMIN'],
+    roles: ['ADMIN', 'MODERATOR'],
     response: {
       success: [
         {
@@ -271,7 +271,7 @@ export class ProposalController {
     body: UpdateProposalStatusDto,
     status: 'OK',
     authenticated: true,
-    roles: ['ADMIN'],
+    roles: ['ADMIN', 'MODERATOR'],
     response: {
       success: [
         {
@@ -295,7 +295,7 @@ export class ProposalController {
     summary: 'proposal.publish.title',
     status: 'CREATED',
     authenticated: true,
-    roles: ['ADMIN'],
+    roles: ['ADMIN', 'MODERATOR'],
     response: {
       success: [
         {
@@ -318,7 +318,7 @@ export class ProposalController {
     summary: 'proposal.reopen.title',
     status: 'OK',
     authenticated: true,
-    roles: ['ADMIN'],
+    roles: ['ADMIN', 'MODERATOR'],
     response: {
       success: [
         {
@@ -341,7 +341,7 @@ export class ProposalController {
     summary: 'proposal.revoke.title',
     status: 'OK',
     authenticated: true,
-    roles: ['ADMIN'],
+    roles: ['ADMIN', 'MODERATOR'],
     response: {
       success: [
         {
@@ -364,7 +364,7 @@ export class ProposalController {
     summary: 'proposal.versions.list.title',
     status: 'OK',
     authenticated: true,
-    roles: ['ADMIN'],
+    roles: ['ADMIN', 'MODERATOR'],
     response: {
       success: [
         {
@@ -388,7 +388,7 @@ export class ProposalController {
     body: AcceptProposalOfflineDto,
     status: 'OK',
     authenticated: true,
-    roles: ['ADMIN'],
+    roles: ['ADMIN', 'MODERATOR'],
     response: {
       success: [
         {
@@ -423,7 +423,7 @@ export class ProposalController {
     body: SendProposalDto,
     status: 'OK',
     authenticated: true,
-    roles: ['ADMIN'],
+    roles: ['ADMIN', 'MODERATOR'],
     response: {
       success: [
         {
@@ -451,7 +451,7 @@ export class ProposalController {
     summary: 'proposal.sends.list.title',
     status: 'OK',
     authenticated: true,
-    roles: ['ADMIN'],
+    roles: ['ADMIN', 'MODERATOR'],
     response: {
       success: [
         {

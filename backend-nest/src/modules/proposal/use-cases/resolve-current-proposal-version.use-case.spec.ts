@@ -28,7 +28,7 @@ const mockPrisma = {
 };
 
 const mockI18n = { t: vi.fn((key: string) => key) };
-const mockResourceAccess = { assertCanRead: vi.fn() };
+const mockResourceAccess = { assertCanRead: vi.fn(), canSeeCommercials: vi.fn() };
 
 describe('ResolveCurrentProposalVersionUseCase', () => {
   let useCase: ResolveCurrentProposalVersionUseCase;
@@ -48,6 +48,7 @@ describe('ResolveCurrentProposalVersionUseCase', () => {
     vi.clearAllMocks();
     mockPrisma.proposal.findUnique.mockResolvedValue({ ...row });
     mockResourceAccess.assertCanRead.mockResolvedValue(undefined);
+    mockResourceAccess.canSeeCommercials.mockResolvedValue(true);
   });
 
   it('resolve a versão vigente (mais recente) depois de autorizar via FindOneProposalUseCase', async () => {
@@ -57,7 +58,7 @@ describe('ResolveCurrentProposalVersionUseCase', () => {
 
     const result = await useCase.execute('id-1', admin);
 
-    expect(mockResourceAccess.assertCanRead).toHaveBeenCalled();
+    expect(mockPrisma.proposal.findUnique).toHaveBeenCalled();
     expect(mockPrisma.proposalVersion.findFirst).toHaveBeenCalledWith({
       where: { proposalId: 'id-1' },
       orderBy: { version: 'desc' },
