@@ -286,6 +286,10 @@ export class GenerateInviteUseCase {
   ): Promise<{ created: 'user_updated' }> {
     const invitePayload = await this.validateInviteToken(dto.token);
     if (currentUser.email.trim().toLowerCase() !== invitePayload.email) {
+      await this.prisma.invite.updateMany({
+        where: { id: invitePayload.inviteId, usedAt: null },
+        data: { usedAt: new Date() },
+      });
       throw new ForbiddenException(this.i18n.t('auth.invite.email_mismatch'));
     }
 
@@ -310,6 +314,10 @@ export class GenerateInviteUseCase {
         select: { id: true, email: true },
       });
       if (!user || user.email.trim().toLowerCase() !== invite.email) {
+        await tx.invite.updateMany({
+          where: { id: invite.id, usedAt: null },
+          data: { usedAt: now },
+        });
         throw new ForbiddenException(this.i18n.t('auth.invite.email_mismatch'));
       }
       const claimed = await tx.invite.updateMany({
