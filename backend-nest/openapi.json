@@ -8020,6 +8020,42 @@
         ]
       }
     },
+    "/artifacts/{id}/publish": {
+      "post": {
+        "operationId": "ArtifactController_publish",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Artefato publicado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "artifact.publish.title",
+        "tags": [
+          "artifact"
+        ]
+      }
+    },
     "/proposal": {
       "post": {
         "description": "proposal.create.description",
@@ -15215,6 +15251,21 @@
           "phone": {
             "type": "string",
             "minLength": 1
+          },
+          "templateId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "values": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "x-nestjs_zod-self-required": false
+          },
+          "headerImageUrl": {
+            "type": "string",
+            "format": "uri"
           }
         }
       },
