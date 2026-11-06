@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { useTranslation } from "@/hooks/use-translation";
 import type {
   CreateProjectDto, UpdateProjectDto,
-  CreateCommentDto, RespondApprovalDto,
+  CreateCommentDto, RespondApprovalDto, RequestApprovalDto,
   CreateInfoRequestDto, AnswerInfoRequestDto,
   ProjectControllerGetCommentsParams,
 } from "./types";
@@ -237,9 +237,14 @@ export function useApprovals(projectId: string, milestoneId: string) {
 export function useRequestApproval(projectId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (milestoneId: string) => requestApproval(projectId, milestoneId),
+    mutationFn: (args: string | { milestoneId: string; data?: RequestApprovalDto }) => {
+      const milestoneId = typeof args === 'string' ? args : args.milestoneId;
+      const data = typeof args === 'string' ? undefined : args.data;
+      return requestApproval(projectId, milestoneId, data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project', projectId, 'approvals'] });
+      queryClient.invalidateQueries({ queryKey: ['project', projectId, 'board'] });
     }
   });
 }
@@ -251,6 +256,7 @@ export function useRespondApproval(projectId: string) {
       respondApproval(projectId, approvalId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project', projectId, 'approvals'] });
+      queryClient.invalidateQueries({ queryKey: ['project', projectId, 'board'] });
     }
   });
 }

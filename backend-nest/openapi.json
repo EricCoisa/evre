@@ -9140,6 +9140,45 @@
         ]
       }
     },
+    "/project/{id}/milestones/reorder": {
+      "patch": {
+        "operationId": "ProjectController_reorderMilestonesEndpoint",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Milestones reordered"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "project.milestone.reorder.title",
+        "tags": [
+          "project"
+        ]
+      }
+    },
     "/project/{id}/milestones": {
       "post": {
         "operationId": "ProjectController_addMilestone",
@@ -9256,45 +9295,6 @@
           }
         ],
         "summary": "project.milestone.delete.title",
-        "tags": [
-          "project"
-        ]
-      }
-    },
-    "/project/{id}/milestones/reorder": {
-      "patch": {
-        "operationId": "ProjectController_reorderMilestonesEndpoint",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ReorderDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Milestones reordered"
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "project.milestone.reorder.title",
         "tags": [
           "project"
         ]
@@ -9668,6 +9668,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestApprovalDto"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "Approval requested"
@@ -15522,6 +15532,23 @@
           }
         }
       },
+      "ReorderDto": {
+        "type": "object",
+        "properties": {
+          "orderedIds": {
+            "description": "IDs in the desired order",
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "orderedIds"
+        ]
+      },
       "CreateMilestoneDto": {
         "type": "object",
         "properties": {
@@ -15544,23 +15571,6 @@
             "minLength": 1
           }
         }
-      },
-      "ReorderDto": {
-        "type": "object",
-        "properties": {
-          "orderedIds": {
-            "description": "IDs in the desired order",
-            "type": "array",
-            "minItems": 1,
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        },
-        "required": [
-          "orderedIds"
-        ]
       },
       "CreateTaskDto": {
         "type": "object",
@@ -15639,6 +15649,15 @@
           "entityId",
           "content"
         ]
+      },
+      "RequestApprovalDto": {
+        "type": "object",
+        "properties": {
+          "requestNote": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        }
       },
       "RespondApprovalDto": {
         "type": "object",

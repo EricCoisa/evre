@@ -3,6 +3,7 @@ export type {
   CreateProjectDto,
   UpdateProjectDto,
   CreateCommentDto,
+  RequestApprovalDto,
   RespondApprovalDto,
   CreateInfoRequestDto,
   AnswerInfoRequestDto,
@@ -31,4 +32,34 @@ export interface InfoRequest {
   status: string;
   requestedBy?: { name?: string };
   createdAt: string;
+}
+
+export interface ProjectComment {
+  id: string;
+  projectId: string;
+  entityType: 'PROJECT' | 'MILESTONE' | 'TASK';
+  entityId: string;
+  authorId: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  author?: {
+    id: string;
+    name?: string | null;
+    imageUrl?: string | null;
+  };
+}
+
+export interface MilestoneApproval {
+  id: string;
+  milestoneId: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  requestedById: string;
+  respondedById?: string | null;
+  requestNote?: string | null;
+  responseNote?: string | null;
+  requestedAt: string;
+  respondedAt?: string | null;
+  requestedBy?: { id: string; name: string };
+  respondedBy?: { id: string; name: string } | null;
 }

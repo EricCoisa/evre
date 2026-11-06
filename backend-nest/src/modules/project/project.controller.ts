@@ -34,6 +34,7 @@ import { RemoveTaskUseCase } from './use-cases/remove-task.use-case';
 import { MoveTaskUseCase } from './use-cases/move-task.use-case';
 import { ReorderTasksUseCase } from './use-cases/reorder-tasks.use-case';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { RequestApprovalDto } from './dto/request-approval.dto';
 import { RespondApprovalDto } from './dto/respond-approval.dto';
 import { CreateInfoRequestDto } from './dto/create-info-request.dto';
 import { AnswerInfoRequestDto } from './dto/answer-info-request.dto';
@@ -231,6 +232,25 @@ export class ProjectController {
 
   // ─── Milestones ─────────────────────────────────────────────
 
+  @PatchApi({
+    path: ':id/milestones/reorder',
+    summary: 'project.milestone.reorder.title',
+    body: ReorderDto,
+    status: 'OK',
+    authenticated: true,
+    roles: ['ADMIN', 'MODERATOR'],
+    response: {
+      success: [{ status: 'OK', description: 'Milestones reordered' }],
+    },
+  })
+  async reorderMilestonesEndpoint(
+    @Param('id') id: string,
+    @Body() dto: ReorderDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    await this.reorderMilestones.execute(id, dto, user);
+  }
+
   @PostApi({
     path: ':id/milestones',
     summary: 'project.milestone.create.title',
@@ -286,25 +306,6 @@ export class ProjectController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.removeMilestone.execute(id, milestoneId, user);
-  }
-
-  @PatchApi({
-    path: ':id/milestones/reorder',
-    summary: 'project.milestone.reorder.title',
-    body: ReorderDto,
-    status: 'OK',
-    authenticated: true,
-    roles: ['ADMIN', 'MODERATOR'],
-    response: {
-      success: [{ status: 'OK', description: 'Milestones reordered' }],
-    },
-  })
-  async reorderMilestonesEndpoint(
-    @Param('id') id: string,
-    @Body() dto: ReorderDto,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
-    await this.reorderMilestones.execute(id, dto, user);
   }
 
   // ─── Tasks ──────────────────────────────────────────────────
@@ -475,6 +476,7 @@ export class ProjectController {
   @PostApi({
     path: ':id/milestones/:milestoneId/approvals',
     summary: 'project.approval.request.title',
+    body: RequestApprovalDto,
     status: 'CREATED',
     authenticated: true,
     roles: ['ADMIN', 'MODERATOR'],
@@ -485,9 +487,10 @@ export class ProjectController {
   async requestMilestoneApproval(
     @Param('id') id: string,
     @Param('milestoneId') milestoneId: string,
+    @Body() dto: RequestApprovalDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.requestApproval.execute(id, milestoneId, user);
+    return this.requestApproval.execute(id, milestoneId, dto, user);
   }
 
   @PatchApi({

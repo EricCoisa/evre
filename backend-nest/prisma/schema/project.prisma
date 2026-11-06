@@ -110,6 +110,7 @@ model MilestoneApproval {
   status         MilestoneApprovalStatus @default(PENDING)
   requestedById  String
   respondedById  String?
+  requestNote    String?                 @db.Text
   responseNote   String?                 @db.Text
   requestedAt    DateTime                @default(now())
   respondedAt    DateTime?

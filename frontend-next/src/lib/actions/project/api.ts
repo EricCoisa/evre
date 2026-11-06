@@ -3,7 +3,7 @@ import { getProject as getProjectFactory } from '@/lib/generated/project/project
 import type { ApiResponse } from '@/lib/api/api';
 import type {
   Project, CreateProjectDto, UpdateProjectDto,
-  CreateCommentDto, RespondApprovalDto,
+  CreateCommentDto, RespondApprovalDto, RequestApprovalDto,
   CreateInfoRequestDto, AnswerInfoRequestDto,
   ProjectControllerGetCommentsParams,
   Milestone, InfoRequest,
@@ -47,8 +47,8 @@ export async function archiveProject(id: string): Promise<ApiResponse<Project>> 
 }
 
 // Board
-export async function getProjectBoard(id: string): Promise<ApiResponse<{ data: Milestone[] }>> {
-  return wrapAs<{ data: Milestone[] }>(() => api.projectControllerBoard(id));
+export async function getProjectBoard(id: string): Promise<ApiResponse<Milestone[] | { data: Milestone[] }>> {
+  return wrapAs<Milestone[] | { data: Milestone[] }>(() => api.projectControllerBoard(id));
 }
 
 // Milestones
@@ -103,8 +103,8 @@ export async function deleteComment(projectId: string, commentId: string) {
 }
 
 // Approvals
-export async function requestApproval(projectId: string, milestoneId: string) {
-  return wrap(() => api.projectControllerRequestMilestoneApproval(projectId, milestoneId));
+export async function requestApproval(projectId: string, milestoneId: string, data?: RequestApprovalDto) {
+  return wrap(() => api.projectControllerRequestMilestoneApproval(projectId, milestoneId, data ?? {}));
 }
 
 export async function respondApproval(projectId: string, approvalId: string, data: RespondApprovalDto) {
