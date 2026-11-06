@@ -1,44 +1,144 @@
-name: Deploy Monorepo via Coolify
+name: CI — Lint, Test & Build
 
 on:
+  pull_request:
   push:
     branches:
       - main
+      - new
+
+permissions:
+  contents: read
+  pull-requests: read
 
 jobs:
   detect-changes:
     runs-on: ubuntu-latest
-    environment: Evre
     outputs:
-      frontend: ${{ steps.filter.outputs.frontend }}
       backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      deploy: ${{ steps.filter.outputs.deploy }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
         id: filter
         with:
           filters: |
-            frontend:
-              - 'frontend-next/**'
             backend:
               - 'backend-nest/**'
+            frontend:
+              - 'frontend-next/**'
+            deploy:
+              - 'backend-nest/**'
+              - 'frontend-next/**'
+              - 'docker-compose.yml'
 
-  deploy-frontend:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.frontend == 'true'
-    runs-on: ubuntu-latest
-    environment: Evre
-    steps:
-      - name: Deploy Frontend
-        run: |
-          curl -X POST -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" "${{ secrets.COOLIFY_FRONTEND_WEBHOOK }}"
-
-  deploy-backend:
+  backend:
     needs: detect-changes
     if: needs.detect-changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
-    environment: Evre
+    defaults:
+      run:
+        working-directory: backend-nest
     steps:
-      - name: Deploy Backend
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        env:
+          DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
+        run: pnpm exec prisma generate
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        # Unit tests use mocks — no real DB needed.
+        # If a future test requires Postgres, add a service here (card 1.2.1 scope: skip e2e).
+        env:
+          DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
+          JWT_SECRET: ci-dummy-secret
+          JWT_REFRESH_SECRET: ci-dummy-refresh-secret
+          NODE_ENV: test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+  frontend:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend-next
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate API client
+        env:
+          DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
+        # Lint e Test importam de src/lib/generated (gitignored) — precisa existir
+        # antes deles. openapi.json é committed em backend-nest, não depende do job backend.
+        run: pnpm generate:api
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        # ponytail: vitest run direto — o script test:ci usa --coverage e
+        # @vitest/coverage-v8 não está declarado em frontend-next
+        run: pnpm exec vitest run
+
+      - name: Build
+        # prebuild (orval) roda de novo automaticamente antes do next build via pnpm lifecycle.
+        # openapi.json resolvido via ../backend-nest/openapi.json (repo root no checkout).
+        # Env vars com fallback no código — build não exige valores reais.
+        # NEXT_PUBLIC_API_URL: fallback "http://localhost:3001" (src/lib/api/api.ts)
+        # NEXT_PUBLIC_SITE_URL: fallback "http://localhost:3000" (src/lib/api/apiNext.ts)
+        # DEFAULT_LOCALE: fallback "pt-BR" (src/lib/translation-utils.ts)
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+          NODE_ENV: production
+        run: pnpm build
+
+  deploy:
+    needs: [detect-changes, backend, frontend]
+    # ponytail: needs sozinho não basta — uma dependência 'skipped' (paths-filter
+    # falso) também pularia este job, então a condição é avaliada explicitamente
+    if: >
+      !cancelled()
+      && github.event_name == 'push'
+      && github.ref == 'refs/heads/new'
+      && needs.detect-changes.outputs.deploy == 'true'
+      && !contains(needs.*.result, 'failure')
+      && !contains(needs.*.result, 'cancelled')
+    runs-on: ubuntu-latest
+    environment: new
+    steps:
+      # single docker-compose stack in Coolify (backend, frontend, postgres,
+      # redis, minio) — one resource, one webhook, deploys everything together.
+      - name: Trigger Coolify deploy
         run: |
-          curl -X POST -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" "${{ secrets.COOLIFY_BACKEND_WEBHOOK }}"
+          curl -fsSL -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" "${{ secrets.COOLIFY_DEPLOY_WEBHOOK }}"
