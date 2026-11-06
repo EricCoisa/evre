@@ -31,6 +31,11 @@ if (typeof window.HTMLElement.prototype.scrollIntoView !== 'function') {
   window.HTMLElement.prototype.scrollIntoView = vi.fn()
 }
 
+// jsdom lacks Element.getAnimations (@base-ui/react ScrollAreaViewport uses it)
+if (typeof window.Element.prototype.getAnimations !== 'function') {
+  window.Element.prototype.getAnimations = () => []
+}
+
 // jsdom's AbortSignal lags behind Node/browsers and lacks `.any` — polyfill it
 // so code that combines a caller signal with an internal timeout can run under test.
 if (typeof AbortSignal.any !== 'function') {
