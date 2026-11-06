@@ -24,6 +24,9 @@
   "revoke": {
     "title": "Revogar publicação da proposta"
   },
+  "reopen": {
+    "title": "Reabrir proposta"
+  },
   "accept": {
     "title": "Aceitar proposta publicada (via link)",
     "offline": {

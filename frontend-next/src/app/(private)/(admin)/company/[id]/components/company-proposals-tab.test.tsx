@@ -12,6 +12,13 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@/lib/actions/proposal/queries', () => ({
   useProposals: mocks.useProposals,
+  useCreateProposal: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useArchiveProposal: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useDuplicateProposal: () => ({ mutateAsync: vi.fn(), isPending: false }),
+}));
+
+vi.mock('@/lib/actions/company/queries', () => ({
+  useCompanys: () => ({ data: [] }),
 }));
 
 describe('CompanyProposalsTab', () => {
@@ -19,7 +26,7 @@ describe('CompanyProposalsTab', () => {
     render(<CompanyProposalsTab companyId="c1" />);
 
     expect(mocks.useProposals).toHaveBeenCalledWith(
-      expect.objectContaining({ filter: { companyId: 'c1' } }),
+      expect.objectContaining({ filter: JSON.stringify({ companyId: 'c1' }) }),
     );
   });
 });

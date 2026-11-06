@@ -3,6 +3,7 @@ import { DiscoveryModule } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import { GetApi } from '../../common/decorators/api-method.decorator';
 import { PageSourceRegistry } from './page-source-registry.service';
+import { CheckAccessUseCase } from '../user-route-access/use-cases/check-access.use-case';
 
 @Controller('fake')
 class FakeController {
@@ -41,7 +42,10 @@ describe('PageSourceRegistry', () => {
     const mod = await Test.createTestingModule({
       imports: [DiscoveryModule],
       controllers: [FakeController],
-      providers: [PageSourceRegistry],
+      providers: [
+        PageSourceRegistry,
+        { provide: CheckAccessUseCase, useValue: {} },
+      ],
     }).compile();
     await mod.init();
     registry = mod.get(PageSourceRegistry);
@@ -111,7 +115,10 @@ describe('PageSourceRegistry', () => {
     const mod = await Test.createTestingModule({
       imports: [DiscoveryModule],
       controllers: [DupController],
-      providers: [PageSourceRegistry],
+      providers: [
+        PageSourceRegistry,
+        { provide: CheckAccessUseCase, useValue: {} },
+      ],
     }).compile();
 
     await expect(mod.init()).rejects.toThrow('PageSource duplicada');

@@ -3,6 +3,7 @@ import { ForbiddenException } from '@nestjs/common';
 import { PATH_METADATA, METHOD_METADATA } from '@nestjs/common/constants';
 import { MessagingController } from './messaging.controller';
 import { FeatureFlagService } from '../feature-flag/feature-flag.service';
+import { CheckAccessUseCase } from '../user-route-access/use-cases/check-access.use-case';
 import { SendMessageUseCase } from './use-cases/send-message.use-case';
 import { SendPresenceUseCase } from './use-cases/send-presence.use-case';
 import { GetCapabilitiesUseCase } from './use-cases/get-capabilities.use-case';
@@ -104,6 +105,7 @@ describe('MessagingController', () => {
           provide: FeatureFlagService,
           useValue: { isEnabled: vi.fn().mockResolvedValue(true) },
         },
+        { provide: CheckAccessUseCase, useValue: { execute: vi.fn() } },
       ],
     }).compile();
     controller = module.get(MessagingController);

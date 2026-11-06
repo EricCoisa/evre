@@ -34,6 +34,7 @@ vi.mock('@/lib/actions/proposal/queries', () => ({
   }),
   useProposalVersions: () => ({ data: [] }),
   usePublishProposal: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }),
+  useReopenProposal: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useRevokeProposalPublication: () => ({ mutate: vi.fn(), isPending: false }),
   useSendProposal: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useUpdateProposalStatus: () => ({ mutateAsync: vi.fn(), isPending: false }),

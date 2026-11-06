@@ -20,8 +20,10 @@ const hashToken = (token: string) =>
 const mockTx = {
   $queryRaw: vi.fn(),
   invite: {
+    create: vi.fn(),
     findFirst: vi.fn(),
     findUnique: vi.fn(),
+    update: vi.fn(),
     upsert: vi.fn(),
     updateMany: vi.fn(),
     deleteMany: vi.fn(),
@@ -101,8 +103,9 @@ describe('GenerateInviteUseCase', () => {
     mockPrisma.role.findUnique.mockResolvedValue(ROLE);
     mockPrisma.invite.upsert.mockResolvedValue({});
     mockPrisma.invite.findUnique.mockResolvedValue(null);
+    mockTx.invite.findFirst.mockResolvedValue(null);
     mockTx.invite.findUnique.mockResolvedValue(null);
-    mockTx.invite.upsert.mockResolvedValue({});
+    mockTx.invite.create.mockResolvedValue({});
     mockLogging.create.mockResolvedValue(undefined);
     mockSysConfig.findByLabelKey.mockResolvedValue({ value: 'MyApp' });
     mockShortUrl.shorten.mockResolvedValue({
@@ -130,7 +133,7 @@ describe('GenerateInviteUseCase', () => {
       ServiceUnavailableException,
     );
     expect(mockPrisma.role.findUnique).not.toHaveBeenCalled();
-    expect(mockTx.invite.upsert).not.toHaveBeenCalled();
+    expect(mockTx.invite.create).not.toHaveBeenCalled();
     expect(mockEmail.sendNow).not.toHaveBeenCalled();
   });
 
@@ -138,7 +141,7 @@ describe('GenerateInviteUseCase', () => {
     mockPrisma.role.findUnique.mockResolvedValue(null);
 
     await expect(useCase.execute(DTO)).rejects.toThrow(NotFoundException);
-    expect(mockTx.invite.upsert).not.toHaveBeenCalled();
+    expect(mockTx.invite.create).not.toHaveBeenCalled();
     expect(mockEmail.sendNow).not.toHaveBeenCalled();
   });
 
@@ -159,30 +162,33 @@ describe('GenerateInviteUseCase', () => {
 
   it('restaura convite anterior se a nova emissão falhar ao enviar', async () => {
     const previousInvite = {
+      id: 'inv-old',
       roleId: 'old-role',
       createdById: 'old-admin',
       expiresAt: new Date('2026-10-01T00:00:00.000Z'),
       actionUrl: null,
       tokenHash: 'old-hash',
       usedAt: null,
+      companyId: null,
     };
-    mockTx.invite.findUnique.mockResolvedValue(previousInvite);
+    mockTx.invite.findFirst.mockResolvedValue(previousInvite);
     mockEmail.sendNow.mockRejectedValue(new Error('mail transport failed'));
 
     await expect(useCase.execute(DTO)).rejects.toThrow('mail transport failed');
 
     expect(mockShortUrl.deactivate).toHaveBeenCalledWith('abc12345');
+    const { id: _id, companyId, ...restoreData } = previousInvite;
     expect(mockTx.invite.updateMany).toHaveBeenCalledWith({
       where: { email: 'a@b.com', tokenHash: hashToken('tok') },
-      data: previousInvite,
+      data: { ...restoreData, companyId },
     });
   });
 
   it('stores only a hash of the invite token and never persists the bearer URL', async () => {
     await useCase.execute(DTO);
-    expect(mockTx.invite.upsert).toHaveBeenCalledWith(
+    expect(mockTx.invite.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        create: expect.objectContaining({
+        data: expect.objectContaining({
           actionUrl: null,
           tokenHash: hashToken('tok'),
         }),
@@ -219,7 +225,7 @@ describe('GenerateInviteUseCase', () => {
     expect(result).toEqual({ actionUrl: 'http://localhost:3000/s/abc12345' });
     expect(mockEmail.checkHealth).toHaveBeenCalledTimes(1);
     expect(mockEmail.sendNow).toHaveBeenCalledTimes(1);
-    expect(mockTx.invite.upsert).toHaveBeenCalledTimes(1);
+    expect(mockTx.invite.create).toHaveBeenCalledTimes(1);
     expect(mockTx.$queryRaw).toHaveBeenCalled();
   });
 
@@ -259,9 +265,11 @@ describe('GenerateInviteUseCase::validateInviteToken', () => {
       email: 'test@example.com',
       roleId: 'role-1',
       createdById: 'user-1',
+      companyId: null,
       tokenHash: hashToken('valid-token'),
       usedAt: null,
       role: { id: 'role-1', name: 'USER' },
+      company: null,
     });
 
     const result = await useCase.validateInviteToken('valid-token');
@@ -271,6 +279,8 @@ describe('GenerateInviteUseCase::validateInviteToken', () => {
       inviteId: 'invite-1',
       tokenHash: hashToken('valid-token'),
       name: null,
+      companyId: null,
+      companyName: null,
       userExists: false,
     });
     expect(mockPrisma.invite.findFirst).toHaveBeenCalledWith({
@@ -280,7 +290,10 @@ describe('GenerateInviteUseCase::validateInviteToken', () => {
         usedAt: null,
         expiresAt: expect.objectContaining({ gt: expect.any(Date) }),
       },
-      include: { role: { select: { id: true, name: true } } },
+      include: {
+        role: { select: { id: true, name: true } },
+        company: { select: { name: true } },
+      },
     });
   });
 
@@ -292,9 +305,11 @@ describe('GenerateInviteUseCase::validateInviteToken', () => {
       email: 'test@example.com',
       roleId: 'role-1',
       createdById: 'user-1',
+      companyId: null,
       tokenHash: hashToken('valid-token'),
       usedAt: null,
       role: { id: 'role-1', name: 'USER' },
+      company: null,
     });
     mockPrisma.user.findUnique.mockResolvedValue({
       id: 'u1',
@@ -336,9 +351,11 @@ describe('GenerateInviteUseCase::validateInviteToken', () => {
       email: 'test@example.com',
       roleId: 'role-1',
       createdById: 'user-1',
+      companyId: null,
       tokenHash: hashToken('token'),
       usedAt: null,
       role: { id: 'role-1', name: 'USER' },
+      company: null,
     });
     mockPrisma.user.findUnique.mockResolvedValue({
       id: 'user-123',

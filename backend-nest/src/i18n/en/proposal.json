@@ -24,6 +24,9 @@
   "revoke": {
     "title": "Revoke proposal publication"
   },
+  "reopen": {
+    "title": "Reopen proposal"
+  },
   "accept": {
     "title": "Accept a published proposal (via link)",
     "offline": {

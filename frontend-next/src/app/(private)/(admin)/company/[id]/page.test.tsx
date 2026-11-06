@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import CompanyDetailPage from './page';
 import { getCompany } from '@/lib/actions/company/api';
+import { getCurrentUser } from '@/lib/actions/auth/api';
 import type { Company } from '@/lib/actions/company/types';
 
 vi.mock('@/hooks/use-translation', () => ({
@@ -10,6 +11,10 @@ vi.mock('@/hooks/use-translation', () => ({
 
 vi.mock('@/lib/actions/company/api', () => ({
   getCompany: vi.fn(),
+}));
+
+vi.mock('@/lib/actions/auth/api', () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 const mocks = vi.hoisted(() => ({
@@ -22,13 +27,23 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => mocks.searchParams,
 }));
 
-// Config e propostas carregam DataTable/FormBuilder reais — mockados aqui, cobertos nos próprios
-// arquivos de teste (company-edit.test.tsx, company-proposals-tab.test.tsx).
 vi.mock('./components/company-config-tab', () => ({
   CompanyConfigTab: () => <div>config-tab-content</div>,
 }));
 vi.mock('./components/company-proposals-tab', () => ({
   CompanyProposalsTab: () => <div>proposals-tab-content</div>,
+}));
+vi.mock('../components/company-contacts-tab', () => ({
+  CompanyContactsTab: () => <div>contacts-tab-content</div>,
+}));
+vi.mock('./components/company-projects-tab', () => ({
+  CompanyProjectsTab: () => <div>projects-tab-content</div>,
+}));
+vi.mock('./components/company-members-tab', () => ({
+  CompanyMembersTab: () => <div>members-tab-content</div>,
+}));
+vi.mock('./components/company-contracts-tab', () => ({
+  CompanyContractsTab: () => <div>contracts-tab-content</div>,
 }));
 
 function company(overrides: Partial<Company> = {}): Company {
@@ -55,17 +70,24 @@ async function renderPage() {
     status: 200,
     errors: undefined,
   });
+  vi.mocked(getCurrentUser).mockResolvedValue({
+    success: true,
+    data: { id: 'u1', email: 'a@b.com', roleName: 'ADMIN' } as never,
+    message: '',
+    status: 200,
+    errors: undefined,
+  });
   const result = await CompanyDetailPage({ params: Promise.resolve({ id: 'c1' }) });
   render(result);
 }
 
 describe('/company/[id]', () => {
-  it('renderiza as 5 abas: configuração, contatos, propostas, projetos e contratos', async () => {
+  it('renderiza as 6 abas: configuração, contatos, propostas, projetos, membros e contratos', async () => {
     mocks.searchParams = new URLSearchParams();
     await renderPage();
 
     const tabs = screen.getAllByRole('tab').map((tab) => tab.textContent);
-    expect(tabs).toEqual(['tabConfig', 'tabContacts', 'tabProposals', 'tabProjects', 'tabContracts']);
+    expect(tabs).toEqual(['tabConfig', 'tabContacts', 'tabProposals', 'tabProjects', 'tabMembers', 'tabContracts']);
   });
 
   it('?tab=propostas abre direto na aba de propostas', async () => {
@@ -76,17 +98,17 @@ describe('/company/[id]', () => {
     expect(screen.queryByText('config-tab-content')).not.toBeInTheDocument();
   });
 
-  it('aba projetos mostra estado vazio explícito — Project só nasce em F2', async () => {
+  it('?tab=projetos abre direto na aba de projetos', async () => {
     mocks.searchParams = new URLSearchParams('tab=projetos');
     await renderPage();
 
-    expect(screen.getByText('projectsEmpty')).toBeInTheDocument();
+    expect(screen.getByText('projects-tab-content')).toBeInTheDocument();
   });
 
-  it('aba contratos mostra estado vazio explícito — Contract só nasce em F2', async () => {
+  it('?tab=contratos abre direto na aba de contratos', async () => {
     mocks.searchParams = new URLSearchParams('tab=contratos');
     await renderPage();
 
-    expect(screen.getByText('contractsEmpty')).toBeInTheDocument();
+    expect(screen.getByText('contracts-tab-content')).toBeInTheDocument();
   });
 });

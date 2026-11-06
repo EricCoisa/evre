@@ -1,11 +1,24 @@
 "use server";
-// Thin adapter — wraps generated company functions, preserves ApiResponse<T> shape
 import { getCompany as getCompanyFactory } from '@/lib/generated/company/company';
 import type { ApiResponse } from '@/lib/api/api';
-import type { Company, CreateCompanyDto, UpdateCompanyDto, Contact, CreateContactDto, UpdateContactDto, AddCompanyMemberDto, InviteCompanyMemberDto, UpdateCompanyMemberDto, CompanyMember, CompanyInvite } from './types';
+import type {
+  Company,
+  CreateCompanyDto,
+  UpdateCompanyDto,
+  Contact,
+  CreateContactDto,
+  UpdateContactDto,
+  AddCompanyMemberDto,
+  InviteCompanyMemberDto,
+  UpdateCompanyMemberDto,
+  CompanyMember,
+  CompanyInvite,
+} from './types';
 import type { PaginatedResponse, PaginationParams } from '@/lib/types/pagination.types';
 import type { CompanyControllerFindAllParams } from '@/lib/generated/schemas';
 import { normalizePaginationParams } from '../normalize-pagination-params';
+import { customInstance } from '@/lib/api/orval-instance';
+import { API_PATHS } from '@/lib/generated/paths';
 import { wrap, wrapAs } from '../wrap';
 
 const api = getCompanyFactory();
@@ -37,7 +50,6 @@ export async function updateCompany(
   return wrap(() => api.companyControllerUpdate(id, data));
 }
 
-/** "Excluir" uma empresa arquiva no servidor — nada é apagado. */
 export async function archiveCompany(id: string): Promise<ApiResponse<Company>> {
   return wrap(() => api.companyControllerRemove(id));
 }
@@ -61,7 +73,6 @@ export async function updateCompanyContact(
   return wrap(() => api.companyControllerUpdateContact(companyId, contactId, data));
 }
 
-/** "Excluir" um contato arquiva no servidor — nada é apagado. */
 export async function archiveCompanyContact(
   companyId: string,
   contactId: string,
@@ -104,9 +115,13 @@ export async function updateCompanyMember(
   membershipId: string,
   data: UpdateCompanyMemberDto,
 ): Promise<ApiResponse<unknown>> {
-  const { customInstance } = await import('@/lib/api/orval-instance');
   return wrap(() =>
-    customInstance({ url: `/company/${companyId}/members/${membershipId}`, method: 'PATCH', headers: { 'Content-Type': 'application/json' }, data }),
+    customInstance({
+      url: API_PATHS.COMPANY_BY_ID_MEMBERS_BY_MEMBERSHIP_ID(companyId, membershipId),
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      data,
+    }),
   );
 }
 
