@@ -24,9 +24,7 @@ export class ListProposalSendsTool implements IAiTool {
     invalidates: [],
   };
 
-  constructor(
-    private readonly listProposalSends: ListProposalSendsUseCase,
-  ) {}
+  constructor(private readonly listProposalSends: ListProposalSendsUseCase) {}
 
   execute(input: ListProposalSendsInput, ctx: AiToolContext) {
     return this.listProposalSends.execute(input.id, toAuthenticatedUser(ctx));

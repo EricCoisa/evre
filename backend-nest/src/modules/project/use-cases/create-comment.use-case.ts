@@ -59,9 +59,7 @@ export class CreateCommentUseCase {
         where: { id: entityId, projectId },
       });
       if (!m)
-        throw new NotFoundException(
-          this.i18n.t('project.milestone_not_found'),
-        );
+        throw new NotFoundException(this.i18n.t('project.milestone_not_found'));
       return;
     }
     const t = await this.prisma.projectTask.findFirst({
@@ -70,7 +68,6 @@ export class CreateCommentUseCase {
         milestone: { projectId },
       },
     });
-    if (!t)
-      throw new NotFoundException(this.i18n.t('project.task_not_found'));
+    if (!t) throw new NotFoundException(this.i18n.t('project.task_not_found'));
   }
 }

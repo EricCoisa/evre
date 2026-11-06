@@ -27,9 +27,7 @@ export class DuplicateProposalTool implements IAiTool {
     invalidates: [InvalidationTags.PROPOSAL],
   };
 
-  constructor(
-    private readonly duplicateProposal: DuplicateProposalUseCase,
-  ) {}
+  constructor(private readonly duplicateProposal: DuplicateProposalUseCase) {}
 
   execute(input: DuplicateProposalInput, ctx: AiToolContext) {
     return this.duplicateProposal.execute(input.id, toAuthenticatedUser(ctx));

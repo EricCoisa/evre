@@ -14,11 +14,7 @@ export class DeleteCommentUseCase {
     private readonly i18n: I18nService,
   ) {}
 
-  async execute(
-    projectId: string,
-    commentId: string,
-    user: AuthenticatedUser,
-  ) {
+  async execute(projectId: string, commentId: string, user: AuthenticatedUser) {
     const comment = await this.prisma.projectComment.findFirst({
       where: { id: commentId, projectId },
     });

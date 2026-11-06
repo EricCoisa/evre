@@ -21,7 +21,8 @@ type ArchiveCompanyContactInput = z.infer<typeof ArchiveCompanyContactSchema>;
 export class ArchiveCompanyContactTool implements IAiTool {
   readonly definition: AiToolDefinition = {
     name: 'archive_company_contact',
-    description: 'Arquiva o vínculo entre uma empresa e um contato (nada é apagado).',
+    description:
+      'Arquiva o vínculo entre uma empresa e um contato (nada é apagado).',
     inputSchema: ArchiveCompanyContactSchema,
     roles: ['ADMIN'],
     approvalScope: McpScopes.COMPANY_WRITE,

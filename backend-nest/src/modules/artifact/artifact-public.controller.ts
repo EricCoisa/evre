@@ -10,9 +10,7 @@ import { normalizeWildcardPath } from './wildcard-path.util';
 @ApiTags('artifact-public')
 @Controller('artifacts/public')
 export class ArtifactPublicController {
-  constructor(
-    private readonly viewPublicArtifact: ViewPublicArtifactUseCase,
-  ) {}
+  constructor(private readonly viewPublicArtifact: ViewPublicArtifactUseCase) {}
 
   @Get([':token', ':token/*path'])
   @Throttle({ default: { limit: 30, ttl: 60000 } })

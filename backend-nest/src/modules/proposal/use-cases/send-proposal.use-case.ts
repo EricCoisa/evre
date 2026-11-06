@@ -26,7 +26,6 @@ export interface SendProposalOutput {
   shortUrl: string;
 }
 
-
 /** Fecha o ciclo "publicou → manda": monta/reusa o link curto e envia o template `PROPOSAL_SENT` por
  * WhatsApp inline (sem fila). `trySendTemplateNow` nunca lança — canal indisponível grava
  * `ProposalSend.succeeded: false` em vez de derrubar a rota. */
@@ -88,7 +87,11 @@ export class SendProposalUseCase {
           link: link.shortUrl,
         },
         ...(contact?.messagingContact.name
-          ? { reserved: { [ReservedVariableKey.FIRST_NAME]: contact.messagingContact.name } }
+          ? {
+              reserved: {
+                [ReservedVariableKey.FIRST_NAME]: contact.messagingContact.name,
+              },
+            }
           : {}),
         buttons: {
           open: version.publicToken as string,
@@ -104,7 +107,9 @@ export class SendProposalUseCase {
         channel: ProposalSendChannelConst.WHATSAPP,
         toPhone: phone,
         succeeded: !!result,
-        detail: result?.providerMessageId ?? this.i18n.t('proposal.send_channel_unavailable'),
+        detail:
+          result?.providerMessageId ??
+          this.i18n.t('proposal.send_channel_unavailable'),
         sentById: user.id,
       },
     });

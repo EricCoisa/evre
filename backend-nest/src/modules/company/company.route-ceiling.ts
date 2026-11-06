@@ -8,6 +8,9 @@ export class CompanyRouteCeiling implements OnModuleInit {
   constructor(private readonly routeCeilings: RouteCeilingRegistry) {}
 
   onModuleInit(): void {
-    this.routeCeilings.register(RoutePathConst.COMPANY, [UserRoleConst.ADMIN, UserRoleConst.MODERATOR]);
+    this.routeCeilings.register(RoutePathConst.COMPANY, [
+      UserRoleConst.ADMIN,
+      UserRoleConst.MODERATOR,
+    ]);
   }
 }

@@ -1,4 +1,8 @@
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+} from '@nestjs/common';
 import { I18nService } from 'nestjs-i18n';
 import { randomBytes } from 'node:crypto';
 import type { Prisma } from '@prisma/client';

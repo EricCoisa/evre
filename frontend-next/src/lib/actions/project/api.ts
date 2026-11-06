@@ -48,7 +48,7 @@ export async function archiveProject(id: string): Promise<ApiResponse<Project>> 
 
 // Board
 export async function getProjectBoard(id: string): Promise<ApiResponse<{ data: Milestone[] }>> {
-  return wrap(() => api.projectControllerBoard(id));
+  return wrapAs<{ data: Milestone[] }>(() => api.projectControllerBoard(id));
 }
 
 // Milestones
@@ -125,7 +125,7 @@ export async function answerInfoRequest(projectId: string, requestId: string, da
 }
 
 export async function getInfoRequests(projectId: string): Promise<ApiResponse<PaginatedResponse<InfoRequest> | InfoRequest[]>> {
-  return wrap(() => api.projectControllerGetInfoRequests(projectId));
+  return wrapAs<PaginatedResponse<InfoRequest> | InfoRequest[]>(() => api.projectControllerGetInfoRequests(projectId));
 }
 
 export async function getInfoRequestValue(projectId: string, requestId: string) {

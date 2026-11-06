@@ -4,5 +4,4 @@ export const MilestoneApprovalStatusConst = {
   REJECTED: 'REJECTED',
 } as const;
 
-export type MilestoneApprovalStatus =
-  keyof typeof MilestoneApprovalStatusConst;
+export type MilestoneApprovalStatus = keyof typeof MilestoneApprovalStatusConst;

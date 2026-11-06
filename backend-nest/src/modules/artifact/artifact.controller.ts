@@ -104,7 +104,11 @@ export class ArtifactController {
     @Body('name') name?: string,
     @UploadedFile() file?: Express.Multer.File,
   ): Promise<Artifact> {
-    return this.uploadArtifact.execute(file, currentUser, name?.trim() || undefined);
+    return this.uploadArtifact.execute(
+      file,
+      currentUser,
+      name?.trim() || undefined,
+    );
   }
 
   @DeleteApi({

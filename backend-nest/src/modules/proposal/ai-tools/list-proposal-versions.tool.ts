@@ -9,9 +9,7 @@ import type {
 import { toAuthenticatedUser } from 'src/domain/ai/ai-tool.types';
 import { ListProposalVersionsUseCase } from '../use-cases/list-proposal-versions.use-case';
 
-const ListProposalVersionsSchema = z
-  .object({ id: z.string().uuid() })
-  .strict();
+const ListProposalVersionsSchema = z.object({ id: z.string().uuid() }).strict();
 type ListProposalVersionsInput = z.infer<typeof ListProposalVersionsSchema>;
 
 @AiToolDef()

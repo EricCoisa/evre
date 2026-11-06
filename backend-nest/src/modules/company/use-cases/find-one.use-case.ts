@@ -16,7 +16,11 @@ export class FindOneCompanyUseCase {
   async execute(
     id: string,
     user: AuthenticatedUser,
-  ): Promise<Company & { myMembership?: { canSeeCommercials: boolean; canComment: boolean } }> {
+  ): Promise<
+    Company & {
+      myMembership?: { canSeeCommercials: boolean; canComment: boolean };
+    }
+  > {
     const found = await this.prisma.company.findUnique({
       where: { id },
     });

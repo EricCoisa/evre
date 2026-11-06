@@ -42,7 +42,11 @@ function normalizeZipEntryPath(rawPath: string): string | null {
   const unixPath = rawPath.replace(/\\/g, '/');
   if (unixPath.startsWith('/')) return null;
   const normalized = posix.normalize(unixPath);
-  if (normalized === '..' || normalized.startsWith('../') || normalized.startsWith('/')) {
+  if (
+    normalized === '..' ||
+    normalized.startsWith('../') ||
+    normalized.startsWith('/')
+  ) {
     return null;
   }
   return normalized;
@@ -162,7 +166,9 @@ export class UploadArtifactUseCase {
     }
 
     const directory = await unzipper.Open.buffer(file.buffer);
-    const fileEntries = directory.files.filter((entry) => entry.type === 'File');
+    const fileEntries = directory.files.filter(
+      (entry) => entry.type === 'File',
+    );
 
     const folderMaxSizeBytes = await this.readConfiguredSize(
       ARTIFACT_CONFIG_KEYS.folderMaxSizeBytes,
@@ -243,9 +249,7 @@ export class UploadArtifactUseCase {
       if (rootHtmlFiles.length === 1) entryFile = rootHtmlFiles[0];
     }
     if (!entryFile) {
-      throw new BadRequestException(
-        this.i18n.t('artifact.missing_entry_file'),
-      );
+      throw new BadRequestException(this.i18n.t('artifact.missing_entry_file'));
     }
 
     // Só extrai e sobe depois que TODAS as entradas passaram validação — evita limpar storage
@@ -271,7 +275,7 @@ export class UploadArtifactUseCase {
           path,
           contentType,
           sizeBytes,
-        })) as unknown as Prisma.InputJsonValue,
+        })),
         sizeBytes: totalUncompressed,
         createdById: user.id,
       },

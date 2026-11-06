@@ -38,10 +38,6 @@ export class UpdateProposalStatusTool implements IAiTool {
 
   execute(input: UpdateProposalStatusInput, ctx: AiToolContext) {
     const { id, ...dto } = input;
-    return this.updateProposalStatus.execute(
-      id,
-      dto,
-      toAuthenticatedUser(ctx),
-    );
+    return this.updateProposalStatus.execute(id, dto, toAuthenticatedUser(ctx));
   }
 }

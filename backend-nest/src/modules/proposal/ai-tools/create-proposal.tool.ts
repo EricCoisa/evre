@@ -18,7 +18,8 @@ type CreateProposalInput = z.infer<typeof CreateProposalSchema>;
 export class CreateProposalTool implements IAiTool {
   readonly definition: AiToolDefinition = {
     name: 'create_proposal',
-    description: 'Cria uma nova proposta (nasce DRAFT, sem layout nem versão). Só o nome é obrigatório.',
+    description:
+      'Cria uma nova proposta (nasce DRAFT, sem layout nem versão). Só o nome é obrigatório.',
     inputSchema: CreateProposalSchema,
     roles: ['ADMIN'],
     approvalScope: McpScopes.PROPOSAL_WRITE,

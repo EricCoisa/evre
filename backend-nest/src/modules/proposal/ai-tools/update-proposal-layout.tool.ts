@@ -38,10 +38,6 @@ export class UpdateProposalLayoutTool implements IAiTool {
 
   execute(input: UpdateProposalLayoutInput, ctx: AiToolContext) {
     const { id, ...dto } = input;
-    return this.updateProposalLayout.execute(
-      id,
-      dto,
-      toAuthenticatedUser(ctx),
-    );
+    return this.updateProposalLayout.execute(id, dto, toAuthenticatedUser(ctx));
   }
 }

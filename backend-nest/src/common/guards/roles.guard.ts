@@ -55,7 +55,10 @@ export class RolesGuard implements CanActivate {
     }
 
     if (request.user.roleName !== UserRoleConst.ADMIN) {
-      const controllerPath = this.reflector.get<string>('path', context.getClass());
+      const controllerPath = this.reflector.get<string>(
+        'path',
+        context.getClass(),
+      );
       const routePath = controllerPath ? `/${controllerPath}` : null;
       if (routePath) {
         const allowed = await this.checkAccess.execute(

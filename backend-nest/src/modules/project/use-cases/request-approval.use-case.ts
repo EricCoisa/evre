@@ -19,9 +19,7 @@ export class RequestApprovalUseCase {
       where: { id: milestoneId, projectId },
     });
     if (!milestone) {
-      throw new NotFoundException(
-        this.i18n.t('project.milestone_not_found'),
-      );
+      throw new NotFoundException(this.i18n.t('project.milestone_not_found'));
     }
 
     return this.prisma.milestoneApproval.create({

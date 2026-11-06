@@ -45,10 +45,7 @@ export class FindAllProjectUseCase {
           'projectId' in clause,
       ).flatMap((clause) => clause.projectId.in);
       and.push({
-        OR: [
-          { companyId: { in: companyIds } },
-          { id: { in: projectIds } },
-        ],
+        OR: [{ companyId: { in: companyIds } }, { id: { in: projectIds } }],
       });
     }
 

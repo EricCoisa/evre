@@ -38,15 +38,25 @@ export class CreateCompanyContactUseCase {
       where: { phone },
       select: { id: true },
     });
-    const mcId = existingMc?.id
-      ?? (await this.createMessagingContact.execute({ phone: dto.phone, name: dto.name })).id;
+    const mcId =
+      existingMc?.id ??
+      (
+        await this.createMessagingContact.execute({
+          phone: dto.phone,
+          name: dto.name,
+        })
+      ).id;
 
     const existing = await this.prisma.companyContact.findUnique({
-      where: { companyId_messagingContactId: { companyId, messagingContactId: mcId } },
+      where: {
+        companyId_messagingContactId: { companyId, messagingContactId: mcId },
+      },
       select: { id: true },
     });
     if (existing) {
-      throw new ConflictException(this.i18n.t('company.contact_already_linked'));
+      throw new ConflictException(
+        this.i18n.t('company.contact_already_linked'),
+      );
     }
 
     const { phone: _phone, name: _name, ...contactFields } = dto;

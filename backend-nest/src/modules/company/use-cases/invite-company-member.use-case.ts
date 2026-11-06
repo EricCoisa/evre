@@ -38,9 +38,7 @@ export class InviteCompanyMemberUseCase {
       select: { id: true },
     });
     if (existingMember) {
-      throw new ConflictException(
-        this.i18n.t('company.member_already_exists'),
-      );
+      throw new ConflictException(this.i18n.t('company.member_already_exists'));
     }
 
     const userRole = await this.prisma.role.findFirst({

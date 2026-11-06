@@ -15,7 +15,8 @@ export const ARTIFACT_CONTENT_TYPES_BY_EXTENSION = {
   ico: 'image/x-icon',
 } as const;
 
-export type ArtifactExtension = keyof typeof ARTIFACT_CONTENT_TYPES_BY_EXTENSION;
+export type ArtifactExtension =
+  keyof typeof ARTIFACT_CONTENT_TYPES_BY_EXTENSION;
 
 /** Mimetypes aceitos no upload de arquivo único — `.js` tem dois valores válidos no mundo real. */
 export const ARTIFACT_FILE_MIME_TYPES = new Set<string>([

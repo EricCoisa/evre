@@ -323,7 +323,8 @@ export class ProposalController {
       success: [
         {
           status: 'OK',
-          description: 'Proposal returned to DRAFT; active public version revoked',
+          description:
+            'Proposal returned to DRAFT; active public version revoked',
           schema: { dto: ProposalDto },
         },
       ],

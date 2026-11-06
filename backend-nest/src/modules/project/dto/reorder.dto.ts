@@ -3,7 +3,10 @@ import { z } from 'zod';
 
 export const ReorderSchema = z
   .object({
-    orderedIds: z.array(z.string().uuid()).min(1).describe('IDs in the desired order'),
+    orderedIds: z
+      .array(z.string().uuid())
+      .min(1)
+      .describe('IDs in the desired order'),
   })
   .strict();
 

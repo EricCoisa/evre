@@ -73,7 +73,7 @@ export async function getCompanyMembers(
   companyId: string,
   params?: PaginationParams,
 ): Promise<ApiResponse<PaginatedResponse<CompanyMember> | CompanyMember[]>> {
-  return wrapAs(() =>
+  return wrapAs<PaginatedResponse<CompanyMember> | CompanyMember[]>(() =>
     api.companyControllerListMembers(
       companyId,
       normalizePaginationParams(params),
@@ -82,7 +82,7 @@ export async function getCompanyMembers(
 }
 
 export async function getCompanyInvites(companyId: string): Promise<ApiResponse<CompanyInvite[]>> {
-  return wrap(() => api.companyControllerListInvites(companyId));
+  return wrap(() => api.companyControllerListInvites(companyId) as unknown as Promise<CompanyInvite[]>);
 }
 
 export async function addCompanyMember(
@@ -96,7 +96,7 @@ export async function inviteCompanyMember(
   companyId: string,
   data: InviteCompanyMemberDto,
 ): Promise<ApiResponse<CompanyInvite>> {
-  return wrap(() => api.companyControllerInviteMember(companyId, data));
+  return wrapAs<CompanyInvite>(() => api.companyControllerInviteMember(companyId, data));
 }
 
 export async function updateCompanyMember(

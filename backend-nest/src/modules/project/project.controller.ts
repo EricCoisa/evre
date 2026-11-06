@@ -96,7 +96,13 @@ export class ProjectController {
     authenticated: true,
     roles: ['ADMIN'],
     response: {
-      success: [{ status: 'CREATED', description: 'Project created', schema: { dto: ProjectDto } }],
+      success: [
+        {
+          status: 'CREATED',
+          description: 'Project created',
+          schema: { dto: ProjectDto },
+        },
+      ],
     },
   })
   async create(
@@ -112,7 +118,13 @@ export class ProjectController {
     authenticated: true,
     queries: commonPaginationQueries,
     response: {
-      success: [{ status: 'OK', description: 'Paginated response', schema: { dto: ProjectDto, isArray: true, isPagination: true } }],
+      success: [
+        {
+          status: 'OK',
+          description: 'Paginated response',
+          schema: { dto: ProjectDto, isArray: true, isPagination: true },
+        },
+      ],
     },
   })
   async findAll(
@@ -136,7 +148,13 @@ export class ProjectController {
     status: 'OK',
     authenticated: true,
     response: {
-      success: [{ status: 'OK', description: 'Project found', schema: { dto: ProjectDto } }],
+      success: [
+        {
+          status: 'OK',
+          description: 'Project found',
+          schema: { dto: ProjectDto },
+        },
+      ],
     },
   })
   async findOne(
@@ -154,7 +172,13 @@ export class ProjectController {
     authenticated: true,
     roles: ['ADMIN'],
     response: {
-      success: [{ status: 'OK', description: 'Project updated', schema: { dto: ProjectDto } }],
+      success: [
+        {
+          status: 'OK',
+          description: 'Project updated',
+          schema: { dto: ProjectDto },
+        },
+      ],
     },
   })
   async update(
@@ -172,7 +196,13 @@ export class ProjectController {
     authenticated: true,
     roles: ['ADMIN'],
     response: {
-      success: [{ status: 'OK', description: 'Project archived', schema: { dto: ProjectDto } }],
+      success: [
+        {
+          status: 'OK',
+          description: 'Project archived',
+          schema: { dto: ProjectDto },
+        },
+      ],
     },
   })
   async remove(
@@ -190,13 +220,12 @@ export class ProjectController {
     status: 'OK',
     authenticated: true,
     response: {
-      success: [{ status: 'OK', description: 'Board with milestones and tasks' }],
+      success: [
+        { status: 'OK', description: 'Board with milestones and tasks' },
+      ],
     },
   })
-  async board(
-    @Param('id') id: string,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
+  async board(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.getBoard.execute(id, user);
   }
 
@@ -404,7 +433,11 @@ export class ProjectController {
     status: 'OK',
     authenticated: true,
     queries: [
-      { name: 'entityType', required: true, enum: ['PROJECT', 'MILESTONE', 'TASK'] },
+      {
+        name: 'entityType',
+        required: true,
+        enum: ['PROJECT', 'MILESTONE', 'TASK'],
+      },
       { name: 'entityId', required: true },
     ],
     response: {

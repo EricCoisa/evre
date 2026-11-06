@@ -42,9 +42,7 @@ export class AddCompanyMemberUseCase {
       where: { userId: dto.userId, companyId },
     });
     if (existing) {
-      throw new ConflictException(
-        this.i18n.t('company.member_already_exists'),
-      );
+      throw new ConflictException(this.i18n.t('company.member_already_exists'));
     }
 
     return this.prisma.membership.create({

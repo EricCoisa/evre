@@ -61,7 +61,12 @@ const AI_TOOLS = [
 ];
 
 @Module({
-  imports: [PrismaModule, LoggingModule, MessagingModule, forwardRef(() => AuthModule)],
+  imports: [
+    PrismaModule,
+    LoggingModule,
+    MessagingModule,
+    forwardRef(() => AuthModule),
+  ],
   controllers: [CompanyController],
   providers: [...USE_CASES, ...AI_TOOLS, CompanyRouteCeiling],
   // Exporte só o que outro módulo injetar.

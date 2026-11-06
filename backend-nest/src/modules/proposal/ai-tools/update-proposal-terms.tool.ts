@@ -36,10 +36,6 @@ export class UpdateProposalTermsTool implements IAiTool {
 
   execute(input: UpdateProposalTermsInput, ctx: AiToolContext) {
     const { id, ...dto } = input;
-    return this.updateProposalTerms.execute(
-      id,
-      dto,
-      toAuthenticatedUser(ctx),
-    );
+    return this.updateProposalTerms.execute(id, dto, toAuthenticatedUser(ctx));
   }
 }

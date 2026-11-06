@@ -15,7 +15,11 @@ import { CompanyDto } from './dto/company.dto';
 import { CreateContactDto } from './dto/create-contact.dto';
 import { UpdateContactDto } from './dto/update-contact.dto';
 import { ContactDto } from './dto/contact.dto';
-import { AddCompanyMemberDto, InviteCompanyMemberDto, UpdateCompanyMemberDto } from './dto/add-member.dto';
+import {
+  AddCompanyMemberDto,
+  InviteCompanyMemberDto,
+  UpdateCompanyMemberDto,
+} from './dto/add-member.dto';
 import { FindAllCompanyUseCase } from './use-cases/find-all.use-case';
 import { FindOneCompanyUseCase } from './use-cases/find-one.use-case';
 import { CreateCompanyUseCase } from './use-cases/create.use-case';
@@ -309,10 +313,7 @@ export class CompanyController {
     authenticated: true,
     roles: ['ADMIN'],
   })
-  async addMember(
-    @Param('id') id: string,
-    @Body() dto: AddCompanyMemberDto,
-  ) {
+  async addMember(@Param('id') id: string, @Body() dto: AddCompanyMemberDto) {
     return this.addCompanyMember.execute(id, dto);
   }
 

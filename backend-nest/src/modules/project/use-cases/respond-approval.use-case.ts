@@ -28,9 +28,7 @@ export class RespondApprovalUseCase {
       include: { milestone: { select: { projectId: true } } },
     });
     if (!approval || approval.milestone.projectId !== projectId) {
-      throw new NotFoundException(
-        this.i18n.t('project.approval_not_found'),
-      );
+      throw new NotFoundException(this.i18n.t('project.approval_not_found'));
     }
     if (approval.status !== 'PENDING') {
       throw new BadRequestException(

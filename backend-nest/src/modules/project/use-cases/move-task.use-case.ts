@@ -39,7 +39,10 @@ export class MoveTaskUseCase {
     return this.prisma.$transaction(async (tx) => {
       // Abrir espaço na posição destino
       await tx.projectTask.updateMany({
-        where: { milestoneId: dto.milestoneId, position: { gte: dto.position } },
+        where: {
+          milestoneId: dto.milestoneId,
+          position: { gte: dto.position },
+        },
         data: { position: { increment: 1 } },
       });
 

@@ -15,11 +15,7 @@ export class RemoveTaskUseCase {
     private readonly findOne: FindOneProjectUseCase,
   ) {}
 
-  async execute(
-    projectId: string,
-    taskId: string,
-    user: AuthenticatedUser,
-  ) {
+  async execute(projectId: string, taskId: string, user: AuthenticatedUser) {
     await this.findOne.execute(projectId, user);
 
     const task = await this.prisma.projectTask.findFirst({

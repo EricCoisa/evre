@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { I18nService } from 'nestjs-i18n';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { ResourceAccessService } from 'src/common/infrastructure/resource-access/resource-access.service';
+import { ProjectCommentEntityType } from '@prisma/client';
 import type { AuthenticatedUser } from 'src/common/types/auth.types';
 
 @Injectable()
@@ -31,7 +32,11 @@ export class ListCommentsUseCase {
     });
 
     return this.prisma.projectComment.findMany({
-      where: { projectId, entityType: entityType as any, entityId },
+      where: {
+        projectId,
+        entityType: entityType as ProjectCommentEntityType,
+        entityId,
+      },
       orderBy: { createdAt: 'asc' },
       include: { author: { select: { id: true, name: true, imageUrl: true } } },
     });
