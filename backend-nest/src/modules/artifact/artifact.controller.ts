@@ -163,7 +163,13 @@ export class ArtifactController {
     status: 'OK',
     roles: ARTIFACT_ROLES,
     response: {
-      success: [{ status: 'OK', description: 'Artefato publicado', schema: { dto: ArtifactDto } }],
+      success: [
+        {
+          status: 'OK',
+          description: 'Artefato publicado',
+          schema: { dto: ArtifactDto },
+        },
+      ],
     },
   })
   async publish(

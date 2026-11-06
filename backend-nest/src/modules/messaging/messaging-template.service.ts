@@ -155,7 +155,7 @@ export class MessagingTemplateService {
         header:
           parts.header?.kind === 'IMAGE' && input.headerImageUrl
             ? { kind: 'IMAGE' as const, url: input.headerImageUrl }
-            : parts.header ?? undefined,
+            : (parts.header ?? undefined),
         footer: row.footer ?? undefined,
         buttons: parts.buttons
           ? parts.buttons.map((button) =>

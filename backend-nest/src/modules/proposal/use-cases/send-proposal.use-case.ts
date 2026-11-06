@@ -86,10 +86,16 @@ export class SendProposalUseCase {
 
     const result = await this.messaging.trySendTemplateNow(
       {
-        ...(input.templateId ? { templateId: input.templateId } : { key: PROPOSAL_SENT_TEMPLATE_KEY }),
+        ...(input.templateId
+          ? { templateId: input.templateId }
+          : { key: PROPOSAL_SENT_TEMPLATE_KEY }),
         phone,
         // `title` e `link` vêm sempre da proposta; variáveis do chamador complementam (ex.: company_name).
-        values: { title: proposal.name, link: link.shortUrl, ...(input.values ?? {}) },
+        values: {
+          title: proposal.name,
+          link: link.shortUrl,
+          ...(input.values ?? {}),
+        },
         ...(contact?.messagingContact.name
           ? {
               reserved: {

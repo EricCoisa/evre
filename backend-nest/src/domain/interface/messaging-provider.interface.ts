@@ -10,8 +10,7 @@ import type {
 
 /** Header do template: TEXT (renderizado como parâmetro nomeado) ou IMAGE (URL fornecida no envio). */
 export type TemplateHeader =
-  | { kind: 'TEXT'; text: string }
-  | { kind: 'IMAGE'; url: string };
+  { kind: 'TEXT'; text: string } | { kind: 'IMAGE'; url: string };
 
 /** slot liga o botão a um espaço tipado do tipo de template; payload é o que a Meta devolve no toque. */
 export type TemplateButton =

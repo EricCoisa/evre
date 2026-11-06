@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ImageIcon, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -105,19 +105,17 @@ export function ProposalSendModal({
   const variables = nonReservedVariables(selected, types, reserved);
   const hasImage = selected?.header?.kind === 'IMAGE';
 
-  // Pré-preenche company_name quando o template tem essa variável e a proposta tem empresa.
-  useEffect(() => {
-    if (!selected || !company) return;
-    const hasCompanyVar = variables.some((v) => v.name === 'company_name');
-    if (hasCompanyVar) {
-      setValues((cur) => ({ company_name: company.name, ...cur }));
+  // company_name é pré-preenchida via memo: defaults abaixo, overrides do usuário acima.
+  const effectiveValues = useMemo(() => {
+    if (company?.name && variables.some((v) => v.name === 'company_name')) {
+      return { company_name: company.name, ...values };
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected?.id, company?.id]);
+    return values;
+  }, [company?.name, values, variables]);
 
   const valid =
     Boolean(selected) &&
-    variables.every((v) => v.required === false || Boolean(values[v.name]?.trim())) &&
+    variables.every((v) => v.required === false || Boolean(effectiveValues[v.name]?.trim())) &&
     (!hasImage || Boolean(draftArtifact)) &&
     Boolean(phone);
 
@@ -149,7 +147,7 @@ export function ProposalSendModal({
     }
     onSubmit({
       templateId: selected!.id,
-      values: Object.keys(values).length ? values : undefined,
+      values: Object.keys(effectiveValues).length ? effectiveValues : undefined,
       headerImageUrl,
       phone: phone || undefined,
     });
@@ -194,7 +192,7 @@ export function ProposalSendModal({
               </Label>
               <Input
                 id={`prop-var-${v.name}`}
-                value={values[v.name] ?? ''}
+                value={effectiveValues[v.name] ?? ''}
                 onChange={(e) => setValues((cur) => ({ ...cur, [v.name]: e.target.value }))}
               />
             </div>

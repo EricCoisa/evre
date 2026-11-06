@@ -3,8 +3,7 @@ import type { MessagingMessage } from '@prisma/client';
 import { renderResolvedParts } from '../providers/template.util';
 
 export type TemplateHeaderDto =
-  | { kind: 'TEXT'; text: string }
-  | { kind: 'IMAGE'; url: string };
+  { kind: 'TEXT'; text: string } | { kind: 'IMAGE'; url: string };
 
 /** Botão de template — tipos suportados. */
 export type TemplateButtonDto =

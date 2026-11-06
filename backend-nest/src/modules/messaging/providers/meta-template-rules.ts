@@ -1,4 +1,7 @@
-import type { TemplateButton, TemplateHeader } from 'src/domain/interface/messaging-provider.interface';
+import type {
+  TemplateButton,
+  TemplateHeader,
+} from 'src/domain/interface/messaging-provider.interface';
 import { extractPlaceholders } from './template.util';
 
 /** Regras que a Meta aplica na revisão de templates, checadas sem ir à rede na submissão e no editor. */

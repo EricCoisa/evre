@@ -1,5 +1,8 @@
 import { BadRequestException } from '@nestjs/common';
-import type { TemplateButton, TemplateHeader } from 'src/domain/interface/messaging-provider.interface';
+import type {
+  TemplateButton,
+  TemplateHeader,
+} from 'src/domain/interface/messaging-provider.interface';
 import {
   assertButtonsMatchSlots,
   buttonSlotVariables,
