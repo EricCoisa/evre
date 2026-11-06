@@ -23,7 +23,7 @@ export function ClientProjectBoardTab({ projectId }: { projectId: string }) {
   const { t } = useTranslation('project');
   const { data: boardData, isLoading } = useProjectBoard(projectId);
 
-  const milestones: Milestone[] = (boardData as any)?.data ?? [];
+  const milestones: Milestone[] = boardData?.data ?? [];
 
   if (isLoading) {
     return (

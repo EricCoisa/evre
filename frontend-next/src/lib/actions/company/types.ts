@@ -12,3 +12,31 @@ export interface UpdateCompanyMemberDto {
   canSeeCommercials?: boolean;
   canComment?: boolean;
 }
+
+export interface CompanyMember {
+  id: string;
+  userId: string;
+  canSeeCommercials: boolean;
+  canComment: boolean;
+  createdAt: string;
+  user: {
+    id: string;
+    email: string;
+    name?: string | null;
+    status?: string;
+    imageUrl?: string | null;
+    roleRecord?: { name: string } | null;
+  };
+}
+
+export interface CompanyInvite {
+  id: string;
+  email: string;
+  roleId: string;
+  roleName: string;
+  createdByName: string | null;
+  expiresAt: string;
+  usedAt: string | null;
+  createdAt: string;
+  actionUrl?: string | null;
+}

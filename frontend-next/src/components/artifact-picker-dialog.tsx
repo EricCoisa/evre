@@ -75,7 +75,7 @@ function ExistingTab({ onSelect }: { onSelect: (artifact: Artifact) => void }) {
     refetchOnMount: 'always' as const,
   });
 
-  const items: Artifact[] = Array.isArray(data) ? data : (data as any)?.data ?? [];
+  const items: Artifact[] = Array.isArray(data) ? data : data?.data ?? [];
 
   return (
     <div className="space-y-3">

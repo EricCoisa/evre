@@ -6,6 +6,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FolderKanban } from 'lucide-react';
+import type { PaginationParams } from '@/lib/types/pagination.types';
 import { formatDate } from '@/lib/utils';
 
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "outline"> = {
@@ -17,17 +18,17 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "outline"> = {
 export function CompanyProjectsTab({ companyId }: { companyId?: string }) {
   const { t } = useTranslation('project');
   const { data, isLoading } = useProjects(
-    companyId ? { companyId, limit: 50, pagination: false } as any : undefined,
+    companyId ? { companyId, limit: 50, pagination: false } as PaginationParams & { companyId: string } : undefined,
   );
 
-  const projects: any[] = Array.isArray(data) ? data : (data as any)?.data ?? [];
+  const projects = Array.isArray(data) ? data : data?.data ?? [];
 
   if (isLoading) return <p className="text-sm text-muted-foreground">Carregando...</p>;
   if (projects.length === 0) return <p className="text-sm text-muted-foreground">{t('empty')}</p>;
 
   return (
     <div className="grid gap-3 sm:grid-cols-2">
-      {projects.map((p: any) => (
+      {projects.map((p) => (
         <Link key={p.id} href={`/project/${p.id}`}>
           <Card className="hover:border-primary/50 transition-colors cursor-pointer">
             <CardContent className="p-4">

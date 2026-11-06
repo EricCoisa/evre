@@ -37,9 +37,7 @@ export default function HomePage() {
     pagination: false,
   });
 
-  const projects: any[] = Array.isArray(projectsData)
-    ? projectsData
-    : (projectsData as any)?.data ?? [];
+  const projects = Array.isArray(projectsData) ? projectsData : projectsData?.data ?? [];
 
   const companies = new Map<string, { id: string; name: string }>();
   for (const p of projects) {

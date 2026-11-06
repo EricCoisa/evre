@@ -29,9 +29,7 @@ export default function MyProjectPage() {
     pagination: false,
   });
 
-  const projects: any[] = Array.isArray(projectsData)
-    ? projectsData
-    : (projectsData as any)?.data ?? [];
+  const projects = Array.isArray(projectsData) ? projectsData : projectsData?.data ?? [];
 
   return (
     <Container border={false}>

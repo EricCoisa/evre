@@ -43,11 +43,10 @@ export function ProjectTab() {
   const archiveProjectMutation = useArchiveProject();
 
   const companyOptions = useMemo(() => {
-    if (!companiesData) return [];
-    const list = Array.isArray(companiesData) ? companiesData : (companiesData as any)?.data ?? [];
+    const list = Array.isArray(companiesData) ? companiesData : companiesData?.data ?? [];
     return list
-      .filter((c: any) => !c.archivedAt)
-      .map((c: any) => ({ value: c.id, label: c.name }));
+      .filter((c) => !c.archivedAt)
+      .map((c) => ({ value: c.id, label: c.name }));
   }, [companiesData]);
 
   const createSchema = useMemo(() =>

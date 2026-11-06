@@ -6,6 +6,7 @@ import type {
   CreateCommentDto, RespondApprovalDto,
   CreateInfoRequestDto, AnswerInfoRequestDto,
   ProjectControllerGetCommentsParams,
+  Milestone, InfoRequest,
 } from './types';
 import type { PaginatedResponse, PaginationParams } from '@/lib/types/pagination.types';
 import type { ProjectControllerFindAllParams } from '@/lib/generated/schemas';
@@ -46,7 +47,7 @@ export async function archiveProject(id: string): Promise<ApiResponse<Project>> 
 }
 
 // Board
-export async function getProjectBoard(id: string) {
+export async function getProjectBoard(id: string): Promise<ApiResponse<{ data: Milestone[] }>> {
   return wrap(() => api.projectControllerBoard(id));
 }
 
@@ -123,7 +124,7 @@ export async function answerInfoRequest(projectId: string, requestId: string, da
   return wrap(() => api.projectControllerAnswerInfoRequest(projectId, requestId, data));
 }
 
-export async function getInfoRequests(projectId: string) {
+export async function getInfoRequests(projectId: string): Promise<ApiResponse<PaginatedResponse<InfoRequest> | InfoRequest[]>> {
   return wrap(() => api.projectControllerGetInfoRequests(projectId));
 }
 

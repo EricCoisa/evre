@@ -17,6 +17,7 @@ import {
 import { Alive } from '@/lib/api/collector';
 import { useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
+import type { InfoRequest } from '@/lib/actions/project/types';
 import { formatDate } from '@/lib/utils';
 
 const STATUS_ICON = {
@@ -43,9 +44,9 @@ export function ClientInfoRequestsTab({
   const { data: requestsData, isLoading } = useInfoRequests(projectId);
   const answerMutation = useAnswerInfoRequest(projectId);
   const queryClient = useQueryClient();
-  const [answeringRequest, setAnsweringRequest] = useState<any>(null);
+  const [answeringRequest, setAnsweringRequest] = useState<InfoRequest | null>(null);
 
-  const requests: any[] = (requestsData as any)?.data ?? [];
+  const requests = Array.isArray(requestsData) ? requestsData : requestsData?.data ?? [];
 
   const answerSchema = z.object({
     value: z.string().min(1).max(5000),
@@ -73,7 +74,7 @@ export function ClientInfoRequestsTab({
       )}
 
       <div className="grid gap-3">
-        {requests.map((req: any) => {
+        {requests.map((req) => {
           const Icon =
             STATUS_ICON[req.status as keyof typeof STATUS_ICON] ?? Clock;
           return (

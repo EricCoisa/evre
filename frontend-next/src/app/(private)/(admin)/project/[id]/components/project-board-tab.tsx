@@ -36,7 +36,7 @@ export function ProjectBoardTab({ projectId }: { projectId: string }) {
   const [newMilestoneTitle, setNewMilestoneTitle] = useState('');
   const [newTaskTitles, setNewTaskTitles] = useState<Record<string, string>>({});
 
-  const milestones: Milestone[] = (boardData as any)?.data ?? [];
+  const milestones: Milestone[] = boardData?.data ?? [];
 
   const handleAddMilestone = async () => {
     if (!newMilestoneTitle.trim()) return;

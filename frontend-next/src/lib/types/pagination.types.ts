@@ -16,3 +16,4 @@ export interface PaginationParams {
   search?: string;
   filter?: Record<string, string> | string;
 }
+

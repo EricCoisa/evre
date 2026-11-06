@@ -48,7 +48,7 @@ export function CompanyMembersTab({ companyId }: { companyId: string }) {
   const queryParams = buildTableQueryParams(membersPagination, globalFilter, filters);
   const { data: membersData, error: membersError } = useCompanyMembers(companyId, queryParams);
   const { data: invitesData, error: invitesError } = useCompanyInvites(companyId);
-  const { data: usersData } = useUsers({ limit: 200, pagination: false } as any);
+  const { data: usersData } = useUsers({ limit: 200, pagination: false });
   const addMutation = useAddCompanyMember(companyId);
   const inviteMutation = useInviteCompanyMember(companyId);
   const removeMutation = useRemoveCompanyMember(companyId);
@@ -56,25 +56,25 @@ export function CompanyMembersTab({ companyId }: { companyId: string }) {
 
   const members: Member[] = useMemo(() => {
     if (!membersData) return [];
-    return Array.isArray(membersData) ? membersData : (membersData as any)?.data ?? [];
+    return Array.isArray(membersData) ? membersData : membersData.data ?? [];
   }, [membersData]);
 
-  const allInvites: CompanyInvite[] = (invitesData as any) ?? [];
+  const allInvites: CompanyInvite[] = invitesData ?? [];
   const invites = useMemo(() => allInvites.filter((i) => !i.usedAt), [allInvites]);
 
   const existingMemberUserIds = useMemo(
-    () => new Set(members.map((m: any) => m.userId)),
+    () => new Set(members.map((m) => m.userId)),
     [members],
   );
 
   const availableUsers = useMemo(() => {
-    const allUsers: any[] = Array.isArray(usersData) ? usersData : (usersData as any)?.data ?? [];
+    const allUsers = Array.isArray(usersData) ? usersData : usersData?.data ?? [];
     return allUsers
-      .filter((u: any) => {
+      .filter((u) => {
         const role = u.role ?? '';
         return (role === 'ADMIN' || role === 'MODERATOR') && !existingMemberUserIds.has(u.id);
       })
-      .map((u: any) => ({ value: u.id, label: `${u.name ?? u.email} (${u.role ?? ''})` }));
+      .map((u) => ({ value: u.id, label: `${u.name ?? u.email} (${u.role ?? ''})` }));
   }, [usersData, existingMemberUserIds]);
 
   const addSchema = useMemo(() => z.object({
@@ -147,8 +147,8 @@ export function CompanyMembersTab({ companyId }: { companyId: string }) {
     setResendingInvite(null);
     try {
       const result = await Alive(() => inviteMutation.mutateAsync({ email: invite.email }))();
-      if ((result as any)?.actionUrl) {
-        setInvitationToken((result as any).actionUrl);
+      if (result?.actionUrl) {
+        setInvitationToken(result.actionUrl);
       }
     } catch {
       // Alive handles toast.error
@@ -180,7 +180,7 @@ export function CompanyMembersTab({ companyId }: { companyId: string }) {
     <>
       <DataTable
         columns={memberColumns}
-        data={membersData as any}
+        data={membersData}
         error={membersError}
         queryKey={['company', companyId, 'members', queryParams]}
         pagination={membersPagination}

@@ -2,7 +2,7 @@
 // Thin adapter — wraps generated company functions, preserves ApiResponse<T> shape
 import { getCompany as getCompanyFactory } from '@/lib/generated/company/company';
 import type { ApiResponse } from '@/lib/api/api';
-import type { Company, CreateCompanyDto, UpdateCompanyDto, Contact, CreateContactDto, UpdateContactDto, AddCompanyMemberDto, InviteCompanyMemberDto, UpdateCompanyMemberDto } from './types';
+import type { Company, CreateCompanyDto, UpdateCompanyDto, Contact, CreateContactDto, UpdateContactDto, AddCompanyMemberDto, InviteCompanyMemberDto, UpdateCompanyMemberDto, CompanyMember, CompanyInvite } from './types';
 import type { PaginatedResponse, PaginationParams } from '@/lib/types/pagination.types';
 import type { CompanyControllerFindAllParams } from '@/lib/generated/schemas';
 import { normalizePaginationParams } from '../normalize-pagination-params';
@@ -72,7 +72,7 @@ export async function archiveCompanyContact(
 export async function getCompanyMembers(
   companyId: string,
   params?: PaginationParams,
-): Promise<ApiResponse<unknown>> {
+): Promise<ApiResponse<PaginatedResponse<CompanyMember> | CompanyMember[]>> {
   return wrapAs(() =>
     api.companyControllerListMembers(
       companyId,
@@ -81,7 +81,7 @@ export async function getCompanyMembers(
   );
 }
 
-export async function getCompanyInvites(companyId: string): Promise<ApiResponse<unknown>> {
+export async function getCompanyInvites(companyId: string): Promise<ApiResponse<CompanyInvite[]>> {
   return wrap(() => api.companyControllerListInvites(companyId));
 }
 
@@ -95,7 +95,7 @@ export async function addCompanyMember(
 export async function inviteCompanyMember(
   companyId: string,
   data: InviteCompanyMemberDto,
-): Promise<ApiResponse<unknown>> {
+): Promise<ApiResponse<CompanyInvite>> {
   return wrap(() => api.companyControllerInviteMember(companyId, data));
 }
 

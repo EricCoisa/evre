@@ -7,22 +7,9 @@ import { DataCell, TableHead } from '@/components/table-utils';
 import { Badge } from '@/components/ui/badge';
 import { RoleBadge } from '@/components/role-badge';
 import type { TFunc } from '@/hooks/use-translation';
+import type { CompanyMember } from '@/lib/actions/company/types';
 
-export interface Member {
-  id: string;
-  userId: string;
-  canSeeCommercials: boolean;
-  canComment: boolean;
-  createdAt: string;
-  user: {
-    id: string;
-    email: string;
-    name?: string | null;
-    status?: string;
-    imageUrl?: string | null;
-    roleRecord?: { name: string } | null;
-  };
-}
+export type Member = CompanyMember;
 
 interface GetMemberColumnsProps {
   t: TFunc;

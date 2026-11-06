@@ -5,18 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Link2, Mail, Trash2 } from 'lucide-react';
 import { DataCell, TableHead } from '@/components/table-utils';
 import type { TFunc } from '@/hooks/use-translation';
-
-export interface CompanyInvite {
-  id: string;
-  email: string;
-  roleId: string;
-  roleName: string;
-  createdByName: string | null;
-  expiresAt: string;
-  usedAt: string | null;
-  createdAt: string;
-  actionUrl?: string | null;
-}
+export type { CompanyInvite } from '@/lib/actions/company/types';
+import type { CompanyInvite } from '@/lib/actions/company/types';
 
 export function getInviteStatus(invite: CompanyInvite): 'PENDING' | 'EXPIRED' {
   if (new Date(invite.expiresAt) < new Date()) return 'EXPIRED';

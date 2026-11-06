@@ -32,7 +32,7 @@ export function ProjectInfoRequestsTab({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-  const requests: any[] = (requestsData as any)?.data ?? [];
+  const requests = Array.isArray(requestsData) ? requestsData : requestsData?.data ?? [];
 
   const schema = z.object({
     label: z.string().min(1).max(200),
@@ -60,7 +60,7 @@ export function ProjectInfoRequestsTab({ projectId }: { projectId: string }) {
       )}
 
       <div className="grid gap-3">
-        {requests.map((req: any) => {
+        {requests.map((req) => {
           const Icon = STATUS_ICON[req.status as keyof typeof STATUS_ICON] ?? Clock;
           return (
             <Card key={req.id}>
