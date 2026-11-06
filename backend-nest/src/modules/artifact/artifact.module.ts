@@ -12,6 +12,7 @@ import { DeleteArtifactUseCase } from './use-cases/delete-artifact.use-case';
 import { ViewArtifactUseCase } from './use-cases/view-artifact.use-case';
 import { ViewPublicArtifactUseCase } from './use-cases/view-public-artifact.use-case';
 import { PublishReferencedArtifactsUseCase } from './use-cases/publish-referenced-artifacts.use-case';
+import { PublishArtifactUseCase } from './use-cases/publish-artifact.use-case';
 import { ArtifactRouteCeiling } from './artifact.route-ceiling';
 import { ListArtifactsTool } from './ai-tools/list-artifacts.tool';
 import { ArchiveArtifactTool } from './ai-tools/archive-artifact.tool';
@@ -25,6 +26,7 @@ const USE_CASES = [
   ViewArtifactUseCase,
   ViewPublicArtifactUseCase,
   PublishReferencedArtifactsUseCase,
+  PublishArtifactUseCase,
 ];
 
 const AI_TOOLS = [ListArtifactsTool, ArchiveArtifactTool, DeleteArtifactTool];

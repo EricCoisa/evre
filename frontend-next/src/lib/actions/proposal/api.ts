@@ -2,6 +2,8 @@
 // Thin adapter — wraps generated functions, preserves ApiResponse<T> shape
 import type { ApiResponse } from "../../api/api";
 import { getProposal as getProposalFactory } from "@/lib/generated/proposal/proposal";
+import { customInstance } from "@/lib/api/orval-instance";
+import { API_PATHS } from "@/lib/generated/paths";
 import type {
   AcceptProposalOfflineDto,
   AcceptProposalVersionResponseDto,
@@ -11,13 +13,21 @@ import type {
   ProposalVersionDto,
   PublishProposalResponseDto,
   RevokeProposalPublicationResponseDto,
-  SendProposalDto,
   SendProposalResponseDto,
   UpdateProposalDto,
   UpdateProposalLayoutDto,
   UpdateProposalStatusDto,
   UpdateProposalTermsDto,
 } from "@/lib/generated/schemas";
+
+/** Estende o DTO gerado com os campos adicionados ao backend (templateId, values, headerImageUrl).
+ * Sem regeneração do cliente Orval — os campos extras são passados via customInstance. */
+export interface SendProposalDto {
+  phone?: string;
+  templateId?: string;
+  values?: Record<string, string>;
+  headerImageUrl?: string;
+}
 import type { PaginatedResponse, PaginationParams } from "@/lib/types/pagination.types";
 import { normalizePaginationParams } from "../normalize-pagination-params";
 import { wrap, wrapAs } from "../wrap";
@@ -113,7 +123,13 @@ export async function sendProposal(
   id: string,
   data: SendProposalDto,
 ): Promise<ApiResponse<SendProposalResponseDto>> {
-  return wrap(() => api.proposalControllerSend(id, data));
+  return wrap(() =>
+    customInstance<SendProposalResponseDto>({
+      url: API_PATHS.PROPOSAL_BY_ID_SEND(id),
+      method: 'POST',
+      data,
+    }),
+  );
 }
 
 export async function listProposalSends(

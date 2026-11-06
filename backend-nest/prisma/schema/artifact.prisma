@@ -23,6 +23,8 @@ model Artifact {
   /// [{ path, contentType, sizeBytes }] — manifesto conhecido no upload; valida sub-path na view.
   sizeBytes     Int
   published     Boolean      @default(false)
+  public        Boolean      @default(false)
+  /// true: URL permanente (getPublicUrl) em vez de presigned — necessário para sistemas externos como Meta.
   publicToken   String?      @unique
   /// gerado uma vez na 1ª publicação, reusado em publish/unpublish seguintes — nunca regenerado.
   archivedAt    DateTime?

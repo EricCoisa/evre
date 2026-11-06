@@ -44,5 +44,7 @@
   "storageDisabled": "Upload disabled: storage is currently unavailable.",
   "pickerTitle": "Select artifact",
   "pickerExisting": "Existing",
-  "pickerUpload": "Upload new"
+  "pickerUpload": "Upload new",
+  "uploadFileTooLarge": "File too large: maximum {maxMB} MB.",
+  "uploadAspectRatioMismatch": "Wrong aspect ratio: expected {expected}, image is {actual}."
 }

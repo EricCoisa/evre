@@ -73,7 +73,7 @@ export function renderBody(
 
 interface TemplateBodyParts {
   body: string;
-  header?: { text?: string } | null;
+  header?: TemplateHeader | null;
   footer?: string | null;
   // `kind` entra só para o TS não recusar o union de botões como "weak type" sem propriedade em comum.
   buttons?: { kind?: string; url?: string }[] | null;
@@ -82,7 +82,7 @@ interface TemplateBodyParts {
 function usedNames(parts: TemplateBodyParts): Set<string> {
   const texts = [
     parts.body,
-    parts.header?.text,
+    parts.header?.kind === 'TEXT' ? parts.header.text : undefined,
     parts.footer,
     ...(parts.buttons ?? []).map((b) => b.url),
   ].filter((text): text is string => !!text);
@@ -163,7 +163,9 @@ export function renderResolvedParts(parts: RenderableParts): {
   const values = parts.values ?? {};
   return {
     header: parts.header
-      ? { ...parts.header, text: renderBody(parts.header.text, values) }
+      ? parts.header.kind === 'TEXT'
+        ? { kind: 'TEXT' as const, text: renderBody(parts.header.text, values) }
+        : parts.header
       : undefined,
     footer: parts.footer ? renderBody(parts.footer, values) : undefined,
     buttons: parts.buttons?.map((button) =>

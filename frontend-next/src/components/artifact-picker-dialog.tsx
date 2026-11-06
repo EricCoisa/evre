@@ -21,15 +21,18 @@ import {
 } from '@/components/ui/tabs';
 import { Search } from 'lucide-react';
 import { UploadArtifactForm } from '@/components/upload-artifact-dialog';
+import type { UploadConstraints } from '@/components/upload-artifact-dialog';
 import type { Artifact } from '@/lib/actions/artifact/types';
 
 interface ArtifactPickerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelect: (artifact: Artifact) => void;
+  filter?: (artifact: Artifact) => boolean;
+  uploadConstraints?: UploadConstraints;
 }
 
-export function ArtifactPickerDialog({ open, onOpenChange, onSelect }: ArtifactPickerDialogProps) {
+export function ArtifactPickerDialog({ open, onOpenChange, onSelect, filter, uploadConstraints }: ArtifactPickerDialogProps) {
   const { t } = useTranslation('artifact');
 
   const handleSelect = (artifact: Artifact) => {
@@ -49,10 +52,10 @@ export function ArtifactPickerDialog({ open, onOpenChange, onSelect }: ArtifactP
             <TabsTrigger value="upload" className="flex-1">{t('pickerUpload')}</TabsTrigger>
           </TabsList>
           <TabsContent value="existing" className="mt-4">
-            <ExistingTab onSelect={handleSelect} />
+            <ExistingTab onSelect={handleSelect} filter={filter} />
           </TabsContent>
           <TabsContent value="upload" className="mt-4">
-            <UploadArtifactForm onSuccess={handleSelect} />
+            <UploadArtifactForm onSuccess={handleSelect} constraints={uploadConstraints} />
           </TabsContent>
         </Tabs>
       </DialogContent>
@@ -60,7 +63,7 @@ export function ArtifactPickerDialog({ open, onOpenChange, onSelect }: ArtifactP
   );
 }
 
-function ExistingTab({ onSelect }: { onSelect: (artifact: Artifact) => void }) {
+function ExistingTab({ onSelect, filter }: { onSelect: (artifact: Artifact) => void; filter?: (artifact: Artifact) => boolean }) {
   const { t } = useTranslation('artifact');
   const [search, setSearch] = useState('');
   const params = {
@@ -93,7 +96,7 @@ function ExistingTab({ onSelect }: { onSelect: (artifact: Artifact) => void }) {
           <p className="text-muted-foreground py-6 text-center text-sm">{t('empty')}</p>
         ) : (
           items
-            .filter((a) => !a.archivedAt)
+            .filter((a) => !a.archivedAt && (!filter || filter(a)))
             .map((artifact) => (
               <button
                 key={artifact.id}

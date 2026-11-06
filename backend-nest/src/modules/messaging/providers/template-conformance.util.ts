@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import type { TemplateButton } from 'src/domain/interface/messaging-provider.interface';
+import type { TemplateButton, TemplateHeader } from 'src/domain/interface/messaging-provider.interface';
 import {
   assertButtonsMatchSlots,
   buttonSlotVariables,
@@ -23,7 +23,7 @@ export interface TypeContract {
 export interface TemplateContent {
   category: string;
   body: string;
-  header?: { text?: string } | null;
+  header?: TemplateHeader | null;
   footer?: string | null;
   buttons?: unknown;
 }

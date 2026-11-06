@@ -55,7 +55,7 @@ export class ImportRemoteTemplateUseCase {
         // Extrai placeholders do corpo, header e urls para declarar as variáveis no tipo
         const usedNames = new Set([
           ...extractPlaceholders(parsed.body),
-          ...(parsed.header?.text
+          ...(parsed.header?.kind === 'TEXT'
             ? extractPlaceholders(parsed.header.text)
             : []),
           ...(parsed.buttons ?? []).flatMap((b) =>

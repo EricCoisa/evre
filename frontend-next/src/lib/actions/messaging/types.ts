@@ -125,7 +125,9 @@ export interface TemplateVariable {
   sensitive?: boolean;
 }
 
-export type TemplateHeader = { kind: 'TEXT'; text: string };
+export type TemplateHeader =
+  | { kind: 'TEXT'; text: string }
+  | { kind: 'IMAGE'; url: string };
 /** `slot` liga o botão a um espaço tipado do tipo de template; ausente = botão livre, sem evento. */
 export type TemplateButton =
   | { kind: 'URL'; label: string; url: string; slot?: string }

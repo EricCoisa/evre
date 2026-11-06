@@ -50,7 +50,7 @@ describe('regras da Meta para template', () => {
     it('no corpo, no header, no rodapé e na URL do botão', () => {
       for (const over of [
         { body: 'Olá {{ nome }}, veja https://bit.ly/abc123 para detalhes do pedido.' },
-        { header: { text: 'Veja https://tinyurl.com/x' } },
+        { header: { kind: 'TEXT', text: 'Veja https://tinyurl.com/x' } },
         { footer: 'https://t.co/xyz' },
         { buttons: [{ kind: 'URL', label: 'Ver', url: 'https://www.bit.ly/{{ id }}' }] },
       ]) {

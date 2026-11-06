@@ -13,6 +13,7 @@ vi.mock('@/components/capability-gate', () => ({
 
 vi.mock('@/lib/actions/company/queries', () => ({
   useCompanyContacts: () => ({ data: [] }),
+  useCompany: () => ({ data: undefined }),
 }));
 
 vi.mock('@/lib/actions/proposal/queries', () => ({

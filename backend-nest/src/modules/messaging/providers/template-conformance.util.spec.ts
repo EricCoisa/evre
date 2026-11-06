@@ -30,7 +30,7 @@ describe('conformTemplateToType — a regra do contrato, no servidor', () => {
   it('variável desconhecida no texto, em qualquer parte (corpo, header, footer, URL livre)', () => {
     for (const over of [
       { body: 'Oi {{ inventada }} {{ order }}' },
-      { header: { text: '{{ inventada }}' } },
+      { header: { kind: 'TEXT', text: '{{ inventada }}' } },
       { footer: '{{ inventada }}' },
     ]) {
       expect(() => conformTemplateToType(TYPE, content(over))).toThrow(/desconhecida.*inventada/);

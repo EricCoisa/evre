@@ -155,4 +155,57 @@ export async function seedMessagingTemplates(prisma: PrismaClient) {
     },
   });
   console.log('✅ Messaging template PROPOSAL_SENT created');
+
+  // PROPOSAL_FIRST_CONTACT: primeiro contato com pequenas empresas sem site/landing page.
+  // Header IMAGE: prévia do site demonstrativo (URL fornecida por headerImageUrl no envio).
+  // company_name: nome da empresa prospectada. first_name: contato (reservada, fallback 'cliente').
+  // Botão open: mesma base do PROPOSAL_SENT — aponta para a proposta/demo publicada.
+  const firstContactVariables = [
+    { name: 'company_name', type: 'STRING', required: true },
+    { name: 'first_name', type: 'STRING', required: false, reserved: true },
+  ];
+  const firstContactTypeButtons = [
+    { key: 'open', kind: 'URL', urlBase: `${frontendUrl}/p/`, required: true },
+    { key: 'opt_out', kind: 'QUICK_REPLY', reserved: true },
+  ];
+  const firstContactType = await prisma.messagingTemplateType.upsert({
+    where: { key: 'PROPOSAL_FIRST_CONTACT' },
+    update: {
+      variables: firstContactVariables,
+      buttons: firstContactTypeButtons,
+      isSystem: true,
+    },
+    create: {
+      key: 'PROPOSAL_FIRST_CONTACT',
+      name: 'Primeiro contato — prévia de site',
+      variables: firstContactVariables,
+      buttons: firstContactTypeButtons,
+      isSystem: true,
+    },
+  });
+  await prisma.messagingTemplate.upsert({
+    where: { key_language: { key: 'PROPOSAL_FIRST_CONTACT', language: 'pt-BR' } },
+    update: { isSystem: true },
+    create: {
+      key: 'PROPOSAL_FIRST_CONTACT',
+      language: 'pt-BR',
+      category: 'MARKETING',
+      typeId: firstContactType.id,
+      // Header IMAGE: URL de exemplo usada na submissão à Meta para aprovação.
+      // No envio, a URL real é passada via headerImageUrl (screenshot do site demo gerado para a empresa).
+      header: { kind: 'IMAGE', url: `${frontendUrl}/assets/proposal-preview.jpg` },
+      body: 'Olá {{ first_name }}! Somos da EVRE, especializados em desenvolvimento de sites e sistemas.\n\nConhecemos um pouco do trabalho da *{{ company_name }}* e preparamos uma prévia demonstrativa de como seu negócio poderia se apresentar na internet, valorizando seus serviços e facilitando o contato com novos clientes.\n\nAcesse o link para ver a demonstração, sem compromisso!',
+      buttons: [
+        {
+          kind: 'URL',
+          label: 'Ver demonstração',
+          url: `${frontendUrl}/p/{{ open }}`,
+          slot: 'open',
+        },
+        { kind: 'QUICK_REPLY', label: 'Parar de receber', slot: 'opt_out' },
+      ],
+      isSystem: true,
+    },
+  });
+  console.log('✅ Messaging template PROPOSAL_FIRST_CONTACT created');
 }

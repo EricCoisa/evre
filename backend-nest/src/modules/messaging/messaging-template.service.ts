@@ -52,6 +52,8 @@ export interface ResolveTemplateInput extends TemplateRef {
   buttons?: ButtonValues;
   /** `false` recusa template com variável `sensitive` (ex.: agente de IA: o valor passaria pela conversa). */
   allowSensitive?: boolean;
+  /** URL da imagem para header IMAGE; obrigatório quando o template tem `header.kind === 'IMAGE'`. */
+  headerImageUrl?: string;
 }
 
 export interface ResolvedTemplateRef {
@@ -150,7 +152,10 @@ export class MessagingTemplateService {
         values,
         body: renderBody(row.body, values),
         bodySource: row.body,
-        header: parts.header ?? undefined,
+        header:
+          parts.header?.kind === 'IMAGE' && input.headerImageUrl
+            ? { kind: 'IMAGE' as const, url: input.headerImageUrl }
+            : parts.header ?? undefined,
         footer: row.footer ?? undefined,
         buttons: parts.buttons
           ? parts.buttons.map((button) =>

@@ -36,6 +36,28 @@ export async function deleteArtifactPermanently(id: string): Promise<ApiResponse
   );
 }
 
+/** URL pré-assinada para preview autenticado — não publica o artefato. */
+export async function getArtifactPreviewUrl(id: string): Promise<ApiResponse<{ url: string }>> {
+  return wrap(() =>
+    customInstance<{ url: string }>({
+      url: API_PATHS.ARTIFACTS_BY_ID(id) + '/preview',
+      method: 'GET',
+    }),
+  );
+}
+
+/** Publica um artefato existente (define published + publicToken). Idempotente.
+ * `isPublic: true` grava `public: true` → URL permanente em vez de presigned (necessário para Meta). */
+export async function publishArtifact(id: string, isPublic = false): Promise<ApiResponse<Artifact>> {
+  return wrap(() =>
+    customInstance<Artifact>({
+      url: API_PATHS.ARTIFACTS_BY_ID(id) + '/publish',
+      method: 'POST',
+      data: isPublic ? { public: true } : undefined,
+    }),
+  );
+}
+
 /** Multipart puro (sem DTO de body) — o Orval não gera client para isso, mesmo caso de
  * `updateProfile` em `lib/actions/user/api.ts` para o upload de avatar. Aceita arquivo único
  * (html/imagem) ou `.zip` (pasta/site estático), extraído no backend. */

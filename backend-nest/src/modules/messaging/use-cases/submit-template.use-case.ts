@@ -90,7 +90,7 @@ export class SubmitTemplateUseCase {
         ? []
         : [
             template.body,
-            header?.text,
+            header?.kind === 'TEXT' ? header.text : undefined,
             template.footer,
             ...(buttons ?? []).map((b) =>
               b.kind === 'URL' ? b.url : undefined,

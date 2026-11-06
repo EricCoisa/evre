@@ -1,4 +1,4 @@
-import type { TemplateButton } from 'src/domain/interface/messaging-provider.interface';
+import type { TemplateButton, TemplateHeader } from 'src/domain/interface/messaging-provider.interface';
 import { extractPlaceholders } from './template.util';
 
 /** Regras que a Meta aplica na revisão de templates, checadas sem ir à rede na submissão e no editor. */
@@ -17,7 +17,7 @@ export interface MetaTemplateIssue {
 export interface MetaRuleContent {
   category: string;
   body: string;
-  header?: { text?: string } | null;
+  header?: TemplateHeader | null;
   footer?: string | null;
   buttons?: readonly TemplateButton[] | null;
 }
@@ -149,7 +149,7 @@ export function checkMetaTemplateRules(
   // --- Links ---------------------------------------------------------------------------------
   const linkTexts: [MetaIssueField, string][] = [
     ['body', body],
-    ['header', content.header?.text ?? ''],
+    ['header', content.header?.kind === 'TEXT' ? content.header.text : ''],
     ['footer', content.footer ?? ''],
     ...(content.buttons ?? []).map((b): [MetaIssueField, string] => [
       'buttons',

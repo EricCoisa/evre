@@ -7,15 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { PhoneInput } from '@/components/ui/phone-input';
 import { CopyField } from '@/components/copy-field';
+import { ProposalSendModal } from './proposal-send-modal';
 import Modal from '@/components/modal';
 import { CapabilityGate } from '@/components/capability-gate';
 import { CAPABILITIES } from '@/types/capabilities';
@@ -58,7 +51,6 @@ export function ProposalPublicationTab({ proposal }: { proposal: Proposal }) {
   const [acceptOpen, setAcceptOpen] = useState(false);
   const [sendOpen, setSendOpen] = useState(false);
   const [reopenOpen, setReopenOpen] = useState(false);
-  const [selectedPhone, setSelectedPhone] = useState('');
   const [note, setNote] = useState('');
   const { data: versions = [] } = useProposalVersions(proposal.id);
   const { data: contacts = [] } = useCompanyContacts(proposal.companyId ?? '');
@@ -84,22 +76,17 @@ export function ProposalPublicationTab({ proposal }: { proposal: Proposal }) {
     setAcceptOpen(false);
   }
 
-  async function handleSend(phone?: string) {
-    const result = await send.mutateAsync({ id: proposal.id, data: { phone } });
+  async function handleSend(draft: { templateId?: string; values?: Record<string, string>; headerImageUrl?: string; phone?: string }) {
+    const result = await send.mutateAsync({
+      id: proposal.id,
+      data: { phone: draft.phone, templateId: draft.templateId, values: draft.values, headerImageUrl: draft.headerImageUrl },
+    });
     if (result.succeeded) {
       toast.success(t('sendSucceeded'));
     } else {
       toast.error(t('sendFailed'));
     }
     setSendOpen(false);
-    setSelectedPhone('');
-  }
-
-  // Sempre pergunta — nunca envia direto para o contato principal sem confirmar, e nunca exige
-  // empresa: sem contato nenhum, o diálogo ainda deixa digitar um número manualmente.
-  function handleSendClick() {
-    setSelectedPhone(sendableContacts.length === 1 ? sendableContacts[0].messagingContact.phone : '');
-    setSendOpen(true);
   }
 
   async function handleReopen() {
@@ -146,7 +133,7 @@ export function ProposalPublicationTab({ proposal }: { proposal: Proposal }) {
           <CapabilityGate name={CAPABILITIES.messaging}>
             <Button
               variant="outline"
-              onClick={handleSendClick}
+              onClick={() => setSendOpen(true)}
               disabled={!canRevoke || send.isPending}
             >
               <Send className="size-4 mr-1.5" />
@@ -254,49 +241,17 @@ export function ProposalPublicationTab({ proposal }: { proposal: Proposal }) {
         </div>
       </Modal>
 
-      <Modal
+      <ProposalSendModal
         open={sendOpen}
         onOpenChange={setSendOpen}
-        title={t('sendChooseContact')}
-        description={t('sendChooseContactDescription')}
-      >
-        <div className="space-y-3">
-          {sendableContacts.length > 0 && (
-            <Select value={selectedPhone} onValueChange={setSelectedPhone}>
-              <SelectTrigger>
-                <SelectValue placeholder={t('sendChooseContactPlaceholder')} />
-              </SelectTrigger>
-              <SelectContent>
-                {sendableContacts.map((contact) => (
-                  <SelectItem key={contact.id} value={contact.messagingContact.phone}>
-                    {contact.messagingContact.name ?? contact.messagingContact.pushName} — {contact.messagingContact.phone}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-          <div className="space-y-1.5">
-            <Label htmlFor="send-manual-phone">{t('sendManualPhone')}</Label>
-            <PhoneInput
-              id="send-manual-phone"
-              value={selectedPhone}
-              onChange={setSelectedPhone}
-              disabled={send.isPending}
-            />
-          </div>
-          <div className="flex gap-2 justify-end">
-            <Button variant="outline" onClick={() => setSendOpen(false)} disabled={send.isPending}>
-              {t('cancel')}
-            </Button>
-            <Button
-              onClick={() => handleSend(selectedPhone)}
-              disabled={!selectedPhone || send.isPending}
-            >
-              {t('sendConfirm')}
-            </Button>
-          </div>
-        </div>
-      </Modal>
+        proposal={proposal}
+        contacts={sendableContacts.map((c) => ({
+          phone: c.messagingContact.phone,
+          name: c.messagingContact.name ?? c.messagingContact.pushName,
+        }))}
+        pending={send.isPending}
+        onSubmit={handleSend}
+      />
     </div>
   );
 }

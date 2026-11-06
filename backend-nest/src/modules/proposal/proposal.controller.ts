@@ -442,7 +442,13 @@ export class ProposalController {
     @CurrentUser() currentUser: AuthenticatedUser,
   ) {
     return this.sendProposal.execute(
-      { proposalId: id, phone: dto.phone },
+      {
+        proposalId: id,
+        phone: dto.phone,
+        templateId: dto.templateId,
+        values: dto.values,
+        headerImageUrl: dto.headerImageUrl,
+      },
       currentUser,
     );
   }

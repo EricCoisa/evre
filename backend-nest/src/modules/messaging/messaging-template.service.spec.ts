@@ -259,6 +259,27 @@ describe('MessagingTemplateService', () => {
     });
   });
 
+  it('header IMAGE: usa headerImageUrl quando fornecido, cai no url do banco quando omitido', async () => {
+    const imageRow = row({ header: { kind: 'IMAGE', url: 'https://example.com/example.jpg' } });
+    prisma.messagingTemplate.findUnique.mockResolvedValue(imageRow);
+
+    const { resolved: withUrl } = await service.resolve({
+      key: 'LOGIN_CODE',
+      phone: PHONE,
+      values: { code_number: '1' },
+      headerImageUrl: 'https://example.com/real.jpg',
+    });
+    expect(withUrl.header).toEqual({ kind: 'IMAGE', url: 'https://example.com/real.jpg' });
+
+    prisma.messagingTemplate.findUnique.mockResolvedValue(imageRow);
+    const { resolved: withoutUrl } = await service.resolve({
+      key: 'LOGIN_CODE',
+      phone: PHONE,
+      values: { code_number: '1' },
+    });
+    expect(withoutUrl.header).toEqual({ kind: 'IMAGE', url: 'https://example.com/example.jpg' });
+  });
+
   it('template que requer ajuste (tipo mudou) não envia: 400 com o motivo', async () => {
     prisma.messagingTemplate.findUnique.mockResolvedValue(
       row({ invalidatedAt: new Date(), invalidReason: 'variáveis obrigatórias do tipo não usadas no texto: x' }),

@@ -16,6 +16,12 @@ export interface SendProposalInput {
   proposalId: string;
   /** Sem telefone, usa o contato principal da empresa (`Contact.isPrimary`). */
   phone?: string;
+  /** Id do template a enviar; omitido usa `PROPOSAL_SENT_TEMPLATE_KEY`. */
+  templateId?: string;
+  /** Variáveis custom do template (além de `title` e `link`, sempre derivados da proposta). */
+  values?: Record<string, string>;
+  /** URL pública da imagem para header IMAGE. */
+  headerImageUrl?: string;
 }
 
 export interface SendProposalOutput {
@@ -80,12 +86,10 @@ export class SendProposalUseCase {
 
     const result = await this.messaging.trySendTemplateNow(
       {
-        key: PROPOSAL_SENT_TEMPLATE_KEY,
+        ...(input.templateId ? { templateId: input.templateId } : { key: PROPOSAL_SENT_TEMPLATE_KEY }),
         phone,
-        values: {
-          title: proposal.name,
-          link: link.shortUrl,
-        },
+        // `title` e `link` vêm sempre da proposta; variáveis do chamador complementam (ex.: company_name).
+        values: { title: proposal.name, link: link.shortUrl, ...(input.values ?? {}) },
         ...(contact?.messagingContact.name
           ? {
               reserved: {
@@ -97,6 +101,7 @@ export class SendProposalUseCase {
           open: version.publicToken as string,
           [ReservedButtonKey.OPT_OUT]: true,
         },
+        headerImageUrl: input.headerImageUrl,
       },
       { correlation: { type: 'proposal', id: input.proposalId } },
     );

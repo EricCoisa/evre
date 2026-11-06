@@ -21,6 +21,15 @@ export function useCompanys(params?: PaginationParams) {
   });
 }
 
+export function useCompany(id: string | null | undefined) {
+  return useQuery({
+    queryKey: ['company', id],
+    queryFn: Collector(() => import('./api').then((m) => m.getCompany(id!))),
+    enabled: !!id,
+    ...getQueryConfig('COMPANY'),
+  });
+}
+
 export function useCreateCompany() {
   const queryClient = useQueryClient();
   const { t } = useTranslation('company');

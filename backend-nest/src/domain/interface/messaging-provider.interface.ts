@@ -8,11 +8,10 @@ import type {
   MessagingTemplateCategory,
 } from 'src/domain/messaging/messaging.const';
 
-/** Header achatável: só `TEXT` existe hoje — mídia exige Resumable Upload API (fora de escopo). */
-export interface TemplateHeader {
-  kind: 'TEXT';
-  text: string;
-}
+/** Header do template: TEXT (renderizado como parâmetro nomeado) ou IMAGE (URL fornecida no envio). */
+export type TemplateHeader =
+  | { kind: 'TEXT'; text: string }
+  | { kind: 'IMAGE'; url: string };
 
 /** slot liga o botão a um espaço tipado do tipo de template; payload é o que a Meta devolve no toque. */
 export type TemplateButton =

@@ -40,6 +40,7 @@ import { ListArtifactsUseCase } from './use-cases/list-artifacts.use-case';
 import { ArchiveArtifactUseCase } from './use-cases/archive-artifact.use-case';
 import { DeleteArtifactUseCase } from './use-cases/delete-artifact.use-case';
 import { ViewArtifactUseCase } from './use-cases/view-artifact.use-case';
+import { PublishArtifactUseCase } from './use-cases/publish-artifact.use-case';
 import { normalizeWildcardPath } from './wildcard-path.util';
 
 const ARTIFACT_ROLES = [UserRoleConst.ADMIN, UserRoleConst.MODERATOR];
@@ -56,6 +57,7 @@ export class ArtifactController {
     private readonly archiveArtifact: ArchiveArtifactUseCase,
     private readonly deleteArtifact: DeleteArtifactUseCase,
     private readonly viewArtifact: ViewArtifactUseCase,
+    private readonly publishArtifact: PublishArtifactUseCase,
   ) {}
 
   @GetApi({
@@ -153,6 +155,32 @@ export class ArtifactController {
     @CurrentUser() currentUser: AuthenticatedUser,
   ): Promise<Artifact> {
     return this.deleteArtifact.execute(id, currentUser);
+  }
+
+  @PostApi({
+    path: ':id/publish',
+    summary: 'artifact.publish.title',
+    status: 'OK',
+    roles: ARTIFACT_ROLES,
+    response: {
+      success: [{ status: 'OK', description: 'Artefato publicado', schema: { dto: ArtifactDto } }],
+    },
+  })
+  async publish(
+    @Param('id') id: string,
+    @Body('public') isPublic?: boolean,
+  ): Promise<Artifact> {
+    return this.publishArtifact.execute(id, isPublic ?? false);
+  }
+
+  @Get(':id/preview')
+  @UseGuards(JwtOrApiKeyAuthGuard, ScopeGuard, RolesGuard)
+  @Roles(...ARTIFACT_ROLES)
+  @ApiBearerAuth()
+  @ApiExcludeEndpoint()
+  async preview(@Param('id') id: string): Promise<{ url: string }> {
+    const url = await this.viewArtifact.execute(id, undefined);
+    return { url };
   }
 
   // Redirect puro (302): GetApi só aceita um `path`, e esta rota precisa de dois patterns pro

@@ -192,7 +192,7 @@ export class MetaProvider implements IMessagingService<MetaConfig> {
       approval: true,
       providerOwnedBody: ['AUTHENTICATION'],
       components: {
-        header: ['TEXT'],
+        header: ['TEXT', 'IMAGE'],
         footer: true,
         buttons: ['QUICK_REPLY', 'URL', 'PHONE_NUMBER', 'COPY_CODE'],
       },
@@ -396,6 +396,11 @@ export class MetaProvider implements IMessagingService<MetaConfig> {
         template.values,
       );
       if (parameters.length) components.push({ type: 'header', parameters });
+    } else if (template.header?.kind === 'IMAGE') {
+      components.push({
+        type: 'header',
+        parameters: [{ type: 'image', image: { link: template.header.url } }],
+      });
     }
 
     const bodyParameters = this.namedParameters(
@@ -753,6 +758,12 @@ export class MetaProvider implements IMessagingService<MetaConfig> {
           definition.examples,
         ),
       );
+    } else if (definition.header?.kind === 'IMAGE') {
+      components.push({
+        type: 'HEADER',
+        format: 'IMAGE',
+        example: { header_handle: [definition.header.url] },
+      });
     }
     components.push(
       this.textComponent('BODY', definition.body, definition.examples),

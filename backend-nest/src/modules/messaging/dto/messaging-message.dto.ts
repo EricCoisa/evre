@@ -2,11 +2,9 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { MessagingMessage } from '@prisma/client';
 import { renderResolvedParts } from '../providers/template.util';
 
-/** Header de template — apenas TEXT por enquanto. */
-export interface TemplateHeaderDto {
-  kind: 'TEXT';
-  text: string;
-}
+export type TemplateHeaderDto =
+  | { kind: 'TEXT'; text: string }
+  | { kind: 'IMAGE'; url: string };
 
 /** Botão de template — tipos suportados. */
 export type TemplateButtonDto =

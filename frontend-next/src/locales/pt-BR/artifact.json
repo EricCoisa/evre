@@ -44,5 +44,7 @@
   "storageDisabled": "Upload desabilitado: o storage está indisponível no momento.",
   "pickerTitle": "Selecionar artefato",
   "pickerExisting": "Existente",
-  "pickerUpload": "Enviar novo"
+  "pickerUpload": "Enviar novo",
+  "uploadFileTooLarge": "Arquivo muito grande: máximo {maxMB} MB.",
+  "uploadAspectRatioMismatch": "Proporção incorreta: esperada {expected}, imagem enviada é {actual}."
 }

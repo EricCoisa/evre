@@ -11,6 +11,9 @@
   "deletePermanent": {
     "title": "Permanently delete artifact"
   },
+  "publish": {
+    "title": "Publish artifact"
+  },
   "not_found": "Artifact not found",
   "invalid_content_type": "File type not allowed for artifact",
   "too_large": "File exceeds the maximum allowed size",

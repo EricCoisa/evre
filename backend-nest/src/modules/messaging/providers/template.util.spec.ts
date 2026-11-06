@@ -68,7 +68,7 @@ describe('assertBodyMatchesType', () => {
     expect(() =>
       assertBodyMatchesType(variables, {
         body: 'oi',
-        header: { text: '{{ last_name }}' },
+        header: { kind: 'TEXT' as const, text: '{{ last_name }}' },
       }),
     ).toThrow(BadRequestException);
     expect(() =>
