@@ -135,7 +135,7 @@ jobs:
       && !contains(needs.*.result, 'failure')
       && !contains(needs.*.result, 'cancelled')
     runs-on: ubuntu-latest
-    environment: new
+    environment: Evre
     steps:
       # single docker-compose stack in Coolify (backend, frontend, postgres,
       # redis, minio) — one resource, one webhook, deploys everything together.
