@@ -3,6 +3,8 @@
 import { useTranslation } from "@/hooks/use-translation";
 import { useProjects, useCreateProject, useArchiveProject } from "@/lib/actions/project/queries";
 import { useCompanys } from "@/lib/actions/company/queries";
+import { useMe } from "@/lib/actions/auth/queries";
+import { ClientProjectsList } from "./client-projects-list";
 import { useState, useCallback, useMemo } from 'react';
 import { DataTable } from "@/components/data-table";
 import { getProjectColumns } from "./project-columns";
@@ -17,6 +19,8 @@ import { Plus } from 'lucide-react';
 
 export function ProjectTab() {
   const { t } = useTranslation('project');
+  const { data: me } = useMe();
+  const isClient = me?.role === 'USER' || (me as { roleName?: string })?.roleName === 'USER';
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
   const [globalFilter, setGlobalFilter] = useState('');
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -37,7 +41,7 @@ export function ProjectTab() {
   };
 
   const { data, error } = useProjects(queryParams);
-  const { data: companiesData } = useCompanys({ limit: 200, pagination: false });
+  const { data: companiesData } = useCompanys({ limit: 200, pagination: false }, { enabled: !isClient });
 
   const createProjectMutation = useCreateProject();
   const archiveProjectMutation = useArchiveProject();
@@ -67,6 +71,10 @@ export function ProjectTab() {
     getProjectColumns({ t, onArchive: handleArchive }),
     [t, handleArchive]
   );
+
+  if (isClient) {
+    return <ClientProjectsList />;
+  }
 
   return (
     <>

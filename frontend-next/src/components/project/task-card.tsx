@@ -39,8 +39,8 @@ interface TaskCardProps {
 export function TaskCard({ projectId, task, canEdit = true, onSelect, onDelete }: TaskCardProps) {
   const { t: tTime } = useTranslation('time-tracking');
   const updateTaskMutation = useUpdateTask(projectId ?? '');
-  const { data: usersData } = useUsers();
-  const { data: activeTimerData } = useActiveTimer();
+  const { data: usersData } = useUsers(undefined, { enabled: canEdit });
+  const { data: activeTimerData } = useActiveTimer({ enabled: canEdit });
   const startTimerMutation = useStartTimer();
   const stopTimerMutation = useStopTimer();
 

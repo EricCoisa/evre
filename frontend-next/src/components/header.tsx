@@ -12,6 +12,7 @@ import { ResourceSearch } from './resource-search';
 import { HeaderTimeTracker } from './time-tracking/header-time-tracker';
 import { Feature } from '@/components/feature';
 import { isDevelopment } from '@/lib/utils';
+import { useMe } from '@/lib/actions/auth/queries';
 
 interface HeaderProps {
   notificationsEnabled?: boolean;
@@ -23,6 +24,8 @@ export function Header({
   timeTrackingEnabled = false,
 }: HeaderProps) {
   const { devTools, setDevTools } = useApp();
+  const { data: me } = useMe();
+  const isClient = me?.roleName === 'USER';
 
   return (
     <header className="flex h-(--header-height) items-end shrink-0 gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height) bg-gradient-to-b from-sidebar via-sidebar/95 to-sidebar/90">
@@ -38,12 +41,14 @@ export function Header({
 
         {/* Right section: search, user menu and controls */}
         <div className="flex items-center gap-2 ml-auto">
-          {timeTrackingEnabled ? (
-            <HeaderTimeTracker />
-          ) : (
-            <Feature flag="FEATURE_TIME_TRACKING">
+          {!isClient && (
+            timeTrackingEnabled ? (
               <HeaderTimeTracker />
-            </Feature>
+            ) : (
+              <Feature flag="FEATURE_TIME_TRACKING">
+                <HeaderTimeTracker />
+              </Feature>
+            )
           )}
           <div className="w-auto sm:w-full sm:max-w-xs">
             <ResourceSearch />

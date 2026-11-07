@@ -58,7 +58,7 @@ export function MilestoneColumn({
 }: MilestoneColumnProps) {
   const { t: tTime } = useTranslation('time-tracking');
   const updateMilestoneMutation = useUpdateMilestone(projectId);
-  const { data: activeTimerData } = useActiveTimer();
+  const { data: activeTimerData } = useActiveTimer({ enabled: canEdit });
   const startTimerMutation = useStartTimer();
   const stopTimerMutation = useStopTimer();
 

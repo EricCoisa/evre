@@ -90,7 +90,7 @@ function invalidateTimeTracking(queryClient: any) {
   queryClient.invalidateQueries({ queryKey: ['time-tracking'], refetchType: 'all' });
 }
 
-export function useActiveTimer() {
+export function useActiveTimer(options?: { enabled?: boolean }) {
   const queryClient = useQueryClient();
 
   const query = useQuery({
@@ -101,6 +101,7 @@ export function useActiveTimer() {
     refetchOnWindowFocus: 'always',
     refetchOnReconnect: 'always',
     retry: 1,
+    enabled: options?.enabled ?? true,
   });
 
   // Sincronização em tempo real entre abas sem polling (BroadcastChannel)

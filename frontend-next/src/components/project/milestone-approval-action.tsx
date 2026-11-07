@@ -39,6 +39,7 @@ import {
   Send,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslation } from '@/hooks/use-translation';
 
 interface ApprovalItem {
   id: string;
@@ -67,6 +68,7 @@ export function MilestoneApprovalAction({
   milestoneTitle,
   canEdit = true,
 }: MilestoneApprovalActionProps) {
+  const { t } = useTranslation('project');
   const { data: approvalsData, isLoading } = useApprovals(projectId, milestoneId);
   const requestApprovalMutation = useRequestApproval(projectId);
   const respondApprovalMutation = useRespondApproval(projectId);
@@ -106,11 +108,11 @@ export function MilestoneApprovalAction({
           requestNote: requestNote.trim() || undefined,
         },
       });
-      toast.success('Solicitação de validação enviada ao cliente!');
+      toast.success(t('approvalSentSuccess'));
       setIsRequestModalOpen(false);
       setRequestNote('');
     } catch {
-      toast.error('Erro ao solicitar aprovação');
+      toast.error(t('infoRequestCreateError'));
     } finally {
       setIsReenviando(false);
     }
@@ -129,13 +131,13 @@ export function MilestoneApprovalAction({
       });
       toast.success(
         status === 'APPROVED'
-          ? 'Etapa aprovada com sucesso! Parabéns!'
-          : 'Feedback enviado com solicitações de ajuste.'
+          ? t('approvalApprovedSuccess')
+          : t('approvalFeedbackSuccess')
       );
       setIsRespondOpen(false);
       setResponseNote('');
     } catch {
-      toast.error('Erro ao responder aprovação');
+      toast.error(t('infoRequestAnswerError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -146,11 +148,11 @@ export function MilestoneApprovalAction({
     setIsCancelling(true);
     try {
       await cancelApprovalMutation.mutateAsync(latestApproval.id);
-      toast.success('Pedido de validação cancelado!');
+      toast.success(t('approvalCancelledSuccess'));
       setIsCancelConfirmOpen(false);
       setIsFeedbackOpen(false);
     } catch {
-      toast.error('Erro ao cancelar pedido de validação');
+      toast.error(t('approvalCancelError'));
     } finally {
       setIsCancelling(false);
     }
@@ -160,20 +162,19 @@ export function MilestoneApprovalAction({
     <AlertDialog open={isCancelConfirmOpen} onOpenChange={setIsCancelConfirmOpen}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Cancelar pedido de validação?</AlertDialogTitle>
+          <AlertDialogTitle>{t('approvalCancelModalTitle')}</AlertDialogTitle>
           <AlertDialogDescription>
-            Deseja cancelar o pedido de validação da etapa <strong>{milestoneTitle}</strong>?
-            O cliente não precisará avaliá-la até que uma nova solicitação seja enviada.
+            {t('approvalCancelModalDesc', { title: milestoneTitle })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isCancelling}>Voltar</AlertDialogCancel>
+          <AlertDialogCancel disabled={isCancelling}>{t('back')}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleCancelApproval}
             disabled={isCancelling}
             className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
           >
-            {isCancelling ? 'Cancelando...' : 'Sim, cancelar pedido'}
+            {isCancelling ? '...' : t('approvalCancel')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -190,11 +191,11 @@ export function MilestoneApprovalAction({
           <DialogTitle className="text-base font-semibold flex items-center gap-2">
             <Send className="h-4 w-4 text-primary" />
             {latestApproval?.status === 'REJECTED'
-              ? 'Reenviar Etapa para Validação'
-              : 'Solicitar Validação da Etapa'}
+              ? t('approvalResendModalTitle')
+              : t('approvalRequestModalTitle')}
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Etapa: <strong>{milestoneTitle}</strong>. Adicione orientações ou comentários para o cliente testar e aprovar.
+            {t('approvalRequestModalDesc', { title: milestoneTitle })}
           </DialogDescription>
         </DialogHeader>
 
@@ -203,7 +204,7 @@ export function MilestoneApprovalAction({
             <div className="rounded-md border border-rose-500/25 bg-rose-500/5 p-2.5 space-y-1">
               <span className="text-[11px] font-semibold text-rose-700 dark:text-rose-300 flex items-center gap-1">
                 <XCircle className="h-3 w-3" />
-                Último apontamento do cliente:
+                {t('approvalLatestClientNote')}
               </span>
               <p className="text-xs text-foreground italic leading-relaxed whitespace-pre-wrap">
                 &ldquo;{latestApproval.responseNote}&rdquo;
@@ -213,11 +214,11 @@ export function MilestoneApprovalAction({
 
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-foreground flex items-center justify-between">
-              <span>Mensagem ou orientações para o cliente (opcional)</span>
+              <span>{t('approvalRequestNoteLabel')}</span>
               <span className="text-[10px] text-muted-foreground">{requestNote.length}/2000</span>
             </label>
             <Textarea
-              placeholder="Ex: Realizamos todas as tarefas desta etapa e os ajustes solicitados. Por favor, valide no ambiente de testes."
+              placeholder={t('approvalRequestNotePlaceholder')}
               value={requestNote}
               onChange={(e) => setRequestNote(e.target.value)}
               className="text-xs min-h-24 resize-none"
@@ -235,7 +236,7 @@ export function MilestoneApprovalAction({
             onClick={() => setIsRequestModalOpen(false)}
             disabled={isReenviando}
           >
-            Cancelar
+            {t('cancel')}
           </Button>
           <Button
             size="sm"
@@ -248,7 +249,9 @@ export function MilestoneApprovalAction({
             ) : (
               <Send className="h-3.5 w-3.5" />
             )}
-            {latestApproval?.status === 'REJECTED' ? 'Reenviar para Validação' : 'Enviar para Validação'}
+            {latestApproval?.status === 'REJECTED'
+              ? t('approvalResendForValidation')
+              : t('approvalSendForValidation')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -262,12 +265,12 @@ export function MilestoneApprovalAction({
         <DialogHeader>
           <DialogTitle className="text-base font-semibold flex items-center gap-2">
             <MessageSquareText className="h-4 w-4 text-primary" />
-            Feedback da Etapa: {milestoneTitle}
+            {t('approvalStageFeedbackTitle', { title: milestoneTitle })}
           </DialogTitle>
           <DialogDescription className="text-xs">
             {latestApproval.status === 'REJECTED'
-              ? 'O cliente solicitou ajustes nesta etapa. Veja as observações abaixo:'
-              : 'Informações da validação desta etapa pelo cliente:'}
+              ? t('approvalClientAdjustmentsDesc')
+              : t('approvalValidationInfoDesc')}
           </DialogDescription>
         </DialogHeader>
 
@@ -278,11 +281,11 @@ export function MilestoneApprovalAction({
               <div className="flex items-center justify-between text-xs font-semibold text-primary">
                 <span className="flex items-center gap-1.5">
                   <Send className="h-3.5 w-3.5" />
-                  Mensagem da Equipe de Desenvolvimento
+                  {t('approvalDevMessage')}
                 </span>
                 {latestApproval.requestedAt && (
                   <span className="text-[11px] font-normal text-muted-foreground">
-                    {new Date(latestApproval.requestedAt).toLocaleDateString('pt-BR', {
+                    {new Date(latestApproval.requestedAt).toLocaleDateString(undefined, {
                       day: '2-digit',
                       month: '2-digit',
                       hour: '2-digit',
@@ -296,7 +299,7 @@ export function MilestoneApprovalAction({
               </p>
               {latestApproval.requestedBy?.name && (
                 <p className="text-[10px] text-muted-foreground text-right">
-                  Enviado por: {latestApproval.requestedBy.name}
+                  {t('approvalSentBy', { name: latestApproval.requestedBy.name })}
                 </p>
               )}
             </div>
@@ -308,21 +311,23 @@ export function MilestoneApprovalAction({
               <div className="flex items-center justify-between text-xs">
                 <span className="font-semibold flex items-center gap-1.5 text-amber-700 dark:text-amber-400">
                   <Clock className="h-3.5 w-3.5" />
-                  Aguardando Avaliação do Cliente
+                  {t('approvalAwaitingClientTitle')}
                 </span>
                 {latestApproval.requestedAt && (
                   <span className="text-[11px] text-muted-foreground">
-                    Enviado em {new Date(latestApproval.requestedAt).toLocaleDateString('pt-BR', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      hour: '2-digit',
-                      minute: '2-digit',
+                    {t('approvalSentOn', {
+                      date: new Date(latestApproval.requestedAt).toLocaleDateString(undefined, {
+                        day: '2-digit',
+                        month: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      }),
                     })}
                   </span>
                 )}
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Esta etapa foi enviada para validação e está aguardando análise e resposta por parte do cliente.
+                {t('approvalAwaitingClient')}
               </p>
             </div>
           ) : (
@@ -344,19 +349,19 @@ export function MilestoneApprovalAction({
                   {latestApproval.status === 'REJECTED' ? (
                     <>
                       <XCircle className="h-3.5 w-3.5" />
-                      Solicitação de Ajustes do Cliente
+                      {t('approvalClientAdjustments')}
                     </>
                   ) : (
                     <>
                       <CheckCircle2 className="h-3.5 w-3.5" />
-                      Etapa Aprovada pelo Cliente
+                      {t('approvalClientApproved')}
                     </>
                   )}
                 </span>
 
                 {latestApproval.respondedAt && (
                   <span className="text-[11px] text-muted-foreground">
-                    {new Date(latestApproval.respondedAt).toLocaleDateString('pt-BR', {
+                    {new Date(latestApproval.respondedAt).toLocaleDateString(undefined, {
                       day: '2-digit',
                       month: '2-digit',
                       year: 'numeric',
@@ -373,14 +378,14 @@ export function MilestoneApprovalAction({
                   latestApproval.responseNote
                 ) : (
                   <span className="italic text-muted-foreground">
-                    Nenhuma observação por escrito foi adicionada.
+                    {t('approvalNoWrittenNote')}
                   </span>
                 )}
               </div>
 
               {latestApproval.respondedBy?.name && (
                 <p className="text-[11px] text-muted-foreground text-right">
-                  Respondido por: <strong>{latestApproval.respondedBy.name}</strong>
+                  {t('approvalRespondedBy', { name: latestApproval.respondedBy.name })}
                 </p>
               )}
             </div>
@@ -390,7 +395,7 @@ export function MilestoneApprovalAction({
           {sortedApprovals.length > 1 && (
             <div className="space-y-2 pt-2 border-t">
               <p className="text-[11px] font-semibold text-muted-foreground">
-                Histórico de Rodadas de Validação ({sortedApprovals.length})
+                {t('approvalHistoryTitle', { count: sortedApprovals.length })}
               </p>
               <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
                 {sortedApprovals.map((appr, idx) => (
@@ -404,43 +409,43 @@ export function MilestoneApprovalAction({
                       <div className="flex items-center gap-1.5">
                         {appr.status === 'APPROVED' && (
                           <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-semibold">
-                            <CheckCircle2 className="h-3 w-3" /> Aprovada
+                            <CheckCircle2 className="h-3 w-3" /> {t('approvalApproved')}
                           </span>
                         )}
                         {appr.status === 'REJECTED' && (
                           <span className="text-rose-600 dark:text-rose-400 flex items-center gap-1 font-semibold">
-                            <XCircle className="h-3 w-3" /> Ajustes
+                            <XCircle className="h-3 w-3" /> {t('approvalAdjustments')}
                           </span>
                         )}
                         {appr.status === 'PENDING' && (
                           <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1 font-semibold">
-                            <Clock className="h-3 w-3" /> Pendente
+                            <Clock className="h-3 w-3" /> {t('approvalPending')}
                           </span>
                         )}
                         {appr.status === 'CANCELLED' && (
                           <span className="text-muted-foreground flex items-center gap-1 font-semibold">
-                            <XCircle className="h-3 w-3" /> Cancelada
+                            <XCircle className="h-3 w-3" /> {t('approvalCancelledStatus')}
                           </span>
                         )}
                         {idx === 0 && (
                           <span className="text-[9px] text-primary font-semibold">
-                            (Mais recente)
+                            {t('approvalMostRecent')}
                           </span>
                         )}
                       </div>
                       <span className="text-[10px] text-muted-foreground">
-                        {new Date(appr.requestedAt).toLocaleDateString('pt-BR')}
+                        {new Date(appr.requestedAt).toLocaleDateString(undefined)}
                       </span>
                     </div>
 
                     {appr.requestNote && (
                       <p className="text-[10px] text-muted-foreground line-clamp-1">
-                        <strong>Equipe:</strong> &ldquo;{appr.requestNote}&rdquo;
+                        <strong>{t('approvalHistoryTeam')}</strong> &ldquo;{appr.requestNote}&rdquo;
                       </p>
                     )}
                     {appr.responseNote && (
                       <p className="text-[10px] text-muted-foreground line-clamp-1">
-                        <strong>Cliente:</strong> &ldquo;{appr.responseNote}&rdquo;
+                        <strong>{t('approvalHistoryClient')}</strong> &ldquo;{appr.responseNote}&rdquo;
                       </p>
                     )}
                   </div>
@@ -457,7 +462,7 @@ export function MilestoneApprovalAction({
             className="text-xs"
             onClick={() => setIsFeedbackOpen(false)}
           >
-            Fechar
+            {t('approvalClose')}
           </Button>
 
           <div className="flex items-center gap-2">
@@ -472,7 +477,7 @@ export function MilestoneApprovalAction({
                 }}
               >
                 <XCircle className="h-3.5 w-3.5" />
-                Cancelar Pedido
+                {t('approvalCancelRequest')}
               </Button>
             )}
 
@@ -486,7 +491,7 @@ export function MilestoneApprovalAction({
                 }}
               >
                 <RefreshCw className="h-3.5 w-3.5" />
-                Reenviar para Aprovação
+                {t('approvalResendForApproval')}
               </Button>
             )}
           </div>
@@ -506,10 +511,10 @@ export function MilestoneApprovalAction({
             size="sm"
             className="h-6 text-[10px] text-muted-foreground hover:text-primary px-1.5"
             onClick={() => setIsRequestModalOpen(true)}
-            title="Pedir para o cliente validar e aprovar esta etapa"
+            title={t('approvalRequestTooltip')}
           >
             <ShieldCheck className="mr-1 h-3 w-3" />
-            Pedir aprovação
+            {t('approvalRequestApproval')}
           </Button>
 
           {latestApproval?.status === 'CANCELLED' && (
@@ -517,9 +522,9 @@ export function MilestoneApprovalAction({
               type="button"
               onClick={() => setIsFeedbackOpen(true)}
               className="text-[10px] text-muted-foreground/80 hover:text-foreground underline cursor-pointer"
-              title="Ver histórico de solicitações canceladas"
+              title={t('approvalCancelledHistoryTooltip')}
             >
-              (cancelado)
+              {t('approvalCancelledHistory')}
             </button>
           )}
         </div>
@@ -538,10 +543,10 @@ export function MilestoneApprovalAction({
           type="button"
           onClick={() => setIsFeedbackOpen(true)}
           className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 transition-colors cursor-pointer"
-          title="Etapa Aprovada pelo cliente. Clique para ver detalhes."
+          title={t('approvalApprovedTooltip')}
         >
           <CheckCircle2 className="h-3 w-3 text-emerald-600 flex-shrink-0" />
-          <span>Etapa Aprovada</span>
+          <span>{t('approvalStageApproved')}</span>
           {(latestApproval.responseNote || latestApproval.requestNote) && (
             <MessageSquareText className="h-3 w-3 ml-0.5 text-emerald-600" />
           )}
@@ -562,10 +567,10 @@ export function MilestoneApprovalAction({
             type="button"
             onClick={() => setIsFeedbackOpen(true)}
             className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300 hover:bg-rose-500/20 transition-colors cursor-pointer group"
-            title="Clique para ver o feedback detalhado do cliente"
+            title={t('approvalFeedbackDetailTooltip')}
           >
             <XCircle className="h-3 w-3 text-rose-500 flex-shrink-0" />
-            <span>Ajustes Solicitados</span>
+            <span>{t('approvalAdjustmentsRequested')}</span>
             <MessageSquareText className="h-3 w-3 ml-0.5 text-rose-600 dark:text-rose-400 group-hover:scale-110 transition-transform" />
           </button>
 
@@ -575,10 +580,10 @@ export function MilestoneApprovalAction({
               size="sm"
               className="h-5 text-[10px] text-muted-foreground hover:text-primary px-1.5 gap-1"
               onClick={() => setIsRequestModalOpen(true)}
-              title="Reenviar etapa para nova validação do cliente com comentário"
+              title={t('approvalResendTooltip')}
             >
               <RefreshCw className="h-3 w-3" />
-              Reenviar
+              {t('approvalResend')}
             </Button>
           )}
         </div>
@@ -596,11 +601,11 @@ export function MilestoneApprovalAction({
         <Badge
           variant="outline"
           className="h-5 text-[10px] gap-1 border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 animate-pulse cursor-pointer hover:bg-amber-500/20 transition-colors"
-          title="Clique para ver o status da validação e histórico"
+          title={t('approvalPendingTooltip')}
           onClick={() => setIsFeedbackOpen(true)}
         >
           <Clock className="h-3 w-3" />
-          Validação Pendente
+          {t('approvalPendingValidation')}
           {latestApproval.requestNote && (
             <MessageSquareText className="h-3 w-3 ml-0.5 text-amber-600" />
           )}
@@ -612,10 +617,10 @@ export function MilestoneApprovalAction({
             size="sm"
             className="h-5 text-[10px] text-muted-foreground hover:text-destructive px-1.5 gap-1"
             onClick={() => setIsCancelConfirmOpen(true)}
-            title="Cancelar o pedido de validação desta etapa"
+            title={t('approvalCancelTooltip')}
           >
             <XCircle className="h-3 w-3" />
-            Cancelar
+            {t('approvalCancel')}
           </Button>
         )}
 
@@ -626,7 +631,7 @@ export function MilestoneApprovalAction({
             className="h-6 text-[10px] px-2 bg-amber-600 hover:bg-amber-700 text-white font-medium"
             onClick={() => setIsRespondOpen(true)}
           >
-            Avaliar Etapa
+            {t('approvalEvaluateStage')}
           </Button>
         )}
       </div>
@@ -640,10 +645,10 @@ export function MilestoneApprovalAction({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold">
-              Revisar e Aprovar Etapa
+              {t('approvalReviewTitle')}
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Você está avaliando a etapa: <strong>{milestoneTitle}</strong>. Todas as tarefas foram entregues?
+              {t('approvalReviewDesc', { title: milestoneTitle })}
             </DialogDescription>
           </DialogHeader>
 
@@ -652,14 +657,14 @@ export function MilestoneApprovalAction({
               <div className="rounded-lg border border-primary/25 bg-primary/5 p-3 space-y-1">
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
                   <Send className="h-3.5 w-3.5" />
-                  Mensagem da Equipe de Desenvolvimento:
+                  {t('approvalDevMessage')}:
                 </div>
                 <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">
                   {latestApproval.requestNote}
                 </p>
                 {latestApproval.requestedBy?.name && (
                   <p className="text-[10px] text-muted-foreground text-right">
-                    Enviado por: {latestApproval.requestedBy.name}
+                    {t('approvalSentBy', { name: latestApproval.requestedBy.name })}
                   </p>
                 )}
               </div>
@@ -667,10 +672,10 @@ export function MilestoneApprovalAction({
 
             <div className="space-y-1">
               <label className="text-xs font-medium text-foreground">
-                Observações ou Feedback (opcional)
+                {t('approvalResponseNoteLabel')}
               </label>
               <Textarea
-                placeholder="Ex: Tudo pronto! Ou: Ficou ótimo, mas gostaríamos de ajustar o banner."
+                placeholder={t('approvalResponseNotePlaceholder')}
                 value={responseNote}
                 onChange={(e) => setResponseNote(e.target.value)}
                 className="text-xs min-h-20"
@@ -687,7 +692,7 @@ export function MilestoneApprovalAction({
               disabled={isSubmitting}
             >
               <XCircle className="mr-1 h-3.5 w-3.5" />
-              Solicitar Ajustes
+              {t('approvalRequestAdjustments')}
             </Button>
             <Button
               size="sm"
@@ -696,7 +701,7 @@ export function MilestoneApprovalAction({
               disabled={isSubmitting}
             >
               <CheckCircle2 className="mr-1 h-3.5 w-3.5" />
-              Aprovar Etapa
+              {t('approvalApproveStage')}
             </Button>
           </DialogFooter>
         </DialogContent>

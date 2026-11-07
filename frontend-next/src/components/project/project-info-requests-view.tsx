@@ -44,6 +44,7 @@ import {
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useTranslation } from '@/hooks/use-translation';
 import type { InfoRequest } from '@/lib/actions/project/types';
 
 interface ProjectInfoRequestsViewProps {
@@ -51,20 +52,11 @@ interface ProjectInfoRequestsViewProps {
   mode?: 'admin' | 'client';
 }
 
-const STATUS_CONFIG: Record<
-  string,
-  { label: string; icon: typeof Clock; variant: 'outline' | 'default' | 'destructive' | 'secondary' }
-> = {
-  PENDING: { label: 'Aguardando Resposta', icon: Clock, variant: 'outline' },
-  ANSWERED: { label: 'Respondida', icon: CheckCircle2, variant: 'default' },
-  EXPIRED: { label: 'Expirada', icon: XCircle, variant: 'destructive' },
-  CANCELLED: { label: 'Cancelada', icon: XCircle, variant: 'secondary' },
-};
-
 export function ProjectInfoRequestsView({
   projectId,
   mode = 'admin',
 }: ProjectInfoRequestsViewProps) {
+  const { t } = useTranslation('project');
   const { data: requestsData, isLoading } = useInfoRequests(projectId);
   const createMutation = useCreateInfoRequest(projectId);
   const answerMutation = useAnswerInfoRequest(projectId);
@@ -96,6 +88,20 @@ export function ProjectInfoRequestsView({
     ? requestsData
     : requestsData?.data ?? [];
 
+  const getStatusConfig = (status: string) => {
+    switch (status) {
+      case 'ANSWERED':
+        return { label: t('infoRequestStatusAnswered'), icon: CheckCircle2, variant: 'default' as const };
+      case 'EXPIRED':
+        return { label: t('infoRequestStatusExpired'), icon: XCircle, variant: 'destructive' as const };
+      case 'CANCELLED':
+        return { label: t('infoRequestStatusCancelled'), icon: XCircle, variant: 'secondary' as const };
+      case 'PENDING':
+      default:
+        return { label: t('infoRequestStatusPending'), icon: Clock, variant: 'outline' as const };
+    }
+  };
+
   const handleCreate = async () => {
     const trimmedLabel = newLabel.trim();
     if (!trimmedLabel) return;
@@ -109,9 +115,9 @@ export function ProjectInfoRequestsView({
       setNewLabel('');
       setNewDesc('');
       setIsCreateOpen(false);
-      toast.success('Solicitação criada e enviada ao cliente!');
+      toast.success(t('infoRequestCreatedSuccess'));
     } catch {
-      toast.error('Erro ao criar solicitação');
+      toast.error(t('infoRequestCreateError'));
     } finally {
       setIsCreating(false);
     }
@@ -122,10 +128,10 @@ export function ProjectInfoRequestsView({
     setIsCancelling(true);
     try {
       await cancelMutation.mutateAsync(cancellingRequest.id);
-      toast.success('Solicitação cancelada com sucesso!');
+      toast.success(t('infoRequestCancelSuccess'));
       setCancellingRequest(null);
     } catch {
-      toast.error('Erro ao cancelar solicitação');
+      toast.error(t('infoRequestCancelError'));
     } finally {
       setIsCancelling(false);
     }
@@ -144,9 +150,9 @@ export function ProjectInfoRequestsView({
       });
       setAnswerValue('');
       setAnsweringRequest(null);
-      toast.success('Informação enviada com segurança!');
+      toast.success(t('infoRequestAnsweredSuccess'));
     } catch {
-      toast.error('Erro ao enviar resposta');
+      toast.error(t('infoRequestAnswerError'));
     } finally {
       setIsAnswering(false);
     }
@@ -159,26 +165,26 @@ export function ProjectInfoRequestsView({
         <div>
           <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
             <KeyRound className="h-4 w-4 text-primary" />
-            Solicitações ao Cliente
+            {mode === 'client' ? t('infoRequestsClientTitle') : t('infoRequestsTitle')}
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
             {mode === 'client'
-              ? 'Itens, credenciais ou arquivos confidenciais solicitados pela equipe. Seus dados são criptografados de ponta a ponta.'
-              : 'Solicite dados sensíveis (senhas, acessos, dados fiscais) com criptografia AES-256 no banco de dados.'}
+              ? t('infoRequestsClientDescription')
+              : t('infoRequestsDescription')}
           </p>
         </div>
 
         {mode === 'admin' && (
           <Button size="sm" onClick={() => setIsCreateOpen(true)} className="h-8 text-xs">
             <Plus className="mr-1.5 h-3.5 w-3.5" />
-            Nova Solicitação
+            {t('newInfoRequest')}
           </Button>
         )}
       </div>
 
       {isLoading ? (
         <div className="p-8 text-center text-xs text-muted-foreground">
-          Carregando solicitações...
+          {t('loadingInfoRequests')}
         </div>
       ) : requests.length === 0 ? (
         <Card className="border-dashed">
@@ -187,19 +193,19 @@ export function ProjectInfoRequestsView({
               <ShieldCheck className="h-5 w-5" />
             </div>
             <p className="text-sm font-medium text-foreground">
-              Nenhuma solicitação pendente
+              {t('noInfoRequestsTitle')}
             </p>
             <p className="text-xs text-muted-foreground max-w-sm mx-auto">
               {mode === 'client'
-                ? 'Tudo certo! No momento a equipe não precisa de nenhuma informação adicional sua.'
-                : 'Você ainda não fez nenhum pedido de informação ou acesso para o cliente neste projeto.'}
+                ? t('noInfoRequestsClientDesc')
+                : t('noInfoRequestsAdminDesc')}
             </p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-3">
           {requests.map((req) => {
-            const config = STATUS_CONFIG[req.status] ?? STATUS_CONFIG.PENDING;
+            const config = getStatusConfig(req.status);
             const Icon = config.icon;
             const isPending = req.status === 'PENDING';
             const isAnswered = req.status === 'ANSWERED';
@@ -229,7 +235,7 @@ export function ProjectInfoRequestsView({
                     )}
 
                     <p className="text-[11px] text-muted-foreground flex items-center gap-2">
-                      <span>Solicitado por: {req.requestedBy?.name ?? 'Equipe'}</span>
+                      <span>{t('infoRequestRequestedBy', { name: req.requestedBy?.name ?? t('infoRequestTeam') })}</span>
                       <span>•</span>
                       <span>{formatDate(req.createdAt)}</span>
                     </p>
@@ -249,7 +255,7 @@ export function ProjectInfoRequestsView({
                           setAnswerValue('');
                         }}
                       >
-                        Responder Agora
+                        {t('answerNow')}
                       </Button>
                     )}
 
@@ -259,10 +265,10 @@ export function ProjectInfoRequestsView({
                         size="sm"
                         className="h-8 text-xs text-muted-foreground hover:text-destructive gap-1"
                         onClick={() => setCancellingRequest(req)}
-                        title="Cancelar esta solicitação ao cliente"
+                        title={t('cancelInfoRequestTooltip')}
                       >
                         <XCircle className="h-3.5 w-3.5" />
-                        Cancelar
+                        {t('cancel')}
                       </Button>
                     )}
 
@@ -274,7 +280,7 @@ export function ProjectInfoRequestsView({
                         onClick={() => setViewingRequestId(req.id)}
                       >
                         <Eye className="h-3.5 w-3.5" />
-                        Ver Resposta
+                        {t('viewResponse')}
                       </Button>
                     )}
                   </div>
@@ -290,20 +296,20 @@ export function ProjectInfoRequestsView({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold">
-              Solicitar Informação ao Cliente
+              {t('createInfoRequestModalTitle')}
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Peça credenciais, chaves de API, arquivos ou dados que a equipe precisa para avançar.
+              {t('createInfoRequestModalDesc')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 py-2">
             <div className="space-y-1">
               <label className="text-xs font-medium text-foreground">
-                O que você precisa? <span className="text-destructive">*</span>
+                {t('infoRequestNeedLabel')} <span className="text-destructive">*</span>
               </label>
               <Input
-                placeholder="Ex: Acesso de homologação do Gateway de Pagamento"
+                placeholder={t('infoRequestNeedPlaceholder')}
                 value={newLabel}
                 onChange={(e) => setNewLabel(e.target.value)}
                 className="text-xs h-9"
@@ -312,19 +318,19 @@ export function ProjectInfoRequestsView({
 
             <div className="space-y-1">
               <label className="text-xs font-medium text-foreground">
-                Instruções para o cliente (com texto rico)
+                {t('infoRequestInstructionsLabel')}
               </label>
               <RichTextInput
-                ariaLabel="Instruções para o cliente"
-                placeholder="Ex: Acesse o painel da Asaas, gere uma chave de API restrita e cole aqui..."
+                ariaLabel={t('infoRequestInstructionsLabel')}
+                placeholder={t('infoRequestInstructionsPlaceholder')}
                 value={newDesc}
                 onChange={setNewDesc}
                 className="min-h-24 text-xs"
                 formatLabels={{
-                  bold: 'Negrito (*texto*)',
-                  italic: 'Itálico (_texto_)',
-                  strikethrough: 'Riscado (~texto~)',
-                  code: 'Código (```texto```)',
+                  bold: t('richTextBold'),
+                  italic: t('richTextItalic'),
+                  strikethrough: t('richTextStrikethrough'),
+                  code: t('richTextCode'),
                 }}
               />
             </div>
@@ -337,7 +343,7 @@ export function ProjectInfoRequestsView({
               onClick={() => setIsCreateOpen(false)}
               className="text-xs"
             >
-              Cancelar
+              {t('cancel')}
             </Button>
             <Button
               size="sm"
@@ -345,7 +351,7 @@ export function ProjectInfoRequestsView({
               disabled={!newLabel.trim() || isCreating}
               className="text-xs"
             >
-              Enviar Solicitação
+              {t('sendInfoRequest')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -361,7 +367,7 @@ export function ProjectInfoRequestsView({
             <div className="flex items-center gap-2 text-primary mb-1">
               <Lock className="h-4 w-4" />
               <span className="text-xs font-semibold uppercase tracking-wider">
-                Envio Criptografado de Ponta a Ponta
+                {t('encryptedSubmissionBadge')}
               </span>
             </div>
             <DialogTitle className="text-base font-semibold">
@@ -376,23 +382,23 @@ export function ProjectInfoRequestsView({
 
           <div className="space-y-2 py-2">
             <label className="text-xs font-medium text-foreground">
-              Sua Resposta / Informação Confidencial
+              {t('confidentialResponseLabel')}
             </label>
             <RichTextInput
-              ariaLabel="Resposta confidencial"
-              placeholder="Digite aqui o valor, credencial ou instrução..."
+              ariaLabel={t('confidentialResponseLabel')}
+              placeholder={t('confidentialResponsePlaceholder')}
               value={answerValue}
               onChange={setAnswerValue}
               className="min-h-28 text-xs font-mono"
               formatLabels={{
-                bold: 'Negrito (*texto*)',
-                italic: 'Itálico (_texto_)',
-                strikethrough: 'Riscado (~texto~)',
-                code: 'Código (```texto```)',
+                bold: t('richTextBold'),
+                italic: t('richTextItalic'),
+                strikethrough: t('richTextStrikethrough'),
+                code: t('richTextCode'),
               }}
             />
             <p className="text-[11px] text-muted-foreground">
-              🔒 Este dado é gravado no banco de dados usando criptografia AES-256 e só os administradores autorizados conseguirão ler.
+              {t('encryptionNotice')}
             </p>
           </div>
 
@@ -403,7 +409,7 @@ export function ProjectInfoRequestsView({
               onClick={() => setAnsweringRequest(null)}
               className="text-xs"
             >
-              Cancelar
+              {t('cancel')}
             </Button>
             <Button
               size="sm"
@@ -411,7 +417,7 @@ export function ProjectInfoRequestsView({
               disabled={!answerValue.trim() || isAnswering}
               className="text-xs bg-amber-600 hover:bg-amber-700 text-white"
             >
-              Enviar com Segurança
+              {t('sendSecurely')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -427,20 +433,20 @@ export function ProjectInfoRequestsView({
             <div className="flex items-center gap-2 text-emerald-600 mb-1">
               <ShieldCheck className="h-4 w-4" />
               <span className="text-xs font-semibold uppercase tracking-wider">
-                Dado Descriptografado
+                {t('decryptedDataBadge')}
               </span>
             </div>
             <DialogTitle className="text-base font-semibold">
-              Resposta do Cliente
+              {t('clientResponseTitle')}
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Valor decodificado via serviço seguro de criptografia.
+              {t('decryptedDataDesc')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="py-3">
             {isLoadingSecret ? (
-              <p className="text-xs text-muted-foreground">Descriptografando...</p>
+              <p className="text-xs text-muted-foreground">{t('decrypting')}</p>
             ) : (
               <div className="rounded-lg border bg-muted/40 p-3 font-mono text-xs select-all break-all whitespace-pre-wrap">
                 {typeof secretValueData === 'string'
@@ -458,7 +464,7 @@ export function ProjectInfoRequestsView({
               onClick={() => setViewingRequestId(null)}
               className="text-xs"
             >
-              Fechar
+              {t('close')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -471,20 +477,19 @@ export function ProjectInfoRequestsView({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancelar solicitação ao cliente?</AlertDialogTitle>
+            <AlertDialogTitle>{t('cancelInfoRequestConfirmTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Deseja cancelar o pedido de <strong>{cancellingRequest?.label}</strong>?
-              O cliente não precisará mais responder a este item confidencial.
+              {t('cancelInfoRequestConfirmDesc', { label: cancellingRequest?.label ?? '' })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isCancelling}>Voltar</AlertDialogCancel>
+            <AlertDialogCancel disabled={isCancelling}>{t('back')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleCancelRequest}
               disabled={isCancelling}
               className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
             >
-              {isCancelling ? 'Cancelando...' : 'Sim, cancelar solicitação'}
+              {isCancelling ? '...' : t('cancelInfoRequestConfirmAction')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

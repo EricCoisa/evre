@@ -52,6 +52,7 @@ import {
 } from '@/components/ui/select';
 import { useMe } from '@/lib/actions/auth/queries';
 import { useUsers } from '@/lib/actions/user/queries';
+import { useTranslation } from '@/hooks/use-translation';
 import {
   LayoutGrid,
   ListTodo,
@@ -163,6 +164,7 @@ export function ProjectBoard({
   onGoToRequests,
   initialTaskId,
 }: ProjectBoardProps) {
+  const { t } = useTranslation('project');
   const searchParams = useSearchParams();
   const searchParamTaskId = searchParams.get('task') || searchParams.get('taskId');
   const targetTaskId = initialTaskId || searchParamTaskId;
@@ -244,9 +246,9 @@ export function ProjectBoard({
     checkedInitialTaskRef.current = targetTaskId;
     const match = findTaskById(items, targetTaskId);
     if (!match) {
-      toast.error('Tarefa informada no link não foi encontrada neste projeto.');
+      toast.error(t('boardTaskNotFoundToast'));
     }
-  }, [targetTaskId, isLoading, items]);
+  }, [targetTaskId, isLoading, items, t]);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -265,8 +267,8 @@ export function ProjectBoard({
 
   const { data: meData } = useMe();
   const currentUserId = meData?.id;
-  const isClient = mode === 'client' || meData?.role === 'USER' || (meData as any)?.roleName === 'USER';
-  const { data: usersData } = useUsers();
+  const isClient = mode === 'client' || meData?.role === 'USER' || (meData as { roleName?: string })?.roleName === 'USER';
+  const { data: usersData } = useUsers(undefined, { enabled: !isClient });
 
   const users = useMemo(() => {
     if (!usersData) return [];
@@ -356,9 +358,9 @@ export function ProjectBoard({
   const handleDeleteMilestone = async (milestoneId: string) => {
     try {
       await deleteMilestoneMutation.mutateAsync(milestoneId);
-      toast.success('Etapa removida');
+      toast.success(t('boardMilestoneDeletedToast'));
     } catch {
-      toast.error('Erro ao remover etapa');
+      toast.error(t('boardMilestoneDeleteErrorToast'));
     }
   };
 
@@ -368,18 +370,18 @@ export function ProjectBoard({
         milestoneId,
         data: { title },
       });
-      toast.success('Tarefa criada');
+      toast.success(t('boardTaskCreatedToast'));
     } catch {
-      toast.error('Erro ao criar tarefa');
+      toast.error(t('boardTaskCreateErrorToast'));
     }
   };
 
   const handleDeleteTask = async (taskId: string) => {
     try {
       await deleteTaskMutation.mutateAsync(taskId);
-      toast.success('Tarefa removida');
+      toast.success(t('boardTaskDeletedToast'));
     } catch {
-      toast.error('Erro ao remover tarefa');
+      toast.error(t('boardTaskDeleteErrorToast'));
     }
   };
 
@@ -493,7 +495,7 @@ export function ProjectBoard({
             await reorderMilestonesMutation.mutateAsync(reordered.map((m) => m.id));
           } catch {
             setItems(items); // Rollback em caso de falha
-            toast.error('Erro ao reordenar etapas');
+            toast.error(t('boardReorderMilestonesErrorToast'));
           }
         }
       }
@@ -547,7 +549,7 @@ export function ProjectBoard({
             });
           } catch {
             setItems(items);
-            toast.error('Erro ao reordenar tarefas');
+            toast.error(t('boardReorderTasksErrorToast'));
           }
         }
       } else {
@@ -579,7 +581,7 @@ export function ProjectBoard({
           });
         } catch {
           setItems(items);
-          toast.error('Erro ao mover tarefa');
+          toast.error(t('boardMoveTaskErrorToast'));
         }
       }
     }
@@ -621,20 +623,20 @@ export function ProjectBoard({
               size="sm"
               className="h-7 text-xs font-medium px-2.5"
               onClick={() => setViewMode('board')}
-              title="Visualização em Quadro (Kanban)"
+              title={t('boardKanbanTooltip')}
             >
               <LayoutGrid className="mr-1.5 h-3.5 w-3.5" />
-              Quadro
+              {t('boardKanban')}
             </Button>
             <Button
               variant={viewMode === 'list' ? 'secondary' : 'ghost'}
               size="sm"
               className="h-7 text-xs font-medium px-2.5"
               onClick={() => setViewMode('list')}
-              title="Visualização em Lista de Etapas"
+              title={t('boardListTooltip')}
             >
               <ListTodo className="mr-1.5 h-3.5 w-3.5" />
-              Lista
+              {t('boardList')}
             </Button>
           </div>
 
@@ -644,7 +646,7 @@ export function ProjectBoard({
           <div className="relative min-w-[150px] sm:min-w-[190px] flex-shrink-0">
             <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
             <Input
-              placeholder="Buscar tarefas..."
+              placeholder={t('boardSearchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="h-8 text-xs pl-8 pr-7 bg-background w-full"
@@ -654,7 +656,7 @@ export function ProjectBoard({
                 type="button"
                 onClick={() => setSearchQuery('')}
                 className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
-                title="Limpar busca"
+                title={t('boardClearSearch')}
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -664,10 +666,10 @@ export function ProjectBoard({
           {/* Filtro de Status */}
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="h-8 text-xs w-[135px] sm:w-[145px] bg-background flex-shrink-0">
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder={t('boardStatus')} />
             </SelectTrigger>
             <SelectContent className="text-xs">
-              <SelectItem value="all">Todos os status</SelectItem>
+              <SelectItem value="all">{t('boardAllStatuses')}</SelectItem>
               {Object.entries(TASK_STATUS_CONFIG).map(([stKey, conf]) => {
                 const Icon = conf.icon;
                 return (
@@ -687,14 +689,14 @@ export function ProjectBoard({
               {/* Filtro de Responsável */}
               <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
                 <SelectTrigger className="h-8 text-xs w-[145px] sm:w-[160px] bg-background flex-shrink-0">
-                  <SelectValue placeholder="Responsável" />
+                  <SelectValue placeholder={t('boardAssignee')} />
                 </SelectTrigger>
                 <SelectContent className="text-xs max-h-60">
-                  <SelectItem value="all">Todos os responsáveis</SelectItem>
+                  <SelectItem value="all">{t('boardAllAssignees')}</SelectItem>
                   <SelectItem value="__UNASSIGNED__">
                     <div className="flex items-center gap-1.5 text-muted-foreground">
                       <UserX className="h-3.5 w-3.5" />
-                      <span>Sem responsável</span>
+                      <span>{t('boardUnassigned')}</span>
                     </div>
                   </SelectItem>
                   {users.map((u) => (
@@ -725,10 +727,10 @@ export function ProjectBoard({
                       : 'text-muted-foreground'
                   }`}
                   onClick={() => setOnlyMyTasks((prev) => !prev)}
-                  title="Mostrar apenas tarefas atribuídas a mim"
+                  title={t('boardMyTasksTooltip')}
                 >
                   <User className="h-3 w-3" />
-                  Minhas tarefas
+                  {t('boardMyTasks')}
                 </Button>
               )}
             </>
@@ -746,13 +748,13 @@ export function ProjectBoard({
                   : 'bg-primary/10 text-primary border-primary/30 hover:bg-primary/20'
               }`}
               onClick={handleResetFilters}
-              title="Limpar todos os filtros e busca"
+              title={t('boardClearFiltersTooltip')}
             >
               <RotateCcw className="h-3 w-3" />
               <span>
                 {filteredTasksCount === 0
-                  ? 'Limpar filtros (0 tarefas)'
-                  : `Limpar (${activeFiltersCount})`}
+                  ? t('boardClearFiltersZero')
+                  : t('boardClearFiltersCount', { count: activeFiltersCount })}
               </span>
             </Button>
           )}
@@ -760,7 +762,7 @@ export function ProjectBoard({
           {/* Contador de tarefas filtradas */}
           {isFilterActive && (
             <Badge variant="outline" className="text-[11px] h-7 px-2 border-primary/30 text-primary hidden 2xl:inline-flex flex-shrink-0">
-              {filteredTasksCount} de {totalTasks} tarefas
+              {t('boardTasksCountFiltered', { count: filteredTasksCount, total: totalTasks })}
             </Badge>
           )}
         </div>
@@ -775,7 +777,7 @@ export function ProjectBoard({
               className="h-8 text-xs px-3 gap-1"
             >
               <Plus className="h-3.5 w-3.5" />
-              Nova Tarefa
+              {t('boardNewTask')}
             </Button>
             <Button
               size="sm"
@@ -783,7 +785,7 @@ export function ProjectBoard({
               className="h-8 text-xs px-3"
             >
               <Plus className="mr-1 h-3.5 w-3.5" />
-              Nova Etapa
+              {t('boardNewMilestone')}
             </Button>
           </div>
         )}
@@ -834,7 +836,7 @@ export function ProjectBoard({
                 <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors shadow-xs">
                   <Plus className="h-4 w-4" />
                 </div>
-                <span className="text-xs font-semibold">+ Adicionar outra etapa</span>
+                <span className="text-xs font-semibold">{t('boardAddAnotherMilestone')}</span>
               </button>
             )}
           </div>

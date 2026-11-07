@@ -92,7 +92,7 @@ function TaskDetailSheetContent({
   canEdit?: boolean;
 }) {
   const updateTaskMutation = useUpdateTask(projectId);
-  const { data: usersData } = useUsers();
+  const { data: usersData } = useUsers(undefined, { enabled: canEdit });
 
   const users = useMemo(() => {
     if (!usersData) return [];

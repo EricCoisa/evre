@@ -13,10 +13,11 @@ import { toast } from "sonner";
 import { useTranslation } from "@/hooks/use-translation";
 import { CreateCompanyDto, UpdateCompanyDto, CreateContactDto, UpdateContactDto, AddCompanyMemberDto, InviteCompanyMemberDto, UpdateCompanyMemberDto } from "./types";
 
-export function useCompanys(params?: PaginationParams) {
+export function useCompanys(params?: PaginationParams, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['companys', params],
     queryFn: Collector(() => getCompanys(params)),
+    enabled: options?.enabled ?? true,
     ...getQueryConfig('COMPANYS'),
   });
 }

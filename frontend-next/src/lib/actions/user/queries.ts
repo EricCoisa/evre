@@ -10,10 +10,11 @@ import { getQueryConfig } from '@/lib/utils';
 import { Alive, Collector, EmulateMutationError } from '@/lib/api/collector';
 import { useApp } from '@/contexts/appProvider';
 
-export function useUsers(params?: PaginationParams) {
+export function useUsers(params?: PaginationParams, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['users', params],
     queryFn: Collector(() => getUsers(params)),
+    enabled: options?.enabled ?? true,
     ...getQueryConfig('USERS'),
   });
 }
