@@ -17,7 +17,12 @@ export class GetBoardUseCase {
       where: { projectId },
       orderBy: { position: 'asc' },
       include: {
-        tasks: { orderBy: { position: 'asc' } },
+        tasks: {
+          orderBy: { position: 'asc' },
+          include: {
+            assignee: { select: { id: true, name: true, email: true, imageUrl: true } },
+          },
+        },
       },
     });
   }

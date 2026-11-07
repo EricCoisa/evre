@@ -15681,6 +15681,11 @@
           "blockedReason": {
             "description": "Reason why the task is blocked",
             "type": "string"
+          },
+          "assigneeId": {
+            "description": "User ID of the task assignee (defaults to creator if omitted)",
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
@@ -15712,6 +15717,11 @@
           },
           "blockedReason": {
             "description": "Reason why the task is blocked",
+            "type": "string",
+            "nullable": true
+          },
+          "assigneeId": {
+            "description": "User ID of the task assignee or null to unassign",
             "type": "string",
             "nullable": true
           }

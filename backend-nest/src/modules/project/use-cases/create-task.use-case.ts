@@ -43,7 +43,11 @@ export class CreateTaskUseCase {
         description: dto.description,
         status: dto.status ?? 'WAITING',
         blockedReason: dto.status === 'BLOCKED' ? dto.blockedReason : null,
+        assigneeId: dto.assigneeId !== undefined ? dto.assigneeId : user.id,
         position: (maxPos._max.position ?? -1) + 1,
+      },
+      include: {
+        assignee: { select: { id: true, name: true, email: true, imageUrl: true } },
       },
     });
 

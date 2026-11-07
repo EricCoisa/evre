@@ -57,6 +57,7 @@ model User {
   milestoneApprovalResponses MilestoneApproval[]    @relation("ApprovalRespondedBy")
   projectInfoRequests        ProjectInfoRequest[]   @relation("InfoRequestedBy")
   projectInfoResponses       ProjectInfoRequest[]   @relation("InfoAnsweredBy")
+  assignedTasks              ProjectTask[]          @relation("TaskAssignee")
 
   @@index([deletedAt])
   @@map("users")

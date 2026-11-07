@@ -14,6 +14,11 @@ export const CreateTaskSchema = z
       .string()
       .optional()
       .describe('Reason why the task is blocked'),
+    assigneeId: z
+      .string()
+      .nullable()
+      .optional()
+      .describe('User ID of the task assignee (defaults to creator if omitted)'),
   })
   .strict();
 

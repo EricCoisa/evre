@@ -14,6 +14,11 @@ export const UpdateTaskSchema = z
       .nullable()
       .optional()
       .describe('Reason why the task is blocked'),
+    assigneeId: z
+      .string()
+      .nullable()
+      .optional()
+      .describe('User ID of the task assignee or null to unassign'),
   })
   .strict();
 

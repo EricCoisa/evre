@@ -30,6 +30,13 @@ export interface Milestone {
   tasks: MilestoneTask[];
 }
 
+export interface TaskAssignee {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  imageUrl?: string | null;
+}
+
 export interface MilestoneTask {
   id: string;
   milestoneId?: string;
@@ -37,6 +44,8 @@ export interface MilestoneTask {
   description?: string | null;
   status: ProjectTaskStatus;
   blockedReason?: string | null;
+  assigneeId?: string | null;
+  assignee?: TaskAssignee | null;
   position: number;
 }
 

@@ -8,6 +8,7 @@ import { MilestoneApprovalAction } from './milestone-approval-action';
 import { MilestoneDetailSheet } from './milestone-detail-sheet';
 import { MilestoneProgressBar, TASK_STATUS_CONFIG } from './milestone-progress';
 import { RichTextViewer } from './rich-text-viewer';
+import { UserAvatar } from './user-avatar';
 import {
   ChevronDown,
   ChevronRight,
@@ -16,6 +17,7 @@ import {
   MessageSquare,
   AlignLeft,
   AlertTriangle,
+  User,
 } from 'lucide-react';
 import type { Milestone, MilestoneTask, ProjectTaskStatus } from '@/lib/actions/project/types';
 
@@ -192,6 +194,32 @@ export function TaskListView({
                       </div>
 
                       <div className="flex items-center gap-2 flex-shrink-0">
+                        {/* Responsável pela Tarefa */}
+                        {task.assignee ? (
+                          <div
+                            className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded bg-muted/40 border text-xs"
+                            title={`Responsável: ${task.assignee.name || task.assignee.email}`}
+                          >
+                            <UserAvatar
+                              name={task.assignee.name}
+                              email={task.assignee.email}
+                              imageUrl={task.assignee.imageUrl}
+                              className="h-4 w-4 text-[8px]"
+                            />
+                            <span className="text-[11px] font-medium text-foreground truncate max-w-[120px]">
+                              {task.assignee.name || task.assignee.email}
+                            </span>
+                          </div>
+                        ) : (
+                          <div
+                            className="hidden sm:flex items-center gap-1 text-[10px] text-muted-foreground/60 italic px-1.5 py-0.5"
+                            title="Sem responsável"
+                          >
+                            <User className="h-3 w-3" />
+                            <span>Sem resp.</span>
+                          </div>
+                        )}
+
                         <div className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
                           <MessageSquare className="h-3.5 w-3.5" />
                           <span className="text-xs">Ver</span>

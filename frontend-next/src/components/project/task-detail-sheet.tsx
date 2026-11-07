@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Sheet,
   SheetContent,
@@ -18,6 +18,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import {
   Dialog,
@@ -30,11 +31,14 @@ import {
 import { RichTextInput } from '@/components/rich-text-input';
 import { RichTextViewer } from './rich-text-viewer';
 import { ProjectCommentsThread } from './project-comments-thread';
+import { UserAvatar } from './user-avatar';
 import { TASK_STATUS_CONFIG } from './milestone-progress';
 import { useUpdateTask } from '@/lib/actions/project/queries';
-import { Check, Edit3, AlignLeft, AlertTriangle } from 'lucide-react';
+import { useUsers } from '@/lib/actions/user/queries';
+import { Check, Edit3, AlignLeft, AlertTriangle, User, UserX } from 'lucide-react';
 import { toast } from 'sonner';
 import type { MilestoneTask, ProjectTaskStatus } from '@/lib/actions/project/types';
+import type { UserDto } from '@/lib/generated/schemas';
 
 const RICH_TEXT_FORMAT_LABELS = {
   bold: 'Negrito (*texto*)',
@@ -87,11 +91,23 @@ function TaskDetailSheetContent({
   canEdit?: boolean;
 }) {
   const updateTaskMutation = useUpdateTask(projectId);
+  const { data: usersData } = useUsers();
+
+  const users = useMemo(() => {
+    if (!usersData) return [];
+    const raw = Array.isArray(usersData)
+      ? (usersData as UserDto[])
+      : (usersData as { data?: UserDto[] })?.data ??
+        (usersData as { items?: UserDto[] })?.items ??
+        [];
+    return raw;
+  }, [usersData]);
 
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description ?? '');
   const [status, setStatus] = useState<ProjectTaskStatus>(task.status || 'WAITING');
   const [blockedReason, setBlockedReason] = useState(task.blockedReason ?? '');
+  const [assigneeId, setAssigneeId] = useState<string>(task.assigneeId ?? '');
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingDesc, setIsEditingDesc] = useState(false);
@@ -141,7 +157,6 @@ function TaskDetailSheetContent({
     if (newStatus === status) return;
 
     if (newStatus === 'BLOCKED') {
-      // Abre modal para preencher o motivo do bloqueio
       setTempBlockedReason(blockedReason);
       setIsBlockedReasonModalOpen(true);
       return;
@@ -161,6 +176,25 @@ function TaskDetailSheetContent({
       toast.success(`Status alterado para ${TASK_STATUS_CONFIG[newStatus].label}`);
     } catch {
       toast.error('Erro ao alterar status');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleAssigneeChange = async (newAssigneeId: string) => {
+    const resolved = newAssigneeId === '__UNASSIGNED__' ? null : newAssigneeId;
+    if (resolved === (assigneeId || null)) return;
+
+    setIsSaving(true);
+    try {
+      await updateTaskMutation.mutateAsync({
+        taskId: task.id,
+        data: { assigneeId: resolved },
+      });
+      setAssigneeId(resolved ?? '');
+      toast.success(resolved ? 'Responsável atualizado' : 'Responsável removido da tarefa');
+    } catch {
+      toast.error('Erro ao atualizar responsável');
     } finally {
       setIsSaving(false);
     }
@@ -203,6 +237,8 @@ function TaskDetailSheetContent({
 
   const currentStatusConfig = TASK_STATUS_CONFIG[status] ?? TASK_STATUS_CONFIG.WAITING;
   const StatusIcon = currentStatusConfig.icon;
+
+  const currentAssigneeUser = users.find((u) => u.id === assigneeId) ?? task.assignee;
 
   return (
     <>
@@ -304,6 +340,61 @@ function TaskDetailSheetContent({
               )}
             </div>
           )}
+
+          {/* Linha do Responsável */}
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/50 text-xs">
+            <span className="text-muted-foreground font-medium flex items-center gap-1.5">
+              <User className="h-3.5 w-3.5 text-primary" />
+              Responsável:
+            </span>
+
+            {canEdit ? (
+              <Select
+                value={assigneeId || '__UNASSIGNED__'}
+                onValueChange={handleAssigneeChange}
+                disabled={isSaving}
+              >
+                <SelectTrigger className="h-7 text-xs w-52 bg-background">
+                  <SelectValue placeholder="Selecione o responsável..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__UNASSIGNED__" className="text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <UserX className="h-3.5 w-3.5" />
+                      <span>Sem responsável</span>
+                    </div>
+                  </SelectItem>
+                  {users.map((u) => (
+                    <SelectItem key={u.id} value={u.id} className="text-xs">
+                      <div className="flex items-center gap-2">
+                        <UserAvatar
+                          name={u.name}
+                          email={u.email}
+                          imageUrl={u.imageUrl}
+                          className="h-4 w-4 text-[9px]"
+                        />
+                        <span className="truncate">{u.name || u.email}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : currentAssigneeUser ? (
+              <div className="flex items-center gap-1.5 bg-background px-2 py-1 rounded border shadow-xs">
+                <UserAvatar
+                  name={currentAssigneeUser.name}
+                  email={currentAssigneeUser.email}
+                  imageUrl={currentAssigneeUser.imageUrl}
+                  className="h-4 w-4 text-[9px]"
+                />
+                <span className="font-medium text-foreground">
+                  {currentAssigneeUser.name || currentAssigneeUser.email}
+                </span>
+              </div>
+            ) : (
+              <span className="text-muted-foreground italic">Sem responsável</span>
+            )}
+          </div>
 
           <SheetDescription className="sr-only">
             Detalhes e comentários da tarefa {task.title}

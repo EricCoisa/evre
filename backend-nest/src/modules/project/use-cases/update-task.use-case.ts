@@ -36,6 +36,9 @@ export class UpdateTaskUseCase {
     return this.prisma.projectTask.update({
       where: { id: taskId },
       data: updateData,
+      include: {
+        assignee: { select: { id: true, name: true, email: true, imageUrl: true } },
+      },
     });
   }
 }

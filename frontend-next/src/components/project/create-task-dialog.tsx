@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -21,10 +21,14 @@ import {
 } from '@/components/ui/select';
 import { RichTextInput } from '@/components/rich-text-input';
 import { useCreateTask } from '@/lib/actions/project/queries';
+import { useMe } from '@/lib/actions/auth/queries';
+import { useUsers } from '@/lib/actions/user/queries';
+import { UserAvatar } from './user-avatar';
 import { TASK_STATUS_CONFIG } from './milestone-progress';
-import { Plus, Loader2, CheckSquare, AlertTriangle } from 'lucide-react';
+import { Plus, Loader2, CheckSquare, AlertTriangle, UserX } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ProjectTaskStatus } from '@/lib/actions/project/types';
+import type { UserDto } from '@/lib/generated/schemas';
 
 const RICH_TEXT_FORMAT_LABELS = {
   bold: 'Negrito (*texto*)',
@@ -84,6 +88,18 @@ function CreateTaskDialogContent({
   onSuccess?: () => void;
 }) {
   const createTaskMutation = useCreateTask(projectId);
+  const { data: meData } = useMe();
+  const { data: usersData } = useUsers();
+
+  const users = useMemo(() => {
+    if (!usersData) return [];
+    const raw = Array.isArray(usersData)
+      ? (usersData as UserDto[])
+      : (usersData as { data?: UserDto[] })?.data ??
+        (usersData as { items?: UserDto[] })?.items ??
+        [];
+    return raw;
+  }, [usersData]);
 
   const defaultMilestoneId =
     initialMilestoneId ?? (availableMilestones.length > 0 ? availableMilestones[0].id : '');
@@ -92,6 +108,8 @@ function CreateTaskDialogContent({
   const [title, setTitle] = useState('');
   const [status, setStatus] = useState<ProjectTaskStatus>('WAITING');
   const [blockedReason, setBlockedReason] = useState('');
+  // Por default, seleciona o criador (meData?.id)
+  const [assigneeId, setAssigneeId] = useState<string>(meData?.id ?? '__CREATOR__');
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -112,6 +130,16 @@ function CreateTaskDialogContent({
       return;
     }
 
+    // Define o assigneeId: se for '__UNASSIGNED__', envia null. Se for '__CREATOR__', usa meData?.id ou deixa undefined pro backend usar user.id
+    let resolvedAssigneeId: string | null | undefined = undefined;
+    if (assigneeId === '__UNASSIGNED__') {
+      resolvedAssigneeId = null;
+    } else if (assigneeId === '__CREATOR__') {
+      resolvedAssigneeId = meData?.id ?? undefined;
+    } else if (assigneeId) {
+      resolvedAssigneeId = assigneeId;
+    }
+
     setIsSubmitting(true);
     try {
       await createTaskMutation.mutateAsync({
@@ -120,6 +148,7 @@ function CreateTaskDialogContent({
           title: trimmedTitle,
           status,
           blockedReason: status === 'BLOCKED' ? blockedReason.trim() : undefined,
+          assigneeId: resolvedAssigneeId,
           description: description.trim() || undefined,
         },
       });
@@ -156,7 +185,7 @@ function CreateTaskDialogContent({
       </DialogHeader>
 
       <div className="flex-1 overflow-y-auto px-6 py-2 space-y-4">
-        {/* Seletor de Etapa (se houver mais de uma e não estiver pré-fixado) */}
+        {/* Seletor de Etapa */}
         {availableMilestones.length > 0 && (
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-foreground">
@@ -196,34 +225,95 @@ function CreateTaskDialogContent({
           />
         </div>
 
-        {/* Status da Tarefa */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium text-foreground">
-            Status Inicial
-          </label>
-          <Select
-            value={status}
-            onValueChange={(val) => setStatus(val as ProjectTaskStatus)}
-            disabled={isSubmitting}
-          >
-            <SelectTrigger className="h-9 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {statusList.map((st) => {
-                const conf = TASK_STATUS_CONFIG[st];
-                const Icon = conf.icon;
-                return (
-                  <SelectItem key={st} value={st} className="text-xs">
+        {/* Grid com Status e Responsável */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Status da Tarefa */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-foreground">
+              Status Inicial
+            </label>
+            <Select
+              value={status}
+              onValueChange={(val) => setStatus(val as ProjectTaskStatus)}
+              disabled={isSubmitting}
+            >
+              <SelectTrigger className="h-9 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {statusList.map((st) => {
+                  const conf = TASK_STATUS_CONFIG[st];
+                  const Icon = conf.icon;
+                  return (
+                    <SelectItem key={st} value={st} className="text-xs">
+                      <div className="flex items-center gap-2">
+                        <Icon className="h-3.5 w-3.5" />
+                        <span>{conf.label}</span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Responsável pela Tarefa (Opcional - padrão é o criador) */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-foreground flex items-center justify-between">
+              <span>Responsável</span>
+              <span className="text-[10px] text-muted-foreground font-normal">Padrão: Criador</span>
+            </label>
+            <Select
+              value={assigneeId}
+              onValueChange={setAssigneeId}
+              disabled={isSubmitting}
+            >
+              <SelectTrigger className="h-9 text-xs">
+                <SelectValue placeholder="Selecione o responsável..." />
+              </SelectTrigger>
+              <SelectContent>
+                {/* Opção Padrão: Criador (Você) */}
+                {meData && (
+                  <SelectItem value={meData.id} className="text-xs">
                     <div className="flex items-center gap-2">
-                      <Icon className="h-3.5 w-3.5" />
-                      <span>{conf.label}</span>
+                      <UserAvatar
+                        name={meData.name}
+                        email={meData.email}
+                        imageUrl={meData.imageUrl}
+                        className="h-4 w-4 text-[9px]"
+                      />
+                      <span className="font-medium truncate">{meData.name || meData.email} (Você - Criador)</span>
                     </div>
                   </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
+                )}
+
+                {/* Sem Responsável */}
+                <SelectItem value="__UNASSIGNED__" className="text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <UserX className="h-3.5 w-3.5" />
+                    <span>Sem responsável</span>
+                  </div>
+                </SelectItem>
+
+                {/* Outros membros */}
+                {users
+                  .filter((u) => u.id !== meData?.id)
+                  .map((u) => (
+                    <SelectItem key={u.id} value={u.id} className="text-xs">
+                      <div className="flex items-center gap-2">
+                        <UserAvatar
+                          name={u.name}
+                          email={u.email}
+                          imageUrl={u.imageUrl}
+                          className="h-4 w-4 text-[9px]"
+                        />
+                        <span className="truncate">{u.name || u.email}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Motivo do Bloqueio (visível se BLOCKED) */}

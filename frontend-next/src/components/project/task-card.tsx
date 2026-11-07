@@ -12,8 +12,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { GripVertical, Trash2, AlignLeft, MessageSquare, AlertTriangle, ChevronDown } from 'lucide-react';
+import { GripVertical, Trash2, AlignLeft, MessageSquare, AlertTriangle, ChevronDown, User } from 'lucide-react';
 import { TASK_STATUS_CONFIG } from './milestone-progress';
+import { UserAvatar } from './user-avatar';
 import { useUpdateTask } from '@/lib/actions/project/queries';
 import { toast } from 'sonner';
 import type { MilestoneTask, ProjectTaskStatus } from '@/lib/actions/project/types';
@@ -191,19 +192,44 @@ export function TaskCard({ projectId, task, canEdit = true, onSelect, onDelete }
             </div>
           )}
 
-          {/* Rodapé do Card com pistas visuais */}
-          <div className="flex items-center gap-3 text-[11px] text-muted-foreground pt-0.5">
-            {task.description && (
-              <div className="flex items-center gap-1" title="Contém descrição detalhada">
-                <AlignLeft className="h-3 w-3 text-muted-foreground/70" />
-                <span className="truncate max-w-[140px] text-[10px] text-muted-foreground/80">
-                  Detalhes
+          {/* Rodapé do Card: Responsável, Detalhes e Ações */}
+          <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground pt-1 border-t border-border/40">
+            {/* Responsável pela Tarefa */}
+            {task.assignee ? (
+              <div
+                className="flex items-center gap-1.5 min-w-0"
+                title={`Responsável: ${task.assignee.name || task.assignee.email}`}
+              >
+                <UserAvatar
+                  name={task.assignee.name}
+                  email={task.assignee.email}
+                  imageUrl={task.assignee.imageUrl}
+                  className="h-4 w-4 text-[8px]"
+                />
+                <span className="text-[10px] text-muted-foreground truncate max-w-[110px] font-medium">
+                  {task.assignee.name || task.assignee.email}
                 </span>
               </div>
+            ) : (
+              <div
+                className="flex items-center gap-1 text-[10px] text-muted-foreground/60 italic"
+                title="Sem responsável atribuído"
+              >
+                <User className="h-3 w-3" />
+                <span>Sem resp.</span>
+              </div>
             )}
-            <div className="flex items-center gap-1 hover:text-foreground transition-colors ml-auto">
-              <MessageSquare className="h-3 w-3" />
-              <span className="text-[10px]">Abrir</span>
+
+            <div className="flex items-center gap-2 ml-auto flex-shrink-0">
+              {task.description && (
+                <div className="flex items-center gap-0.5 text-muted-foreground/70" title="Contém descrição detalhada">
+                  <AlignLeft className="h-3 w-3" />
+                </div>
+              )}
+              <div className="flex items-center gap-1 hover:text-foreground transition-colors">
+                <MessageSquare className="h-3 w-3" />
+                <span className="text-[10px]">Abrir</span>
+              </div>
             </div>
           </div>
         </CardContent>
