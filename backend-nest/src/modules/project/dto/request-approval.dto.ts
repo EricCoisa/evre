@@ -6,4 +6,3 @@ const schema = z.object({
 });
 
 export class RequestApprovalDto extends createZodDto(schema) {}
-

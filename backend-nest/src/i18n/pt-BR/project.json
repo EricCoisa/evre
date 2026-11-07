@@ -5,8 +5,10 @@
   "comment_not_found": "Comentário não encontrado",
   "approval_not_found": "Aprovação não encontrada",
   "approval_already_responded": "Esta aprovação já foi respondida",
+  "approval_cannot_cancel": "Apenas aprovações pendentes podem ser canceladas",
   "info_request_not_found": "Solicitação de informação não encontrada",
   "info_request_already_answered": "Esta solicitação já foi respondida",
+  "info_request_cannot_cancel": "Apenas solicitações pendentes podem ser canceladas",
   "create": {
     "title": "Criar projeto",
     "description": "Cria um novo projeto para uma empresa"
@@ -47,11 +49,13 @@
   "approval": {
     "request": { "title": "Solicitar aprovação de milestone" },
     "respond": { "title": "Responder aprovação de milestone" },
+    "cancel": { "title": "Cancelar aprovação de milestone" },
     "list": { "title": "Listar aprovações de milestone" }
   },
   "infoRequest": {
     "create": { "title": "Criar solicitação de informação" },
     "answer": { "title": "Responder solicitação de informação" },
+    "cancel": { "title": "Cancelar solicitação de informação" },
     "list": { "title": "Listar solicitações de informação" },
     "getValue": { "title": "Obter valor descriptografado" }
   }

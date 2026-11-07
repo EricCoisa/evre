@@ -7,8 +7,8 @@ import {
   createMilestone, updateMilestone, deleteMilestone, reorderMilestones,
   createTask, updateTask, deleteTask, moveTask, reorderTasks,
   createComment, getComments, deleteComment,
-  requestApproval, respondApproval, getApprovals,
-  createInfoRequest, answerInfoRequest, getInfoRequests, getInfoRequestValue,
+  requestApproval, respondApproval, cancelApproval, getApprovals,
+  createInfoRequest, answerInfoRequest, cancelInfoRequest, getInfoRequests, getInfoRequestValue,
 } from "./api";
 import type { PaginationParams } from "../../types/pagination.types";
 import { getQueryConfig } from '../../utils';
@@ -103,7 +103,7 @@ export function useProjectBoard(projectId: string) {
 export function useCreateMilestone(projectId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: { title: string }) => createMilestone(projectId, data),
+    mutationFn: (data: { title: string; description?: string }) => createMilestone(projectId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project', projectId, 'board'] });
     }
@@ -113,7 +113,7 @@ export function useCreateMilestone(projectId: string) {
 export function useUpdateMilestone(projectId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ milestoneId, data }: { milestoneId: string; data: { title?: string } }) =>
+    mutationFn: ({ milestoneId, data }: { milestoneId: string; data: { title?: string; description?: string } }) =>
       updateMilestone(projectId, milestoneId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project', projectId, 'board'] });
@@ -261,6 +261,17 @@ export function useRespondApproval(projectId: string) {
   });
 }
 
+export function useCancelApproval(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (approvalId: string) => cancelApproval(projectId, approvalId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project', projectId, 'approvals'] });
+      queryClient.invalidateQueries({ queryKey: ['project', projectId, 'board'] });
+    }
+  });
+}
+
 // Info Requests
 export function useInfoRequests(projectId: string) {
   return useQuery({
@@ -285,6 +296,16 @@ export function useAnswerInfoRequest(projectId: string) {
   return useMutation({
     mutationFn: ({ requestId, data }: { requestId: string; data: AnswerInfoRequestDto }) =>
       answerInfoRequest(projectId, requestId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project', projectId, 'info-requests'] });
+    }
+  });
+}
+
+export function useCancelInfoRequest(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (requestId: string) => cancelInfoRequest(projectId, requestId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project', projectId, 'info-requests'] });
     }

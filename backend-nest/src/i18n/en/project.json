@@ -5,8 +5,10 @@
   "comment_not_found": "Comment not found",
   "approval_not_found": "Approval not found",
   "approval_already_responded": "This approval has already been responded to",
+  "approval_cannot_cancel": "Only pending approvals can be cancelled",
   "info_request_not_found": "Info request not found",
   "info_request_already_answered": "This info request has already been answered",
+  "info_request_cannot_cancel": "Only pending requests can be cancelled",
   "create": {
     "title": "Create project",
     "description": "Create a new project for a company"
@@ -47,11 +49,13 @@
   "approval": {
     "request": { "title": "Request milestone approval" },
     "respond": { "title": "Respond to milestone approval" },
+    "cancel": { "title": "Cancel milestone approval" },
     "list": { "title": "List milestone approvals" }
   },
   "infoRequest": {
     "create": { "title": "Create info request" },
     "answer": { "title": "Answer info request" },
+    "cancel": { "title": "Cancel info request" },
     "list": { "title": "List info requests" },
     "getValue": { "title": "Get decrypted info request value" }
   }

@@ -13,15 +13,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { TaskCard } from './task-card';
 import { MilestoneApprovalAction } from './milestone-approval-action';
-import { ProjectCommentsThread } from './project-comments-thread';
+import { MilestoneDetailSheet } from './milestone-detail-sheet';
 import {
   GripVertical,
   Plus,
@@ -30,6 +24,7 @@ import {
   Edit2,
   Check,
   MessageSquare,
+  AlignLeft,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUpdateMilestone } from '@/lib/actions/project/queries';
@@ -59,7 +54,7 @@ export function MilestoneColumn({
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [title, setTitle] = useState(milestone.title);
-  const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   const {
     attributes,
@@ -182,13 +177,17 @@ export function MilestoneColumn({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setIsDetailOpen(true)}>
+                    <AlignLeft className="mr-2 h-3.5 w-3.5" />
+                    {canEdit ? 'Detalhes e descrição' : 'Ver detalhes'}
+                  </DropdownMenuItem>
                   {canEdit && (
                     <DropdownMenuItem onClick={() => setIsEditingTitle(true)}>
                       <Edit2 className="mr-2 h-3.5 w-3.5" />
                       Renomear etapa
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuItem onClick={() => setIsCommentsOpen(true)}>
+                  <DropdownMenuItem onClick={() => setIsDetailOpen(true)}>
                     <MessageSquare className="mr-2 h-3.5 w-3.5" />
                     Comentários da etapa
                   </DropdownMenuItem>
@@ -205,6 +204,18 @@ export function MilestoneColumn({
               </DropdownMenu>
             </div>
           </div>
+
+          {/* Descrição resumida da etapa (se houver) */}
+          {milestone.description && (
+            <button
+              type="button"
+              onClick={() => setIsDetailOpen(true)}
+              className="text-left text-[11px] text-muted-foreground line-clamp-1 hover:text-foreground transition-colors cursor-pointer"
+              title="Clique para ver a descrição detalhada"
+            >
+              {milestone.description}
+            </button>
+          )}
 
           {/* Validação / Aprovação da Milestone */}
           <div className="flex items-center justify-between pt-0.5">
@@ -263,24 +274,14 @@ export function MilestoneColumn({
         )}
       </Card>
 
-      {/* Modal de Comentários da Milestone */}
-      <Dialog open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-base font-semibold">
-              Comentários: {milestone.title}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-2">
-            <ProjectCommentsThread
-              projectId={projectId}
-              entityType="MILESTONE"
-              entityId={milestone.id}
-              title="Discussão da Etapa"
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Drawer de Detalhes, Descrição Rica e Comentários da Milestone */}
+      <MilestoneDetailSheet
+        projectId={projectId}
+        milestone={milestone}
+        open={isDetailOpen}
+        onOpenChange={setIsDetailOpen}
+        canEdit={canEdit}
+      />
     </div>
   );
 }

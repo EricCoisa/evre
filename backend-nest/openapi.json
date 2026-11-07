@@ -9776,6 +9776,43 @@
         ]
       }
     },
+    "/project/{id}/approvals/{approvalId}/cancel": {
+      "patch": {
+        "operationId": "ProjectController_cancelMilestoneApproval",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "approvalId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Approval cancelled"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "project.approval.cancel.title",
+        "tags": [
+          "project"
+        ]
+      }
+    },
     "/project/{id}/info-requests": {
       "post": {
         "operationId": "ProjectController_addInfoRequest",
@@ -9884,6 +9921,43 @@
           }
         ],
         "summary": "project.infoRequest.answer.title",
+        "tags": [
+          "project"
+        ]
+      }
+    },
+    "/project/{id}/info-requests/{requestId}/cancel": {
+      "patch": {
+        "operationId": "ProjectController_cancelInfoRequestEndpoint",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "requestId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Info request cancelled"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "project.infoRequest.cancel.title",
         "tags": [
           "project"
         ]
@@ -15556,6 +15630,10 @@
             "description": "Milestone (column) title",
             "type": "string",
             "minLength": 1
+          },
+          "description": {
+            "description": "Milestone rich text description",
+            "type": "string"
           }
         },
         "required": [
@@ -15569,6 +15647,10 @@
             "description": "Milestone title",
             "type": "string",
             "minLength": 1
+          },
+          "description": {
+            "description": "Milestone rich text description",
+            "type": "string"
           }
         }
       },

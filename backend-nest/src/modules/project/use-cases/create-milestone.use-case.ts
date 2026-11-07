@@ -30,6 +30,7 @@ export class CreateMilestoneUseCase {
       data: {
         projectId,
         title: dto.title,
+        description: dto.description,
         position: (maxPos._max.position ?? -1) + 1,
       },
     });

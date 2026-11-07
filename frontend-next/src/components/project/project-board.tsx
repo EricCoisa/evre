@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -13,7 +13,6 @@ import {
   useSensors,
   type DragStartEvent,
   type DragEndEvent,
-  type DragOverEvent,
   type CollisionDetection,
 } from '@dnd-kit/core';
 import {
@@ -23,7 +22,6 @@ import {
 } from '@dnd-kit/sortable';
 import {
   useProjectBoard,
-  useCreateMilestone,
   useDeleteMilestone,
   useReorderMilestones,
   useCreateTask,
@@ -35,8 +33,8 @@ import { MilestoneColumn } from './milestone-column';
 import { TaskCard } from './task-card';
 import { TaskListView } from './task-list-view';
 import { TaskDetailSheet } from './task-detail-sheet';
+import { CreateMilestoneDialog } from './create-milestone-dialog';
 import { ClientActionBanner } from './client-action-banner';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -59,7 +57,6 @@ export function ProjectBoard({
   onGoToRequests,
 }: ProjectBoardProps) {
   const { data: boardData, isLoading } = useProjectBoard(projectId);
-  const createMilestoneMutation = useCreateMilestone(projectId);
   const deleteMilestoneMutation = useDeleteMilestone(projectId);
   const reorderMilestonesMutation = useReorderMilestones(projectId);
   const createTaskMutation = useCreateTask(projectId);
@@ -68,7 +65,7 @@ export function ProjectBoard({
   const reorderTasksMutation = useReorderTasks(projectId);
 
   const [viewMode, setViewMode] = useState<'board' | 'list'>('board');
-  const [newMilestoneTitle, setNewMilestoneTitle] = useState('');
+  const [isCreateMilestoneOpen, setIsCreateMilestoneOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<MilestoneTask | null>(null);
   const [selectedMilestoneTitle, setSelectedMilestoneTitle] = useState<string>('');
   const [activeTask, setActiveTask] = useState<MilestoneTask | null>(null);
@@ -76,7 +73,24 @@ export function ProjectBoard({
 
   // Estado local para permitir drag and drop otimista e fluido sem efeito rebote
   const [items, setItems] = useState<Milestone[]>([]);
+  const [prevBoardData, setPrevBoardData] = useState(boardData);
   const [searchQuery, setSearchQuery] = useState('');
+
+  if (boardData !== prevBoardData) {
+    setPrevBoardData(boardData);
+    const raw = Array.isArray(boardData)
+      ? boardData
+      : Array.isArray((boardData as { data?: Milestone[] })?.data)
+      ? (boardData as { data: Milestone[] }).data
+      : [];
+
+    setItems(
+      raw.map((m) => ({
+        ...m,
+        tasks: Array.isArray(m.tasks) ? m.tasks : [],
+      }))
+    );
+  }
 
   const displayedItems = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -99,23 +113,6 @@ export function ProjectBoard({
     return displayedItems.reduce((acc, m) => acc + (m.tasks?.length ?? 0), 0);
   }, [displayedItems]);
 
-  useEffect(() => {
-    if (boardData) {
-      const raw = Array.isArray(boardData)
-        ? boardData
-        : Array.isArray((boardData as { data?: Milestone[] })?.data)
-        ? (boardData as { data: Milestone[] }).data
-        : [];
-
-      setItems(
-        raw.map((m) => ({
-          ...m,
-          tasks: Array.isArray(m.tasks) ? m.tasks : [],
-        }))
-      );
-    }
-  }, [boardData]);
-
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -124,18 +121,6 @@ export function ProjectBoard({
     }),
     useSensor(KeyboardSensor)
   );
-
-  const handleAddMilestone = async () => {
-    const trimmed = newMilestoneTitle.trim();
-    if (!trimmed) return;
-    try {
-      await createMilestoneMutation.mutateAsync({ title: trimmed });
-      setNewMilestoneTitle('');
-      toast.success('Etapa adicionada');
-    } catch {
-      toast.error('Erro ao adicionar etapa');
-    }
-  };
 
   const handleDeleteMilestone = async (milestoneId: string) => {
     try {
@@ -447,24 +432,14 @@ export function ProjectBoard({
         </div>
 
         {canEdit && (
-          <div className="flex items-center gap-2">
-            <Input
-              placeholder="Nome da nova etapa..."
-              value={newMilestoneTitle}
-              onChange={(e) => setNewMilestoneTitle(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleAddMilestone()}
-              className="h-8 text-xs w-48 sm:w-60"
-            />
-            <Button
-              size="sm"
-              onClick={handleAddMilestone}
-              disabled={!newMilestoneTitle.trim()}
-              className="h-8 text-xs px-3"
-            >
-              <Plus className="mr-1 h-3.5 w-3.5" />
-              Nova Etapa
-            </Button>
-          </div>
+          <Button
+            size="sm"
+            onClick={() => setIsCreateMilestoneOpen(true)}
+            className="h-8 text-xs px-3"
+          >
+            <Plus className="mr-1 h-3.5 w-3.5" />
+            Nova Etapa
+          </Button>
         )}
       </div>
 
@@ -509,30 +484,16 @@ export function ProjectBoard({
             </SortableContext>
 
             {canEdit && (
-              <Card className="w-[280px] flex-shrink-0 border-dashed bg-muted/10 hover:bg-muted/20 transition-colors">
-                <CardContent className="p-4 space-y-3">
-                  <div className="text-xs font-semibold text-muted-foreground">
-                    + Adicionar outra etapa
-                  </div>
-                  <div className="flex gap-1.5">
-                    <Input
-                      placeholder="Ex: Entrega e Validação"
-                      className="h-8 text-xs bg-background"
-                      value={newMilestoneTitle}
-                      onChange={(e) => setNewMilestoneTitle(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleAddMilestone()}
-                    />
-                    <Button
-                      size="sm"
-                      className="h-8 w-8 p-0 flex-shrink-0"
-                      onClick={handleAddMilestone}
-                      disabled={!newMilestoneTitle.trim()}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <button
+                type="button"
+                onClick={() => setIsCreateMilestoneOpen(true)}
+                className="w-[280px] h-32 flex-shrink-0 border-2 border-dashed rounded-xl bg-muted/10 hover:bg-muted/20 hover:border-primary/50 transition-all flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-foreground cursor-pointer group"
+              >
+                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors shadow-xs">
+                  <Plus className="h-4 w-4" />
+                </div>
+                <span className="text-xs font-semibold">+ Adicionar outra etapa</span>
+              </button>
             )}
           </div>
 
@@ -568,6 +529,13 @@ export function ProjectBoard({
         open={!!selectedTask}
         onOpenChange={(open) => !open && setSelectedTask(null)}
         canEdit={canEdit}
+      />
+
+      {/* Modal para Criar Nova Etapa com Rich Text de Descrição */}
+      <CreateMilestoneDialog
+        projectId={projectId}
+        open={isCreateMilestoneOpen}
+        onOpenChange={setIsCreateMilestoneOpen}
       />
     </div>
   );

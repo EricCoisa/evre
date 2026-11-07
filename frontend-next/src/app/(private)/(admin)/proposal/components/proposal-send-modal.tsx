@@ -129,7 +129,7 @@ export function ProposalSendModal({
   function handleFormSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!valid) return;
-    if (hasImage && draftArtifact && !(draftArtifact.published && draftArtifact.public)) {
+    if (hasImage && draftArtifact && !(draftArtifact.published && draftArtifact.publicToken)) {
       setConfirmOpen(true);
       return;
     }
@@ -140,7 +140,7 @@ export function ProposalSendModal({
     let headerImageUrl: string | undefined;
     if (hasImage && draftArtifact) {
       const target =
-        draftArtifact.published && draftArtifact.public && draftArtifact.publicToken
+        draftArtifact.published && draftArtifact.publicToken
           ? draftArtifact
           : await publishArtifact.mutateAsync({ id: draftArtifact.id, isPublic: true });
       headerImageUrl = `${API_BASE_URL}/artifacts/public/${target.publicToken}`;

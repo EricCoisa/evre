@@ -5,6 +5,7 @@ import {
   useApprovals,
   useRequestApproval,
   useRespondApproval,
+  useCancelApproval,
 } from '@/lib/actions/project/queries';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +17,16 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
 import {
   CheckCircle2,
@@ -32,7 +43,7 @@ import { toast } from 'sonner';
 interface ApprovalItem {
   id: string;
   milestoneId: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
   requestedById: string;
   respondedById?: string | null;
   requestNote?: string | null;
@@ -59,27 +70,29 @@ export function MilestoneApprovalAction({
   const { data: approvalsData, isLoading } = useApprovals(projectId, milestoneId);
   const requestApprovalMutation = useRequestApproval(projectId);
   const respondApprovalMutation = useRespondApproval(projectId);
+  const cancelApprovalMutation = useCancelApproval(projectId);
 
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [requestNote, setRequestNote] = useState('');
   const [isRespondOpen, setIsRespondOpen] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   const [responseNote, setResponseNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isReenviando, setIsReenviando] = useState(false);
-
-  const rawApprovals = Array.isArray(approvalsData)
-    ? (approvalsData as unknown as ApprovalItem[])
-    : ((approvalsData as unknown as { data?: ApprovalItem[] })?.data ?? []);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   // Ordena rigorosamente do mais recente para o mais antigo
   const sortedApprovals = useMemo(() => {
-    return [...rawApprovals].sort((a, b) => {
+    const raw = Array.isArray(approvalsData)
+      ? (approvalsData as unknown as ApprovalItem[])
+      : ((approvalsData as unknown as { data?: ApprovalItem[] })?.data ?? []);
+    return [...raw].sort((a, b) => {
       const timeA = new Date(a.requestedAt).getTime();
       const timeB = new Date(b.requestedAt).getTime();
       return timeB - timeA;
     });
-  }, [rawApprovals]);
+  }, [approvalsData]);
 
   // A aprovação mais recente é SEMPRE o primeiro item do array ordenado decrescente
   const latestApproval = sortedApprovals[0] ?? null;
@@ -127,6 +140,45 @@ export function MilestoneApprovalAction({
       setIsSubmitting(false);
     }
   };
+
+  const handleCancelApproval = async () => {
+    if (!latestApproval) return;
+    setIsCancelling(true);
+    try {
+      await cancelApprovalMutation.mutateAsync(latestApproval.id);
+      toast.success('Pedido de validação cancelado!');
+      setIsCancelConfirmOpen(false);
+      setIsFeedbackOpen(false);
+    } catch {
+      toast.error('Erro ao cancelar pedido de validação');
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  const cancelConfirmationDialog = (
+    <AlertDialog open={isCancelConfirmOpen} onOpenChange={setIsCancelConfirmOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Cancelar pedido de validação?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Deseja cancelar o pedido de validação da etapa <strong>{milestoneTitle}</strong>?
+            O cliente não precisará avaliá-la até que uma nova solicitação seja enviada.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isCancelling}>Voltar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleCancelApproval}
+            disabled={isCancelling}
+            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+          >
+            {isCancelling ? 'Cancelando...' : 'Sim, cancelar pedido'}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
 
   if (isLoading) return null;
 
@@ -203,28 +255,8 @@ export function MilestoneApprovalAction({
     </Dialog>
   );
 
-  // 1. Nenhuma aprovação solicitada ainda
-  if (!latestApproval) {
-    if (!canEdit) return null;
-    return (
-      <>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-6 text-[10px] text-muted-foreground hover:text-primary px-1.5"
-          onClick={() => setIsRequestModalOpen(true)}
-          title="Pedir para o cliente validar e aprovar esta etapa"
-        >
-          <ShieldCheck className="mr-1 h-3 w-3" />
-          Pedir aprovação
-        </Button>
-        {requestApprovalDialog}
-      </>
-    );
-  }
-
-  // 2. Modal Compartilhado de Feedback do Cliente e Histórico
-  const feedbackDialog = (
+  // Modal Compartilhado de Feedback do Cliente e Histórico
+  const feedbackDialog = latestApproval ? (
     <Dialog open={isFeedbackOpen} onOpenChange={setIsFeedbackOpen}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
@@ -385,6 +417,11 @@ export function MilestoneApprovalAction({
                             <Clock className="h-3 w-3" /> Pendente
                           </span>
                         )}
+                        {appr.status === 'CANCELLED' && (
+                          <span className="text-muted-foreground flex items-center gap-1 font-semibold">
+                            <XCircle className="h-3 w-3" /> Cancelada
+                          </span>
+                        )}
                         {idx === 0 && (
                           <span className="text-[9px] text-primary font-semibold">
                             (Mais recente)
@@ -423,23 +460,75 @@ export function MilestoneApprovalAction({
             Fechar
           </Button>
 
-          {canEdit && latestApproval.status === 'REJECTED' && (
-            <Button
-              size="sm"
-              className="text-xs gap-1.5"
-              onClick={() => {
-                setIsFeedbackOpen(false);
-                setIsRequestModalOpen(true);
-              }}
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-              Reenviar para Aprovação
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {canEdit && latestApproval.status === 'PENDING' && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs text-destructive hover:bg-destructive/10 border-destructive/30 gap-1.5"
+                onClick={() => {
+                  setIsFeedbackOpen(false);
+                  setIsCancelConfirmOpen(true);
+                }}
+              >
+                <XCircle className="h-3.5 w-3.5" />
+                Cancelar Pedido
+              </Button>
+            )}
+
+            {canEdit && latestApproval.status === 'REJECTED' && (
+              <Button
+                size="sm"
+                className="text-xs gap-1.5"
+                onClick={() => {
+                  setIsFeedbackOpen(false);
+                  setIsRequestModalOpen(true);
+                }}
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                Reenviar para Aprovação
+              </Button>
+            )}
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
+  ) : null;
+
+  // 1. Nenhuma aprovação solicitada ainda ou a última foi cancelada
+  if (!latestApproval || latestApproval.status === 'CANCELLED') {
+    if (!canEdit) return null;
+    return (
+      <>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 text-[10px] text-muted-foreground hover:text-primary px-1.5"
+            onClick={() => setIsRequestModalOpen(true)}
+            title="Pedir para o cliente validar e aprovar esta etapa"
+          >
+            <ShieldCheck className="mr-1 h-3 w-3" />
+            Pedir aprovação
+          </Button>
+
+          {latestApproval?.status === 'CANCELLED' && (
+            <button
+              type="button"
+              onClick={() => setIsFeedbackOpen(true)}
+              className="text-[10px] text-muted-foreground/80 hover:text-foreground underline cursor-pointer"
+              title="Ver histórico de solicitações canceladas"
+            >
+              (cancelado)
+            </button>
+          )}
+        </div>
+        {requestApprovalDialog}
+        {feedbackDialog}
+        {cancelConfirmationDialog}
+      </>
+    );
+  }
 
   // 3. Status = APPROVED
   if (latestApproval.status === 'APPROVED') {
@@ -459,6 +548,7 @@ export function MilestoneApprovalAction({
         </button>
         {feedbackDialog}
         {requestApprovalDialog}
+        {cancelConfirmationDialog}
       </>
     );
   }
@@ -494,6 +584,7 @@ export function MilestoneApprovalAction({
         </div>
         {feedbackDialog}
         {requestApprovalDialog}
+        {cancelConfirmationDialog}
       </>
     );
   }
@@ -514,6 +605,20 @@ export function MilestoneApprovalAction({
             <MessageSquareText className="h-3 w-3 ml-0.5 text-amber-600" />
           )}
         </Badge>
+
+        {canEdit && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-5 text-[10px] text-muted-foreground hover:text-destructive px-1.5 gap-1"
+            onClick={() => setIsCancelConfirmOpen(true)}
+            title="Cancelar o pedido de validação desta etapa"
+          >
+            <XCircle className="h-3 w-3" />
+            Cancelar
+          </Button>
+        )}
+
         {!canEdit && (
           <Button
             size="sm"
@@ -528,6 +633,7 @@ export function MilestoneApprovalAction({
 
       {feedbackDialog}
       {requestApprovalDialog}
+      {cancelConfirmationDialog}
 
       {/* Modal do Cliente para Avaliar e Responder */}
       <Dialog open={isRespondOpen} onOpenChange={setIsRespondOpen}>

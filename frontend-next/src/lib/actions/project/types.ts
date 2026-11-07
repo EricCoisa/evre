@@ -2,6 +2,8 @@ export type {
   ProjectDto as Project,
   CreateProjectDto,
   UpdateProjectDto,
+  CreateMilestoneDto,
+  UpdateMilestoneDto,
   CreateCommentDto,
   RequestApprovalDto,
   RespondApprovalDto,
@@ -14,6 +16,7 @@ export type {
 export interface Milestone {
   id: string;
   title: string;
+  description?: string | null;
   position: number;
   tasks: MilestoneTask[];
 }
@@ -29,7 +32,7 @@ export interface InfoRequest {
   id: string;
   label: string;
   description?: string;
-  status: string;
+  status: 'PENDING' | 'ANSWERED' | 'EXPIRED' | 'CANCELLED' | string;
   requestedBy?: { name?: string };
   createdAt: string;
 }
@@ -53,7 +56,7 @@ export interface ProjectComment {
 export interface MilestoneApproval {
   id: string;
   milestoneId: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
   requestedById: string;
   respondedById?: string | null;
   requestNote?: string | null;

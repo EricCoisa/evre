@@ -52,11 +52,11 @@ export async function getProjectBoard(id: string): Promise<ApiResponse<Milestone
 }
 
 // Milestones
-export async function createMilestone(projectId: string, data: { title: string }) {
+export async function createMilestone(projectId: string, data: { title: string; description?: string }) {
   return wrap(() => api.projectControllerAddMilestone(projectId, data));
 }
 
-export async function updateMilestone(projectId: string, milestoneId: string, data: { title?: string }) {
+export async function updateMilestone(projectId: string, milestoneId: string, data: { title?: string; description?: string }) {
   return wrap(() => api.projectControllerEditMilestone(projectId, milestoneId, data));
 }
 
@@ -111,6 +111,10 @@ export async function respondApproval(projectId: string, approvalId: string, dat
   return wrap(() => api.projectControllerRespondMilestoneApproval(projectId, approvalId, data));
 }
 
+export async function cancelApproval(projectId: string, approvalId: string) {
+  return wrap(() => api.projectControllerCancelMilestoneApproval(projectId, approvalId));
+}
+
 export async function getApprovals(projectId: string, milestoneId: string) {
   return wrap(() => api.projectControllerGetMilestoneApprovals(projectId, milestoneId));
 }
@@ -122,6 +126,10 @@ export async function createInfoRequest(projectId: string, data: CreateInfoReque
 
 export async function answerInfoRequest(projectId: string, requestId: string, data: AnswerInfoRequestDto) {
   return wrap(() => api.projectControllerAnswerInfoRequest(projectId, requestId, data));
+}
+
+export async function cancelInfoRequest(projectId: string, requestId: string) {
+  return wrap(() => api.projectControllerCancelInfoRequestEndpoint(projectId, requestId));
 }
 
 export async function getInfoRequests(projectId: string): Promise<ApiResponse<PaginatedResponse<InfoRequest> | InfoRequest[]>> {

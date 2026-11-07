@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { MilestoneApprovalAction } from './milestone-approval-action';
+import { MilestoneDetailSheet } from './milestone-detail-sheet';
+import { RichTextViewer } from './rich-text-viewer';
 import {
   ChevronDown,
   ChevronRight,
@@ -13,7 +15,6 @@ import {
   Trash2,
   MessageSquare,
   AlignLeft,
-  CheckCircle2,
   Circle,
 } from 'lucide-react';
 import type { Milestone, MilestoneTask } from '@/lib/actions/project/types';
@@ -39,6 +40,7 @@ export function TaskListView({
 }: TaskListViewProps) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [newTasks, setNewTasks] = useState<Record<string, string>>({});
+  const [selectedMilestoneForDetail, setSelectedMilestoneForDetail] = useState<Milestone | null>(null);
 
   const toggleCollapse = (id: string) => {
     setCollapsed((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -95,6 +97,17 @@ export function TaskListView({
               </div>
 
               <div className="flex items-center gap-2 flex-shrink-0">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-[10px] text-muted-foreground hover:text-foreground px-1.5 gap-1"
+                  onClick={() => setSelectedMilestoneForDetail(milestone)}
+                  title="Ver detalhes e descrição da etapa"
+                >
+                  <AlignLeft className="h-3 w-3" />
+                  Detalhes
+                </Button>
+
                 <MilestoneApprovalAction
                   projectId={projectId}
                   milestoneId={milestone.id}
@@ -118,7 +131,17 @@ export function TaskListView({
 
             {!isCollapsed && (
               <CardContent className="p-0 divide-y">
-                {tasks.map((task, tIdx) => (
+                {milestone.description && (
+                  <div
+                    className="px-4 py-2 bg-muted/10 border-b text-xs text-muted-foreground cursor-pointer hover:bg-muted/20 transition-colors"
+                    onClick={() => setSelectedMilestoneForDetail(milestone)}
+                    title="Clique para ver ou editar detalhes da etapa"
+                  >
+                    <RichTextViewer content={milestone.description} className="text-xs [&_*]:text-xs line-clamp-2" />
+                  </div>
+                )}
+
+                {tasks.map((task) => (
                   <div
                     key={task.id}
                     className="group flex items-center justify-between p-3 hover:bg-muted/20 cursor-pointer transition-colors"
@@ -196,6 +219,14 @@ export function TaskListView({
           </Card>
         );
       })}
+      {/* Drawer de Detalhes da Milestone */}
+      <MilestoneDetailSheet
+        projectId={projectId}
+        milestone={selectedMilestoneForDetail}
+        open={!!selectedMilestoneForDetail}
+        onOpenChange={(open) => !open && setSelectedMilestoneForDetail(null)}
+        canEdit={canEdit}
+      />
     </div>
   );
 }

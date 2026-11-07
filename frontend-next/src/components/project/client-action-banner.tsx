@@ -4,7 +4,7 @@ import { useInfoRequests } from '@/lib/actions/project/queries';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { KeyRound, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { KeyRound, ArrowRight } from 'lucide-react';
 import type { InfoRequest } from '@/lib/actions/project/types';
 
 interface ClientActionBannerProps {

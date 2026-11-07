@@ -5,6 +5,7 @@ import {
   useInfoRequests,
   useCreateInfoRequest,
   useAnswerInfoRequest,
+  useCancelInfoRequest,
   useInfoRequestValue,
 } from '@/lib/actions/project/queries';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,8 +19,17 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { RichTextInput } from '@/components/rich-text-input';
 import { RichTextViewer } from './rich-text-viewer';
 import {
@@ -43,11 +53,12 @@ interface ProjectInfoRequestsViewProps {
 
 const STATUS_CONFIG: Record<
   string,
-  { label: string; icon: typeof Clock; variant: 'outline' | 'default' | 'destructive' }
+  { label: string; icon: typeof Clock; variant: 'outline' | 'default' | 'destructive' | 'secondary' }
 > = {
   PENDING: { label: 'Aguardando Resposta', icon: Clock, variant: 'outline' },
   ANSWERED: { label: 'Respondida', icon: CheckCircle2, variant: 'default' },
   EXPIRED: { label: 'Expirada', icon: XCircle, variant: 'destructive' },
+  CANCELLED: { label: 'Cancelada', icon: XCircle, variant: 'secondary' },
 };
 
 export function ProjectInfoRequestsView({
@@ -57,12 +68,17 @@ export function ProjectInfoRequestsView({
   const { data: requestsData, isLoading } = useInfoRequests(projectId);
   const createMutation = useCreateInfoRequest(projectId);
   const answerMutation = useAnswerInfoRequest(projectId);
+  const cancelMutation = useCancelInfoRequest(projectId);
 
   // Estados de modais
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newLabel, setNewLabel] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+
+  // Estado para cancelar solicitação (admin)
+  const [cancellingRequest, setCancellingRequest] = useState<InfoRequest | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   // Estado para responder solicitação (cliente)
   const [answeringRequest, setAnsweringRequest] = useState<InfoRequest | null>(null);
@@ -98,6 +114,20 @@ export function ProjectInfoRequestsView({
       toast.error('Erro ao criar solicitação');
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  const handleCancelRequest = async () => {
+    if (!cancellingRequest) return;
+    setIsCancelling(true);
+    try {
+      await cancelMutation.mutateAsync(cancellingRequest.id);
+      toast.success('Solicitação cancelada com sucesso!');
+      setCancellingRequest(null);
+    } catch {
+      toast.error('Erro ao cancelar solicitação');
+    } finally {
+      setIsCancelling(false);
     }
   };
 
@@ -220,6 +250,19 @@ export function ProjectInfoRequestsView({
                         }}
                       >
                         Responder Agora
+                      </Button>
+                    )}
+
+                    {mode === 'admin' && isPending && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 text-xs text-muted-foreground hover:text-destructive gap-1"
+                        onClick={() => setCancellingRequest(req)}
+                        title="Cancelar esta solicitação ao cliente"
+                      >
+                        <XCircle className="h-3.5 w-3.5" />
+                        Cancelar
                       </Button>
                     )}
 
@@ -420,6 +463,32 @@ export function ProjectInfoRequestsView({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Diálogo de Confirmação para Cancelar Solicitação */}
+      <AlertDialog
+        open={!!cancellingRequest}
+        onOpenChange={(open) => !open && setCancellingRequest(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar solicitação ao cliente?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Deseja cancelar o pedido de <strong>{cancellingRequest?.label}</strong>?
+              O cliente não precisará mais responder a este item confidencial.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isCancelling}>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCancelRequest}
+              disabled={isCancelling}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+            >
+              {isCancelling ? 'Cancelando...' : 'Sim, cancelar solicitação'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

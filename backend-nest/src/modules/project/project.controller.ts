@@ -43,9 +43,11 @@ import { ListCommentsUseCase } from './use-cases/list-comments.use-case';
 import { DeleteCommentUseCase } from './use-cases/delete-comment.use-case';
 import { RequestApprovalUseCase } from './use-cases/request-approval.use-case';
 import { RespondApprovalUseCase } from './use-cases/respond-approval.use-case';
+import { CancelApprovalUseCase } from './use-cases/cancel-approval.use-case';
 import { ListApprovalsUseCase } from './use-cases/list-approvals.use-case';
 import { CreateInfoRequestUseCase } from './use-cases/create-info-request.use-case';
 import { AnswerInfoRequestUseCase } from './use-cases/answer-info-request.use-case';
+import { CancelInfoRequestUseCase } from './use-cases/cancel-info-request.use-case';
 import { ListInfoRequestsUseCase } from './use-cases/list-info-requests.use-case';
 import { GetInfoRequestValueUseCase } from './use-cases/get-info-request-value.use-case';
 import { commonPaginationQueries } from '../../common/swagger/pagination-queries';
@@ -80,9 +82,11 @@ export class ProjectController {
     private readonly deleteComment: DeleteCommentUseCase,
     private readonly requestApproval: RequestApprovalUseCase,
     private readonly respondApproval: RespondApprovalUseCase,
+    private readonly cancelApproval: CancelApprovalUseCase,
     private readonly listApprovals: ListApprovalsUseCase,
     private readonly createInfoReq: CreateInfoRequestUseCase,
     private readonly answerInfoReq: AnswerInfoRequestUseCase,
+    private readonly cancelInfoReq: CancelInfoRequestUseCase,
     private readonly listInfoReqs: ListInfoRequestsUseCase,
     private readonly getInfoReqValue: GetInfoRequestValueUseCase,
   ) {}
@@ -512,6 +516,24 @@ export class ProjectController {
     return this.respondApproval.execute(id, approvalId, dto, user);
   }
 
+  @PatchApi({
+    path: ':id/approvals/:approvalId/cancel',
+    summary: 'project.approval.cancel.title',
+    status: 'OK',
+    authenticated: true,
+    roles: ['ADMIN', 'MODERATOR'],
+    response: {
+      success: [{ status: 'OK', description: 'Approval cancelled' }],
+    },
+  })
+  async cancelMilestoneApproval(
+    @Param('id') id: string,
+    @Param('approvalId') approvalId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.cancelApproval.execute(id, approvalId, user);
+  }
+
   @GetApi({
     path: ':id/milestones/:milestoneId/approvals',
     summary: 'project.approval.list.title',
@@ -567,6 +589,24 @@ export class ProjectController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.answerInfoReq.execute(id, requestId, dto, user);
+  }
+
+  @PatchApi({
+    path: ':id/info-requests/:requestId/cancel',
+    summary: 'project.infoRequest.cancel.title',
+    status: 'OK',
+    authenticated: true,
+    roles: ['ADMIN', 'MODERATOR'],
+    response: {
+      success: [{ status: 'OK', description: 'Info request cancelled' }],
+    },
+  })
+  async cancelInfoRequestEndpoint(
+    @Param('id') id: string,
+    @Param('requestId') requestId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.cancelInfoReq.execute(id, requestId, user);
   }
 
   @GetApi({
