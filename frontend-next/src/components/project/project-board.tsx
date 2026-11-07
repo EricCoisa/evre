@@ -36,13 +36,35 @@ import { TaskDetailSheet } from './task-detail-sheet';
 import { CreateMilestoneDialog } from './create-milestone-dialog';
 import { CreateTaskDialog } from './create-task-dialog';
 import { ClientActionBanner } from './client-action-banner';
+import { TASK_STATUS_CONFIG } from './milestone-progress';
+import { UserAvatar } from './user-avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { LayoutGrid, ListTodo, Plus, Search, X } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useMe } from '@/lib/actions/auth/queries';
+import { useUsers } from '@/lib/actions/user/queries';
+import {
+  LayoutGrid,
+  ListTodo,
+  Plus,
+  Search,
+  X,
+  Filter,
+  RotateCcw,
+  User,
+  UserX,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import type { Milestone, MilestoneTask } from '@/lib/actions/project/types';
+import type { UserDto } from '@/lib/generated/schemas';
 
 interface ProjectBoardProps {
   projectId: string;
@@ -99,6 +121,48 @@ export function ProjectBoard({
   const [prevBoardData, setPrevBoardData] = useState(boardData);
   const [searchQuery, setSearchQuery] = useState('');
 
+  const { data: meData } = useMe();
+  const { data: usersData } = useUsers();
+
+  const users = useMemo(() => {
+    if (!usersData) return [];
+    const raw = Array.isArray(usersData)
+      ? (usersData as UserDto[])
+      : (usersData as { data?: UserDto[] })?.data ??
+        (usersData as { items?: UserDto[] })?.items ??
+        [];
+    return raw;
+  }, [usersData]);
+
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [assigneeFilter, setAssigneeFilter] = useState<string>('all');
+  const [onlyMyTasks, setOnlyMyTasks] = useState(false);
+
+  const isFilterActive = useMemo(() => {
+    return (
+      Boolean(searchQuery.trim()) ||
+      statusFilter !== 'all' ||
+      assigneeFilter !== 'all' ||
+      onlyMyTasks
+    );
+  }, [searchQuery, statusFilter, assigneeFilter, onlyMyTasks]);
+
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (searchQuery.trim()) count++;
+    if (statusFilter !== 'all') count++;
+    if (assigneeFilter !== 'all') count++;
+    if (onlyMyTasks) count++;
+    return count;
+  }, [searchQuery, statusFilter, assigneeFilter, onlyMyTasks]);
+
+  const handleResetFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('all');
+    setAssigneeFilter('all');
+    setOnlyMyTasks(false);
+  };
+
   if (boardData !== prevBoardData) {
     setPrevBoardData(boardData);
     setItems(parseBoardItems(boardData));
@@ -106,16 +170,61 @@ export function ProjectBoard({
 
   const displayedItems = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    if (!query) return items;
-    return items.map((m) => ({
-      ...m,
-      tasks: m.tasks.filter(
-        (t) =>
-          t.title.toLowerCase().includes(query) ||
-          (t.description && t.description.toLowerCase().includes(query))
-      ),
-    }));
-  }, [items, searchQuery]);
+
+    return items.map((m) => {
+      const allTasks = m.tasks ?? [];
+
+      const filteredTasks = allTasks.filter((t) => {
+        // 1. Filtro textual
+        if (query) {
+          const matchTitle = t.title.toLowerCase().includes(query);
+          const matchDesc = t.description?.toLowerCase().includes(query);
+          const matchAssignee =
+            t.assignee?.name?.toLowerCase().includes(query) ||
+            t.assignee?.email?.toLowerCase().includes(query);
+          const matchBlocked = t.blockedReason?.toLowerCase().includes(query);
+          const matchMilestoneTitle = m.title.toLowerCase().includes(query);
+          if (!matchTitle && !matchDesc && !matchAssignee && !matchBlocked && !matchMilestoneTitle) {
+            return false;
+          }
+        }
+
+        // 2. Filtro de Status
+        if (statusFilter !== 'all') {
+          const taskStatus = t.status || 'WAITING';
+          if (taskStatus !== statusFilter) {
+            return false;
+          }
+        }
+
+        // 3. Filtro de Responsável
+        if (assigneeFilter !== 'all') {
+          if (assigneeFilter === '__UNASSIGNED__') {
+            if (t.assigneeId || t.assignee) return false;
+          } else {
+            const taskAssigneeId = t.assigneeId ?? t.assignee?.id;
+            if (taskAssigneeId !== assigneeFilter) return false;
+          }
+        }
+
+        // 4. Filtro "Minhas Tarefas"
+        if (onlyMyTasks) {
+          const taskAssigneeId = t.assigneeId ?? t.assignee?.id;
+          if (!meData?.id || taskAssigneeId !== meData.id) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+
+      return {
+        ...m,
+        allTasks,
+        tasks: filteredTasks,
+      };
+    });
+  }, [items, searchQuery, statusFilter, assigneeFilter, onlyMyTasks, meData?.id]);
 
   const totalTasks = useMemo(() => {
     return items.reduce((acc, m) => acc + (m.tasks?.length ?? 0), 0);
@@ -436,7 +545,7 @@ export function ProjectBoard({
             )}
           </div>
 
-          {searchQuery && (
+          {isFilterActive && (
             <Badge variant="outline" className="text-[11px] h-7 px-2 border-primary/30 text-primary">
               {filteredTasksCount} de {totalTasks} tarefas
             </Badge>
@@ -466,12 +575,115 @@ export function ProjectBoard({
         )}
       </div>
 
+      {/* Barra de Filtros: Status, Responsável, Minhas Tarefas, Bloqueadas */}
+      <div className="flex items-center gap-2 flex-wrap p-2 rounded-lg bg-muted/20 border border-border/60 text-xs">
+        <div className="flex items-center gap-1.5 text-muted-foreground font-medium mr-1">
+          <Filter className="h-3.5 w-3.5 text-primary" />
+          <span>Filtros:</span>
+        </div>
+
+        {/* Filtro de Status */}
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="h-7 text-xs w-[145px] bg-background">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent className="text-xs">
+            <SelectItem value="all">Todos os status</SelectItem>
+            {Object.entries(TASK_STATUS_CONFIG).map(([stKey, conf]) => {
+              const Icon = conf.icon;
+              return (
+                <SelectItem key={stKey} value={stKey} className="text-xs">
+                  <div className="flex items-center gap-2">
+                    <Icon className="h-3.5 w-3.5" />
+                    <span>{conf.label}</span>
+                  </div>
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
+
+        {/* Filtro de Responsável */}
+        <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+          <SelectTrigger className="h-7 text-xs w-[165px] bg-background">
+            <SelectValue placeholder="Responsável" />
+          </SelectTrigger>
+          <SelectContent className="text-xs max-h-60">
+            <SelectItem value="all">Todos os responsáveis</SelectItem>
+            <SelectItem value="__UNASSIGNED__">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <UserX className="h-3.5 w-3.5" />
+                <span>Sem responsável</span>
+              </div>
+            </SelectItem>
+            {users.map((u) => (
+              <SelectItem key={u.id} value={u.id} className="text-xs">
+                <div className="flex items-center gap-2">
+                  <UserAvatar
+                    name={u.name}
+                    email={u.email}
+                    imageUrl={u.imageUrl}
+                    className="h-4 w-4 text-[8px]"
+                  />
+                  <span className="truncate max-w-[120px]">{u.name || u.email}</span>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Toggle Chip: Minhas Tarefas */}
+        {meData?.id && (
+          <Button
+            type="button"
+            variant={onlyMyTasks ? 'secondary' : 'outline'}
+            size="sm"
+            className={`h-7 text-xs gap-1.5 transition-colors cursor-pointer ${
+              onlyMyTasks
+                ? 'bg-primary/10 text-primary border-primary/40 font-semibold'
+                : 'text-muted-foreground'
+            }`}
+            onClick={() => setOnlyMyTasks((prev) => !prev)}
+            title="Mostrar apenas tarefas atribuídas a mim"
+          >
+            <User className="h-3 w-3" />
+            Minhas tarefas
+          </Button>
+        )}
+
+        {/* Botão Limpar Filtros quando ativo com destaque visual */}
+        {isFilterActive && (
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className={`h-7 text-xs gap-1.5 px-2.5 font-medium cursor-pointer border transition-all ${
+              filteredTasksCount === 0
+                ? 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/40 hover:bg-rose-500/25 font-semibold shadow-xs'
+                : 'bg-primary/10 text-primary border-primary/30 hover:bg-primary/20'
+            }`}
+            onClick={handleResetFilters}
+            title="Limpar todos os filtros e busca"
+          >
+            <RotateCcw className="h-3 w-3" />
+            <span>
+              {filteredTasksCount === 0 ? 'Limpar filtros (nenhuma tarefa)' : `Limpar filtros (${activeFiltersCount})`}
+            </span>
+          </Button>
+        )}
+
+        {/* Contador de tarefas filtradas */}
+        <span className="text-[11px] text-muted-foreground ml-auto hidden sm:inline">
+          {filteredTasksCount} de {totalTasks} {totalTasks === 1 ? 'tarefa' : 'tarefas'}
+        </span>
+      </div>
+
       {/* Conteúdo: Modo Quadro (Kanban) ou Modo Lista */}
       {viewMode === 'list' ? (
         <TaskListView
           projectId={projectId}
           milestones={displayedItems}
-          canEdit={canEdit && !searchQuery.trim()}
+          canEdit={canEdit && !isFilterActive}
           onSelectTask={(task, title) => {
             setSelectedTask(task);
             setSelectedMilestoneTitle(title);
@@ -495,7 +707,7 @@ export function ProjectBoard({
                   key={milestone.id}
                   projectId={projectId}
                   milestone={milestone}
-                  canEdit={canEdit && !searchQuery.trim()}
+                  canEdit={canEdit && !isFilterActive}
                   onSelectTask={(task, title) => {
                     setSelectedTask(task);
                     setSelectedMilestoneTitle(title);

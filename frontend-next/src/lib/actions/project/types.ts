@@ -28,6 +28,7 @@ export interface Milestone {
   description?: string | null;
   position: number;
   tasks: MilestoneTask[];
+  allTasks?: MilestoneTask[];
 }
 
 export interface TaskAssignee {

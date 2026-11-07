@@ -99,6 +99,7 @@ export function MilestoneColumn({
   };
 
   const tasks = milestone.tasks ?? [];
+  const allMilestoneTasks = milestone.allTasks ?? tasks;
   const taskIds = tasks.map((t) => t.id);
 
   return (
@@ -160,8 +161,18 @@ export function MilestoneColumn({
             </div>
 
             <div className="flex items-center gap-1">
-              <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-normal">
-                {tasks.length}
+              <Badge
+                variant="secondary"
+                className="h-5 px-1.5 text-[10px] font-normal"
+                title={
+                  milestone.allTasks && milestone.allTasks.length !== tasks.length
+                    ? `${tasks.length} exibidas de ${milestone.allTasks.length} tarefas nesta etapa`
+                    : `${tasks.length} tarefas`
+                }
+              >
+                {milestone.allTasks && milestone.allTasks.length !== tasks.length
+                  ? `${tasks.length}/${milestone.allTasks.length}`
+                  : tasks.length}
               </Badge>
 
               <DropdownMenu>
@@ -206,7 +217,7 @@ export function MilestoneColumn({
           </div>
 
           {/* Barra de Progresso da Milestone */}
-          <MilestoneProgressBar tasks={tasks} compact />
+          <MilestoneProgressBar tasks={allMilestoneTasks} compact />
 
           {/* Descrição resumida da etapa (se houver) */}
           {milestone.description && (

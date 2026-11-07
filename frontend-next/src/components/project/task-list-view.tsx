@@ -1,14 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { MilestoneApprovalAction } from './milestone-approval-action';
 import { MilestoneDetailSheet } from './milestone-detail-sheet';
 import { MilestoneProgressBar, TASK_STATUS_CONFIG } from './milestone-progress';
 import { RichTextViewer } from './rich-text-viewer';
 import { UserAvatar } from './user-avatar';
+import { useUpdateTask } from '@/lib/actions/project/queries';
+import { useUsers } from '@/lib/actions/user/queries';
+import { toast } from 'sonner';
 import {
   ChevronDown,
   ChevronRight,
@@ -18,8 +29,11 @@ import {
   AlignLeft,
   AlertTriangle,
   User,
+  UserX,
+  Check,
 } from 'lucide-react';
 import type { Milestone, MilestoneTask, ProjectTaskStatus } from '@/lib/actions/project/types';
+import type { UserDto } from '@/lib/generated/schemas';
 
 interface TaskListViewProps {
   projectId: string;
@@ -41,12 +55,71 @@ export function TaskListView({
   onDeleteTask,
   onDeleteMilestone,
 }: TaskListViewProps) {
+  const updateTaskMutation = useUpdateTask(projectId);
+  const { data: usersData } = useUsers();
+
+  const users = useMemo(() => {
+    if (!usersData) return [];
+    const raw = Array.isArray(usersData)
+      ? (usersData as UserDto[])
+      : (usersData as { data?: UserDto[] })?.data ??
+        (usersData as { items?: UserDto[] })?.items ??
+        [];
+    return raw;
+  }, [usersData]);
+
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [selectedMilestoneForDetail, setSelectedMilestoneForDetail] = useState<Milestone | null>(null);
 
   const toggleCollapse = (id: string) => {
     setCollapsed((prev) => ({ ...prev, [id]: !prev[id] }));
   };
+
+  const handleQuickStatusChange = async (task: MilestoneTask, newStatus: ProjectTaskStatus) => {
+    if (newStatus === task.status) return;
+    if (newStatus === 'BLOCKED') {
+      onSelectTask(task, '');
+      return;
+    }
+
+    try {
+      await updateTaskMutation.mutateAsync({
+        taskId: task.id,
+        data: { status: newStatus },
+      });
+      toast.success(`Status alterado para ${TASK_STATUS_CONFIG[newStatus].label}`);
+    } catch {
+      toast.error('Erro ao alterar status');
+    }
+  };
+
+  const handleQuickAssigneeChange = async (task: MilestoneTask, newAssigneeId: string | null) => {
+    const currentAssigneeId = task.assigneeId ?? task.assignee?.id ?? null;
+    if (newAssigneeId === currentAssigneeId) return;
+
+    try {
+      await updateTaskMutation.mutateAsync({
+        taskId: task.id,
+        data: { assigneeId: newAssigneeId },
+      });
+      const targetUser = users.find((u) => u.id === newAssigneeId);
+      toast.success(
+        newAssigneeId && targetUser
+          ? `Responsável: ${targetUser.name || targetUser.email}`
+          : 'Responsável removido da tarefa'
+      );
+    } catch {
+      toast.error('Erro ao alterar responsável');
+    }
+  };
+
+  const statusList: ProjectTaskStatus[] = [
+    'WAITING',
+    'IN_PROGRESS',
+    'BLOCKED',
+    'DONE',
+    'CANCELLED',
+  ];
 
   if (milestones.length === 0) {
     return (
@@ -61,6 +134,7 @@ export function TaskListView({
       {milestones.map((milestone, idx) => {
         const isCollapsed = collapsed[milestone.id] ?? false;
         const tasks = milestone.tasks ?? [];
+        const allMilestoneTasks = milestone.allTasks ?? tasks;
 
         return (
           <Card key={milestone.id} className="overflow-hidden border shadow-xs">
@@ -87,8 +161,18 @@ export function TaskListView({
                     </span>
                   </div>
 
-                  <Badge variant="secondary" className="h-5 text-[10px] px-1.5 ml-1">
-                    {tasks.length} {tasks.length === 1 ? 'tarefa' : 'tarefas'}
+                  <Badge
+                    variant="secondary"
+                    className="h-5 text-[10px] px-1.5 ml-1"
+                    title={
+                      milestone.allTasks && milestone.allTasks.length !== tasks.length
+                        ? `${tasks.length} exibidas de ${milestone.allTasks.length} tarefas nesta etapa`
+                        : `${tasks.length} tarefas`
+                    }
+                  >
+                    {milestone.allTasks && milestone.allTasks.length !== tasks.length
+                      ? `${tasks.length}/${milestone.allTasks.length} tarefas`
+                      : `${tasks.length} ${tasks.length === 1 ? 'tarefa' : 'tarefas'}`}
                   </Badge>
                 </div>
 
@@ -127,7 +211,7 @@ export function TaskListView({
 
               {/* Barra de Progresso da Milestone */}
               <div className="pt-0.5 max-w-md">
-                <MilestoneProgressBar tasks={tasks} compact />
+                <MilestoneProgressBar tasks={allMilestoneTasks} compact />
               </div>
             </CardHeader>
 
@@ -155,14 +239,48 @@ export function TaskListView({
                       onClick={() => onSelectTask(task, milestone.title)}
                     >
                       <div className="flex items-center gap-3 min-w-0 flex-1">
-                        {/* Status badge com ícone */}
-                        <Badge
-                          variant={conf.variant}
-                          className={`h-5 text-[10px] px-1.5 gap-1 font-normal flex-shrink-0 ${conf.className}`}
-                        >
-                          <Icon className="h-3 w-3 flex-shrink-0" />
-                          <span>{conf.label}</span>
-                        </Badge>
+                        {/* Status badge com ícone e Dropdown */}
+                        <div onClick={(e) => e.stopPropagation()}>
+                          {canEdit ? (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button
+                                  type="button"
+                                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium border transition-colors cursor-pointer ${conf.className}`}
+                                  title="Clique para alterar status rápido"
+                                >
+                                  <Icon className="h-3 w-3 flex-shrink-0" />
+                                  <span>{conf.label}</span>
+                                  <ChevronDown className="h-2.5 w-2.5 opacity-60" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="start" className="w-40 text-xs">
+                                {statusList.map((st) => {
+                                  const itemConf = TASK_STATUS_CONFIG[st];
+                                  const ItemIcon = itemConf.icon;
+                                  return (
+                                    <DropdownMenuItem
+                                      key={st}
+                                      className="flex items-center gap-2 cursor-pointer text-xs"
+                                      onClick={() => handleQuickStatusChange(task, st)}
+                                    >
+                                      <ItemIcon className="h-3.5 w-3.5" />
+                                      <span>{itemConf.label}</span>
+                                    </DropdownMenuItem>
+                                  );
+                                })}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          ) : (
+                            <Badge
+                              variant={conf.variant}
+                              className={`h-5 text-[10px] px-1.5 gap-1 font-normal flex-shrink-0 ${conf.className}`}
+                            >
+                              <Icon className="h-3 w-3 flex-shrink-0" />
+                              <span>{conf.label}</span>
+                            </Badge>
+                          )}
+                        </div>
 
                         <div className="space-y-0.5 truncate">
                           <span
@@ -194,31 +312,109 @@ export function TaskListView({
                       </div>
 
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        {/* Responsável pela Tarefa */}
-                        {task.assignee ? (
-                          <div
-                            className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded bg-muted/40 border text-xs"
-                            title={`Responsável: ${task.assignee.name || task.assignee.email}`}
-                          >
-                            <UserAvatar
-                              name={task.assignee.name}
-                              email={task.assignee.email}
-                              imageUrl={task.assignee.imageUrl}
-                              className="h-4 w-4 text-[8px]"
-                            />
-                            <span className="text-[11px] font-medium text-foreground truncate max-w-[120px]">
-                              {task.assignee.name || task.assignee.email}
-                            </span>
-                          </div>
-                        ) : (
-                          <div
-                            className="hidden sm:flex items-center gap-1 text-[10px] text-muted-foreground/60 italic px-1.5 py-0.5"
-                            title="Sem responsável"
-                          >
-                            <User className="h-3 w-3" />
-                            <span>Sem resp.</span>
-                          </div>
-                        )}
+                        {/* Responsável pela Tarefa com troca rápida via Dropdown */}
+                        <div onClick={(e) => e.stopPropagation()}>
+                          {canEdit ? (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button
+                                  type="button"
+                                  className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-muted/40 hover:bg-muted border text-xs font-medium text-foreground transition-colors cursor-pointer group/assignee max-w-[150px]"
+                                  title="Clique para alterar o responsável"
+                                >
+                                  {task.assignee ? (
+                                    <>
+                                      <UserAvatar
+                                        name={task.assignee.name}
+                                        email={task.assignee.email}
+                                        imageUrl={task.assignee.imageUrl}
+                                        className="h-4 w-4 text-[8px] flex-shrink-0"
+                                      />
+                                      <span className="text-[11px] font-medium text-foreground truncate max-w-[100px]">
+                                        {task.assignee.name || task.assignee.email}
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <User className="h-3 w-3 flex-shrink-0 text-muted-foreground/60" />
+                                      <span className="text-[10px] text-muted-foreground/70 italic">Sem resp.</span>
+                                    </>
+                                  )}
+                                  <ChevronDown className="h-2.5 w-2.5 opacity-50 group-hover/assignee:opacity-100 flex-shrink-0" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-56 max-h-64 overflow-y-auto text-xs">
+                                <DropdownMenuLabel className="text-[10px] text-muted-foreground font-semibold px-2 py-1">
+                                  Atribuir Responsável
+                                </DropdownMenuLabel>
+                                <DropdownMenuItem
+                                  className="flex items-center gap-2 cursor-pointer text-xs"
+                                  onClick={() => handleQuickAssigneeChange(task, null)}
+                                >
+                                  <UserX className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                                  <span className="text-muted-foreground">Sem responsável</span>
+                                  {!(task.assigneeId ?? task.assignee?.id) && (
+                                    <Check className="h-3.5 w-3.5 text-primary ml-auto flex-shrink-0" />
+                                  )}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                {users.map((u) => {
+                                  const isCurrent = (task.assigneeId ?? task.assignee?.id) === u.id;
+                                  return (
+                                    <DropdownMenuItem
+                                      key={u.id}
+                                      className="flex items-center gap-2 cursor-pointer text-xs"
+                                      onClick={() => handleQuickAssigneeChange(task, u.id)}
+                                    >
+                                      <UserAvatar
+                                        name={u.name}
+                                        email={u.email}
+                                        imageUrl={u.imageUrl}
+                                        className="h-5 w-5 text-[9px] flex-shrink-0"
+                                      />
+                                      <div className="flex flex-col min-w-0 flex-1">
+                                        <span className="truncate font-medium leading-tight">
+                                          {u.name || u.email}
+                                        </span>
+                                        {u.name && u.email && (
+                                          <span className="text-[10px] text-muted-foreground truncate leading-tight">
+                                            {u.email}
+                                          </span>
+                                        )}
+                                      </div>
+                                      {isCurrent && (
+                                        <Check className="h-3.5 w-3.5 text-primary ml-auto flex-shrink-0" />
+                                      )}
+                                    </DropdownMenuItem>
+                                  );
+                                })}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          ) : task.assignee ? (
+                            <div
+                              className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded bg-muted/40 border text-xs"
+                              title={`Responsável: ${task.assignee.name || task.assignee.email}`}
+                            >
+                              <UserAvatar
+                                name={task.assignee.name}
+                                email={task.assignee.email}
+                                imageUrl={task.assignee.imageUrl}
+                                className="h-4 w-4 text-[8px]"
+                              />
+                              <span className="text-[11px] font-medium text-foreground truncate max-w-[120px]">
+                                {task.assignee.name || task.assignee.email}
+                              </span>
+                            </div>
+                          ) : (
+                            <div
+                              className="hidden sm:flex items-center gap-1 text-[10px] text-muted-foreground/60 italic px-1.5 py-0.5"
+                              title="Sem responsável"
+                            >
+                              <User className="h-3 w-3" />
+                              <span>Sem resp.</span>
+                            </div>
+                          )}
+                        </div>
 
                         <div className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
                           <MessageSquare className="h-3.5 w-3.5" />

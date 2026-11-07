@@ -188,7 +188,7 @@ function MilestoneDetailSheetContent({
       {/* Corpo com scroll */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {/* Progresso Geral da Etapa */}
-        <MilestoneProgressBar tasks={milestone.tasks ?? []} />
+        <MilestoneProgressBar tasks={milestone.allTasks ?? milestone.tasks ?? []} />
 
         {/* Seção Descrição Rica da Etapa */}
         <div className="space-y-2">

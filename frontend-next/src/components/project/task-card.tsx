@@ -10,14 +10,18 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { GripVertical, Trash2, AlignLeft, MessageSquare, AlertTriangle, ChevronDown, User } from 'lucide-react';
+import { GripVertical, Trash2, AlignLeft, MessageSquare, AlertTriangle, ChevronDown, User, UserX, Check } from 'lucide-react';
 import { TASK_STATUS_CONFIG } from './milestone-progress';
 import { UserAvatar } from './user-avatar';
 import { useUpdateTask } from '@/lib/actions/project/queries';
+import { useUsers } from '@/lib/actions/user/queries';
 import { toast } from 'sonner';
 import type { MilestoneTask, ProjectTaskStatus } from '@/lib/actions/project/types';
+import type { UserDto } from '@/lib/generated/schemas';
 
 interface TaskCardProps {
   projectId?: string;
@@ -29,6 +33,28 @@ interface TaskCardProps {
 
 export function TaskCard({ projectId, task, canEdit = true, onSelect, onDelete }: TaskCardProps) {
   const updateTaskMutation = useUpdateTask(projectId ?? '');
+  const { data: usersData } = useUsers();
+
+  const users = React.useMemo(() => {
+    if (!usersData) return [];
+    const raw = Array.isArray(usersData)
+      ? (usersData as UserDto[])
+      : (usersData as { data?: UserDto[] })?.data ??
+        (usersData as { items?: UserDto[] })?.items ??
+        [];
+    if (task.assignee && !raw.some((u) => u.id === task.assignee?.id)) {
+      return [
+        {
+          id: task.assignee.id,
+          name: task.assignee.name,
+          email: task.assignee.email,
+          imageUrl: task.assignee.imageUrl,
+        } as UserDto,
+        ...raw,
+      ];
+    }
+    return raw;
+  }, [usersData, task.assignee]);
 
   const {
     attributes,
@@ -73,6 +99,27 @@ export function TaskCard({ projectId, task, canEdit = true, onSelect, onDelete }
       toast.success(`Status alterado para ${TASK_STATUS_CONFIG[newStatus].label}`);
     } catch {
       toast.error('Erro ao alterar status');
+    }
+  };
+
+  const handleQuickAssigneeChange = async (newAssigneeId: string | null) => {
+    if (!projectId) return;
+    const currentAssigneeId = task.assigneeId ?? task.assignee?.id ?? null;
+    if (newAssigneeId === currentAssigneeId) return;
+
+    try {
+      await updateTaskMutation.mutateAsync({
+        taskId: task.id,
+        data: { assigneeId: newAssigneeId },
+      });
+      const targetUser = users.find((u) => u.id === newAssigneeId);
+      toast.success(
+        newAssigneeId && targetUser
+          ? `Responsável alterado para ${targetUser.name || targetUser.email}`
+          : 'Responsável removido da tarefa'
+      );
+    } catch {
+      toast.error('Erro ao alterar responsável');
     }
   };
 
@@ -194,31 +241,109 @@ export function TaskCard({ projectId, task, canEdit = true, onSelect, onDelete }
 
           {/* Rodapé do Card: Responsável, Detalhes e Ações */}
           <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground pt-1 border-t border-border/40">
-            {/* Responsável pela Tarefa */}
-            {task.assignee ? (
-              <div
-                className="flex items-center gap-1.5 min-w-0"
-                title={`Responsável: ${task.assignee.name || task.assignee.email}`}
-              >
-                <UserAvatar
-                  name={task.assignee.name}
-                  email={task.assignee.email}
-                  imageUrl={task.assignee.imageUrl}
-                  className="h-4 w-4 text-[8px]"
-                />
-                <span className="text-[10px] text-muted-foreground truncate max-w-[110px] font-medium">
-                  {task.assignee.name || task.assignee.email}
-                </span>
-              </div>
-            ) : (
-              <div
-                className="flex items-center gap-1 text-[10px] text-muted-foreground/60 italic"
-                title="Sem responsável atribuído"
-              >
-                <User className="h-3 w-3" />
-                <span>Sem resp.</span>
-              </div>
-            )}
+            {/* Responsável pela Tarefa com troca rápida via Dropdown */}
+            <div onClick={(e) => e.stopPropagation()}>
+              {canEdit && projectId ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1.5 px-1.5 py-0.5 -ml-1 rounded hover:bg-muted/80 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer group/assignee max-w-[145px]"
+                      title="Clique para alterar o responsável"
+                    >
+                      {task.assignee ? (
+                        <>
+                          <UserAvatar
+                            name={task.assignee.name}
+                            email={task.assignee.email}
+                            imageUrl={task.assignee.imageUrl}
+                            className="h-4 w-4 text-[8px] flex-shrink-0"
+                          />
+                          <span className="truncate max-w-[95px] font-medium">
+                            {task.assignee.name || task.assignee.email}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <User className="h-3 w-3 flex-shrink-0 text-muted-foreground/60" />
+                          <span className="italic text-muted-foreground/70">Sem resp.</span>
+                        </>
+                      )}
+                      <ChevronDown className="h-2.5 w-2.5 opacity-50 group-hover/assignee:opacity-100 flex-shrink-0" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-56 max-h-64 overflow-y-auto text-xs">
+                    <DropdownMenuLabel className="text-[10px] text-muted-foreground font-semibold px-2 py-1">
+                      Atribuir Responsável
+                    </DropdownMenuLabel>
+                    <DropdownMenuItem
+                      className="flex items-center gap-2 cursor-pointer text-xs"
+                      onClick={() => handleQuickAssigneeChange(null)}
+                    >
+                      <UserX className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                      <span className="text-muted-foreground">Sem responsável</span>
+                      {!(task.assigneeId ?? task.assignee?.id) && (
+                        <Check className="h-3.5 w-3.5 text-primary ml-auto flex-shrink-0" />
+                      )}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    {users.map((u) => {
+                      const isCurrent = (task.assigneeId ?? task.assignee?.id) === u.id;
+                      return (
+                        <DropdownMenuItem
+                          key={u.id}
+                          className="flex items-center gap-2 cursor-pointer text-xs"
+                          onClick={() => handleQuickAssigneeChange(u.id)}
+                        >
+                          <UserAvatar
+                            name={u.name}
+                            email={u.email}
+                            imageUrl={u.imageUrl}
+                            className="h-5 w-5 text-[9px] flex-shrink-0"
+                          />
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <span className="truncate font-medium leading-tight">
+                              {u.name || u.email}
+                            </span>
+                            {u.name && u.email && (
+                              <span className="text-[10px] text-muted-foreground truncate leading-tight">
+                                {u.email}
+                              </span>
+                            )}
+                          </div>
+                          {isCurrent && (
+                            <Check className="h-3.5 w-3.5 text-primary ml-auto flex-shrink-0" />
+                          )}
+                        </DropdownMenuItem>
+                      );
+                    })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : task.assignee ? (
+                <div
+                  className="flex items-center gap-1.5 min-w-0"
+                  title={`Responsável: ${task.assignee.name || task.assignee.email}`}
+                >
+                  <UserAvatar
+                    name={task.assignee.name}
+                    email={task.assignee.email}
+                    imageUrl={task.assignee.imageUrl}
+                    className="h-4 w-4 text-[8px]"
+                  />
+                  <span className="text-[10px] text-muted-foreground truncate max-w-[110px] font-medium">
+                    {task.assignee.name || task.assignee.email}
+                  </span>
+                </div>
+              ) : (
+                <div
+                  className="flex items-center gap-1 text-[10px] text-muted-foreground/60 italic"
+                  title="Sem responsável atribuído"
+                >
+                  <User className="h-3 w-3" />
+                  <span>Sem resp.</span>
+                </div>
+              )}
+            </div>
 
             <div className="flex items-center gap-2 ml-auto flex-shrink-0">
               {task.description && (
