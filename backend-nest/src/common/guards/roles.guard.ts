@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorators/roles.decorator';
+import { ROUTE_ACCESS_KEY } from '../decorators/route-access.decorator';
 import { I18nContext } from 'nestjs-i18n';
 import { Request } from 'express';
 import type { AuthenticatedUser } from '../types/auth.types';
@@ -55,11 +56,13 @@ export class RolesGuard implements CanActivate {
     }
 
     if (request.user.roleName !== UserRoleConst.ADMIN) {
-      const controllerPath = this.reflector.get<string>(
-        'path',
-        context.getClass(),
+      const explicitMeta = this.reflector.getAllAndOverride<string | undefined>(
+        ROUTE_ACCESS_KEY,
+        [context.getHandler(), context.getClass()],
       );
-      const routePath = controllerPath ? `/${controllerPath}` : null;
+      const routePath =
+        typeof explicitMeta === 'string' ? explicitMeta : undefined;
+
       if (routePath) {
         const allowed = await this.checkAccess.execute(
           request.user.id,

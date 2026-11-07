@@ -43,6 +43,9 @@ import { ViewArtifactUseCase } from './use-cases/view-artifact.use-case';
 import { PublishArtifactUseCase } from './use-cases/publish-artifact.use-case';
 import { normalizeWildcardPath } from './wildcard-path.util';
 
+import { RouteAccess } from 'src/common/decorators/route-access.decorator';
+import { RoutePathConst } from 'src/domain/route/route-path.const';
+
 const ARTIFACT_ROLES = [UserRoleConst.ADMIN, UserRoleConst.MODERATOR];
 const ARTIFACT_DELETE_ROLES = [UserRoleConst.ADMIN];
 
@@ -50,6 +53,7 @@ const ARTIFACT_DELETE_ROLES = [UserRoleConst.ADMIN];
  * `iframe` do page-builder. Ver docs/architecture/data-model.md. */
 @ApiTags('artifact')
 @Controller('artifacts')
+@RouteAccess(RoutePathConst.ARTIFACT)
 export class ArtifactController {
   constructor(
     private readonly uploadArtifact: UploadArtifactUseCase,

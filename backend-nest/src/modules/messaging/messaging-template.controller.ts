@@ -62,11 +62,15 @@ const ListTemplatesQuerySchema = PaginationQuerySchema.extend({
   connectionId: z.string().optional(),
 });
 
+import { RouteAccess } from 'src/common/decorators/route-access.decorator';
+import { RoutePathConst } from 'src/domain/route/route-path.const';
+
 /** Separado do controller principal de mensageria para não empurrá-lo a 28 use-cases injetados (mcp/ já faz isso). */
 @ApiTags('messaging')
 @UseGuards(FeatureFlagGuard)
 @RequireFeature(MessagingFeatureFlag.TEMPLATES)
 @Controller('messaging')
+@RouteAccess(RoutePathConst.COMMUNICATION_TEMPLATES)
 export class MessagingTemplateController {
   constructor(
     private readonly listTypes: ListTemplateTypesUseCase,

@@ -42,9 +42,12 @@ import {
   PaginationQuerySchema,
 } from 'src/common/schemas/pagination.schema';
 import { PaginatedResponse } from 'src/common/types/pagination.types';
+import { RouteAccess } from 'src/common/decorators/route-access.decorator';
+import { RoutePathConst } from 'src/domain/route/route-path.const';
 
 @ApiTags('company')
 @Controller('company')
+@RouteAccess(RoutePathConst.COMPANY)
 export class CompanyController {
   constructor(
     private readonly findAllCompany: FindAllCompanyUseCase,

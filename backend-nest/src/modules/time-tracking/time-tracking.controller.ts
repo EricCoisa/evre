@@ -23,6 +23,8 @@ import { JwtOrApiKeyAuthGuard } from 'src/common/guards/jwt-or-api-key.guard';
 import { ScopeGuard } from 'src/common/guards/scope.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
+import { RouteAccess } from 'src/common/decorators/route-access.decorator';
+import { RoutePathConst } from 'src/domain/route/route-path.const';
 import { StartTimerDto } from './dto/start-timer.dto';
 import { CreateManualEntryDto } from './dto/create-manual-entry.dto';
 import { UpdateTimeEntryDto } from './dto/update-time-entry.dto';
@@ -40,6 +42,7 @@ import { CreateManualEntryUseCase } from './use-cases/create-manual-entry.use-ca
 @UseGuards(JwtOrApiKeyAuthGuard, ScopeGuard, RolesGuard, FeatureFlagGuard)
 @RequireFeature('FEATURE_TIME_TRACKING')
 @Roles('ADMIN', 'MODERATOR')
+@RouteAccess(RoutePathConst.TIME_TRACKER)
 export class TimeTrackingController {
   constructor(
     private readonly startTimerUseCase: StartTimerUseCase,

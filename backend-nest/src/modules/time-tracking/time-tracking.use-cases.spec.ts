@@ -40,7 +40,7 @@ describe('TimeTracking Use Cases', () => {
       } as unknown as PrismaService;
 
       const useCase = new StartTimerUseCase(prisma);
-      const result = await useCase.execute('u1', { description: 'New Task' });
+      const result = await useCase.execute('u1', { description: 'New Task', isBillable: true });
 
       expect(tx.timeEntry.findFirst).toHaveBeenCalledWith({
         where: { userId: 'u1', endTime: null },

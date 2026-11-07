@@ -28,9 +28,12 @@ import {
   maskSecretValue,
   maskSecretValues,
 } from '../../common/utils/mask-secret-value.util';
+import { RouteAccess } from 'src/common/decorators/route-access.decorator';
+import { RoutePathConst } from 'src/domain/route/route-path.const';
 
 @ApiTags('system-configuration')
 @Controller('system-configuration')
+@RouteAccess(RoutePathConst.SETTINGS)
 export class SystemConfigurationController {
   constructor(
     private readonly findAll$: FindAllSystemConfigurationUseCase,

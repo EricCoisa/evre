@@ -71,10 +71,13 @@ import {
 } from '../verification/verification.guard';
 import { PhoneAvailabilityGuard } from './phone-availability.guard';
 import { UserVerificationPurpose } from 'src/domain/user/user-verification-purpose.const';
+import { RouteAccess } from 'src/common/decorators/route-access.decorator';
+import { RoutePathConst } from 'src/domain/route/route-path.const';
 // UserRole enum moved to Role table (3.2); role field kept as string
 
 @ApiTags('user')
 @Controller('user')
+@RouteAccess(RoutePathConst.USER)
 export class UserController {
   constructor(
     private readonly signupUseCase: SignupUseCase,

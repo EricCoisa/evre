@@ -88,11 +88,14 @@ import { GetCapabilitiesUseCase } from './use-cases/get-capabilities.use-case';
 import { UpdateMessagingContactDto } from './dto/update-messaging-contact.dto';
 import { CreateMessagingContactDto } from './dto/create-messaging-contact.dto';
 import { ListConversationsUseCase } from './use-cases/list-conversations.use-case';
+import { RouteAccess } from 'src/common/decorators/route-access.decorator';
+import { RoutePathConst } from 'src/domain/route/route-path.const';
 
 const WEBHOOK_RATE_LIMIT = 1000;
 
 @ApiTags('messaging')
 @Controller('messaging')
+@RouteAccess(RoutePathConst.COMMUNICATION)
 export class MessagingController {
   constructor(
     private readonly sendMessageUseCase: SendMessageUseCase,

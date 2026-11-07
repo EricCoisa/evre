@@ -78,9 +78,12 @@ describe('RolesGuard', () => {
     );
   });
 
-  it('checks route access for non-ADMIN and denies when revoked', async () => {
-    vi.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['ADMIN', 'MODERATOR']);
-    vi.spyOn(reflector, 'get').mockReturnValue('company');
+  it('checks route access via RouteAccess for non-ADMIN and denies when revoked', async () => {
+    vi.spyOn(reflector, 'getAllAndOverride').mockImplementation((key) => {
+      if (key === 'roles') return ['ADMIN', 'MODERATOR'];
+      if (key === 'route_access_path') return '/company';
+      return undefined;
+    });
     mockCheckAccess.execute.mockResolvedValue(false);
 
     await expect(
@@ -89,13 +92,17 @@ describe('RolesGuard', () => {
     expect(mockCheckAccess.execute).toHaveBeenCalledWith('u1', '/company', 'r1');
   });
 
-  it('allows non-ADMIN when route access is granted', async () => {
-    vi.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['ADMIN', 'MODERATOR']);
-    vi.spyOn(reflector, 'get').mockReturnValue('company');
+  it('allows non-ADMIN when route access is granted via RouteAccess', async () => {
+    vi.spyOn(reflector, 'getAllAndOverride').mockImplementation((key) => {
+      if (key === 'roles') return ['ADMIN', 'MODERATOR'];
+      if (key === 'route_access_path') return '/company';
+      return undefined;
+    });
     mockCheckAccess.execute.mockResolvedValue(true);
 
     await expect(
       guard.canActivate(makeContext({ id: 'u1', roleName: 'MODERATOR', roleId: 'r1' })),
     ).resolves.toBe(true);
+    expect(mockCheckAccess.execute).toHaveBeenCalledWith('u1', '/company', 'r1');
   });
 });

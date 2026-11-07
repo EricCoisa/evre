@@ -12,9 +12,12 @@ import { commonPaginationQueries } from '../../common/swagger/pagination-queries
 import type { PaginatedResponse } from '../../common/types/pagination.types';
 import { FindAllLogsUseCase } from './use-cases/find-all.use-case';
 import { Logging } from 'src/domain/logging/logging.entity';
+import { RouteAccess } from 'src/common/decorators/route-access.decorator';
+import { RoutePathConst } from 'src/domain/route/route-path.const';
 
 @ApiTags('logging')
 @Controller('logging')
+@RouteAccess(RoutePathConst.LOGGING)
 export class LoggingController {
   constructor(
     private readonly findAllLogs: FindAllLogsUseCase,

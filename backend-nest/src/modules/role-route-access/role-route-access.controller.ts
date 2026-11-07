@@ -26,11 +26,15 @@ import { FindAllUserRoleUseCase } from './use-cases/find-all-user-role.use-case'
 import { FindByRoleUseCase } from './use-cases/find-by-role.use-case';
 import { RemoveByRoleUseCase } from './use-cases/remove-by-role.use-case';
 
+import { RouteAccess } from 'src/common/decorators/route-access.decorator';
+import { RoutePathConst } from 'src/domain/route/route-path.const';
+
 const RemoveByRoleQuerySchema = z.object({ roleId: z.string().min(1) });
 type RemoveByRoleQuery = z.infer<typeof RemoveByRoleQuerySchema>;
 
 @ApiTags('role-route-access')
 @Controller('role-route-access')
+@RouteAccess(RoutePathConst.ACCESS)
 export class RoleRouteAccessController {
   constructor(
     private readonly findAllUseCase: FindAllRoleRouteAccessUseCase,

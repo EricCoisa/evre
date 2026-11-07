@@ -11,7 +11,7 @@ describe('DescribePageBuilderTool', () => {
   const fakeContext: AiToolContext = {
     userId: 'user-123',
     roleName: 'USER',
-    conversationId: 'conv-123',
+    approvedScopes: [],
   };
 
   beforeEach(() => {

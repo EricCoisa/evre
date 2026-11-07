@@ -32,7 +32,7 @@ const admin: AuthenticatedUser = {
 };
 
 describe('Project use-cases', () => {
-  let prisma: Record<string, Record<string, ReturnType<typeof vi.fn>>>;
+  let prisma: any;
   let loggingService: { create: ReturnType<typeof vi.fn> };
   let i18n: { t: ReturnType<typeof vi.fn> };
   let resourceAccess: {

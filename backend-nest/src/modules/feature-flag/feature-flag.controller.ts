@@ -19,9 +19,12 @@ import { FeatureFlagDto } from './dto/feature-flag.dto';
 import { McpScopes } from '../../domain/api-key/mcp-scopes.const';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../../common/types/auth.types';
+import { RouteAccess } from 'src/common/decorators/route-access.decorator';
+import { RoutePathConst } from 'src/domain/route/route-path.const';
 
 @ApiTags('feature-flags')
 @Controller('feature-flags')
+@RouteAccess(RoutePathConst.FEATURE_FLAGS)
 export class FeatureFlagController {
   constructor(
     private readonly service: FeatureFlagService,

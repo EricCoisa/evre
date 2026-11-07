@@ -51,9 +51,12 @@ import {
   PaginationQuerySchema,
   type PaginationQuery,
 } from '../../common/schemas/pagination.schema';
+import { RouteAccess } from 'src/common/decorators/route-access.decorator';
+import { RoutePathConst } from 'src/domain/route/route-path.const';
 
 @ApiTags('ai')
 @Controller('ai')
+@RouteAccess(RoutePathConst.AGENT)
 export class AiController {
   private readonly logger = new Logger(AiController.name);
 

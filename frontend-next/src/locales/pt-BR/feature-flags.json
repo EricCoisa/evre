@@ -70,6 +70,7 @@
     "MESSAGING_TEMPLATES": "Templates da Mensageria",
     "NOTIFICATION": "Módulo de Notificações",
     "OAUTH_LOGIN": "Login Social (OAuth/OIDC)",
-    "PAGE_BUILDER": "Customização de Páginas (PageBuilder)"
+    "PAGE_BUILDER": "Customização de Páginas (PageBuilder)",
+    "FEATURE_TIME_TRACKING": "Controle de Tempo"
   }
 }

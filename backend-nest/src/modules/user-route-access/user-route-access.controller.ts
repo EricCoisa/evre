@@ -21,6 +21,9 @@ import { RevokeAccessUseCase } from './use-cases/revoke-access.use-case';
 import { RevokeAllAccessUseCase } from './use-cases/revoke-all-access.use-case';
 import { CheckAccessUseCase } from './use-cases/check-access.use-case';
 
+import { RouteAccess } from 'src/common/decorators/route-access.decorator';
+import { RoutePathConst } from 'src/domain/route/route-path.const';
+
 const CheckAccessQuerySchema = z.object({ path: z.string().min(1) });
 const RevokeAllQuerySchema = z.object({ userId: z.string().min(1) });
 const ListQuerySchema = PaginationQuerySchema.extend({
@@ -30,6 +33,7 @@ type ListQuery = z.infer<typeof ListQuerySchema>;
 
 @ApiTags('user-route-access')
 @Controller('user-route-access')
+@RouteAccess(RoutePathConst.ACCESS)
 export class UserRouteAccessController {
   private readonly logger = new Logger(UserRouteAccessController.name);
 

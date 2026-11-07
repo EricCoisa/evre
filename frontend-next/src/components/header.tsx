@@ -25,7 +25,7 @@ export function Header({
 }: HeaderProps) {
   const { devTools, setDevTools } = useApp();
   const { data: me } = useMe();
-  const isClient = me?.roleName === 'USER';
+  const isClient = me?.role === 'USER' || (me as any)?.roleName === 'USER';
 
   return (
     <header className="flex h-(--header-height) items-end shrink-0 gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height) bg-gradient-to-b from-sidebar via-sidebar/95 to-sidebar/90">
