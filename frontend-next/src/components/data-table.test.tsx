@@ -427,6 +427,25 @@ describe('DataTable - agrupamento (enableGrouping)', () => {
     expect(screen.queryByText('team: alpha')).not.toBeInTheDocument();
     expect(screen.getByText(/Grupo alpha/)).toBeInTheDocument();
   });
+
+  it('oculta a contagem de itens quando meta.hideGroupCount é true', () => {
+    const groupedColumns: ColumnDef<GroupRow>[] = [
+      {
+        accessorKey: 'team',
+        header: 'Equipe',
+        meta: {
+          groupBy: true,
+          hideGroupCount: true,
+          groupLabel: (value) => <strong>Grupo {String(value)}</strong>,
+        },
+      },
+      { accessorKey: 'name', header: 'Nome' },
+    ];
+    render(<GroupHarness columns={groupedColumns} />);
+
+    expect(screen.getByText(/Grupo alpha/)).toBeInTheDocument();
+    expect(screen.queryByText(/\(2 itens\)/)).not.toBeInTheDocument();
+  });
 });
 
 describe('DataTable - visão mobile (useIsMobile = true)', () => {

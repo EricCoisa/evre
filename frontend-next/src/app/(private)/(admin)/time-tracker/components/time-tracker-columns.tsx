@@ -59,6 +59,7 @@ export function getTimeTrackingColumns({
       header: () => <TableHead>{t('activity_link')}</TableHead>,
       meta: {
         groupBy: true,
+        hideGroupCount: true,
         groupLabel: (value: unknown, groupData: any) => {
           const subRows: any[] = groupData?.allSubRows ?? [];
           const count = subRows.length;

@@ -96,34 +96,12 @@ export function useActiveTimer() {
   const query = useQuery({
     queryKey: ['time-tracking', 'active'],
     queryFn: Collector(() => getActiveTimer(), { silentStatuses: [404] }),
-    staleTime: 0,
+    staleTime: 1000 * 5,
     refetchOnMount: 'always',
     refetchOnWindowFocus: 'always',
     refetchOnReconnect: 'always',
-    retry: 2,
+    retry: 1,
   });
-
-  // Revalidação proativa imediata quando a aba/janela volta a ficar visível ou ganha foco
-  useEffect(() => {
-    if (typeof document === 'undefined') return;
-
-    const handleVisibilityOrFocus = () => {
-      if (document.visibilityState === 'visible') {
-        queryClient.invalidateQueries({
-          queryKey: ['time-tracking', 'active'],
-          refetchType: 'all',
-        });
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityOrFocus);
-    window.addEventListener('focus', handleVisibilityOrFocus);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
-      window.removeEventListener('focus', handleVisibilityOrFocus);
-    };
-  }, [queryClient]);
 
   // Sincronização em tempo real entre abas sem polling (BroadcastChannel)
   useEffect(() => {

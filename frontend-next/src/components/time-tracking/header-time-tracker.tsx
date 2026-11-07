@@ -67,10 +67,7 @@ export function HeaderTimeTracker() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/40 animate-pulse text-xs text-muted-foreground">
-        <Clock className="h-3.5 w-3.5" />
-        <span>{t('running')}</span>
-      </div>
+      <div className="h-8 w-24 rounded-md bg-muted/30 animate-pulse" />
     );
   }
 
@@ -89,7 +86,7 @@ export function HeaderTimeTracker() {
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
-          <p>{t('running')}</p>
+          <p>{t('start')}</p>
         </TooltipContent>
       </Tooltip>
     );
@@ -123,7 +120,7 @@ export function HeaderTimeTracker() {
 
   // Estado 2: Timer Ativo rodando
   const displayTitle =
-    entry.entityTitle || entry.description || t('running');
+    entry.entityTitle || entry.description || t('session');
 
   return (
     <>

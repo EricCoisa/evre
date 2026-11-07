@@ -72,5 +72,9 @@
   "stopTaskTimer": "Parar cronômetro desta tarefa",
   "trackTimeInTask": "Rastrear tempo nesta tarefa",
   "stopMilestoneTimer": "Parar cronômetro desta etapa",
-  "startMilestoneTimer": "Iniciar cronômetro nesta etapa"
+  "startMilestoneTimer": "Iniciar cronômetro nesta etapa",
+  "descriptionRequired": "A descrição da atividade é obrigatória",
+  "startTimeRequired": "O horário de início é obrigatório",
+  "endTimeRequired": "O horário de término é obrigatório",
+  "endTimeAfterStartTime": "O término deve ser posterior ao início"
 }

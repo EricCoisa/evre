@@ -1,27 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
+import { useMemo } from 'react';
+import Modal from '@/components/modal';
+import { FormBuilder, type FormBuilderField } from '@/components/form/form-builder';
 import { useUpdateTimeEntry } from '@/lib/actions/time-tracking/queries';
 import type { TimeEntry } from '@/lib/actions/time-tracking/types';
-import { Edit2, ShieldAlert } from 'lucide-react';
+import { ShieldAlert } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
+import { useScreenItem } from '@/components/agent/screen-registry';
+import { useQueryClient } from '@tanstack/react-query';
+import { z } from 'zod';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface EditTimeEntryDialogProps {
   entry: TimeEntry | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+}
+
+export interface TimeEntryEditProps {
+  entry: TimeEntry | null;
+  onCancel?: () => void;
+  onSuccess?: () => void;
 }
 
 function toLocalDatetimeString(isoString?: string | null): string {
@@ -37,134 +38,150 @@ function toLocalDatetimeString(isoString?: string | null): string {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
+export function TimeEntryEdit({ entry, onCancel, onSuccess }: TimeEntryEditProps) {
+  const { t } = useTranslation('time-tracking');
+  const queryClient = useQueryClient();
+  const updateMutation = useUpdateTimeEntry();
+
+  // Registra o item ativo na tela para o contexto do agente IA
+  useScreenItem('record', 'time-entries', entry?.id);
+
+  const updateTimeEntrySchema = useMemo(
+    () =>
+      z
+        .object({
+          description: z.string().optional(),
+          startTime: z.string().min(1, t('startTimeRequired')),
+          endTime: z.string().optional(),
+          isBillable: z.boolean().default(true),
+        })
+        .refine(
+          (data) => {
+            if (!data.startTime || !data.endTime) return true;
+            return new Date(data.endTime) > new Date(data.startTime);
+          },
+          {
+            message: t('endTimeAfterStartTime'),
+            path: ['endTime'],
+          },
+        ),
+    [t],
+  );
+
+  const fields = useMemo<FormBuilderField[]>(
+    () => [
+      {
+        name: 'description',
+        label: t('activityLabel'),
+        placeholder: t('activityPlaceholder'),
+        className: 'sm:col-span-2',
+      },
+      {
+        name: 'startTime',
+        label: t('startTime'),
+        type: 'datetime-local',
+      },
+      {
+        name: 'endTime',
+        label: t('endTime'),
+        type: 'datetime-local',
+      },
+      {
+        name: 'isBillable',
+        label: '',
+        type: 'custom',
+        className: 'sm:col-span-2',
+        render: (field, isSubmitting) => (
+          <div className="flex items-center justify-between rounded-lg border p-3">
+            <div className="space-y-0.5">
+              <Label htmlFor="edit-billable" className="cursor-pointer font-medium text-sm">
+                {t('billableActivity')}
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                {t('billableDescription')}
+              </p>
+            </div>
+            <Switch
+              id="edit-billable"
+              checked={field.value ?? true}
+              onCheckedChange={field.onChange}
+              disabled={isSubmitting}
+            />
+          </div>
+        ),
+      },
+      {
+        name: '_auditNotice',
+        label: '',
+        type: 'custom',
+        className: 'sm:col-span-2',
+        render: () => (
+          <div className="flex items-start gap-2 p-2.5 rounded-md bg-muted/60 text-muted-foreground text-xs">
+            <ShieldAlert className="h-4 w-4 text-warning-600 flex-shrink-0 mt-0.5" />
+            <span>{t('auditNotice')}</span>
+          </div>
+        ),
+      },
+    ],
+    [t],
+  );
+
+  if (!entry) return null;
+
+  return (
+    <FormBuilder
+      key={entry.id}
+      schema={updateTimeEntrySchema}
+      fields={fields}
+      mode="edit"
+      gridClassName="grid gap-4 sm:grid-cols-2"
+      showToast={false}
+      values={{
+        description: entry.description ?? entry.entityTitle ?? '',
+        startTime: toLocalDatetimeString(entry.startTime),
+        endTime: toLocalDatetimeString(entry.endTime),
+        isBillable: entry.isBillable ?? true,
+      }}
+      onCancel={onCancel}
+      onSubmit={async (data) => {
+        const payload = {
+          description: data.description?.trim() || undefined,
+          startTime: data.startTime ? new Date(data.startTime).toISOString() : undefined,
+          endTime: data.endTime ? new Date(data.endTime).toISOString() : null,
+          isBillable: data.isBillable,
+        };
+        return await updateMutation.mutateAsync({ id: entry.id, data: payload });
+      }}
+      onSuccess={() => {
+        queryClient.invalidateQueries({ queryKey: ['time-tracking'] });
+        onSuccess?.();
+      }}
+      submitLabel={t('save')}
+      cancelLabel={t('cancel')}
+    />
+  );
+}
+
 export function EditTimeEntryDialog({
   entry,
   open,
   onOpenChange,
 }: EditTimeEntryDialogProps) {
   const { t } = useTranslation('time-tracking');
-  const [description, setDescription] = useState('');
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
-  const [isBillable, setIsBillable] = useState(true);
-
-  const updateMutation = useUpdateTimeEntry();
-
-  useEffect(() => {
-    if (entry) {
-      setDescription(entry.description ?? entry.entityTitle ?? '');
-      setStartTime(toLocalDatetimeString(entry.startTime));
-      setEndTime(toLocalDatetimeString(entry.endTime));
-      setIsBillable(entry.isBillable ?? true);
-    }
-  }, [entry]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!entry) return;
-
-    try {
-      await updateMutation.mutateAsync({
-        id: entry.id,
-        data: {
-          description: description.trim() || undefined,
-          startTime: startTime ? new Date(startTime).toISOString() : undefined,
-          endTime: endTime ? new Date(endTime).toISOString() : null,
-          isBillable,
-        },
-      });
-      onOpenChange(false);
-    } catch {
-      // Toast de erro já tratado via Alive
-    }
-  };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px]">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Edit2 className="h-5 w-5 text-primary" />
-              {t('editTitle')}
-            </DialogTitle>
-            <DialogDescription>
-              {t('editDescription')}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-3.5 py-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="edit-description">{t('activityLabel')}</Label>
-              <Input
-                id="edit-description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder={t('activityPlaceholder')}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="edit-start">{t('startTime')}</Label>
-                <Input
-                  id="edit-start"
-                  type="datetime-local"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="edit-end">{t('endTime')}</Label>
-                <Input
-                  id="edit-end"
-                  type="datetime-local"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <div className="space-y-0.5">
-                <Label htmlFor="edit-billable" className="cursor-pointer font-medium">
-                  {t('billableActivity')}
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  {t('billableDescription')}
-                </p>
-              </div>
-              <Switch
-                id="edit-billable"
-                checked={isBillable}
-                onCheckedChange={setIsBillable}
-              />
-            </div>
-
-            <div className="flex items-start gap-2 p-2.5 rounded-md bg-muted/60 text-muted-foreground text-xs">
-              <ShieldAlert className="h-4 w-4 text-warning-600 flex-shrink-0 mt-0.5" />
-              <span>
-                {t('auditNotice')}
-              </span>
-            </div>
-          </div>
-
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              {t('cancel')}
-            </Button>
-            <Button type="submit" disabled={updateMutation.isPending}>
-              {updateMutation.isPending ? t('saving') : t('save')}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <Modal
+      open={open}
+      onOpenChange={onOpenChange}
+      size="md"
+      title={t('editTitle')}
+      description={t('editDescription')}
+    >
+      <TimeEntryEdit
+        entry={entry}
+        onCancel={() => onOpenChange(false)}
+        onSuccess={() => onOpenChange(false)}
+      />
+    </Modal>
   );
 }

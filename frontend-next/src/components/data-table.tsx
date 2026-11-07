@@ -63,6 +63,7 @@ declare module '@tanstack/react-table' {
     isAction?: boolean;
     groupBy?: boolean;
     groupLabel?: (value: TValue, groupData?: unknown) => string | React.ReactNode;
+    hideGroupCount?: boolean;
     hidden?: boolean;
     // Propriedades para layout mobile
     mobileWidth?: 'full' | 'half' | 'third'; // Largura da coluna no card mobile
@@ -680,9 +681,11 @@ function DataTableDesktopGroupRow<TData>({
           ) : (
             groupLabel
           )}
-          <span className="text-warning-600 dark:text-warning-400 text-sm">
-            ({row.subRows?.length} itens)
-          </span>
+          {!groupColumn?.meta?.hideGroupCount && (
+            <span className="text-warning-600 dark:text-warning-400 text-sm">
+              ({row.subRows?.length} itens)
+            </span>
+          )}
         </div>
       </TableCell>
     </TableRow>

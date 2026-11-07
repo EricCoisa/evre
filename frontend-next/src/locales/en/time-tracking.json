@@ -72,5 +72,9 @@
   "stopTaskTimer": "Stop timer for this task",
   "trackTimeInTask": "Track time on this task",
   "stopMilestoneTimer": "Stop milestone timer",
-  "startMilestoneTimer": "Start milestone timer"
+  "startMilestoneTimer": "Start milestone timer",
+  "descriptionRequired": "Activity description is required",
+  "startTimeRequired": "Start time is required",
+  "endTimeRequired": "End time is required",
+  "endTimeAfterStartTime": "End time must be after start time"
 }
