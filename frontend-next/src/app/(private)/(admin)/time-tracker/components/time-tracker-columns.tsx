@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Play,
-  Pause,
+  Square,
   Edit2,
   Trash2,
   AlertTriangle,
@@ -115,14 +115,14 @@ export function getTimeTrackingColumns({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 text-amber-600 hover:text-amber-700 hover:bg-amber-500/10 dark:hover:bg-amber-950/30"
+                    className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/15 dark:hover:bg-destructive/25"
                     onClick={(e) => {
                       e.stopPropagation();
                       onStop();
                     }}
-                    title={t('pauseTask')}
+                    title={t('stopTaskTimer')}
                   >
-                    <Pause className="h-3.5 w-3.5 fill-current" />
+                    <Square className="h-3.5 w-3.5 fill-current animate-pulse" />
                   </Button>
                 ) : (
                   <Button
@@ -320,14 +320,14 @@ export function getTimeTrackingColumns({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 text-amber-600 hover:text-amber-700 hover:bg-amber-500/10 dark:hover:bg-amber-950/30"
+                  className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/15 dark:hover:bg-destructive/25"
                   onClick={(e) => {
                     e.stopPropagation();
                     onStop();
                   }}
-                  title={t('pauseTask')}
+                  title={t('stopTaskTimer')}
                 >
-                  <Pause className="h-3.5 w-3.5 fill-current" />
+                  <Square className="h-3.5 w-3.5 fill-current animate-pulse" />
                 </Button>
               ) : (
                 <Button

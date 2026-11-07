@@ -19,6 +19,9 @@ export class GetActiveTimerUseCase {
         userId,
         endTime: null,
       },
+      orderBy: {
+        startTime: 'desc',
+      },
       include: {
         project: {
           select: { id: true, name: true },

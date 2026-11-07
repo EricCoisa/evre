@@ -29,8 +29,9 @@ export default async function PrivateLayout({
     redirect('/login');
   }
 
-  // Decisão de servidor: com a flag off, <NotificationBell> nem monta — zero chamada ao backend.
+  // Decisão de servidor: com a flag off, componentes nem montam — zero chamada desnecessária ao backend.
   const notificationsEnabled = await serverFeatureFlag('NOTIFICATION');
+  const timeTrackingEnabled = await serverFeatureFlag('FEATURE_TIME_TRACKING');
 
   return (
     // Boundary mais externo do app privado: o AuthHydration suspende até `me`, idioma
@@ -47,7 +48,10 @@ export default async function PrivateLayout({
                     <AppSidebar />
                     <SidebarInset className="flex flex-col min-h-screen  w-full max-w-full overflow-x-auto bg-background">
                       <BreadProvider>
-                        <Header notificationsEnabled={notificationsEnabled} />
+                        <Header
+                          notificationsEnabled={notificationsEnabled}
+                          timeTrackingEnabled={timeTrackingEnabled}
+                        />
                         <CMSLayoutWrapper>
                           {children}
                         </CMSLayoutWrapper>

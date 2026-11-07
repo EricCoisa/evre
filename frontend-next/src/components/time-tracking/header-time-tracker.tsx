@@ -27,7 +27,7 @@ function formatElapsed(seconds: number): string {
 
 export function HeaderTimeTracker() {
   const { t } = useTranslation('time-tracking');
-  const { data: activeTimerData, isLoading } = useActiveTimer();
+  const { data: activeTimerData, isLoading, isError, refetch } = useActiveTimer();
   const stopTimerMutation = useStopTimer();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -71,6 +71,27 @@ export function HeaderTimeTracker() {
         <Clock className="h-3.5 w-3.5" />
         <span>{t('running')}</span>
       </div>
+    );
+  }
+
+  // Estado em erro com retry manual
+  if (isError && !entry) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => refetch()}
+            className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <Clock className="h-3.5 w-3.5" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          <p>{t('running')}</p>
+        </TooltipContent>
+      </Tooltip>
     );
   }
 
