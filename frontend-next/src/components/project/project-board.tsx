@@ -34,6 +34,7 @@ import { TaskCard } from './task-card';
 import { TaskListView } from './task-list-view';
 import { TaskDetailSheet } from './task-detail-sheet';
 import { CreateMilestoneDialog } from './create-milestone-dialog';
+import { CreateTaskDialog } from './create-task-dialog';
 import { ClientActionBanner } from './client-action-banner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,6 +49,19 @@ interface ProjectBoardProps {
   canEdit?: boolean;
   mode?: 'admin' | 'client';
   onGoToRequests?: () => void;
+}
+
+function parseBoardItems(data: unknown): Milestone[] {
+  const raw = Array.isArray(data)
+    ? (data as Milestone[])
+    : Array.isArray((data as { data?: Milestone[] })?.data)
+    ? (data as { data: Milestone[] }).data
+    : [];
+
+  return raw.map((m) => ({
+    ...m,
+    tasks: Array.isArray(m.tasks) ? m.tasks : [],
+  }));
 }
 
 export function ProjectBoard({
@@ -66,30 +80,28 @@ export function ProjectBoard({
 
   const [viewMode, setViewMode] = useState<'board' | 'list'>('board');
   const [isCreateMilestoneOpen, setIsCreateMilestoneOpen] = useState(false);
+  const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
+  const [createTaskMilestoneId, setCreateTaskMilestoneId] = useState<string | undefined>(undefined);
+  const [createTaskMilestoneTitle, setCreateTaskMilestoneTitle] = useState<string | undefined>(undefined);
   const [selectedTask, setSelectedTask] = useState<MilestoneTask | null>(null);
   const [selectedMilestoneTitle, setSelectedMilestoneTitle] = useState<string>('');
   const [activeTask, setActiveTask] = useState<MilestoneTask | null>(null);
   const [activeMilestone, setActiveMilestone] = useState<Milestone | null>(null);
 
+  const handleOpenCreateTask = (milestoneId?: string, milestoneTitle?: string) => {
+    setCreateTaskMilestoneId(milestoneId);
+    setCreateTaskMilestoneTitle(milestoneTitle);
+    setIsCreateTaskOpen(true);
+  };
+
   // Estado local para permitir drag and drop otimista e fluido sem efeito rebote
-  const [items, setItems] = useState<Milestone[]>([]);
+  const [items, setItems] = useState<Milestone[]>(() => parseBoardItems(boardData));
   const [prevBoardData, setPrevBoardData] = useState(boardData);
   const [searchQuery, setSearchQuery] = useState('');
 
   if (boardData !== prevBoardData) {
     setPrevBoardData(boardData);
-    const raw = Array.isArray(boardData)
-      ? boardData
-      : Array.isArray((boardData as { data?: Milestone[] })?.data)
-      ? (boardData as { data: Milestone[] }).data
-      : [];
-
-    setItems(
-      raw.map((m) => ({
-        ...m,
-        tasks: Array.isArray(m.tasks) ? m.tasks : [],
-      }))
-    );
+    setItems(parseBoardItems(boardData));
   }
 
   const displayedItems = useMemo(() => {
@@ -260,7 +272,7 @@ export function ProjectBoard({
 
           try {
             await reorderMilestonesMutation.mutateAsync(reordered.map((m) => m.id));
-          } catch (err) {
+          } catch {
             setItems(items); // Rollback em caso de falha
             toast.error('Erro ao reordenar etapas');
           }
@@ -432,14 +444,25 @@ export function ProjectBoard({
         </div>
 
         {canEdit && (
-          <Button
-            size="sm"
-            onClick={() => setIsCreateMilestoneOpen(true)}
-            className="h-8 text-xs px-3"
-          >
-            <Plus className="mr-1 h-3.5 w-3.5" />
-            Nova Etapa
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleOpenCreateTask()}
+              className="h-8 text-xs px-3 gap-1"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Nova Tarefa
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setIsCreateMilestoneOpen(true)}
+              className="h-8 text-xs px-3"
+            >
+              <Plus className="mr-1 h-3.5 w-3.5" />
+              Nova Etapa
+            </Button>
+          </div>
         )}
       </div>
 
@@ -453,6 +476,7 @@ export function ProjectBoard({
             setSelectedTask(task);
             setSelectedMilestoneTitle(title);
           }}
+          onOpenCreateTask={canEdit ? handleOpenCreateTask : undefined}
           onAddTask={canEdit ? handleAddTask : undefined}
           onDeleteTask={canEdit ? handleDeleteTask : undefined}
           onDeleteMilestone={canEdit ? handleDeleteMilestone : undefined}
@@ -476,6 +500,7 @@ export function ProjectBoard({
                     setSelectedTask(task);
                     setSelectedMilestoneTitle(title);
                   }}
+                  onOpenCreateTask={canEdit ? handleOpenCreateTask : undefined}
                   onAddTask={canEdit ? handleAddTask : undefined}
                   onDeleteTask={canEdit ? handleDeleteTask : undefined}
                   onDeleteMilestone={canEdit ? handleDeleteMilestone : undefined}
@@ -536,6 +561,16 @@ export function ProjectBoard({
         projectId={projectId}
         open={isCreateMilestoneOpen}
         onOpenChange={setIsCreateMilestoneOpen}
+      />
+
+      {/* Modal para Criar Nova Tarefa com Status, Motivo de Bloqueio e Rich Text */}
+      <CreateTaskDialog
+        projectId={projectId}
+        milestoneId={createTaskMilestoneId}
+        milestoneTitle={createTaskMilestoneTitle}
+        availableMilestones={items.map((m) => ({ id: m.id, title: m.title }))}
+        open={isCreateTaskOpen}
+        onOpenChange={setIsCreateTaskOpen}
       />
     </div>
   );

@@ -16,6 +16,7 @@ import {
 import { TaskCard } from './task-card';
 import { MilestoneApprovalAction } from './milestone-approval-action';
 import { MilestoneDetailSheet } from './milestone-detail-sheet';
+import { MilestoneProgressBar } from './milestone-progress';
 import {
   GripVertical,
   Plus,
@@ -35,6 +36,7 @@ interface MilestoneColumnProps {
   milestone: Milestone;
   canEdit?: boolean;
   onSelectTask: (task: MilestoneTask, milestoneTitle: string) => void;
+  onOpenCreateTask?: (milestoneId: string, milestoneTitle: string) => void;
   onAddTask?: (milestoneId: string, title: string) => void;
   onDeleteTask?: (taskId: string) => void;
   onDeleteMilestone?: (milestoneId: string) => void;
@@ -45,13 +47,12 @@ export function MilestoneColumn({
   milestone,
   canEdit = true,
   onSelectTask,
-  onAddTask,
+  onOpenCreateTask,
   onDeleteTask,
   onDeleteMilestone,
 }: MilestoneColumnProps) {
   const updateMilestoneMutation = useUpdateMilestone(projectId);
 
-  const [newTaskTitle, setNewTaskTitle] = useState('');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [title, setTitle] = useState(milestone.title);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -97,13 +98,6 @@ export function MilestoneColumn({
     }
   };
 
-  const handleAddTask = () => {
-    const trimmed = newTaskTitle.trim();
-    if (!trimmed || !onAddTask) return;
-    onAddTask(milestone.id, trimmed);
-    setNewTaskTitle('');
-  };
-
   const tasks = milestone.tasks ?? [];
   const taskIds = tasks.map((t) => t.id);
 
@@ -115,7 +109,7 @@ export function MilestoneColumn({
     >
       <Card className="flex flex-col max-h-[calc(100vh-220px)] bg-muted/30 border shadow-xs rounded-xl overflow-hidden">
         {/* Cabeçalho da Milestone */}
-        <CardHeader className="p-3 pb-2 border-b bg-muted/20 space-y-2">
+        <CardHeader className="p-3 pb-2.5 border-b bg-muted/20 space-y-2.5">
           <div className="flex items-center justify-between gap-1">
             <div className="flex items-center gap-1.5 min-w-0 flex-1">
               {canEdit && (
@@ -177,6 +171,12 @@ export function MilestoneColumn({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  {canEdit && onOpenCreateTask && (
+                    <DropdownMenuItem onClick={() => onOpenCreateTask(milestone.id, milestone.title)}>
+                      <Plus className="mr-2 h-3.5 w-3.5" />
+                      Nova tarefa
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={() => setIsDetailOpen(true)}>
                     <AlignLeft className="mr-2 h-3.5 w-3.5" />
                     {canEdit ? 'Detalhes e descrição' : 'Ver detalhes'}
@@ -204,6 +204,9 @@ export function MilestoneColumn({
               </DropdownMenu>
             </div>
           </div>
+
+          {/* Barra de Progresso da Milestone */}
+          <MilestoneProgressBar tasks={tasks} compact />
 
           {/* Descrição resumida da etapa (se houver) */}
           {milestone.description && (
@@ -234,6 +237,7 @@ export function MilestoneColumn({
             {tasks.map((task) => (
               <TaskCard
                 key={task.id}
+                projectId={projectId}
                 task={task}
                 canEdit={canEdit}
                 onSelect={(t) => onSelectTask(t, milestone.title)}
@@ -249,27 +253,18 @@ export function MilestoneColumn({
           )}
         </CardContent>
 
-        {/* Adicionar nova tarefa rápido */}
-        {canEdit && onAddTask && (
+        {/* Botão de Adicionar Tarefa com Modal */}
+        {canEdit && onOpenCreateTask && (
           <div className="p-2 border-t bg-card/60">
-            <div className="flex gap-1.5">
-              <Input
-                placeholder="Adicionar tarefa..."
-                className="h-8 text-xs bg-background"
-                value={newTaskTitle}
-                onChange={(e) => setNewTaskTitle(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 w-8 p-0 flex-shrink-0"
-                onClick={handleAddTask}
-                disabled={!newTaskTitle.trim()}
-              >
-                <Plus className="h-3.5 w-3.5" />
-              </Button>
-            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start text-xs text-muted-foreground hover:text-foreground h-8 gap-1.5"
+              onClick={() => onOpenCreateTask(milestone.id, milestone.title)}
+            >
+              <Plus className="h-3.5 w-3.5 text-primary" />
+              <span>Adicionar tarefa</span>
+            </Button>
           </div>
         )}
       </Card>
@@ -285,4 +280,3 @@ export function MilestoneColumn({
     </div>
   );
 }
-

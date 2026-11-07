@@ -16,6 +16,7 @@ import { RichTextInput } from '@/components/rich-text-input';
 import { RichTextViewer } from './rich-text-viewer';
 import { ProjectCommentsThread } from './project-comments-thread';
 import { MilestoneApprovalAction } from './milestone-approval-action';
+import { MilestoneProgressBar } from './milestone-progress';
 import { useUpdateMilestone } from '@/lib/actions/project/queries';
 import { Check, Edit3, AlignLeft, Layers } from 'lucide-react';
 import { toast } from 'sonner';
@@ -186,6 +187,9 @@ function MilestoneDetailSheetContent({
 
       {/* Corpo com scroll */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        {/* Progresso Geral da Etapa */}
+        <MilestoneProgressBar tasks={milestone.tasks ?? []} />
+
         {/* Seção Descrição Rica da Etapa */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">

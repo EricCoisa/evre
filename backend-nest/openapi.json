@@ -15663,7 +15663,23 @@
             "minLength": 1
           },
           "description": {
-            "description": "Task description",
+            "description": "Task rich text description",
+            "type": "string"
+          },
+          "status": {
+            "description": "Task status",
+            "type": "string",
+            "enum": [
+              "WAITING",
+              "IN_PROGRESS",
+              "BLOCKED",
+              "DONE",
+              "CANCELLED"
+            ],
+            "default": "WAITING"
+          },
+          "blockedReason": {
+            "description": "Reason why the task is blocked",
             "type": "string"
           }
         },
@@ -15680,8 +15696,24 @@
             "minLength": 1
           },
           "description": {
-            "description": "Task description",
+            "description": "Task rich text description",
             "type": "string"
+          },
+          "status": {
+            "description": "Task status",
+            "type": "string",
+            "enum": [
+              "WAITING",
+              "IN_PROGRESS",
+              "BLOCKED",
+              "DONE",
+              "CANCELLED"
+            ]
+          },
+          "blockedReason": {
+            "description": "Reason why the task is blocked",
+            "type": "string",
+            "nullable": true
           }
         }
       },

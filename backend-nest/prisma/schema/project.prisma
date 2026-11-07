@@ -48,19 +48,32 @@ model ProjectMilestone {
   @@schema("public")
 }
 
+enum ProjectTaskStatus {
+  WAITING
+  IN_PROGRESS
+  BLOCKED
+  DONE
+  CANCELLED
+
+  @@schema("public")
+}
+
 /// Card dentro de uma milestone. `position` define a ordem dentro da coluna.
 model ProjectTask {
-  id          String   @id @default(uuid())
-  milestoneId String
-  title       String
-  description String?  @db.Text
-  position    Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String            @id @default(uuid())
+  milestoneId   String
+  title         String
+  description   String?           @db.Text
+  status        ProjectTaskStatus @default(WAITING)
+  blockedReason String?           @db.Text
+  position      Int               @default(0)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
 
   milestone ProjectMilestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
 
   @@index([milestoneId])
+  @@index([status])
   @@map("project_tasks")
   @@schema("public")
 }

@@ -17,6 +17,8 @@ import { toast } from "sonner";
 import { useTranslation } from "@/hooks/use-translation";
 import type {
   CreateProjectDto, UpdateProjectDto,
+  CreateMilestoneDto, UpdateMilestoneDto,
+  CreateTaskDto, UpdateTaskDto,
   CreateCommentDto, RespondApprovalDto, RequestApprovalDto,
   CreateInfoRequestDto, AnswerInfoRequestDto,
   ProjectControllerGetCommentsParams,
@@ -103,7 +105,7 @@ export function useProjectBoard(projectId: string) {
 export function useCreateMilestone(projectId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: { title: string; description?: string }) => createMilestone(projectId, data),
+    mutationFn: (data: CreateMilestoneDto) => createMilestone(projectId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project', projectId, 'board'] });
     }
@@ -113,7 +115,7 @@ export function useCreateMilestone(projectId: string) {
 export function useUpdateMilestone(projectId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ milestoneId, data }: { milestoneId: string; data: { title?: string; description?: string } }) =>
+    mutationFn: ({ milestoneId, data }: { milestoneId: string; data: UpdateMilestoneDto }) =>
       updateMilestone(projectId, milestoneId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project', projectId, 'board'] });
@@ -145,7 +147,7 @@ export function useReorderMilestones(projectId: string) {
 export function useCreateTask(projectId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ milestoneId, data }: { milestoneId: string; data: { title: string; description?: string } }) =>
+    mutationFn: ({ milestoneId, data }: { milestoneId: string; data: CreateTaskDto }) =>
       createTask(projectId, milestoneId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project', projectId, 'board'] });
@@ -156,7 +158,7 @@ export function useCreateTask(projectId: string) {
 export function useUpdateTask(projectId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ taskId, data }: { taskId: string; data: { title?: string; description?: string } }) =>
+    mutationFn: ({ taskId, data }: { taskId: string; data: UpdateTaskDto }) =>
       updateTask(projectId, taskId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project', projectId, 'board'] });

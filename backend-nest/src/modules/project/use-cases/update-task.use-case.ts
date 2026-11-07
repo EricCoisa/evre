@@ -28,9 +28,14 @@ export class UpdateTaskUseCase {
       throw new NotFoundException(this.i18n.t('project.task_not_found'));
     }
 
+    const updateData = { ...dto };
+    if (dto.status && dto.status !== 'BLOCKED' && dto.blockedReason === undefined) {
+      updateData.blockedReason = null;
+    }
+
     return this.prisma.projectTask.update({
       where: { id: taskId },
-      data: { ...dto },
+      data: updateData,
     });
   }
 }

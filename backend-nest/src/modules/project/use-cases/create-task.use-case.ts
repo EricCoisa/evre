@@ -41,6 +41,8 @@ export class CreateTaskUseCase {
         milestoneId,
         title: dto.title,
         description: dto.description,
+        status: dto.status ?? 'WAITING',
+        blockedReason: dto.status === 'BLOCKED' ? dto.blockedReason : null,
         position: (maxPos._max.position ?? -1) + 1,
       },
     });

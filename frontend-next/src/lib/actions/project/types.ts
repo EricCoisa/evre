@@ -4,6 +4,8 @@ export type {
   UpdateProjectDto,
   CreateMilestoneDto,
   UpdateMilestoneDto,
+  CreateTaskDto,
+  UpdateTaskDto,
   CreateCommentDto,
   RequestApprovalDto,
   RespondApprovalDto,
@@ -12,6 +14,13 @@ export type {
   ProjectControllerFindAllParams,
   ProjectControllerGetCommentsParams,
 } from '@/lib/generated/schemas';
+
+export type ProjectTaskStatus =
+  | 'WAITING'
+  | 'IN_PROGRESS'
+  | 'BLOCKED'
+  | 'DONE'
+  | 'CANCELLED';
 
 export interface Milestone {
   id: string;
@@ -23,8 +32,11 @@ export interface Milestone {
 
 export interface MilestoneTask {
   id: string;
+  milestoneId?: string;
   title: string;
   description?: string | null;
+  status: ProjectTaskStatus;
+  blockedReason?: string | null;
   position: number;
 }
 

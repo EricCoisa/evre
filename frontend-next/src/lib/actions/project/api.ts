@@ -3,6 +3,8 @@ import { getProject as getProjectFactory } from '@/lib/generated/project/project
 import type { ApiResponse } from '@/lib/api/api';
 import type {
   Project, CreateProjectDto, UpdateProjectDto,
+  CreateMilestoneDto, UpdateMilestoneDto,
+  CreateTaskDto, UpdateTaskDto,
   CreateCommentDto, RespondApprovalDto, RequestApprovalDto,
   CreateInfoRequestDto, AnswerInfoRequestDto,
   ProjectControllerGetCommentsParams,
@@ -52,11 +54,11 @@ export async function getProjectBoard(id: string): Promise<ApiResponse<Milestone
 }
 
 // Milestones
-export async function createMilestone(projectId: string, data: { title: string; description?: string }) {
+export async function createMilestone(projectId: string, data: CreateMilestoneDto) {
   return wrap(() => api.projectControllerAddMilestone(projectId, data));
 }
 
-export async function updateMilestone(projectId: string, milestoneId: string, data: { title?: string; description?: string }) {
+export async function updateMilestone(projectId: string, milestoneId: string, data: UpdateMilestoneDto) {
   return wrap(() => api.projectControllerEditMilestone(projectId, milestoneId, data));
 }
 
@@ -69,11 +71,11 @@ export async function reorderMilestones(projectId: string, orderedIds: string[])
 }
 
 // Tasks
-export async function createTask(projectId: string, milestoneId: string, data: { title: string; description?: string }) {
+export async function createTask(projectId: string, milestoneId: string, data: CreateTaskDto) {
   return wrap(() => api.projectControllerAddTask(projectId, milestoneId, data));
 }
 
-export async function updateTask(projectId: string, taskId: string, data: { title?: string; description?: string }) {
+export async function updateTask(projectId: string, taskId: string, data: UpdateTaskDto) {
   return wrap(() => api.projectControllerEditTask(projectId, taskId, data));
 }
 
