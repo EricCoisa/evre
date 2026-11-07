@@ -246,4 +246,37 @@ export async function seedFeatureFlags(
     },
   });
   console.log('✅ Notification feature flag created');
+
+  // Time Tracking feature flag (para ADMIN e MODERATOR)
+  const timeTrackingFlag = await prisma.featureFlag.upsert({
+    where: { key: 'FEATURE_TIME_TRACKING' },
+    update: {
+      category: 'GENERAL',
+    },
+    create: {
+      key: 'FEATURE_TIME_TRACKING',
+      description: 'Habilita o módulo de rastreamento de tempo trabalhado (Time Tracker)',
+      category: 'GENERAL',
+      enabled: true,
+    },
+  });
+
+  for (const roleName of ['ADMIN', 'MODERATOR']) {
+    if (roleMap[roleName]) {
+      await prisma.featureFlagRole.upsert({
+        where: {
+          featureFlagId_roleId: {
+            featureFlagId: timeTrackingFlag.id,
+            roleId: roleMap[roleName],
+          },
+        },
+        update: {},
+        create: {
+          featureFlagId: timeTrackingFlag.id,
+          roleId: roleMap[roleName],
+        },
+      });
+    }
+  }
+  console.log('✅ Time Tracking feature flag created');
 }

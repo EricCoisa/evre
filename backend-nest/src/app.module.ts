@@ -51,6 +51,7 @@ import { VerificationModule } from './modules/verification/verification.module';
 import { ShortUrlModule } from './modules/short-url/short-url.module';
 import { SentryModule } from '@sentry/nestjs/setup';
 import { ProjectModule } from './modules/project/project.module';
+import { TimeTrackingModule } from './modules/time-tracking/time-tracking.module';
 
 @Module({
   imports: [
@@ -142,6 +143,7 @@ import { ProjectModule } from './modules/project/project.module';
     ArtifactModule,
     ProposalModule,
     ProjectModule,
+    TimeTrackingModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

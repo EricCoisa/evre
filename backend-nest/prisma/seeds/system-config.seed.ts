@@ -332,6 +332,11 @@ export async function seedSystemConfigurations(prisma: PrismaClient) {
       valueType: 'NUMBER',
       value: String(PROPOSAL_ARTIFACT_DEFAULT_MAX_SIZE_BYTES),
     },
+    {
+      labelKey: 'TIME_TRACKING_FORGOTTEN_THRESHOLD_HOURS',
+      valueType: 'NUMBER',
+      value: '8',
+    },
   ];
 
   // Limpa placeholders legados que possam ter ficado em bancos locais existentes

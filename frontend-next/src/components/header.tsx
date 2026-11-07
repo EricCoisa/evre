@@ -9,6 +9,8 @@ import { Switch } from './ui/switch';
 import { useApp } from '@/contexts/appProvider';
 import { BreadcrumbNav } from './breadcrumb-nav';
 import { ResourceSearch } from './resource-search';
+import { HeaderTimeTracker } from './time-tracking/header-time-tracker';
+import { Feature } from '@/components/feature';
 import { isDevelopment } from '@/lib/utils';
 
 export function Header({ notificationsEnabled = false }: { notificationsEnabled?: boolean }) {
@@ -28,6 +30,9 @@ export function Header({ notificationsEnabled = false }: { notificationsEnabled?
 
         {/* Right section: search, user menu and controls */}
         <div className="flex items-center gap-2 ml-auto">
+          <Feature flag="FEATURE_TIME_TRACKING">
+            <HeaderTimeTracker />
+          </Feature>
           <div className="w-auto sm:w-full sm:max-w-xs">
             <ResourceSearch />
           </div>

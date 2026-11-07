@@ -85,6 +85,62 @@ function parseBoardItems(data: unknown): Milestone[] {
   }));
 }
 
+interface TaskFilterParams {
+  query: string;
+  statusFilter: string;
+  assigneeFilter: string;
+  onlyMyTasks: boolean;
+  currentUserId?: string;
+  milestoneTitle: string;
+}
+
+function matchesSearchQuery(task: MilestoneTask, query: string, milestoneTitle: string): boolean {
+  if (!query) return true;
+  const searchableStrings = [
+    task.title,
+    task.description,
+    task.assignee?.name,
+    task.assignee?.email,
+    task.blockedReason,
+    milestoneTitle,
+  ];
+  return searchableStrings.some((str) => str?.toLowerCase().includes(query));
+}
+
+function matchesStatus(task: MilestoneTask, statusFilter: string): boolean {
+  if (statusFilter === 'all') return true;
+  const taskStatus = task.status || 'WAITING';
+  return taskStatus === statusFilter;
+}
+
+function matchesAssignee(task: MilestoneTask, assigneeFilter: string): boolean {
+  if (assigneeFilter === 'all') return true;
+  if (assigneeFilter === '__UNASSIGNED__') {
+    return !task.assigneeId && !task.assignee;
+  }
+  const taskAssigneeId = task.assigneeId ?? task.assignee?.id;
+  return taskAssigneeId === assigneeFilter;
+}
+
+function matchesMyTasks(task: MilestoneTask, onlyMyTasks: boolean, currentUserId?: string): boolean {
+  if (!onlyMyTasks) return true;
+  if (!currentUserId) return false;
+  const taskAssigneeId = task.assigneeId ?? task.assignee?.id;
+  return taskAssigneeId === currentUserId;
+}
+
+function filterMilestoneTasks(
+  tasks: MilestoneTask[],
+  params: TaskFilterParams
+): MilestoneTask[] {
+  return tasks.filter((t) =>
+    matchesSearchQuery(t, params.query, params.milestoneTitle) &&
+    matchesStatus(t, params.statusFilter) &&
+    matchesAssignee(t, params.assigneeFilter) &&
+    matchesMyTasks(t, params.onlyMyTasks, params.currentUserId)
+  );
+}
+
 export function ProjectBoard({
   projectId,
   canEdit = true,
@@ -121,6 +177,7 @@ export function ProjectBoard({
   const [searchQuery, setSearchQuery] = useState('');
 
   const { data: meData } = useMe();
+  const currentUserId = meData?.id;
   const { data: usersData } = useUsers();
 
   const users = useMemo(() => {
@@ -172,58 +229,22 @@ export function ProjectBoard({
 
     return items.map((m) => {
       const allTasks = m.tasks ?? [];
-
-      const filteredTasks = allTasks.filter((t) => {
-        // 1. Filtro textual
-        if (query) {
-          const matchTitle = t.title.toLowerCase().includes(query);
-          const matchDesc = t.description?.toLowerCase().includes(query);
-          const matchAssignee =
-            t.assignee?.name?.toLowerCase().includes(query) ||
-            t.assignee?.email?.toLowerCase().includes(query);
-          const matchBlocked = t.blockedReason?.toLowerCase().includes(query);
-          const matchMilestoneTitle = m.title.toLowerCase().includes(query);
-          if (!matchTitle && !matchDesc && !matchAssignee && !matchBlocked && !matchMilestoneTitle) {
-            return false;
-          }
-        }
-
-        // 2. Filtro de Status
-        if (statusFilter !== 'all') {
-          const taskStatus = t.status || 'WAITING';
-          if (taskStatus !== statusFilter) {
-            return false;
-          }
-        }
-
-        // 3. Filtro de Responsável
-        if (assigneeFilter !== 'all') {
-          if (assigneeFilter === '__UNASSIGNED__') {
-            if (t.assigneeId || t.assignee) return false;
-          } else {
-            const taskAssigneeId = t.assigneeId ?? t.assignee?.id;
-            if (taskAssigneeId !== assigneeFilter) return false;
-          }
-        }
-
-        // 4. Filtro "Minhas Tarefas"
-        if (onlyMyTasks) {
-          const taskAssigneeId = t.assigneeId ?? t.assignee?.id;
-          if (!meData?.id || taskAssigneeId !== meData.id) {
-            return false;
-          }
-        }
-
-        return true;
+      const tasks = filterMilestoneTasks(allTasks, {
+        query,
+        statusFilter,
+        assigneeFilter,
+        onlyMyTasks,
+        currentUserId,
+        milestoneTitle: m.title,
       });
 
       return {
         ...m,
         allTasks,
-        tasks: filteredTasks,
+        tasks,
       };
     });
-  }, [items, searchQuery, statusFilter, assigneeFilter, onlyMyTasks, meData?.id]);
+  }, [items, searchQuery, statusFilter, assigneeFilter, onlyMyTasks, currentUserId]);
 
   const totalTasks = useMemo(() => {
     return items.reduce((acc, m) => acc + (m.tasks?.length ?? 0), 0);

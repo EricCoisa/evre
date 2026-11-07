@@ -7,4 +7,3 @@ export const ProjectTaskStatusConst = {
 } as const;
 
 export type ProjectTaskStatus = keyof typeof ProjectTaskStatusConst;
-

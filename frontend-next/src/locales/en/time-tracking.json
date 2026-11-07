@@ -1,0 +1,9 @@
+{
+  "title": "Time Tracker",
+  "description": "Control and record work hours dedicated to projects and tasks",
+  "start": "Start Timer",
+  "stop": "Stop Timer",
+  "manual_entry": "Manual Entry",
+  "billable": "Billable",
+  "forgotten_alert": "Possible forgotten timer"
+}

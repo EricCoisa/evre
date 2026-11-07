@@ -9999,6 +9999,287 @@
           "project"
         ]
       }
+    },
+    "/time-tracking/start": {
+      "post": {
+        "operationId": "TimeTrackingController_startTimer",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartTimerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Inicia um novo cronômetro ou faz switch atômico do timer ativo",
+        "tags": [
+          "Time Tracking"
+        ]
+      }
+    },
+    "/time-tracking/stop": {
+      "post": {
+        "operationId": "TimeTrackingController_stopTimer",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Finaliza o cronômetro atualmente ativo para o usuário",
+        "tags": [
+          "Time Tracking"
+        ]
+      }
+    },
+    "/time-tracking/active": {
+      "get": {
+        "operationId": "TimeTrackingController_getActiveTimer",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Retorna o cronômetro ativo do usuário com indicador de esquecimento",
+        "tags": [
+          "Time Tracking"
+        ]
+      }
+    },
+    "/time-tracking": {
+      "get": {
+        "operationId": "TimeTrackingController_listTimeEntries",
+        "parameters": [
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "x-nestjs_zod-empty-type": true,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "x-nestjs_zod-empty-type": true,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "description": "Data de início para filtro (ISO ou YYYY-MM-DD)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "description": "Data final para filtro (ISO ou YYYY-MM-DD)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar por ID do projeto",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar por ID do usuário (restrito a ADMIN)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityType",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar por tipo de entidade",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityId",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar por ID da entidade",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lista histórico de registros de tempo com filtros e paginação",
+        "tags": [
+          "Time Tracking"
+        ]
+      }
+    },
+    "/time-tracking/manual": {
+      "post": {
+        "operationId": "TimeTrackingController_createManualEntry",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateManualEntryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cria uma entrada retroativa manual de tempo trabalhado",
+        "tags": [
+          "Time Tracking"
+        ]
+      }
+    },
+    "/time-tracking/{id}": {
+      "patch": {
+        "operationId": "TimeTrackingController_updateTimeEntry",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTimeEntryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Edita um registro de tempo existente, marcando-o como editado manualmente",
+        "tags": [
+          "Time Tracking"
+        ]
+      },
+      "delete": {
+        "operationId": "TimeTrackingController_deleteTimeEntry",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Exclui um registro de tempo ou descarta o timer ativo",
+        "tags": [
+          "Time Tracking"
+        ]
+      }
     }
   },
   "info": {
@@ -10081,7 +10362,8 @@
               "COMPANY",
               "PROPOSAL",
               "ARTIFACT",
-              "PROJECT"
+              "PROJECT",
+              "TIME_TRACKING"
             ],
             "example": "USER"
           },
@@ -15831,6 +16113,138 @@
         "required": [
           "value"
         ]
+      },
+      "StartTimerDto": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "description": "Descrição ou título da atividade",
+            "type": "string",
+            "nullable": true
+          },
+          "isBillable": {
+            "description": "Se a atividade é faturável",
+            "type": "boolean",
+            "nullable": true,
+            "default": true
+          },
+          "entityType": {
+            "description": "Tipo da entidade vinculada (ex: TASK, MILESTONE, PROJECT)",
+            "type": "string",
+            "nullable": true
+          },
+          "entityId": {
+            "description": "ID da entidade vinculada",
+            "type": "string",
+            "nullable": true
+          },
+          "entityTitle": {
+            "description": "Snapshot do título ou nome da entidade vinculada",
+            "type": "string",
+            "nullable": true
+          },
+          "projectId": {
+            "description": "ID do projeto para agrupamento",
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "CreateManualEntryDto": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "description": "Descrição ou título da atividade",
+            "type": "string",
+            "nullable": true
+          },
+          "startTime": {
+            "description": "Data e hora de início (ISO 8601)",
+            "type": "string",
+            "format": "date-time"
+          },
+          "endTime": {
+            "description": "Data e hora de término (ISO 8601)",
+            "type": "string",
+            "format": "date-time"
+          },
+          "isBillable": {
+            "description": "Se a atividade é faturável",
+            "type": "boolean",
+            "nullable": true,
+            "default": true
+          },
+          "entityType": {
+            "description": "Tipo da entidade vinculada",
+            "type": "string",
+            "nullable": true
+          },
+          "entityId": {
+            "description": "ID da entidade vinculada",
+            "type": "string",
+            "nullable": true
+          },
+          "entityTitle": {
+            "description": "Snapshot do título ou nome da entidade vinculada",
+            "type": "string",
+            "nullable": true
+          },
+          "projectId": {
+            "description": "ID do projeto para agrupamento",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "startTime",
+          "endTime"
+        ]
+      },
+      "UpdateTimeEntryDto": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "description": "Descrição ou título da atividade",
+            "type": "string",
+            "nullable": true
+          },
+          "startTime": {
+            "description": "Data e hora de início (ISO 8601)",
+            "type": "string",
+            "format": "date-time"
+          },
+          "endTime": {
+            "description": "Data e hora de término (ISO 8601)",
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "isBillable": {
+            "description": "Se a atividade é faturável",
+            "type": "boolean",
+            "nullable": true
+          },
+          "entityType": {
+            "description": "Tipo da entidade vinculada",
+            "type": "string",
+            "nullable": true
+          },
+          "entityId": {
+            "description": "ID da entidade vinculada",
+            "type": "string",
+            "nullable": true
+          },
+          "entityTitle": {
+            "description": "Snapshot do título ou nome da entidade vinculada",
+            "type": "string",
+            "nullable": true
+          },
+          "projectId": {
+            "description": "ID do projeto para agrupamento",
+            "type": "string",
+            "nullable": true
+          }
+        }
       }
     }
   }

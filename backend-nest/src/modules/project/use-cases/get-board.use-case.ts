@@ -20,7 +20,9 @@ export class GetBoardUseCase {
         tasks: {
           orderBy: { position: 'asc' },
           include: {
-            assignee: { select: { id: true, name: true, email: true, imageUrl: true } },
+            assignee: {
+              select: { id: true, name: true, email: true, imageUrl: true },
+            },
           },
         },
       },

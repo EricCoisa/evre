@@ -50,6 +50,7 @@ enum LogModule {
   ARTIFACT
   PROPOSAL
   PROJECT
+  TIME_TRACKING
 
   @@schema("public")
 }

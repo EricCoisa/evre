@@ -1,0 +1,231 @@
+"use client";
+
+import { useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  getActiveTimer,
+  startTimer,
+  stopTimer,
+  createManualTimeEntry,
+  updateTimeEntry,
+  deleteTimeEntry,
+  listTimeEntries,
+} from './api';
+import { Collector, Alive } from '@/lib/api/collector';
+import { toast } from 'sonner';
+import type {
+  StartTimerDto,
+  UpdateTimeEntryDto,
+  CreateManualEntryDto,
+  TimeTrackingControllerListTimeEntriesParams,
+  TimeEntry,
+} from './types';
+
+const TIME_TRACKING_CHANNEL = 'evre_time_tracking_bus';
+
+function notifyChannel(entry: any) {
+  if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+    const channel = new BroadcastChannel(TIME_TRACKING_CHANNEL);
+    channel.postMessage({ type: 'TIMER_CHANGED', entry });
+    channel.close();
+  }
+}
+
+function updateListCacheOnStart(queryClient: any, newEntry: TimeEntry) {
+  queryClient.setQueriesData({ queryKey: ['time-tracking', 'list'] }, (old: any) => {
+    if (!old) return old;
+    const items = Array.isArray(old) ? old : old?.data;
+    if (!Array.isArray(items)) return old;
+
+    // Se havia algum timer rodando sem endTime (switch automático), encerra-o
+    const updatedItems = items.map((item: any) => {
+      if (!item.endTime && item.id !== newEntry.id) {
+        const duration = Math.max(
+          0,
+          Math.round(
+            (new Date(newEntry.startTime).getTime() - new Date(item.startTime).getTime()) / 1000,
+          ),
+        );
+        return { ...item, endTime: newEntry.startTime, duration };
+      }
+      return item;
+    });
+
+    const alreadyExists = updatedItems.some((i: any) => i.id === newEntry.id);
+    const finalItems = alreadyExists ? updatedItems : [newEntry, ...updatedItems];
+
+    if (Array.isArray(old)) return finalItems;
+    return {
+      ...old,
+      data: finalItems,
+      meta: old.meta ? { ...old.meta, total: (old.meta.total ?? 0) + (alreadyExists ? 0 : 1) } : old.meta,
+    };
+  });
+}
+
+function updateListCacheOnStop(queryClient: any, stoppedEntry: TimeEntry) {
+  queryClient.setQueriesData({ queryKey: ['time-tracking', 'list'] }, (old: any) => {
+    if (!old) return old;
+    const items = Array.isArray(old) ? old : old?.data;
+    if (!Array.isArray(items)) return old;
+
+    const finalItems = items.map((item: any) => {
+      if (item.id === stoppedEntry.id) {
+        return {
+          ...item,
+          endTime: stoppedEntry.endTime,
+          duration: stoppedEntry.duration,
+        };
+      }
+      return item;
+    });
+
+    if (Array.isArray(old)) return finalItems;
+    return { ...old, data: finalItems };
+  });
+}
+
+function invalidateTimeTracking(queryClient: any) {
+  queryClient.invalidateQueries({ queryKey: ['time-tracking'], refetchType: 'all' });
+}
+
+export function useActiveTimer() {
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
+    queryKey: ['time-tracking', 'active'],
+    queryFn: Collector(() => getActiveTimer(), { silentStatuses: [404] }),
+    staleTime: 1000 * 30, // 30s cache local
+    refetchOnWindowFocus: true,
+    retry: false,
+  });
+
+  // Sincronização em tempo real entre abas sem polling (BroadcastChannel)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('BroadcastChannel' in window)) return;
+
+    const channel = new BroadcastChannel(TIME_TRACKING_CHANNEL);
+    channel.onmessage = (event) => {
+      if (event.data?.type === 'TIMER_CHANGED') {
+        const entry = event.data?.entry;
+        if (entry && !entry.endTime && entry.id !== 'mutation_sync') {
+          queryClient.setQueryData(['time-tracking', 'active'], {
+            entry,
+            isForgotten: false,
+            thresholdHours: 8,
+          });
+          updateListCacheOnStart(queryClient, entry);
+        } else if (entry?.endTime) {
+          queryClient.setQueryData(['time-tracking', 'active'], {
+            entry: null,
+            isForgotten: false,
+            thresholdHours: 8,
+          });
+          updateListCacheOnStop(queryClient, entry);
+        }
+        invalidateTimeTracking(queryClient);
+      }
+    };
+
+    return () => {
+      channel.close();
+    };
+  }, [queryClient]);
+
+  return query;
+}
+
+export function useStartTimer() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: StartTimerDto) => Alive(() => startTimer(data))(),
+    onSuccess: (newEntry) => {
+      queryClient.setQueryData(['time-tracking', 'active'], {
+        entry: newEntry,
+        isForgotten: false,
+        thresholdHours: 8,
+      });
+      updateListCacheOnStart(queryClient, newEntry);
+      invalidateTimeTracking(queryClient);
+      notifyChannel(newEntry);
+
+      toast.success(
+        newEntry?.description
+          ? `Cronômetro iniciado: "${newEntry.description}"`
+          : 'Cronômetro iniciado!',
+      );
+    },
+  });
+}
+
+export function useStopTimer() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => Alive(() => stopTimer())(),
+    onSuccess: (stoppedEntry) => {
+      queryClient.setQueryData(['time-tracking', 'active'], {
+        entry: null,
+        isForgotten: false,
+        thresholdHours: 8,
+      });
+      updateListCacheOnStop(queryClient, stoppedEntry);
+      invalidateTimeTracking(queryClient);
+      notifyChannel(stoppedEntry);
+
+      toast.success('Cronômetro finalizado!');
+    },
+  });
+}
+
+export function useCreateManualEntry() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateManualEntryDto) =>
+      Alive(() => createManualTimeEntry(data))(),
+    onSuccess: () => {
+      invalidateTimeTracking(queryClient);
+      notifyChannel({ id: 'mutation_sync' });
+      toast.success('Lançamento manual registrado com sucesso!');
+    },
+  });
+}
+
+export function useUpdateTimeEntry() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateTimeEntryDto }) =>
+      Alive(() => updateTimeEntry(id, data))(),
+    onSuccess: () => {
+      invalidateTimeTracking(queryClient);
+      notifyChannel({ id: 'mutation_sync' });
+      toast.success('Registro de tempo atualizado!');
+    },
+  });
+}
+
+export function useDeleteTimeEntry() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => Alive(() => deleteTimeEntry(id))(),
+    onSuccess: () => {
+      invalidateTimeTracking(queryClient);
+      notifyChannel({ id: 'mutation_sync' });
+      toast.success('Registro de tempo excluído!');
+    },
+  });
+}
+
+export function useTimeEntries(params?: TimeTrackingControllerListTimeEntriesParams) {
+  return useQuery({
+    queryKey: ['time-tracking', 'list', params],
+    queryFn: Collector(() => listTimeEntries(params)),
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+  });
+}

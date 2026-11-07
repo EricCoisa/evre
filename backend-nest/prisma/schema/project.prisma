@@ -22,6 +22,7 @@ model Project {
   memberships  Membership[]
   comments     ProjectComment[]
   infoRequests ProjectInfoRequest[]
+  timeEntries  TimeEntry[]
 
   @@index([companyId])
   @@index([status])

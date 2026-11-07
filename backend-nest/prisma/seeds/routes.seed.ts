@@ -189,6 +189,18 @@ export async function seedRoutes(
     },
   });
 
+  const timeTrackerRoute = await prisma.route.upsert({
+    where: { path: RoutePathConst.TIME_TRACKER },
+    update: {},
+    create: {
+      path: RoutePathConst.TIME_TRACKER,
+      labelKey: 'ROUTE_TIME_TRACKER',
+      icon: 'Clock',
+      ordem: 17,
+      isActive: true,
+    },
+  });
+
   const communicationRoute = await prisma.route.upsert({
     where: { path: RoutePathConst.COMMUNICATION },
     update: {},
@@ -233,7 +245,7 @@ export async function seedRoutes(
     agentRoute,
     communicationRoute,
     communicationTemplatesRoute,
-    companyRoute, proposalRoute, artifactRoute, projectRoute];
+    companyRoute, proposalRoute, artifactRoute, projectRoute, timeTrackerRoute];
   for (const route of adminRoutes) {
     await prisma.roleRouteAccess.upsert({
       where: {
@@ -255,6 +267,7 @@ export async function seedRoutes(
     projectRoute,
     companyRoute,
     proposalRoute,
+    timeTrackerRoute,
   ];
   for (const route of moderatorRoutes) {
     await prisma.roleRouteAccess.upsert({

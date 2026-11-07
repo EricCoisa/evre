@@ -1,0 +1,9 @@
+{
+  "title": "Rastreamento de Tempo",
+  "description": "Controle de horas dedicadas a projetos e tarefas",
+  "start": "Iniciar Cronômetro",
+  "stop": "Parar Cronômetro",
+  "manual_entry": "Lançamento Manual",
+  "billable": "Faturável",
+  "forgotten_alert": "Possível timer esquecido"
+}

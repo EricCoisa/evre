@@ -26,9 +26,13 @@ import {
   Check,
   MessageSquare,
   AlignLeft,
+  Play,
+  Square,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUpdateMilestone } from '@/lib/actions/project/queries';
+import { useActiveTimer, useStartTimer, useStopTimer } from '@/lib/actions/time-tracking/queries';
+import { Feature } from '@/components/feature';
 import type { Milestone, MilestoneTask } from '@/lib/actions/project/types';
 
 interface MilestoneColumnProps {
@@ -52,6 +56,31 @@ export function MilestoneColumn({
   onDeleteMilestone,
 }: MilestoneColumnProps) {
   const updateMilestoneMutation = useUpdateMilestone(projectId);
+  const { data: activeTimerData } = useActiveTimer();
+  const startTimerMutation = useStartTimer();
+  const stopTimerMutation = useStopTimer();
+
+  const isMilestoneActive = activeTimerData?.entry?.entityId === milestone.id;
+
+  const handleToggleMilestoneTimer = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      if (isMilestoneActive) {
+        await stopTimerMutation.mutateAsync();
+      } else {
+        await startTimerMutation.mutateAsync({
+          entityType: 'MILESTONE',
+          entityId: milestone.id,
+          entityTitle: milestone.title,
+          description: `Etapa: ${milestone.title}`,
+          projectId,
+          isBillable: true,
+        });
+      }
+    } catch {
+      // Toast via Collector
+    }
+  };
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [title, setTitle] = useState(milestone.title);
@@ -174,6 +203,30 @@ export function MilestoneColumn({
                   ? `${tasks.length}/${milestone.allTasks.length}`
                   : tasks.length}
               </Badge>
+
+              <Feature flag="FEATURE_TIME_TRACKING">
+                <button
+                  type="button"
+                  onClick={handleToggleMilestoneTimer}
+                  disabled={startTimerMutation.isPending || stopTimerMutation.isPending}
+                  className={`p-1 rounded-sm transition-colors cursor-pointer ${
+                    isMilestoneActive
+                      ? 'text-destructive bg-destructive/15 hover:bg-destructive/25'
+                      : 'text-muted-foreground/60 hover:text-emerald-600 hover:bg-emerald-500/10'
+                  }`}
+                  title={
+                    isMilestoneActive
+                      ? 'Parar cronômetro desta etapa'
+                      : 'Iniciar cronômetro nesta etapa'
+                  }
+                >
+                  {isMilestoneActive ? (
+                    <Square className="h-3 w-3 fill-current animate-pulse" />
+                  ) : (
+                    <Play className="h-3 w-3 fill-current" />
+                  )}
+                </button>
+              </Feature>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

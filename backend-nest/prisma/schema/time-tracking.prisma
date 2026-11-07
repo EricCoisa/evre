@@ -1,0 +1,42 @@
+enum TimeEntrySource {
+  TIMER
+  MANUAL
+
+  @@schema("public")
+}
+
+/// Registro de tempo trabalhado, com suporte a timer contínuo ou lançamento manual.
+model TimeEntry {
+  id          String          @id @default(uuid())
+  userId      String
+  description String?         @db.Text
+  startTime   DateTime
+  endTime     DateTime?
+  duration    Int?            // Duração total em segundos
+  isBillable  Boolean         @default(true)
+  source      TimeEntrySource @default(TIMER)
+
+  // Vínculo agnóstico a qualquer entidade (ex.: TASK, MILESTONE, PROJECT)
+  entityType  String?
+  entityId    String?
+  entityTitle String?
+  projectId   String?
+
+  // Auditoria de edição manual
+  isManual    Boolean         @default(false)
+  editedById  String?
+  editedAt    DateTime?
+
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  user        User            @relation("UserTimeEntries", fields: [userId], references: [id], onDelete: Cascade)
+  editedBy    User?           @relation("TimeEntryEditor", fields: [editedById], references: [id], onDelete: SetNull)
+  project     Project?        @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([userId, endTime])
+  @@index([projectId])
+  @@index([entityType, entityId])
+  @@map("time_entries")
+  @@schema("public")
+}

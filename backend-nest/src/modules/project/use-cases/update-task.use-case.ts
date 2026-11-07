@@ -29,7 +29,11 @@ export class UpdateTaskUseCase {
     }
 
     const updateData = { ...dto };
-    if (dto.status && dto.status !== 'BLOCKED' && dto.blockedReason === undefined) {
+    if (
+      dto.status &&
+      dto.status !== 'BLOCKED' &&
+      dto.blockedReason === undefined
+    ) {
       updateData.blockedReason = null;
     }
 
@@ -37,7 +41,9 @@ export class UpdateTaskUseCase {
       where: { id: taskId },
       data: updateData,
       include: {
-        assignee: { select: { id: true, name: true, email: true, imageUrl: true } },
+        assignee: {
+          select: { id: true, name: true, email: true, imageUrl: true },
+        },
       },
     });
   }

@@ -14,7 +14,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { GripVertical, Trash2, AlignLeft, MessageSquare, AlertTriangle, ChevronDown, User, UserX, Check } from 'lucide-react';
+import { GripVertical, Trash2, AlignLeft, MessageSquare, AlertTriangle, ChevronDown, User, UserX, Check, Play, Square } from 'lucide-react';
+import { useActiveTimer, useStartTimer, useStopTimer } from '@/lib/actions/time-tracking/queries';
+import { Feature } from '@/components/feature';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { TASK_STATUS_CONFIG } from './milestone-progress';
 import { UserAvatar } from './user-avatar';
 import { useUpdateTask } from '@/lib/actions/project/queries';
@@ -34,6 +37,31 @@ interface TaskCardProps {
 export function TaskCard({ projectId, task, canEdit = true, onSelect, onDelete }: TaskCardProps) {
   const updateTaskMutation = useUpdateTask(projectId ?? '');
   const { data: usersData } = useUsers();
+  const { data: activeTimerData } = useActiveTimer();
+  const startTimerMutation = useStartTimer();
+  const stopTimerMutation = useStopTimer();
+
+  const isTimerActiveForThisTask = activeTimerData?.entry?.entityId === task.id;
+
+  const handleToggleTimer = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      if (isTimerActiveForThisTask) {
+        await stopTimerMutation.mutateAsync();
+      } else {
+        await startTimerMutation.mutateAsync({
+          entityType: 'TASK',
+          entityId: task.id,
+          entityTitle: task.title,
+          description: task.title,
+          projectId: projectId ?? undefined,
+          isBillable: true,
+        });
+      }
+    } catch {
+      // Toast gerenciado pelo Collector
+    }
+  };
 
   const users = React.useMemo(() => {
     if (!usersData) return [];
@@ -135,8 +163,8 @@ export function TaskCard({ projectId, task, canEdit = true, onSelect, onDelete }
     <div ref={setNodeRef} style={style} className="touch-none group">
       <Card
         className={`cursor-pointer border bg-card shadow-xs hover:border-primary/40 hover:shadow-sm transition-all ${
-          currentStatus === 'BLOCKED' ? 'border-rose-500/40' : ''
-        } ${currentStatus === 'DONE' ? 'opacity-90' : ''}`}
+          isTimerActiveForThisTask ? 'ring-2 ring-emerald-500/80 bg-emerald-500/5 dark:bg-emerald-500/10' : ''
+        } ${currentStatus === 'BLOCKED' ? 'border-rose-500/40' : ''} ${currentStatus === 'DONE' ? 'opacity-90' : ''}`}
         onClick={() => onSelect(task)}
       >
         <CardContent className="p-3 space-y-2">
@@ -185,6 +213,39 @@ export function TaskCard({ projectId, task, canEdit = true, onSelect, onDelete }
             </div>
 
             <div className="flex items-center gap-0.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+              <Feature flag="FEATURE_TIME_TRACKING">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={handleToggleTimer}
+                      disabled={startTimerMutation.isPending || stopTimerMutation.isPending}
+                      className={`p-1 rounded-sm transition-all cursor-pointer ${
+                        isTimerActiveForThisTask
+                          ? 'text-destructive bg-destructive/15 hover:bg-destructive/25'
+                          : 'text-muted-foreground/60 hover:text-emerald-600 hover:bg-emerald-500/10'
+                      }`}
+                      title={
+                        isTimerActiveForThisTask
+                          ? 'Parar cronômetro desta tarefa'
+                          : 'Iniciar cronômetro nesta tarefa'
+                      }
+                    >
+                      {isTimerActiveForThisTask ? (
+                        <Square className="h-3.5 w-3.5 fill-current animate-pulse" />
+                      ) : (
+                        <Play className="h-3.5 w-3.5 fill-current" />
+                      )}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    {isTimerActiveForThisTask
+                      ? 'Parar cronômetro'
+                      : 'Rastrear tempo nesta tarefa'}
+                  </TooltipContent>
+                </Tooltip>
+              </Feature>
+
               {canEdit && (
                 <>
                   <div

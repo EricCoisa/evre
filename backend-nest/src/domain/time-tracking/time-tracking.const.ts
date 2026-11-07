@@ -1,0 +1,5 @@
+export const TIME_TRACKING_CONFIG_KEYS = {
+  forgottenThresholdHours: 'TIME_TRACKING_FORGOTTEN_THRESHOLD_HOURS',
+} as const;
+
+export const TIME_TRACKING_DEFAULT_FORGOTTEN_THRESHOLD_HOURS = 8;

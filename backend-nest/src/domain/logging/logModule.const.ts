@@ -21,6 +21,7 @@ export const LogModuleConst = {
   PROPOSAL: 'PROPOSAL', // Adicionado pelo Plop
   ARTIFACT: 'ARTIFACT',
   PROJECT: 'PROJECT',
+  TIME_TRACKING: 'TIME_TRACKING',
 };
 
 export type LogModule = keyof typeof LogModuleConst;

@@ -18,7 +18,9 @@ export const CreateTaskSchema = z
       .string()
       .nullable()
       .optional()
-      .describe('User ID of the task assignee (defaults to creator if omitted)'),
+      .describe(
+        'User ID of the task assignee (defaults to creator if omitted)',
+      ),
   })
   .strict();
 

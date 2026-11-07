@@ -58,6 +58,8 @@ model User {
   projectInfoRequests        ProjectInfoRequest[]   @relation("InfoRequestedBy")
   projectInfoResponses       ProjectInfoRequest[]   @relation("InfoAnsweredBy")
   assignedTasks              ProjectTask[]          @relation("TaskAssignee")
+  timeEntries                TimeEntry[]            @relation("UserTimeEntries")
+  editedTimeEntries          TimeEntry[]            @relation("TimeEntryEditor")
 
   @@index([deletedAt])
   @@map("users")

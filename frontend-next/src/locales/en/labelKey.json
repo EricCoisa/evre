@@ -4,6 +4,7 @@
     "ROUTE_ARTIFACT": "Artifacts",
     "ROUTE_PROJECT": "Projects",
     "ROUTE_MY_PROJECT": "My Projects",
+    "ROUTE_TIME_TRACKER": "Time Tracker",
     "ROUTE_DASHBOARD": "Dashboard",
     "ROUTE_USERS": "Users",
     "ROUTE_PROFILE": "Profile",
