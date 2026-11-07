@@ -17,7 +17,9 @@ export const ListTimeEntriesSchema = z
         const n = v ? Number(v) : NaN;
         return Number.isInteger(n) ? Math.min(Math.max(n, 1), 50) : 20;
       }),
+    pagination: z.union([z.boolean(), z.string()]).optional(),
     search: z.string().trim().optional(),
+    filter: z.string().optional().describe('Filtros em JSON string gerados pelo DataTable'),
     startDate: z.string().optional().describe('Data de início para filtro (ISO ou YYYY-MM-DD)'),
     endDate: z.string().optional().describe('Data final para filtro (ISO ou YYYY-MM-DD)'),
     projectId: z.string().optional().describe('Filtrar por ID do projeto'),

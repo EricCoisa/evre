@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { GripVertical, Trash2, AlignLeft, MessageSquare, AlertTriangle, ChevronDown, User, UserX, Check, Play, Square } from 'lucide-react';
 import { useActiveTimer, useStartTimer, useStopTimer } from '@/lib/actions/time-tracking/queries';
+import { useTranslation } from '@/hooks/use-translation';
 import { Feature } from '@/components/feature';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { TASK_STATUS_CONFIG } from './milestone-progress';
@@ -35,6 +36,7 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ projectId, task, canEdit = true, onSelect, onDelete }: TaskCardProps) {
+  const { t: tTime } = useTranslation('time-tracking');
   const updateTaskMutation = useUpdateTask(projectId ?? '');
   const { data: usersData } = useUsers();
   const { data: activeTimerData } = useActiveTimer();
@@ -227,8 +229,8 @@ export function TaskCard({ projectId, task, canEdit = true, onSelect, onDelete }
                       }`}
                       title={
                         isTimerActiveForThisTask
-                          ? 'Parar cronômetro desta tarefa'
-                          : 'Iniciar cronômetro nesta tarefa'
+                          ? tTime('stopTaskTimer')
+                          : tTime('trackTimeInTask')
                       }
                     >
                       {isTimerActiveForThisTask ? (
@@ -240,8 +242,8 @@ export function TaskCard({ projectId, task, canEdit = true, onSelect, onDelete }
                   </TooltipTrigger>
                   <TooltipContent side="top">
                     {isTimerActiveForThisTask
-                      ? 'Parar cronômetro'
-                      : 'Rastrear tempo nesta tarefa'}
+                      ? tTime('stopTaskTimer')
+                      : tTime('trackTimeInTask')}
                   </TooltipContent>
                 </Tooltip>
               </Feature>

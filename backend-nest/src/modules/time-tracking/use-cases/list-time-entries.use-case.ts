@@ -23,23 +23,35 @@ export class ListTimeEntriesUseCase {
 
     const where: Prisma.TimeEntryWhereInput = {};
 
+    let parsedFilter: Record<string, any> = {};
+    if (dto.filter) {
+      try {
+        parsedFilter = JSON.parse(dto.filter);
+      } catch {}
+    }
+
+    const resolvedProjectId = dto.projectId || parsedFilter.projectId;
+    const resolvedUserId = dto.userId || parsedFilter.userId;
+    const resolvedEntityType = dto.entityType || parsedFilter.entityType;
+    const resolvedEntityId = dto.entityId || parsedFilter.entityId;
+
     // Restrição de role: se for MODERATOR, lista apenas as suas horas a menos que seja ADMIN
     if (user.roleName !== 'ADMIN') {
       where.userId = user.id;
-    } else if (dto.userId) {
-      where.userId = dto.userId;
+    } else if (resolvedUserId) {
+      where.userId = resolvedUserId;
     }
 
-    if (dto.projectId) {
-      where.projectId = dto.projectId;
+    if (resolvedProjectId) {
+      where.projectId = resolvedProjectId;
     }
 
-    if (dto.entityType) {
-      where.entityType = dto.entityType;
+    if (resolvedEntityType) {
+      where.entityType = resolvedEntityType;
     }
 
-    if (dto.entityId) {
-      where.entityId = dto.entityId;
+    if (resolvedEntityId) {
+      where.entityId = resolvedEntityId;
     }
 
     if (dto.search) {

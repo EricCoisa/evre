@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/tooltip';
 import { useActiveTimer, useStopTimer } from '@/lib/actions/time-tracking/queries';
 import { StartTimerModal } from './start-timer-modal';
+import { useTranslation } from '@/hooks/use-translation';
 
 function formatElapsed(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -25,6 +26,7 @@ function formatElapsed(seconds: number): string {
 }
 
 export function HeaderTimeTracker() {
+  const { t } = useTranslation('time-tracking');
   const { data: activeTimerData, isLoading } = useActiveTimer();
   const stopTimerMutation = useStopTimer();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -59,7 +61,7 @@ export function HeaderTimeTracker() {
     try {
       await stopTimerMutation.mutateAsync();
     } catch {
-      // Erro tratado via Collector
+      // Erro tratado via Alive
     }
   };
 
@@ -67,7 +69,7 @@ export function HeaderTimeTracker() {
     return (
       <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/40 animate-pulse text-xs text-muted-foreground">
         <Clock className="h-3.5 w-3.5" />
-        <span>Carregando...</span>
+        <span>{t('running')}</span>
       </div>
     );
   }
@@ -85,11 +87,11 @@ export function HeaderTimeTracker() {
               className="h-8 gap-1.5 border-dashed border-emerald-500/50 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30 text-xs font-medium"
             >
               <Play className="h-3.5 w-3.5 fill-current" />
-              <span>Start</span>
+              <span>{t('start')}</span>
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">
-            <p>Iniciar rastreador de tempo</p>
+            <p>{t('startTimerDescription')}</p>
           </TooltipContent>
         </Tooltip>
 
@@ -100,7 +102,7 @@ export function HeaderTimeTracker() {
 
   // Estado 2: Timer Ativo rodando
   const displayTitle =
-    entry.entityTitle || entry.description || 'Trabalho em andamento';
+    entry.entityTitle || entry.description || t('running');
 
   return (
     <>
@@ -122,9 +124,9 @@ export function HeaderTimeTracker() {
               </div>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="max-w-xs">
-              <p className="font-semibold text-destructive">Possível timer esquecido!</p>
+              <p className="font-semibold text-destructive">{t('forgotten_alert')}</p>
               <p className="text-xs">
-                Este cronômetro ultrapassou {thresholdHours} horas contínuas.
+                {t('forgotten_description')} ({thresholdHours}h)
               </p>
             </TooltipContent>
           </Tooltip>
@@ -171,7 +173,7 @@ export function HeaderTimeTracker() {
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">
-            <p>Parar cronômetro</p>
+            <p>{t('stop')}</p>
           </TooltipContent>
         </Tooltip>
       </div>

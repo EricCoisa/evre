@@ -23,6 +23,7 @@ import {
 import { useStartTimer } from '@/lib/actions/time-tracking/queries';
 import { useProjects } from '@/lib/actions/project/queries';
 import { Play } from 'lucide-react';
+import { useTranslation } from '@/hooks/use-translation';
 
 interface StartTimerModalProps {
   open: boolean;
@@ -43,6 +44,7 @@ export function StartTimerModal({
   defaultEntityId,
   defaultEntityTitle,
 }: StartTimerModalProps) {
+  const { t } = useTranslation('time-tracking');
   const [description, setDescription] = useState(defaultDescription);
   const [projectId, setProjectId] = useState<string | undefined>(defaultProjectId);
   const [isBillable, setIsBillable] = useState(true);
@@ -87,19 +89,19 @@ export function StartTimerModal({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Play className="h-5 w-5 text-emerald-500 fill-emerald-500" />
-              Iniciar Cronômetro
+              {t('startTimerTitle')}
             </DialogTitle>
             <DialogDescription>
-              Acompanhe o tempo dedicado aos projetos e tarefas. O cronômetro começará a rodar imediatamente.
+              {t('startTimerDescription')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 py-2">
             <div className="space-y-1.5">
-              <Label htmlFor="timer-description">O que você está fazendo?</Label>
+              <Label htmlFor="timer-description">{t('startTimerWhat')}</Label>
               <Input
                 id="timer-description"
-                placeholder="Ex.: Desenvolvendo autenticação, reunião de alinhamento..."
+                placeholder={t('startTimerPlaceholder')}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 autoFocus
@@ -107,16 +109,16 @@ export function StartTimerModal({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="timer-project">Projeto vinculado (opcional)</Label>
+              <Label htmlFor="timer-project">{t('projectLabel')}</Label>
               <Select
                 value={projectId ?? 'none'}
                 onValueChange={(val) => setProjectId(val === 'none' ? undefined : val)}
               >
                 <SelectTrigger id="timer-project" className="w-full">
-                  <SelectValue placeholder="Selecione um projeto ou deixe avulso" />
+                  <SelectValue placeholder={t('selectProjectPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Nenhum (Tempo avulso)</SelectItem>
+                  <SelectItem value="none">{t('noProjectAvulso')}</SelectItem>
                   {projects.map((proj: any) => (
                     <SelectItem key={proj.id} value={proj.id}>
                       {proj.name}
@@ -129,10 +131,10 @@ export function StartTimerModal({
             <div className="flex items-center justify-between rounded-lg border p-3">
               <div className="space-y-0.5">
                 <Label htmlFor="timer-billable" className="cursor-pointer font-medium">
-                  Atividade Faturável
+                  {t('billableActivity')}
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Marcar este registro de tempo para faturamento do projeto
+                  {t('billableDescription')}
                 </p>
               </div>
               <Switch
@@ -149,7 +151,7 @@ export function StartTimerModal({
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              Cancelar
+              {t('cancel')}
             </Button>
             <Button
               type="submit"
@@ -157,7 +159,7 @@ export function StartTimerModal({
               disabled={startTimerMutation.isPending}
             >
               <Play className="h-4 w-4 fill-white" />
-              {startTimerMutation.isPending ? 'Iniciando...' : 'Iniciar'}
+              {startTimerMutation.isPending ? t('starting') : t('start')}
             </Button>
           </DialogFooter>
         </form>

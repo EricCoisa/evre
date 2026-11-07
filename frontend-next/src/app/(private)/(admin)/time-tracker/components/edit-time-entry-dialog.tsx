@@ -16,6 +16,7 @@ import { Switch } from '@/components/ui/switch';
 import { useUpdateTimeEntry } from '@/lib/actions/time-tracking/queries';
 import type { TimeEntry } from '@/lib/actions/time-tracking/types';
 import { Edit2, ShieldAlert } from 'lucide-react';
+import { useTranslation } from '@/hooks/use-translation';
 
 interface EditTimeEntryDialogProps {
   entry: TimeEntry | null;
@@ -41,6 +42,7 @@ export function EditTimeEntryDialog({
   open,
   onOpenChange,
 }: EditTimeEntryDialogProps) {
+  const { t } = useTranslation('time-tracking');
   const [description, setDescription] = useState('');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
@@ -73,7 +75,7 @@ export function EditTimeEntryDialog({
       });
       onOpenChange(false);
     } catch {
-      // Toast de erro já tratado via Collector
+      // Toast de erro já tratado via Alive
     }
   };
 
@@ -84,27 +86,27 @@ export function EditTimeEntryDialog({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Edit2 className="h-5 w-5 text-primary" />
-              Editar Registro de Tempo
+              {t('editTitle')}
             </DialogTitle>
             <DialogDescription>
-              Ajuste horários e detalhes. As alterações são registradas na auditoria interna do sistema.
+              {t('editDescription')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3.5 py-2">
             <div className="space-y-1.5">
-              <Label htmlFor="edit-description">Descrição / Atividade</Label>
+              <Label htmlFor="edit-description">{t('activityLabel')}</Label>
               <Input
                 id="edit-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Ex.: Desenvolvimento da feature..."
+                placeholder={t('activityPlaceholder')}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="edit-start">Início</Label>
+                <Label htmlFor="edit-start">{t('startTime')}</Label>
                 <Input
                   id="edit-start"
                   type="datetime-local"
@@ -115,7 +117,7 @@ export function EditTimeEntryDialog({
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="edit-end">Término</Label>
+                <Label htmlFor="edit-end">{t('endTime')}</Label>
                 <Input
                   id="edit-end"
                   type="datetime-local"
@@ -128,10 +130,10 @@ export function EditTimeEntryDialog({
             <div className="flex items-center justify-between rounded-lg border p-3">
               <div className="space-y-0.5">
                 <Label htmlFor="edit-billable" className="cursor-pointer font-medium">
-                  Atividade Faturável
+                  {t('billableActivity')}
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Considerar horas no faturamento do projeto
+                  {t('billableDescription')}
                 </p>
               </div>
               <Switch
@@ -144,7 +146,7 @@ export function EditTimeEntryDialog({
             <div className="flex items-start gap-2 p-2.5 rounded-md bg-muted/60 text-muted-foreground text-xs">
               <ShieldAlert className="h-4 w-4 text-warning-600 flex-shrink-0 mt-0.5" />
               <span>
-                Ao salvar, o registro será carimbado internamente como <strong>Editado Manualmente</strong> para fins de auditoria.
+                {t('auditNotice')}
               </span>
             </div>
           </div>
@@ -155,10 +157,10 @@ export function EditTimeEntryDialog({
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              Cancelar
+              {t('cancel')}
             </Button>
             <Button type="submit" disabled={updateMutation.isPending}>
-              {updateMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
+              {updateMutation.isPending ? t('saving') : t('save')}
             </Button>
           </DialogFooter>
         </form>

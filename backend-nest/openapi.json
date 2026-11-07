@@ -10107,9 +10107,34 @@
             }
           },
           {
+            "name": "pagination",
+            "required": false,
+            "in": "query",
+            "x-nestjs_zod-empty-type": true,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          {
             "name": "search",
             "required": false,
             "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "required": false,
+            "in": "query",
+            "description": "Filtros em JSON string gerados pelo DataTable",
             "schema": {
               "type": "string"
             }

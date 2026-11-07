@@ -48,8 +48,12 @@ import ptBRArtifact from '../locales/pt-BR/artifact.json';
 import enArtifact from '../locales/en/artifact.json';
 import ptBRProject from '../locales/pt-BR/project.json';
 import enProject from '../locales/en/project.json';
+import ptBRTimeTracking from '../locales/pt-BR/time-tracking.json';
+import enTimeTracking from '../locales/en/time-tracking.json';
 export const resources = {
 	'pt-BR': {
+		'time-tracking': ptBRTimeTracking,
+		timeTracking: ptBRTimeTracking,
 		proposal: ptBRProposal,
 		company: ptBRCompany,
 		artifact: ptBRArtifact,
@@ -76,6 +80,8 @@ export const resources = {
     vocabulary: ptBRVocabulary,
 	},
 	en: {
+		'time-tracking': enTimeTracking,
+		timeTracking: enTimeTracking,
 		proposal: enProposal,
 		company: enCompany,
 		artifact: enArtifact,

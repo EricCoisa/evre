@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from '@/hooks/use-translation';
 import {
   getActiveTimer,
   startTimer,
@@ -137,6 +138,7 @@ export function useActiveTimer() {
 
 export function useStartTimer() {
   const queryClient = useQueryClient();
+  const { t } = useTranslation('time-tracking');
 
   return useMutation({
     mutationFn: (data: StartTimerDto) => Alive(() => startTimer(data))(),
@@ -152,8 +154,8 @@ export function useStartTimer() {
 
       toast.success(
         newEntry?.description
-          ? `Cronômetro iniciado: "${newEntry.description}"`
-          : 'Cronômetro iniciado!',
+          ? `${t('startSuccess')} "${newEntry.description}"`
+          : t('startSuccess'),
       );
     },
   });
@@ -161,6 +163,7 @@ export function useStartTimer() {
 
 export function useStopTimer() {
   const queryClient = useQueryClient();
+  const { t } = useTranslation('time-tracking');
 
   return useMutation({
     mutationFn: () => Alive(() => stopTimer())(),
@@ -174,13 +177,14 @@ export function useStopTimer() {
       invalidateTimeTracking(queryClient);
       notifyChannel(stoppedEntry);
 
-      toast.success('Cronômetro finalizado!');
+      toast.success(t('stopSuccess'));
     },
   });
 }
 
 export function useCreateManualEntry() {
   const queryClient = useQueryClient();
+  const { t } = useTranslation('time-tracking');
 
   return useMutation({
     mutationFn: (data: CreateManualEntryDto) =>
@@ -188,13 +192,14 @@ export function useCreateManualEntry() {
     onSuccess: () => {
       invalidateTimeTracking(queryClient);
       notifyChannel({ id: 'mutation_sync' });
-      toast.success('Lançamento manual registrado com sucesso!');
+      toast.success(t('createManualSuccess'));
     },
   });
 }
 
 export function useUpdateTimeEntry() {
   const queryClient = useQueryClient();
+  const { t } = useTranslation('time-tracking');
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateTimeEntryDto }) =>
@@ -202,20 +207,21 @@ export function useUpdateTimeEntry() {
     onSuccess: () => {
       invalidateTimeTracking(queryClient);
       notifyChannel({ id: 'mutation_sync' });
-      toast.success('Registro de tempo atualizado!');
+      toast.success(t('updateSuccess'));
     },
   });
 }
 
 export function useDeleteTimeEntry() {
   const queryClient = useQueryClient();
+  const { t } = useTranslation('time-tracking');
 
   return useMutation({
     mutationFn: (id: string) => Alive(() => deleteTimeEntry(id))(),
     onSuccess: () => {
       invalidateTimeTracking(queryClient);
       notifyChannel({ id: 'mutation_sync' });
-      toast.success('Registro de tempo excluído!');
+      toast.success(t('deleteSuccess'));
     },
   });
 }

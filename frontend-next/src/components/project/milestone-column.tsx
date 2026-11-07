@@ -32,6 +32,7 @@ import {
 import { toast } from 'sonner';
 import { useUpdateMilestone } from '@/lib/actions/project/queries';
 import { useActiveTimer, useStartTimer, useStopTimer } from '@/lib/actions/time-tracking/queries';
+import { useTranslation } from '@/hooks/use-translation';
 import { Feature } from '@/components/feature';
 import type { Milestone, MilestoneTask } from '@/lib/actions/project/types';
 
@@ -55,6 +56,7 @@ export function MilestoneColumn({
   onDeleteTask,
   onDeleteMilestone,
 }: MilestoneColumnProps) {
+  const { t: tTime } = useTranslation('time-tracking');
   const updateMilestoneMutation = useUpdateMilestone(projectId);
   const { data: activeTimerData } = useActiveTimer();
   const startTimerMutation = useStartTimer();
@@ -216,8 +218,8 @@ export function MilestoneColumn({
                   }`}
                   title={
                     isMilestoneActive
-                      ? 'Parar cronômetro desta etapa'
-                      : 'Iniciar cronômetro nesta etapa'
+                      ? tTime('stopMilestoneTimer')
+                      : tTime('startMilestoneTimer')
                   }
                 >
                   {isMilestoneActive ? (
