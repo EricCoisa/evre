@@ -13,8 +13,6 @@ import {
   Edit2,
   Trash2,
   AlertTriangle,
-  FileEdit,
-  DollarSign,
   User as UserIcon,
   Layers,
 } from 'lucide-react';
@@ -245,63 +243,6 @@ export function getTimeTrackingColumns({
                 {formatDuration(entry.duration)}
               </span>
             )}
-          </DataCell>
-        );
-      },
-    },
-    {
-      id: 'audit',
-      header: () => <TableHead className="text-center">{t('audit')}</TableHead>,
-      cell: ({ row }) => {
-        const entry = row.original;
-
-        return (
-          <DataCell className="text-center">
-            <div className="flex items-center justify-center gap-1">
-              {entry.isForgotten && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="p-1 rounded bg-destructive/15 text-destructive">
-                      <AlertTriangle className="h-3.5 w-3.5 animate-pulse" />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">
-                    <p className="text-xs font-semibold text-destructive">{t('forgotten_alert')}</p>
-                    <p className="text-[11px]">{t('forgotten_description')}</p>
-                  </TooltipContent>
-                </Tooltip>
-              )}
-
-              {entry.isManual && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Badge variant="secondary" className="text-[9px] px-1 py-0 h-4 gap-0.5">
-                      <FileEdit className="h-2.5 w-2.5" />
-                      {t('manual_badge')}
-                    </Badge>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">
-                    <p className="text-xs">
-                      {t('manual_audit')}
-                      {entry.editedBy?.name ? ` por ${entry.editedBy.name}` : ''}.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              )}
-
-              {entry.isBillable && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="p-0.5 rounded text-emerald-600 dark:text-emerald-400">
-                      <DollarSign className="h-3 w-3" />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">
-                    <p className="text-xs">{t('billable')}</p>
-                  </TooltipContent>
-                </Tooltip>
-              )}
-            </div>
           </DataCell>
         );
       },

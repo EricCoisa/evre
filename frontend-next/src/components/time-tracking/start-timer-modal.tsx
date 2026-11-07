@@ -12,7 +12,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -47,13 +46,11 @@ export function StartTimerModal({
   const { t } = useTranslation('time-tracking');
   const [description, setDescription] = useState(defaultDescription);
   const [projectId, setProjectId] = useState<string | undefined>(defaultProjectId);
-  const [isBillable, setIsBillable] = useState(true);
 
   useEffect(() => {
     if (open) {
       setDescription(defaultDescription || defaultEntityTitle || '');
       setProjectId(defaultProjectId);
-      setIsBillable(true);
     }
   }, [open, defaultDescription, defaultEntityTitle, defaultProjectId]);
 
@@ -70,7 +67,7 @@ export function StartTimerModal({
       await startTimerMutation.mutateAsync({
         description: description.trim() || defaultEntityTitle || undefined,
         projectId: projectId && projectId !== 'none' ? projectId : undefined,
-        isBillable,
+        isBillable: true,
         entityType: defaultEntityType,
         entityId: defaultEntityId,
         entityTitle: defaultEntityTitle,
@@ -126,22 +123,6 @@ export function StartTimerModal({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <div className="space-y-0.5">
-                <Label htmlFor="timer-billable" className="cursor-pointer font-medium">
-                  {t('billableActivity')}
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  {t('billableDescription')}
-                </p>
-              </div>
-              <Switch
-                id="timer-billable"
-                checked={isBillable}
-                onCheckedChange={setIsBillable}
-              />
             </div>
           </div>
 

@@ -10,8 +10,6 @@ import { useTranslation } from '@/hooks/use-translation';
 import { useScreenItem } from '@/components/agent/screen-registry';
 import { useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 
 interface EditTimeEntryDialogProps {
   entry: TimeEntry | null;
@@ -87,30 +85,6 @@ export function TimeEntryEdit({ entry, onCancel, onSuccess }: TimeEntryEditProps
         type: 'datetime-local',
       },
       {
-        name: 'isBillable',
-        label: '',
-        type: 'custom',
-        className: 'sm:col-span-2',
-        render: (field, isSubmitting) => (
-          <div className="flex items-center justify-between rounded-lg border p-3">
-            <div className="space-y-0.5">
-              <Label htmlFor="edit-billable" className="cursor-pointer font-medium text-sm">
-                {t('billableActivity')}
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                {t('billableDescription')}
-              </p>
-            </div>
-            <Switch
-              id="edit-billable"
-              checked={field.value ?? true}
-              onCheckedChange={field.onChange}
-              disabled={isSubmitting}
-            />
-          </div>
-        ),
-      },
-      {
         name: '_auditNotice',
         label: '',
         type: 'custom',
@@ -140,7 +114,6 @@ export function TimeEntryEdit({ entry, onCancel, onSuccess }: TimeEntryEditProps
         description: entry.description ?? entry.entityTitle ?? '',
         startTime: toLocalDatetimeString(entry.startTime),
         endTime: toLocalDatetimeString(entry.endTime),
-        isBillable: entry.isBillable ?? true,
       }}
       onCancel={onCancel}
       onSubmit={async (data) => {
@@ -148,7 +121,7 @@ export function TimeEntryEdit({ entry, onCancel, onSuccess }: TimeEntryEditProps
           description: data.description?.trim() || undefined,
           startTime: data.startTime ? new Date(data.startTime).toISOString() : undefined,
           endTime: data.endTime ? new Date(data.endTime).toISOString() : null,
-          isBillable: data.isBillable,
+          isBillable: entry.isBillable ?? true,
         };
         return await updateMutation.mutateAsync({ id: entry.id, data: payload });
       }}

@@ -24,7 +24,6 @@ import {
   Play,
   PlusCircle,
   Clock,
-  DollarSign,
   Briefcase,
 } from 'lucide-react';
 
@@ -73,15 +72,8 @@ export function TimeTrackerTab() {
   }, [projectsData]);
 
   // Cálculos de métricas do período filtrado
-  const { totalSeconds, billableSeconds } = useMemo(() => {
-    let total = 0;
-    let billable = 0;
-    for (const e of entries) {
-      const dur = e.duration ?? 0;
-      total += dur;
-      if (e.isBillable) billable += dur;
-    }
-    return { totalSeconds: total, billableSeconds: billable };
+  const totalSeconds = useMemo(() => {
+    return entries.reduce((acc, e) => acc + (e.duration ?? 0), 0);
   }, [entries]);
 
   const handleEdit = useCallback((entry: TimeEntry) => {
@@ -145,7 +137,7 @@ export function TimeTrackerTab() {
   return (
     <div className="space-y-6">
       {/* Cards de Métricas */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="rounded-xl border bg-card p-4 shadow-xs flex items-center justify-between">
           <div className="space-y-1">
             <span className="text-xs text-muted-foreground font-medium">{t('totalTime')}</span>
@@ -155,18 +147,6 @@ export function TimeTrackerTab() {
           </div>
           <div className="p-2.5 rounded-lg bg-primary/10 text-primary">
             <Clock className="h-5 w-5" />
-          </div>
-        </div>
-
-        <div className="rounded-xl border bg-card p-4 shadow-xs flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-xs text-muted-foreground font-medium">{t('billableHours')}</span>
-            <div className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
-              {formatDuration(billableSeconds)}
-            </div>
-          </div>
-          <div className="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-            <DollarSign className="h-5 w-5" />
           </div>
         </div>
 
