@@ -57,7 +57,6 @@ import {
   Plus,
   Search,
   X,
-  Filter,
   RotateCcw,
   User,
   UserX,
@@ -500,44 +499,50 @@ export function ProjectBoard({
         onGoToRequests={onGoToRequests}
       />
 
-      {/* Barra de Controles: Alternador de Visualização + Busca + Nova Etapa */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1 p-1 bg-muted/50 rounded-lg border w-fit">
+      {/* Barra Unificada de Controles, Busca, Filtros e Ações */}
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2.5 p-2 rounded-xl bg-card border shadow-xs">
+        {/* Lado Esquerdo: Modo de Exibição, Busca e Controles de Filtros */}
+        <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+          {/* Alternador de Visualização */}
+          <div className="flex items-center gap-0.5 p-0.5 bg-muted/60 rounded-lg border w-fit flex-shrink-0">
             <Button
               variant={viewMode === 'board' ? 'secondary' : 'ghost'}
               size="sm"
               className="h-7 text-xs font-medium px-2.5"
               onClick={() => setViewMode('board')}
+              title="Visualização em Quadro (Kanban)"
             >
               <LayoutGrid className="mr-1.5 h-3.5 w-3.5" />
-              Quadro (Kanban)
+              Quadro
             </Button>
             <Button
               variant={viewMode === 'list' ? 'secondary' : 'ghost'}
               size="sm"
               className="h-7 text-xs font-medium px-2.5"
               onClick={() => setViewMode('list')}
+              title="Visualização em Lista de Etapas"
             >
               <ListTodo className="mr-1.5 h-3.5 w-3.5" />
-              Lista de Etapas
+              Lista
             </Button>
           </div>
 
+          <div className="h-5 w-px bg-border/60 hidden sm:block flex-shrink-0" />
+
           {/* Campo de Busca Rápida de Tarefas */}
-          <div className="relative">
+          <div className="relative min-w-[150px] sm:min-w-[190px] flex-shrink-0">
             <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
             <Input
               placeholder="Buscar tarefas..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 text-xs pl-8 pr-7 w-40 sm:w-56 bg-background"
+              className="h-8 text-xs pl-8 pr-7 bg-background w-full"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground"
+                className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
                 title="Limpar busca"
               >
                 <X className="h-3.5 w-3.5" />
@@ -545,15 +550,109 @@ export function ProjectBoard({
             )}
           </div>
 
+          {/* Filtro de Status */}
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="h-8 text-xs w-[135px] sm:w-[145px] bg-background flex-shrink-0">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent className="text-xs">
+              <SelectItem value="all">Todos os status</SelectItem>
+              {Object.entries(TASK_STATUS_CONFIG).map(([stKey, conf]) => {
+                const Icon = conf.icon;
+                return (
+                  <SelectItem key={stKey} value={stKey} className="text-xs">
+                    <div className="flex items-center gap-2">
+                      <Icon className="h-3.5 w-3.5" />
+                      <span>{conf.label}</span>
+                    </div>
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+
+          {/* Filtro de Responsável */}
+          <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+            <SelectTrigger className="h-8 text-xs w-[145px] sm:w-[160px] bg-background flex-shrink-0">
+              <SelectValue placeholder="Responsável" />
+            </SelectTrigger>
+            <SelectContent className="text-xs max-h-60">
+              <SelectItem value="all">Todos os responsáveis</SelectItem>
+              <SelectItem value="__UNASSIGNED__">
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <UserX className="h-3.5 w-3.5" />
+                  <span>Sem responsável</span>
+                </div>
+              </SelectItem>
+              {users.map((u) => (
+                <SelectItem key={u.id} value={u.id} className="text-xs">
+                  <div className="flex items-center gap-2">
+                    <UserAvatar
+                      name={u.name}
+                      email={u.email}
+                      imageUrl={u.imageUrl}
+                      className="h-4 w-4 text-[8px]"
+                    />
+                    <span className="truncate max-w-[120px]">{u.name || u.email}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Toggle Chip: Minhas Tarefas */}
+          {meData?.id && (
+            <Button
+              type="button"
+              variant={onlyMyTasks ? 'secondary' : 'outline'}
+              size="sm"
+              className={`h-8 text-xs gap-1.5 px-2.5 transition-colors cursor-pointer flex-shrink-0 ${
+                onlyMyTasks
+                  ? 'bg-primary/10 text-primary border-primary/40 font-semibold'
+                  : 'text-muted-foreground'
+              }`}
+              onClick={() => setOnlyMyTasks((prev) => !prev)}
+              title="Mostrar apenas tarefas atribuídas a mim"
+            >
+              <User className="h-3 w-3" />
+              Minhas tarefas
+            </Button>
+          )}
+
+          {/* Botão Limpar Filtros quando ativo com destaque visual */}
           {isFilterActive && (
-            <Badge variant="outline" className="text-[11px] h-7 px-2 border-primary/30 text-primary">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className={`h-8 text-xs gap-1.5 px-2.5 font-medium cursor-pointer border transition-all flex-shrink-0 ${
+                filteredTasksCount === 0
+                  ? 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/40 hover:bg-rose-500/25 font-semibold shadow-xs'
+                  : 'bg-primary/10 text-primary border-primary/30 hover:bg-primary/20'
+              }`}
+              onClick={handleResetFilters}
+              title="Limpar todos os filtros e busca"
+            >
+              <RotateCcw className="h-3 w-3" />
+              <span>
+                {filteredTasksCount === 0
+                  ? 'Limpar filtros (0 tarefas)'
+                  : `Limpar (${activeFiltersCount})`}
+              </span>
+            </Button>
+          )}
+
+          {/* Contador de tarefas filtradas */}
+          {isFilterActive && (
+            <Badge variant="outline" className="text-[11px] h-7 px-2 border-primary/30 text-primary hidden 2xl:inline-flex flex-shrink-0">
               {filteredTasksCount} de {totalTasks} tarefas
             </Badge>
           )}
         </div>
 
+        {/* Lado Direito: Ações de Criação (Nova Tarefa, Nova Etapa) */}
         {canEdit && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0 self-end xl:self-center pt-2 xl:pt-0 border-t xl:border-t-0 border-border/40 w-full xl:w-auto justify-end">
             <Button
               size="sm"
               variant="outline"
@@ -573,109 +672,6 @@ export function ProjectBoard({
             </Button>
           </div>
         )}
-      </div>
-
-      {/* Barra de Filtros: Status, Responsável, Minhas Tarefas, Bloqueadas */}
-      <div className="flex items-center gap-2 flex-wrap p-2 rounded-lg bg-muted/20 border border-border/60 text-xs">
-        <div className="flex items-center gap-1.5 text-muted-foreground font-medium mr-1">
-          <Filter className="h-3.5 w-3.5 text-primary" />
-          <span>Filtros:</span>
-        </div>
-
-        {/* Filtro de Status */}
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="h-7 text-xs w-[145px] bg-background">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent className="text-xs">
-            <SelectItem value="all">Todos os status</SelectItem>
-            {Object.entries(TASK_STATUS_CONFIG).map(([stKey, conf]) => {
-              const Icon = conf.icon;
-              return (
-                <SelectItem key={stKey} value={stKey} className="text-xs">
-                  <div className="flex items-center gap-2">
-                    <Icon className="h-3.5 w-3.5" />
-                    <span>{conf.label}</span>
-                  </div>
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
-
-        {/* Filtro de Responsável */}
-        <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-          <SelectTrigger className="h-7 text-xs w-[165px] bg-background">
-            <SelectValue placeholder="Responsável" />
-          </SelectTrigger>
-          <SelectContent className="text-xs max-h-60">
-            <SelectItem value="all">Todos os responsáveis</SelectItem>
-            <SelectItem value="__UNASSIGNED__">
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <UserX className="h-3.5 w-3.5" />
-                <span>Sem responsável</span>
-              </div>
-            </SelectItem>
-            {users.map((u) => (
-              <SelectItem key={u.id} value={u.id} className="text-xs">
-                <div className="flex items-center gap-2">
-                  <UserAvatar
-                    name={u.name}
-                    email={u.email}
-                    imageUrl={u.imageUrl}
-                    className="h-4 w-4 text-[8px]"
-                  />
-                  <span className="truncate max-w-[120px]">{u.name || u.email}</span>
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* Toggle Chip: Minhas Tarefas */}
-        {meData?.id && (
-          <Button
-            type="button"
-            variant={onlyMyTasks ? 'secondary' : 'outline'}
-            size="sm"
-            className={`h-7 text-xs gap-1.5 transition-colors cursor-pointer ${
-              onlyMyTasks
-                ? 'bg-primary/10 text-primary border-primary/40 font-semibold'
-                : 'text-muted-foreground'
-            }`}
-            onClick={() => setOnlyMyTasks((prev) => !prev)}
-            title="Mostrar apenas tarefas atribuídas a mim"
-          >
-            <User className="h-3 w-3" />
-            Minhas tarefas
-          </Button>
-        )}
-
-        {/* Botão Limpar Filtros quando ativo com destaque visual */}
-        {isFilterActive && (
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            className={`h-7 text-xs gap-1.5 px-2.5 font-medium cursor-pointer border transition-all ${
-              filteredTasksCount === 0
-                ? 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/40 hover:bg-rose-500/25 font-semibold shadow-xs'
-                : 'bg-primary/10 text-primary border-primary/30 hover:bg-primary/20'
-            }`}
-            onClick={handleResetFilters}
-            title="Limpar todos os filtros e busca"
-          >
-            <RotateCcw className="h-3 w-3" />
-            <span>
-              {filteredTasksCount === 0 ? 'Limpar filtros (nenhuma tarefa)' : `Limpar filtros (${activeFiltersCount})`}
-            </span>
-          </Button>
-        )}
-
-        {/* Contador de tarefas filtradas */}
-        <span className="text-[11px] text-muted-foreground ml-auto hidden sm:inline">
-          {filteredTasksCount} de {totalTasks} {totalTasks === 1 ? 'tarefa' : 'tarefas'}
-        </span>
       </div>
 
       {/* Conteúdo: Modo Quadro (Kanban) ou Modo Lista */}
