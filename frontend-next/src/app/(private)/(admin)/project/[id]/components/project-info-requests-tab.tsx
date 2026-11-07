@@ -2,6 +2,12 @@
 
 import { ProjectInfoRequestsView } from '@/components/project/project-info-requests-view';
 
-export function ProjectInfoRequestsTab({ projectId }: { projectId: string }) {
-  return <ProjectInfoRequestsView projectId={projectId} mode="admin" />;
+export function ProjectInfoRequestsTab({
+  projectId,
+  mode = 'admin',
+}: {
+  projectId: string;
+  mode?: 'admin' | 'client';
+}) {
+  return <ProjectInfoRequestsView projectId={projectId} mode={mode} />;
 }

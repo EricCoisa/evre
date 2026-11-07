@@ -2,8 +2,17 @@ import { Container } from "@/components/container";
 import { PageHeader } from "@/components/page-header";
 import LangLabel from "@/components/ui/langLabel";
 import { ProjectTab } from "./components/project-tab";
+import { serverMe } from "@/lib/server-context";
+import { ClientProjectsList } from "./components/client-projects-list";
 
-export default function ProjectPage() {
+export default async function ProjectPage() {
+  const me = await serverMe();
+  const isClient = me?.roleName === 'USER';
+
+  if (isClient) {
+    return <ClientProjectsList />;
+  }
+
   return (
     <Container variant="dataTable" border={false}>
       <PageHeader

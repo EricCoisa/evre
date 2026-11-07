@@ -83,7 +83,7 @@ export class ListTimeEntriesUseCase {
       thresholdHours = TIME_TRACKING_DEFAULT_FORGOTTEN_THRESHOLD_HOURS;
     }
 
-    const [items, total] = await Promise.all([
+    const [items, total, durationAggregate, runningEntries] = await Promise.all([
       this.prisma.timeEntry.findMany({
         where,
         skip,
@@ -102,7 +102,23 @@ export class ListTimeEntriesUseCase {
         },
       }),
       this.prisma.timeEntry.count({ where }),
+      this.prisma.timeEntry.aggregate({
+        where: { ...where, endTime: { not: null } },
+        _sum: { duration: true },
+      }),
+      this.prisma.timeEntry.findMany({
+        where: { ...where, endTime: null },
+        select: { startTime: true },
+      }),
     ]);
+
+    const completedSeconds = durationAggregate._sum.duration ?? 0;
+    const nowMs = Date.now();
+    const runningSeconds = runningEntries.reduce((acc, r) => {
+      return acc + Math.max(0, Math.floor((nowMs - new Date(r.startTime).getTime()) / 1000));
+    }, 0);
+
+    const totalSeconds = completedSeconds + runningSeconds;
 
     const enrichedItems = items.map((item) => {
       let isForgotten = false;
@@ -123,6 +139,7 @@ export class ListTimeEntriesUseCase {
         limit,
         total,
         totalPages: Math.ceil(total / limit),
+        totalSeconds,
       },
     };
   }

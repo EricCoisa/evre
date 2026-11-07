@@ -55,7 +55,6 @@ interface TaskDetailSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   canEdit?: boolean;
-  mode?: 'admin' | 'client';
 }
 
 export function TaskDetailSheet({
@@ -65,7 +64,6 @@ export function TaskDetailSheet({
   open,
   onOpenChange,
   canEdit = true,
-  mode = 'admin',
 }: TaskDetailSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -76,7 +74,6 @@ export function TaskDetailSheet({
           task={task}
           milestoneTitle={milestoneTitle}
           canEdit={canEdit}
-          mode={mode}
         />
       )}
     </Sheet>
@@ -88,13 +85,11 @@ function TaskDetailSheetContent({
   task,
   milestoneTitle,
   canEdit = true,
-  mode = 'admin',
 }: {
   projectId: string;
   task: MilestoneTask;
   milestoneTitle?: string;
   canEdit?: boolean;
-  mode?: 'admin' | 'client';
 }) {
   const updateTaskMutation = useUpdateTask(projectId);
   const { data: usersData } = useUsers();
@@ -272,7 +267,7 @@ function TaskDetailSheetContent({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => copyTaskLink(projectId, task.id, mode === 'client')}
+                onClick={() => copyTaskLink(projectId, task.id)}
                 className="h-8 px-2.5 gap-1.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer shadow-2xs"
                 title="Copiar link direto da tarefa"
               >

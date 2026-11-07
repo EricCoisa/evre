@@ -71,10 +71,41 @@ export function TimeTrackerTab() {
     return (projectsData as { data?: any[] })?.data ?? [];
   }, [projectsData]);
 
-  // Cálculos de métricas do período filtrado
-  const totalSeconds = useMemo(() => {
-    return entries.reduce((acc, e) => acc + (e.duration ?? 0), 0);
+  const meta = useMemo(() => {
+    if (!data || Array.isArray(data)) return null;
+    return (data as any)?.meta;
+  }, [data]);
+
+  // Cálculos de métricas do período filtrado com agregação total e ticker em tempo real
+  const baseTotalSeconds = useMemo(() => {
+    if (meta?.totalSeconds != null) {
+      return meta.totalSeconds;
+    }
+    return entries.reduce((acc, e) => {
+      if (e.duration != null) return acc + e.duration;
+      if (!e.endTime && e.startTime) {
+        return acc + Math.max(0, Math.floor((Date.now() - new Date(e.startTime).getTime()) / 1000));
+      }
+      return acc;
+    }, 0);
+  }, [meta, entries]);
+
+  const runningCount = useMemo(() => {
+    return entries.filter((e) => !e.endTime).length;
   }, [entries]);
+
+  const [elapsedTick, setElapsedTick] = useState(0);
+
+  useEffect(() => {
+    setElapsedTick(0);
+    if (runningCount === 0) return;
+    const interval = setInterval(() => {
+      setElapsedTick((prev) => prev + runningCount);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [runningCount, data]);
+
+  const liveTotalSeconds = baseTotalSeconds + elapsedTick;
 
   const handleEdit = useCallback((entry: TimeEntry) => {
     setEditingEntry(entry);
@@ -141,8 +172,8 @@ export function TimeTrackerTab() {
         <div className="rounded-xl border bg-card p-4 shadow-xs flex items-center justify-between">
           <div className="space-y-1">
             <span className="text-xs text-muted-foreground font-medium">{t('totalTime')}</span>
-            <div className="text-2xl font-bold tracking-tight text-foreground">
-              {formatDuration(totalSeconds)}
+            <div className="text-2xl font-bold tracking-tight text-foreground font-mono">
+              {formatDuration(liveTotalSeconds)}
             </div>
           </div>
           <div className="p-2.5 rounded-lg bg-primary/10 text-primary">
@@ -154,7 +185,7 @@ export function TimeTrackerTab() {
           <div className="space-y-1">
             <span className="text-xs text-muted-foreground font-medium">{t('totalEntries')}</span>
             <div className="text-2xl font-bold tracking-tight text-foreground">
-              {entries.length}
+              {meta?.total ?? entries.length}
             </div>
           </div>
           <div className="p-2.5 rounded-lg bg-muted text-muted-foreground">

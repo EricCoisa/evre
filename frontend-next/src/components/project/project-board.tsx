@@ -200,7 +200,7 @@ export function ProjectBoard({
     setSelectedTaskId(task.id);
 
     if (typeof window !== 'undefined') {
-      const basePath = mode === 'client' ? `/my-project/${projectId}/${task.id}` : `/project/${projectId}/${task.id}`;
+      const basePath = `/project/${projectId}/${task.id}`;
       const search = window.location.search;
       const newUrl = search ? `${basePath}${search}` : basePath;
       if (window.location.pathname !== basePath) {
@@ -213,7 +213,7 @@ export function ProjectBoard({
     setSelectedTaskId(null);
 
     if (typeof window !== 'undefined') {
-      const basePath = mode === 'client' ? `/my-project/${projectId}` : `/project/${projectId}`;
+      const basePath = `/project/${projectId}`;
       const search = window.location.search;
       const newUrl = search ? `${basePath}${search}` : basePath;
       if (window.location.pathname !== basePath) {
@@ -265,6 +265,7 @@ export function ProjectBoard({
 
   const { data: meData } = useMe();
   const currentUserId = meData?.id;
+  const isClient = mode === 'client' || meData?.role === 'USER' || (meData as any)?.roleName === 'USER';
   const { data: usersData } = useUsers();
 
   const users = useMemo(() => {
@@ -285,19 +286,18 @@ export function ProjectBoard({
     return (
       Boolean(searchQuery.trim()) ||
       statusFilter !== 'all' ||
-      assigneeFilter !== 'all' ||
-      onlyMyTasks
+      (!isClient && (assigneeFilter !== 'all' || onlyMyTasks))
     );
-  }, [searchQuery, statusFilter, assigneeFilter, onlyMyTasks]);
+  }, [searchQuery, statusFilter, assigneeFilter, onlyMyTasks, isClient]);
 
   const activeFiltersCount = useMemo(() => {
     let count = 0;
     if (searchQuery.trim()) count++;
     if (statusFilter !== 'all') count++;
-    if (assigneeFilter !== 'all') count++;
-    if (onlyMyTasks) count++;
+    if (!isClient && assigneeFilter !== 'all') count++;
+    if (!isClient && onlyMyTasks) count++;
     return count;
-  }, [searchQuery, statusFilter, assigneeFilter, onlyMyTasks]);
+  }, [searchQuery, statusFilter, assigneeFilter, onlyMyTasks, isClient]);
 
   const handleResetFilters = () => {
     setSearchQuery('');
@@ -311,6 +311,9 @@ export function ProjectBoard({
     setItems(parseBoardItems(boardData));
   }
 
+  const effectiveAssigneeFilter = isClient ? 'all' : assigneeFilter;
+  const effectiveOnlyMyTasks = isClient ? false : onlyMyTasks;
+
   const displayedItems = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
@@ -319,8 +322,8 @@ export function ProjectBoard({
       const tasks = filterMilestoneTasks(allTasks, {
         query,
         statusFilter,
-        assigneeFilter,
-        onlyMyTasks,
+        assigneeFilter: effectiveAssigneeFilter,
+        onlyMyTasks: effectiveOnlyMyTasks,
         currentUserId,
         milestoneTitle: m.title,
       });
@@ -331,7 +334,7 @@ export function ProjectBoard({
         tasks,
       };
     });
-  }, [items, searchQuery, statusFilter, assigneeFilter, onlyMyTasks, currentUserId]);
+  }, [items, searchQuery, statusFilter, effectiveAssigneeFilter, effectiveOnlyMyTasks, currentUserId]);
 
   const totalTasks = useMemo(() => {
     return items.reduce((acc, m) => acc + (m.tasks?.length ?? 0), 0);
@@ -679,52 +682,56 @@ export function ProjectBoard({
             </SelectContent>
           </Select>
 
-          {/* Filtro de Responsável */}
-          <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-            <SelectTrigger className="h-8 text-xs w-[145px] sm:w-[160px] bg-background flex-shrink-0">
-              <SelectValue placeholder="Responsável" />
-            </SelectTrigger>
-            <SelectContent className="text-xs max-h-60">
-              <SelectItem value="all">Todos os responsáveis</SelectItem>
-              <SelectItem value="__UNASSIGNED__">
-                <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <UserX className="h-3.5 w-3.5" />
-                  <span>Sem responsável</span>
-                </div>
-              </SelectItem>
-              {users.map((u) => (
-                <SelectItem key={u.id} value={u.id} className="text-xs">
-                  <div className="flex items-center gap-2">
-                    <UserAvatar
-                      name={u.name}
-                      email={u.email}
-                      imageUrl={u.imageUrl}
-                      className="h-4 w-4 text-[8px]"
-                    />
-                    <span className="truncate max-w-[120px]">{u.name || u.email}</span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {!isClient && (
+            <>
+              {/* Filtro de Responsável */}
+              <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+                <SelectTrigger className="h-8 text-xs w-[145px] sm:w-[160px] bg-background flex-shrink-0">
+                  <SelectValue placeholder="Responsável" />
+                </SelectTrigger>
+                <SelectContent className="text-xs max-h-60">
+                  <SelectItem value="all">Todos os responsáveis</SelectItem>
+                  <SelectItem value="__UNASSIGNED__">
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <UserX className="h-3.5 w-3.5" />
+                      <span>Sem responsável</span>
+                    </div>
+                  </SelectItem>
+                  {users.map((u) => (
+                    <SelectItem key={u.id} value={u.id} className="text-xs">
+                      <div className="flex items-center gap-2">
+                        <UserAvatar
+                          name={u.name}
+                          email={u.email}
+                          imageUrl={u.imageUrl}
+                          className="h-4 w-4 text-[8px]"
+                        />
+                        <span className="truncate max-w-[120px]">{u.name || u.email}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-          {/* Toggle Chip: Minhas Tarefas */}
-          {meData?.id && (
-            <Button
-              type="button"
-              variant={onlyMyTasks ? 'secondary' : 'outline'}
-              size="sm"
-              className={`h-8 text-xs gap-1.5 px-2.5 transition-colors cursor-pointer flex-shrink-0 ${
-                onlyMyTasks
-                  ? 'bg-primary/10 text-primary border-primary/40 font-semibold'
-                  : 'text-muted-foreground'
-              }`}
-              onClick={() => setOnlyMyTasks((prev) => !prev)}
-              title="Mostrar apenas tarefas atribuídas a mim"
-            >
-              <User className="h-3 w-3" />
-              Minhas tarefas
-            </Button>
+              {/* Toggle Chip: Minhas Tarefas */}
+              {meData?.id && (
+                <Button
+                  type="button"
+                  variant={onlyMyTasks ? 'secondary' : 'outline'}
+                  size="sm"
+                  className={`h-8 text-xs gap-1.5 px-2.5 transition-colors cursor-pointer flex-shrink-0 ${
+                    onlyMyTasks
+                      ? 'bg-primary/10 text-primary border-primary/40 font-semibold'
+                      : 'text-muted-foreground'
+                  }`}
+                  onClick={() => setOnlyMyTasks((prev) => !prev)}
+                  title="Mostrar apenas tarefas atribuídas a mim"
+                >
+                  <User className="h-3 w-3" />
+                  Minhas tarefas
+                </Button>
+              )}
+            </>
           )}
 
           {/* Botão Limpar Filtros quando ativo com destaque visual */}
@@ -864,7 +871,6 @@ export function ProjectBoard({
         open={!!selectedTask}
         onOpenChange={(open) => !open && handleCloseTask()}
         canEdit={canEdit}
-        mode={mode}
       />
 
       {/* Modal para Criar Nova Etapa com Rich Text de Descrição */}

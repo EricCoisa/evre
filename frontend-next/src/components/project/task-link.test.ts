@@ -15,19 +15,14 @@ describe('task-link utilities', () => {
   });
 
   describe('getTaskPath', () => {
-    it('retorna a rota de admin /project/[projectId]/[taskId]', () => {
+    it('retorna a rota unificada /project/[projectId]/[taskId]', () => {
       const path = getTaskPath('proj-123', 'task-456');
       expect(path).toBe('/project/proj-123/task-456');
-    });
-
-    it('retorna a rota de client /my-project/[projectId]/[taskId] quando isClient é true', () => {
-      const path = getTaskPath('proj-123', 'task-456', true);
-      expect(path).toBe('/my-project/proj-123/task-456');
     });
   });
 
   describe('copyTaskLink', () => {
-    it('copia a URL completa usando navigator.clipboard e dispara toast de sucesso', async () => {
+    it('copia a URL canônica usando navigator.clipboard e dispara toast de sucesso', async () => {
       const writeTextMock = vi.fn().mockResolvedValue(undefined);
       Object.assign(navigator, {
         clipboard: {
@@ -39,21 +34,6 @@ describe('task-link utilities', () => {
 
       expect(result).toBe(true);
       expect(writeTextMock).toHaveBeenCalledWith(`${window.location.origin}/project/proj-1/task-2`);
-      expect(toast.success).toHaveBeenCalledWith('Link da tarefa copiado!');
-    });
-
-    it('funciona para rotas de cliente', async () => {
-      const writeTextMock = vi.fn().mockResolvedValue(undefined);
-      Object.assign(navigator, {
-        clipboard: {
-          writeText: writeTextMock,
-        },
-      });
-
-      const result = await copyTaskLink('proj-1', 'task-2', true);
-
-      expect(result).toBe(true);
-      expect(writeTextMock).toHaveBeenCalledWith(`${window.location.origin}/my-project/proj-1/task-2`);
       expect(toast.success).toHaveBeenCalledWith('Link da tarefa copiado!');
     });
 

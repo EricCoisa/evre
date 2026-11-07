@@ -98,7 +98,7 @@ export default function HomePage() {
             </h2>
             {projects.length > 0 && (
               <Button variant="ghost" size="sm" asChild>
-                <Link href="/my-project">
+                <Link href="/project">
                   {t('viewAll')} <ArrowRight className="ml-1 h-4 w-4" />
                 </Link>
               </Button>
@@ -130,7 +130,7 @@ export default function HomePage() {
               {projects.map((project) => (
                 <Link
                   key={project.id}
-                  href={`/my-project/${project.id}`}
+                  href={`/project/${project.id}`}
                   className="group"
                 >
                   <Card className="h-full transition-colors group-hover:border-primary/50">

@@ -179,13 +179,16 @@ export async function seedRoutes(
 
   const myProjectRoute = await prisma.route.upsert({
     where: { path: RoutePathConst.MY_PROJECT },
-    update: {},
+    update: {
+      showSideBar: false,
+    },
     create: {
       path: RoutePathConst.MY_PROJECT,
       labelKey: 'ROUTE_MY_PROJECT',
       icon: 'FolderKanban',
       ordem: 16,
       isActive: true,
+      showSideBar: false,
     },
   });
 
@@ -279,7 +282,7 @@ export async function seedRoutes(
     });
   }
 
-  const userRoutes = [homeRoute, profileRoute, myProjectRoute];
+  const userRoutes = [homeRoute, profileRoute, projectRoute, myProjectRoute];
   for (const route of userRoutes) {
     await prisma.roleRouteAccess.upsert({
       where: { roleId_routeId: { roleId: roleMap['USER'], routeId: route.id } },

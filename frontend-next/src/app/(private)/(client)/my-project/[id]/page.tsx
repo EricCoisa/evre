@@ -1,80 +1,10 @@
-import { Container } from '@/components/container';
-import { PageHeader } from '@/components/page-header';
-import { SubNavLayout, type SubNavSection, TabsContent } from '@/components/sub-nav-layout';
-import { ItemNotFound } from '@/components/ui/item-not-found';
-import { Badge } from '@/components/ui/badge';
-import LangLabel from '@/components/ui/langLabel';
-import { getProject } from '@/lib/actions/project/api';
-import { ClientProjectBoardTab } from './components/client-project-board-tab';
-import { ClientInfoRequestsTab } from './components/client-info-requests-tab';
-import { LayoutGrid, KeyRound } from 'lucide-react';
+import { redirect } from 'next/navigation';
 
-const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'outline'> = {
-  ACTIVE: 'default',
-  COMPLETED: 'outline',
-  ARCHIVED: 'secondary',
-};
-
-const sections: SubNavSection[] = [
-  {
-    items: [
-      {
-        id: 'board',
-        label: <LangLabel text="tabBoard" langJson="project" />,
-        icon: <LayoutGrid className="size-4" />,
-      },
-      {
-        id: 'info-requests',
-        label: <LangLabel text="tabInfoRequests" langJson="project" />,
-        icon: <KeyRound className="size-4" />,
-      },
-    ],
-  },
-];
-
-export default async function ClientProjectDetailPage({
+export default async function MyProjectDetailRedirectPage({
   params,
-  initialTaskId,
 }: {
-  params: Promise<{ id: string; taskId?: string }>;
-  initialTaskId?: string;
+  params: Promise<{ id: string }>;
 }) {
-  const resolvedParams = await params;
-  const id = resolvedParams.id;
-  const taskId = initialTaskId ?? resolvedParams.taskId;
-  const response = await getProject(id);
-
-  if (!response.success || !response.data) {
-    return (
-      <ItemNotFound
-        itemName="projeto"
-        returnPage="/my-project"
-        returnLabel="Voltar para Meus Projetos"
-      />
-    );
-  }
-
-  const project = response.data;
-
-  return (
-    <Container variant="dataTable" border={false}>
-      <PageHeader
-        title={project.name}
-        description={project.description ?? undefined}
-        badge={
-          <Badge variant={STATUS_VARIANT[project.status] ?? 'default'}>
-            <LangLabel text={project.status.toLowerCase()} langJson="project" />
-          </Badge>
-        }
-      />
-      <SubNavLayout sections={sections} defaultTab="board">
-        <TabsContent value="board" className="mt-0 space-y-4">
-          <ClientProjectBoardTab projectId={project.id} initialTaskId={taskId} />
-        </TabsContent>
-        <TabsContent value="info-requests" className="mt-0 space-y-4">
-          <ClientInfoRequestsTab projectId={project.id} />
-        </TabsContent>
-      </SubNavLayout>
-    </Container>
-  );
+  const { id } = await params;
+  redirect(`/project/${id}`);
 }

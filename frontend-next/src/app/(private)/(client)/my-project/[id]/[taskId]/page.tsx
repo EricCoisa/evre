@@ -1,9 +1,10 @@
-import ClientProjectDetailPage from '../page';
+import { redirect } from 'next/navigation';
 
-export default async function ClientProjectTaskDetailPage({
+export default async function MyProjectTaskDetailRedirectPage({
   params,
 }: {
   params: Promise<{ id: string; taskId: string }>;
 }) {
-  return <ClientProjectDetailPage params={params} />;
+  const { id, taskId } = await params;
+  redirect(`/project/${id}/${taskId}`);
 }

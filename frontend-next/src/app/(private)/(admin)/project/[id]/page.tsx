@@ -5,6 +5,7 @@ import { ItemNotFound } from "@/components/ui/item-not-found";
 import { Badge } from "@/components/ui/badge";
 import LangLabel from "@/components/ui/langLabel";
 import { getProject } from "@/lib/actions/project/api";
+import { serverMe } from "@/lib/server-context";
 import { ProjectBoardTab } from "./components/project-board-tab";
 import { ProjectInfoRequestsTab } from "./components/project-info-requests-tab";
 import { LayoutGrid, KeyRound } from "lucide-react";
@@ -42,6 +43,8 @@ export default async function ProjectDetailPage({
   const resolvedParams = await params;
   const id = resolvedParams.id;
   const taskId = initialTaskId ?? resolvedParams.taskId;
+  const me = await serverMe();
+  const isClient = me?.roleName === 'USER';
   const response = await getProject(id);
 
   if (!response.success || !response.data) {
@@ -63,10 +66,18 @@ export default async function ProjectDetailPage({
       />
       <SubNavLayout sections={sections} defaultTab="board">
         <TabsContent value="board" className="mt-0 space-y-4">
-          <ProjectBoardTab projectId={project.id} initialTaskId={taskId} />
+          <ProjectBoardTab
+            projectId={project.id}
+            initialTaskId={taskId}
+            canEdit={!isClient}
+            mode={isClient ? 'client' : 'admin'}
+          />
         </TabsContent>
         <TabsContent value="info-requests" className="mt-0 space-y-4">
-          <ProjectInfoRequestsTab projectId={project.id} />
+          <ProjectInfoRequestsTab
+            projectId={project.id}
+            mode={isClient ? 'client' : 'admin'}
+          />
         </TabsContent>
       </SubNavLayout>
     </Container>
