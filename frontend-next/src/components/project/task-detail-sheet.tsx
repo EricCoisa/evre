@@ -35,8 +35,9 @@ import { UserAvatar } from './user-avatar';
 import { TASK_STATUS_CONFIG } from './milestone-progress';
 import { useUpdateTask } from '@/lib/actions/project/queries';
 import { useUsers } from '@/lib/actions/user/queries';
-import { Check, Edit3, AlignLeft, AlertTriangle, User, UserX } from 'lucide-react';
+import { Check, Edit3, AlignLeft, AlertTriangle, User, UserX, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { copyTaskLink } from './task-link';
 import type { MilestoneTask, ProjectTaskStatus } from '@/lib/actions/project/types';
 import type { UserDto } from '@/lib/generated/schemas';
 
@@ -54,6 +55,7 @@ interface TaskDetailSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   canEdit?: boolean;
+  mode?: 'admin' | 'client';
 }
 
 export function TaskDetailSheet({
@@ -63,6 +65,7 @@ export function TaskDetailSheet({
   open,
   onOpenChange,
   canEdit = true,
+  mode = 'admin',
 }: TaskDetailSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -73,6 +76,7 @@ export function TaskDetailSheet({
           task={task}
           milestoneTitle={milestoneTitle}
           canEdit={canEdit}
+          mode={mode}
         />
       )}
     </Sheet>
@@ -84,11 +88,13 @@ function TaskDetailSheetContent({
   task,
   milestoneTitle,
   canEdit = true,
+  mode = 'admin',
 }: {
   projectId: string;
   task: MilestoneTask;
   milestoneTitle?: string;
   canEdit?: boolean;
+  mode?: 'admin' | 'client';
 }) {
   const updateTaskMutation = useUpdateTask(projectId);
   const { data: usersData } = useUsers();
@@ -260,43 +266,58 @@ function TaskDetailSheetContent({
               </Badge>
             </div>
 
-            {/* Seletor de Status */}
-            {canEdit ? (
-              <Select
-                value={status}
-                onValueChange={(val) => handleStatusChange(val as ProjectTaskStatus)}
-                disabled={isSaving}
+            {/* Ações do Topo: Copiar Link e Status */}
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => copyTaskLink(projectId, task.id, mode === 'client')}
+                className="h-8 px-2.5 gap-1.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer shadow-2xs"
+                title="Copiar link direto da tarefa"
               >
-                <SelectTrigger className="h-8 text-xs w-40">
-                  <div className="flex items-center gap-1.5 truncate">
-                    <StatusIcon className="h-3.5 w-3.5 flex-shrink-0" />
-                    <span>{currentStatusConfig.label}</span>
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  {statusList.map((st) => {
-                    const conf = TASK_STATUS_CONFIG[st];
-                    const Icon = conf.icon;
-                    return (
-                      <SelectItem key={st} value={st} className="text-xs">
-                        <div className="flex items-center gap-2">
-                          <Icon className="h-3.5 w-3.5" />
-                          <span>{conf.label}</span>
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            ) : (
-              <Badge
-                variant={currentStatusConfig.variant}
-                className={`h-6 text-xs px-2 gap-1 font-normal ${currentStatusConfig.className}`}
-              >
-                <StatusIcon className="h-3.5 w-3.5" />
-                <span>{currentStatusConfig.label}</span>
-              </Badge>
-            )}
+                <Link2 className="h-3.5 w-3.5 text-primary" />
+                <span>Copiar link</span>
+              </Button>
+
+              {/* Seletor de Status */}
+              {canEdit ? (
+                <Select
+                  value={status}
+                  onValueChange={(val) => handleStatusChange(val as ProjectTaskStatus)}
+                  disabled={isSaving}
+                >
+                  <SelectTrigger className="h-8 text-xs w-40">
+                    <div className="flex items-center gap-1.5 truncate">
+                      <StatusIcon className="h-3.5 w-3.5 flex-shrink-0" />
+                      <span>{currentStatusConfig.label}</span>
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusList.map((st) => {
+                      const conf = TASK_STATUS_CONFIG[st];
+                      const Icon = conf.icon;
+                      return (
+                        <SelectItem key={st} value={st} className="text-xs">
+                          <div className="flex items-center gap-2">
+                            <Icon className="h-3.5 w-3.5" />
+                            <span>{conf.label}</span>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Badge
+                  variant={currentStatusConfig.variant}
+                  className={`h-6 text-xs px-2 gap-1 font-normal ${currentStatusConfig.className}`}
+                >
+                  <StatusIcon className="h-3.5 w-3.5" />
+                  <span>{currentStatusConfig.label}</span>
+                </Badge>
+              )}
+            </div>
           </div>
 
           {/* Título com edição inline */}

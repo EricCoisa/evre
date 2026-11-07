@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   DndContext,
   DragOverlay,
@@ -70,6 +71,20 @@ interface ProjectBoardProps {
   canEdit?: boolean;
   mode?: 'admin' | 'client';
   onGoToRequests?: () => void;
+  initialTaskId?: string;
+}
+
+function findTaskById(
+  items: Milestone[],
+  taskId: string
+): { task: MilestoneTask; milestoneTitle: string } | null {
+  for (const m of items) {
+    const found = m.tasks?.find((t) => t.id === taskId);
+    if (found) {
+      return { task: found, milestoneTitle: m.title };
+    }
+  }
+  return null;
 }
 
 function parseBoardItems(data: unknown): Milestone[] {
@@ -146,7 +161,12 @@ export function ProjectBoard({
   canEdit = true,
   mode = 'admin',
   onGoToRequests,
+  initialTaskId,
 }: ProjectBoardProps) {
+  const searchParams = useSearchParams();
+  const searchParamTaskId = searchParams.get('task') || searchParams.get('taskId');
+  const targetTaskId = initialTaskId || searchParamTaskId;
+
   const { data: boardData, isLoading } = useProjectBoard(projectId);
   const deleteMilestoneMutation = useDeleteMilestone(projectId);
   const reorderMilestonesMutation = useReorderMilestones(projectId);
@@ -160,8 +180,13 @@ export function ProjectBoard({
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [createTaskMilestoneId, setCreateTaskMilestoneId] = useState<string | undefined>(undefined);
   const [createTaskMilestoneTitle, setCreateTaskMilestoneTitle] = useState<string | undefined>(undefined);
-  const [selectedTask, setSelectedTask] = useState<MilestoneTask | null>(null);
-  const [selectedMilestoneTitle, setSelectedMilestoneTitle] = useState<string>('');
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(() => targetTaskId ?? null);
+  const [prevTargetTaskId, setPrevTargetTaskId] = useState(targetTaskId);
+  if (targetTaskId !== prevTargetTaskId) {
+    setPrevTargetTaskId(targetTaskId);
+    setSelectedTaskId(targetTaskId ?? null);
+  }
+
   const [activeTask, setActiveTask] = useState<MilestoneTask | null>(null);
   const [activeMilestone, setActiveMilestone] = useState<Milestone | null>(null);
 
@@ -171,10 +196,72 @@ export function ProjectBoard({
     setIsCreateTaskOpen(true);
   };
 
+  const handleSelectTask = (task: MilestoneTask) => {
+    setSelectedTaskId(task.id);
+
+    if (typeof window !== 'undefined') {
+      const basePath = mode === 'client' ? `/my-project/${projectId}/${task.id}` : `/project/${projectId}/${task.id}`;
+      const search = window.location.search;
+      const newUrl = search ? `${basePath}${search}` : basePath;
+      if (window.location.pathname !== basePath) {
+        window.history.pushState({ taskId: task.id }, '', newUrl);
+      }
+    }
+  };
+
+  const handleCloseTask = () => {
+    setSelectedTaskId(null);
+
+    if (typeof window !== 'undefined') {
+      const basePath = mode === 'client' ? `/my-project/${projectId}` : `/project/${projectId}`;
+      const search = window.location.search;
+      const newUrl = search ? `${basePath}${search}` : basePath;
+      if (window.location.pathname !== basePath) {
+        window.history.pushState({ taskId: null }, '', newUrl);
+      }
+    }
+  };
+
   // Estado local para permitir drag and drop otimista e fluido sem efeito rebote
   const [items, setItems] = useState<Milestone[]>(() => parseBoardItems(boardData));
   const [prevBoardData, setPrevBoardData] = useState(boardData);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const selectedTaskMatch = useMemo(() => {
+    if (!selectedTaskId) return null;
+    return findTaskById(items, selectedTaskId);
+  }, [items, selectedTaskId]);
+
+  const selectedTask = selectedTaskMatch?.task ?? null;
+  const selectedMilestoneTitle = selectedTaskMatch?.milestoneTitle ?? '';
+
+  const checkedInitialTaskRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!targetTaskId || isLoading || items.length === 0) return;
+    if (checkedInitialTaskRef.current === targetTaskId) return;
+
+    checkedInitialTaskRef.current = targetTaskId;
+    const match = findTaskById(items, targetTaskId);
+    if (!match) {
+      toast.error('Tarefa informada no link não foi encontrada neste projeto.');
+    }
+  }, [targetTaskId, isLoading, items]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (typeof window === 'undefined') return;
+      const pathname = window.location.pathname;
+      const segments = pathname.split('/').filter(Boolean);
+      const isTaskUrl = segments.length >= 3 && (segments[0] === 'project' || segments[0] === 'my-project');
+      const pathTaskId = isTaskUrl ? segments[2] : null;
+
+      setSelectedTaskId(pathTaskId ?? null);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const { data: meData } = useMe();
   const currentUserId = meData?.id;
@@ -701,10 +788,7 @@ export function ProjectBoard({
           projectId={projectId}
           milestones={displayedItems}
           canEdit={canEdit && !isFilterActive}
-          onSelectTask={(task, title) => {
-            setSelectedTask(task);
-            setSelectedMilestoneTitle(title);
-          }}
+          onSelectTask={(task) => handleSelectTask(task)}
           onOpenCreateTask={canEdit ? handleOpenCreateTask : undefined}
           onAddTask={canEdit ? handleAddTask : undefined}
           onDeleteTask={canEdit ? handleDeleteTask : undefined}
@@ -725,10 +809,7 @@ export function ProjectBoard({
                   projectId={projectId}
                   milestone={milestone}
                   canEdit={canEdit && !isFilterActive}
-                  onSelectTask={(task, title) => {
-                    setSelectedTask(task);
-                    setSelectedMilestoneTitle(title);
-                  }}
+                  onSelectTask={(task) => handleSelectTask(task)}
                   onOpenCreateTask={canEdit ? handleOpenCreateTask : undefined}
                   onAddTask={canEdit ? handleAddTask : undefined}
                   onDeleteTask={canEdit ? handleDeleteTask : undefined}
@@ -781,8 +862,9 @@ export function ProjectBoard({
         task={selectedTask}
         milestoneTitle={selectedMilestoneTitle}
         open={!!selectedTask}
-        onOpenChange={(open) => !open && setSelectedTask(null)}
+        onOpenChange={(open) => !open && handleCloseTask()}
         canEdit={canEdit}
+        mode={mode}
       />
 
       {/* Modal para Criar Nova Etapa com Rich Text de Descrição */}

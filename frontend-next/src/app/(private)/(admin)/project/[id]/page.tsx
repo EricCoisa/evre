@@ -7,7 +7,7 @@ import LangLabel from "@/components/ui/langLabel";
 import { getProject } from "@/lib/actions/project/api";
 import { ProjectBoardTab } from "./components/project-board-tab";
 import { ProjectInfoRequestsTab } from "./components/project-info-requests-tab";
-import { LayoutGrid, MessageSquare, CheckCircle2, KeyRound } from "lucide-react";
+import { LayoutGrid, KeyRound } from "lucide-react";
 
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "outline"> = {
   ACTIVE: "default",
@@ -32,8 +32,16 @@ const sections: SubNavSection[] = [
   },
 ];
 
-export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default async function ProjectDetailPage({
+  params,
+  initialTaskId,
+}: {
+  params: Promise<{ id: string; taskId?: string }>;
+  initialTaskId?: string;
+}) {
+  const resolvedParams = await params;
+  const id = resolvedParams.id;
+  const taskId = initialTaskId ?? resolvedParams.taskId;
   const response = await getProject(id);
 
   if (!response.success || !response.data) {
@@ -55,7 +63,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       />
       <SubNavLayout sections={sections} defaultTab="board">
         <TabsContent value="board" className="mt-0 space-y-4">
-          <ProjectBoardTab projectId={project.id} />
+          <ProjectBoardTab projectId={project.id} initialTaskId={taskId} />
         </TabsContent>
         <TabsContent value="info-requests" className="mt-0 space-y-4">
           <ProjectInfoRequestsTab projectId={project.id} />

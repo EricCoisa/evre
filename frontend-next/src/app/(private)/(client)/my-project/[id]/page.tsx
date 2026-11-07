@@ -34,10 +34,14 @@ const sections: SubNavSection[] = [
 
 export default async function ClientProjectDetailPage({
   params,
+  initialTaskId,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string; taskId?: string }>;
+  initialTaskId?: string;
 }) {
-  const { id } = await params;
+  const resolvedParams = await params;
+  const id = resolvedParams.id;
+  const taskId = initialTaskId ?? resolvedParams.taskId;
   const response = await getProject(id);
 
   if (!response.success || !response.data) {
@@ -65,7 +69,7 @@ export default async function ClientProjectDetailPage({
       />
       <SubNavLayout sections={sections} defaultTab="board">
         <TabsContent value="board" className="mt-0 space-y-4">
-          <ClientProjectBoardTab projectId={project.id} />
+          <ClientProjectBoardTab projectId={project.id} initialTaskId={taskId} />
         </TabsContent>
         <TabsContent value="info-requests" className="mt-0 space-y-4">
           <ClientInfoRequestsTab projectId={project.id} />

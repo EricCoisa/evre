@@ -31,7 +31,9 @@ import {
   User,
   UserX,
   Check,
+  Link2,
 } from 'lucide-react';
+import { copyTaskLink } from './task-link';
 import type { Milestone, MilestoneTask, ProjectTaskStatus } from '@/lib/actions/project/types';
 import type { UserDto } from '@/lib/generated/schemas';
 
@@ -415,6 +417,18 @@ export function TaskListView({
                             </div>
                           )}
                         </div>
+
+                        <button
+                          type="button"
+                          className="p-1 rounded-sm text-muted-foreground/60 hover:text-foreground hover:bg-muted transition-all cursor-pointer opacity-0 group-hover:opacity-100"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void copyTaskLink(projectId, task.id);
+                          }}
+                          title="Copiar link da tarefa"
+                        >
+                          <Link2 className="h-3.5 w-3.5" />
+                        </button>
 
                         <div className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
                           <MessageSquare className="h-3.5 w-3.5" />

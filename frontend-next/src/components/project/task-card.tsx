@@ -14,7 +14,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { GripVertical, Trash2, AlignLeft, MessageSquare, AlertTriangle, ChevronDown, User, UserX, Check, Play, Square } from 'lucide-react';
+import { GripVertical, Trash2, AlignLeft, MessageSquare, AlertTriangle, ChevronDown, User, UserX, Check, Play, Square, Link2 } from 'lucide-react';
+import { copyTaskLink } from './task-link';
 import { useActiveTimer, useStartTimer, useStopTimer } from '@/lib/actions/time-tracking/queries';
 import { useTranslation } from '@/hooks/use-translation';
 import { Feature } from '@/components/feature';
@@ -247,6 +248,25 @@ export function TaskCard({ projectId, task, canEdit = true, onSelect, onDelete }
                   </TooltipContent>
                 </Tooltip>
               </Feature>
+
+              {projectId && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void copyTaskLink(projectId, task.id);
+                      }}
+                      className="p-1 rounded-sm text-muted-foreground/60 hover:text-foreground hover:bg-muted transition-all cursor-pointer opacity-0 group-hover:opacity-100"
+                      title="Copiar link da tarefa"
+                    >
+                      <Link2 className="h-3.5 w-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Copiar link da tarefa</TooltipContent>
+                </Tooltip>
+              )}
 
               {canEdit && (
                 <>
