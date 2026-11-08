@@ -61,13 +61,20 @@ export class ListTimeEntriesUseCase {
       ];
     }
 
-    if (dto.startDate || dto.endDate) {
+    const resolvedStartDate = dto.startDate || parsedFilter.startDate;
+    const resolvedEndDate = dto.endDate || parsedFilter.endDate;
+
+    if (resolvedStartDate || resolvedEndDate) {
       where.startTime = {};
-      if (dto.startDate) {
-        where.startTime.gte = new Date(dto.startDate);
+      if (resolvedStartDate) {
+        where.startTime.gte = new Date(resolvedStartDate);
       }
-      if (dto.endDate) {
-        where.startTime.lte = new Date(dto.endDate);
+      if (resolvedEndDate) {
+        const end = new Date(resolvedEndDate);
+        if (typeof resolvedEndDate === 'string' && resolvedEndDate.length === 10) {
+          end.setHours(23, 59, 59, 999);
+        }
+        where.startTime.lte = end;
       }
     }
 

@@ -241,5 +241,50 @@ describe('TimeTracking Use Cases', () => {
       expect(result.data[0].isForgotten).toBe(true);
       expect(result.data[1].isForgotten).toBe(true);
     });
+
+    it('resolves startDate and endDate from JSON filter or top-level params', async () => {
+      const prisma = {
+        timeEntry: {
+          findMany: vi.fn()
+            .mockResolvedValueOnce([])
+            .mockResolvedValueOnce([])
+            .mockResolvedValueOnce([]),
+          count: vi.fn().mockResolvedValue(0),
+          aggregate: vi.fn()
+            .mockResolvedValueOnce({ _sum: { duration: 0 } })
+            .mockResolvedValueOnce({ _sum: { duration: 0 } }),
+        },
+      } as unknown as PrismaService;
+
+      const sysConfig = {
+        getValueOrNull: vi.fn().mockResolvedValue('8'),
+      } as unknown as SystemConfigurationService;
+
+      const useCase = new ListTimeEntriesUseCase(prisma, sysConfig);
+      const user = { id: 'u1', roleName: 'ADMIN' } as any;
+
+      await useCase.execute(
+        {
+          page: 1,
+          limit: 20,
+          filter: JSON.stringify({
+            startDate: '2026-10-01T00:00:00.000Z',
+            endDate: '2026-10-31',
+          }),
+        },
+        user,
+      );
+
+      expect(prisma.timeEntry.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            startTime: expect.objectContaining({
+              gte: new Date('2026-10-01T00:00:00.000Z'),
+              lte: expect.any(Date),
+            }),
+          }),
+        }),
+      );
+    });
   });
 });

@@ -17,6 +17,7 @@ import { getTimeTrackingColumns, formatDuration } from './time-tracker-columns';
 import { StartTimerModal } from '@/components/time-tracking/start-timer-modal';
 import { EditTimeEntryDialog } from './edit-time-entry-dialog';
 import { ManualEntryDialog } from './manual-entry-dialog';
+import { TimeTrackerDateFilter } from './time-tracker-date-filter';
 import type { TimeEntry } from '@/lib/actions/time-tracking/types';
 import { buildTableQueryParams } from '@/lib/table-query-params';
 import { toast } from 'sonner';
@@ -243,6 +244,11 @@ export function TimeTrackerTab() {
             value: p.id,
             label: p.name,
           }))}
+        />
+
+        <TimeTrackerDateFilter
+          filters={filters}
+          onFiltersChange={setFilters}
         />
 
         <DataTable.Actions>
