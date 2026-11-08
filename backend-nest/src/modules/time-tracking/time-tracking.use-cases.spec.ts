@@ -4,6 +4,7 @@ import { StartTimerUseCase } from './use-cases/start-timer.use-case';
 import { StopTimerUseCase } from './use-cases/stop-timer.use-case';
 import { GetActiveTimerUseCase } from './use-cases/get-active-timer.use-case';
 import { UpdateTimeEntryUseCase } from './use-cases/update-time-entry.use-case';
+import { ListTimeEntriesUseCase } from './use-cases/list-time-entries.use-case';
 import type { PrismaService } from 'src/prisma/prisma.service';
 import type { SystemConfigurationService } from 'src/modules/system-configuration/system-configuration.service';
 import type { LoggingService } from 'src/modules/logging/logging.service';
@@ -175,6 +176,36 @@ describe('TimeTracking Use Cases', () => {
       const user = { id: 'u1', roleName: 'MODERATOR' } as any;
 
       await expect(useCase.execute('t-1', {}, user)).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('ListTimeEntriesUseCase', () => {
+    it('returns filtered items and aggregates both totalSeconds and unfiltered currentMonthSeconds', async () => {
+      const prisma = {
+        timeEntry: {
+          findMany: vi.fn()
+            .mockResolvedValueOnce([{ id: 'item-1', startTime: new Date(), endTime: new Date(), duration: 1800 }])
+            .mockResolvedValueOnce([])
+            .mockResolvedValueOnce([]),
+          count: vi.fn().mockResolvedValue(1),
+          aggregate: vi.fn()
+            .mockResolvedValueOnce({ _sum: { duration: 1800 } })
+            .mockResolvedValueOnce({ _sum: { duration: 36000 } }),
+        },
+      } as unknown as PrismaService;
+
+      const sysConfig = {
+        getValueOrNull: vi.fn().mockResolvedValue('8'),
+      } as unknown as SystemConfigurationService;
+
+      const useCase = new ListTimeEntriesUseCase(prisma, sysConfig);
+      const user = { id: 'u1', roleName: 'ADMIN' } as any;
+
+      const result = await useCase.execute({ page: 1, limit: 20 }, user);
+
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.totalSeconds).toBe(1800);
+      expect(result.meta.currentMonthSeconds).toBe(36000);
     });
   });
 });

@@ -76,36 +76,47 @@ export function TimeTrackerTab() {
     return (data as any)?.meta;
   }, [data]);
 
-  // Cálculos de métricas do período filtrado com agregação total e ticker em tempo real
-  const baseTotalSeconds = useMemo(() => {
-    if (meta?.totalSeconds != null) {
-      return meta.totalSeconds;
+  // Cálculos do Tempo Total do Mês Vigente (sem filtro) com ticker em tempo real
+  const baseMonthSeconds = useMemo(() => {
+    if (meta?.currentMonthSeconds != null) {
+      return meta.currentMonthSeconds;
     }
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0).getTime();
     return entries.reduce((acc, e) => {
-      if (e.duration != null) return acc + e.duration;
-      if (!e.endTime && e.startTime) {
-        return acc + Math.max(0, Math.floor((Date.now() - new Date(e.startTime).getTime()) / 1000));
+      const entryTime = e.startTime ? new Date(e.startTime).getTime() : 0;
+      if (entryTime >= startOfMonth) {
+        if (e.duration != null) return acc + e.duration;
+        if (!e.endTime && e.startTime) {
+          return acc + Math.max(0, Math.floor((Date.now() - entryTime) / 1000));
+        }
       }
       return acc;
     }, 0);
   }, [meta, entries]);
 
-  const runningCount = useMemo(() => {
+  const monthRunningCount = useMemo(() => {
+    if (meta?.monthRunningCount != null) {
+      return meta.monthRunningCount;
+    }
+    if (activeTimerData?.entry && !activeTimerData.entry.endTime) {
+      return 1;
+    }
     return entries.filter((e) => !e.endTime).length;
-  }, [entries]);
+  }, [meta, activeTimerData, entries]);
 
   const [elapsedTick, setElapsedTick] = useState(0);
 
   useEffect(() => {
     setElapsedTick(0);
-    if (runningCount === 0) return;
+    if (monthRunningCount === 0) return;
     const interval = setInterval(() => {
-      setElapsedTick((prev) => prev + runningCount);
+      setElapsedTick((prev) => prev + monthRunningCount);
     }, 1000);
     return () => clearInterval(interval);
-  }, [runningCount, data]);
+  }, [monthRunningCount, data]);
 
-  const liveTotalSeconds = baseTotalSeconds + elapsedTick;
+  const liveMonthSeconds = baseMonthSeconds + elapsedTick;
 
   const handleEdit = useCallback((entry: TimeEntry) => {
     setEditingEntry(entry);
@@ -173,7 +184,7 @@ export function TimeTrackerTab() {
           <div className="space-y-1">
             <span className="text-xs text-muted-foreground font-medium">{t('totalTime')}</span>
             <div className="text-2xl font-bold tracking-tight text-foreground font-mono">
-              {formatDuration(liveTotalSeconds)}
+              {formatDuration(liveMonthSeconds)}
             </div>
           </div>
           <div className="p-2.5 rounded-lg bg-primary/10 text-primary">

@@ -83,7 +83,22 @@ export class ListTimeEntriesUseCase {
       thresholdHours = TIME_TRACKING_DEFAULT_FORGOTTEN_THRESHOLD_HOURS;
     }
 
-    const [items, total, durationAggregate, runningEntries] = await Promise.all([
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+
+    const monthWhere: Prisma.TimeEntryWhereInput = {
+      startTime: { gte: startOfMonth },
+      ...(user.roleName !== 'ADMIN' ? { userId: user.id } : {}),
+    };
+
+    const [
+      items,
+      total,
+      durationAggregate,
+      runningEntries,
+      monthDurationAggregate,
+      monthRunningEntries,
+    ] = await Promise.all([
       this.prisma.timeEntry.findMany({
         where,
         skip,
@@ -110,6 +125,14 @@ export class ListTimeEntriesUseCase {
         where: { ...where, endTime: null },
         select: { startTime: true },
       }),
+      this.prisma.timeEntry.aggregate({
+        where: { ...monthWhere, endTime: { not: null } },
+        _sum: { duration: true },
+      }),
+      this.prisma.timeEntry.findMany({
+        where: { ...monthWhere, endTime: null },
+        select: { startTime: true },
+      }),
     ]);
 
     const completedSeconds = durationAggregate._sum.duration ?? 0;
@@ -117,8 +140,13 @@ export class ListTimeEntriesUseCase {
     const runningSeconds = runningEntries.reduce((acc, r) => {
       return acc + Math.max(0, Math.floor((nowMs - new Date(r.startTime).getTime()) / 1000));
     }, 0);
-
     const totalSeconds = completedSeconds + runningSeconds;
+
+    const monthCompletedSeconds = monthDurationAggregate._sum.duration ?? 0;
+    const monthRunningSeconds = monthRunningEntries.reduce((acc, r) => {
+      return acc + Math.max(0, Math.floor((nowMs - new Date(r.startTime).getTime()) / 1000));
+    }, 0);
+    const currentMonthSeconds = monthCompletedSeconds + monthRunningSeconds;
 
     const enrichedItems = items.map((item) => {
       let isForgotten = false;
@@ -140,6 +168,8 @@ export class ListTimeEntriesUseCase {
         total,
         totalPages: Math.ceil(total / limit),
         totalSeconds,
+        currentMonthSeconds,
+        monthRunningCount: monthRunningEntries.length,
       },
     };
   }
