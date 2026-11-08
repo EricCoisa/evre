@@ -94,7 +94,7 @@ export function getTimeTrackingColumns({
                   {count} {t('stackedSessions')}
                 </Badge>
                 {hasForgotten && (
-                  <Badge variant="destructive" className="text-[10px] gap-1 px-1.5">
+                  <Badge variant="warning" className="text-[10px] gap-1 px-1.5 font-medium">
                     <AlertTriangle className="h-3 w-3" />
                     {t('forgotten_alert')}
                   </Badge>
@@ -147,9 +147,17 @@ export function getTimeTrackingColumns({
         return (
           <DataCell>
             <div className="flex flex-col gap-0.5">
-              <span className="text-xs font-semibold text-foreground">
-                {entry.description || entry.entityTitle || t('noDescription')}
-              </span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-xs font-semibold text-foreground">
+                  {entry.description || entry.entityTitle || t('noDescription')}
+                </span>
+                {entry.isForgotten && (
+                  <Badge variant="warning" className="text-[9px] gap-1 px-1.5 py-0 h-4 font-normal">
+                    <AlertTriangle className="h-2.5 w-2.5" />
+                    {t('forgotten_alert')}
+                  </Badge>
+                )}
+              </div>
               {entry.entityType && (
                 <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                   <span className="font-medium px-1 py-0.2 rounded bg-muted">
@@ -234,15 +242,41 @@ export function getTimeTrackingColumns({
 
         return (
           <DataCell className="text-right">
-            {isRunning ? (
-              <Badge className="bg-emerald-500 text-white animate-pulse text-[10px]">
-                {t('running')}
-              </Badge>
-            ) : (
-              <span className="font-mono text-xs font-bold text-foreground">
-                {formatDuration(entry.duration)}
-              </span>
-            )}
+            <div className="flex items-center justify-end gap-1.5">
+              {entry.isForgotten && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex cursor-help text-amber-500">
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                    <p className="text-xs">{t('forgotten_threshold_exceeded')}</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {isRunning ? (
+                <Badge
+                  className={
+                    entry.isForgotten
+                      ? 'bg-amber-500 text-white animate-pulse text-[10px]'
+                      : 'bg-emerald-500 text-white animate-pulse text-[10px]'
+                  }
+                >
+                  {t('running')}
+                </Badge>
+              ) : (
+                <span
+                  className={
+                    entry.isForgotten
+                      ? 'font-mono text-xs font-bold text-amber-600 dark:text-amber-500'
+                      : 'font-mono text-xs font-bold text-foreground'
+                  }
+                >
+                  {formatDuration(entry.duration)}
+                </span>
+              )}
+            </div>
           </DataCell>
         );
       },

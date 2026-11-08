@@ -224,6 +224,11 @@ export function TimeTrackerTab() {
         emptyMessage={t('noEntries')}
         entityName={t('entity')}
         entityNamePlural={t('entityPlural')}
+        getRowClassName={(row) =>
+          row.original?.isForgotten
+            ? 'bg-amber-500/10 hover:bg-amber-500/15 dark:bg-amber-500/15 dark:hover:bg-amber-500/20 border-l-4 border-l-amber-500'
+            : undefined
+        }
       >
         <DataTable.Input
           title={t('searchText')}

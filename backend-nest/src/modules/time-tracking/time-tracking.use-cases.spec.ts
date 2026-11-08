@@ -204,8 +204,42 @@ describe('TimeTracking Use Cases', () => {
       const result = await useCase.execute({ page: 1, limit: 20 }, user);
 
       expect(result.data).toHaveLength(1);
+      expect(result.data[0].isForgotten).toBe(false);
       expect(result.meta.totalSeconds).toBe(1800);
       expect(result.meta.currentMonthSeconds).toBe(36000);
+      expect(result.meta.thresholdHours).toBe(8);
+    });
+
+    it('marks completed and running entries exceeding threshold hours as isForgotten', async () => {
+      const nineHoursAgo = new Date(Date.now() - 9 * 3600 * 1000);
+      const prisma = {
+        timeEntry: {
+          findMany: vi.fn()
+            .mockResolvedValueOnce([
+              { id: 'item-1', startTime: new Date(), endTime: new Date(), duration: 10 * 3600 },
+              { id: 'item-2', startTime: nineHoursAgo, endTime: null, duration: null },
+            ])
+            .mockResolvedValueOnce([])
+            .mockResolvedValueOnce([]),
+          count: vi.fn().mockResolvedValue(2),
+          aggregate: vi.fn()
+            .mockResolvedValueOnce({ _sum: { duration: 36000 } })
+            .mockResolvedValueOnce({ _sum: { duration: 36000 } }),
+        },
+      } as unknown as PrismaService;
+
+      const sysConfig = {
+        getValueOrNull: vi.fn().mockResolvedValue('8'),
+      } as unknown as SystemConfigurationService;
+
+      const useCase = new ListTimeEntriesUseCase(prisma, sysConfig);
+      const user = { id: 'u1', roleName: 'ADMIN' } as any;
+
+      const result = await useCase.execute({ page: 1, limit: 20 }, user);
+
+      expect(result.data).toHaveLength(2);
+      expect(result.data[0].isForgotten).toBe(true);
+      expect(result.data[1].isForgotten).toBe(true);
     });
   });
 });

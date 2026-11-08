@@ -36,6 +36,11 @@
   "system_captcha_secret_key_desc": "Chave privada, usada só na verificação servidor-a-servidor. Nunca sai do backend.",
   "userConfiguration": "Configuração do Usuário",
   "systemConfiguration": "Configuração do Sistema",
+  "timeTrackingConfiguration": "Rastreamento de Tempo",
+  "time_tracking_config_title": "Parâmetros do Rastreamento de Tempo",
+  "time_tracking_config_desc": "Configurações operacionais para o controle de horas trabalhadas e alertas de cronômetro.",
+  "time_tracking_forgotten_threshold_hours": "Limite de horas para timer esquecido",
+  "time_tracking_forgotten_threshold_hours_desc": "Quantidade de horas contínuas em execução a partir da qual um cronômetro ativo é considerado potencialmente esquecido e sinalizado com alerta.",
   "emailConfiguration": "Configuração de Email",
   "oauthConfiguration": "Login Social (OAuth)",
   "system_oauth_redirect_uri": "Cadastre no provider a URL de redirecionamento {url}. Deixe as credenciais em branco para esconder o botão na tela de login.",
@@ -304,5 +309,6 @@
   "tour_settings_oauth": "Gerencie provedores de autenticação social (Google, GitHub, etc.) para login unificado.",
   "tour_settings_notification": "Configure canais e preferências de disparo de notificações do sistema por e-mail ou WhatsApp.",
   "tour_settings_messaging": "Conecte números e canais de WhatsApp Business (Meta Cloud API ou Evolution) para envio de mensagens.",
-  "tour_settings_ai": "Gerencie os provedores de inteligência artificial (OpenAI, Anthropic) e personalize o comportamento do Agente."
+  "tour_settings_ai": "Gerencie os provedores de inteligência artificial (OpenAI, Anthropic) e personalize o comportamento do Agente.",
+  "tour_settings_time_tracking": "Ajuste os parâmetros operacionais do controle de tempo trabalhado e alertas de cronômetro esquecido."
 }

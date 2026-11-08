@@ -24,6 +24,7 @@ export const ConfigRowsList: ConfigRowEntry[] = [
   { id: SYSTEM_CONFIG_KEYS.userCreate, path: '/settings', tab: 'userConfig' },
   { id: SYSTEM_CONFIG_KEYS.aiSystemPrompt, path: '/settings', tab: 'agenteConfig' },
   { id: SYSTEM_CONFIG_KEYS.agentOwnKey, path: '/settings', tab: 'agenteConfig' },
+  { id: SYSTEM_CONFIG_KEYS.timeTrackingForgottenThresholdHours, path: '/settings', tab: 'timeTrackingConfig' },
   { id: USER_CONFIG_KEYS.notificationChannelEmail, path: '/profile', tab: 'notifications' },
   { id: USER_CONFIG_KEYS.notificationChannelWhatsapp, path: '/profile', tab: 'notifications' },
 ];

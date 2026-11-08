@@ -10,6 +10,7 @@ export const SYSTEM_CONFIG_KEYS = {
   userCreate: 'SYSTEM_USER_CREATE',
   aiSystemPrompt: 'SYSTEM_AI_SYSTEM_PROMPT',
   agentOwnKey: 'SYSTEM_AGENT_OWN_KEY',
+  timeTrackingForgottenThresholdHours: 'TIME_TRACKING_FORGOTTEN_THRESHOLD_HOURS',
 } as const;
 
 export type SystemConfigKey = (typeof SYSTEM_CONFIG_KEYS)[keyof typeof SYSTEM_CONFIG_KEYS];

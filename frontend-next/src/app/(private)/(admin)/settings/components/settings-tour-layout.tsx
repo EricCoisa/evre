@@ -21,6 +21,7 @@ interface SettingsTourLayoutProps {
     oauth: boolean;
     messaging: boolean;
     notification: boolean;
+    timeTracking?: boolean;
   };
 }
 
@@ -102,11 +103,20 @@ export function SettingsTourLayout({ sections, children, flags }: SettingsTourLa
         position: 'bottom',
         onEnter: () => setActiveTab('agenteConfig'),
       },
+      {
+        content: t('tour_settings_time_tracking'),
+        tabId: 'timeTrackingConfig',
+        hidden: !flags.timeTracking,
+        selectorId: 'settings-tab-timeTrackingConfig',
+        mobileSelectorId: 'settings-content-timeTrackingConfig',
+        position: 'bottom',
+        onEnter: () => setActiveTab('timeTrackingConfig'),
+      },
     ];
 
     const steps = filterStepsBySubNavSections(allSteps, sections);
     registerTour('settings-general', steps);
-  }, [flags.aiAgent, flags.messaging, flags.notification, flags.oauth, registerTour, sections, setActiveTab, t]);
+  }, [flags.aiAgent, flags.messaging, flags.notification, flags.oauth, flags.timeTracking, registerTour, sections, setActiveTab, t]);
 
   return (
     <>

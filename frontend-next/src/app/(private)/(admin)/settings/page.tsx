@@ -14,6 +14,7 @@ import { OAuthConfig } from "./components/oauth-config-tab";
 import { CaptchaConfig } from "./components/captcha-config-tab";
 import { MessagingConfig } from "./components/messaging-config-tab";
 import { NotificationConfig } from "./components/notification-config-tab";
+import { TimeTrackingConfig } from "./components/time-tracking-config-tab";
 import { SettingsTourLayout } from "./components/settings-tour-layout";
 import {
   Sliders,
@@ -25,6 +26,7 @@ import {
   KeyRound,
   Bot,
   MessageSquare,
+  Clock,
 } from "lucide-react";
 
 interface SettingsFlags {
@@ -32,6 +34,7 @@ interface SettingsFlags {
   oauth: boolean;
   messaging: boolean;
   notification: boolean;
+  timeTracking: boolean;
 }
 
 function getSettingsSections(flags: SettingsFlags): SubNavSection[] {
@@ -59,6 +62,13 @@ function getSettingsSections(flags: SettingsFlags): SubNavSection[] {
           label: <LangLabel text="notificationConfiguration" langJson="settings" />,
           icon: <Bell className="size-4" />,
           hidden: !flags.notification,
+        },
+        {
+          id: 'timeTrackingConfig',
+          idAttr: 'settings-tab-timeTrackingConfig',
+          label: <LangLabel text="timeTrackingConfiguration" langJson="settings" />,
+          icon: <Clock className="size-4" />,
+          hidden: !flags.timeTracking,
         },
       ],
     },
@@ -143,6 +153,7 @@ function SettingsTabsContent({ flags }: { flags: SettingsFlags }) {
       {flags.oauth && <TabsContent value="oauthConfig" id="settings-content-oauthConfig"><OAuthConfig /></TabsContent>}
       {flags.messaging && <TabsContent value="messagingConfig" id="settings-content-messagingConfig"><MessagingConfig /></TabsContent>}
       {flags.notification && <TabsContent value="notificationConfig" id="settings-content-notificationConfig"><NotificationConfig /></TabsContent>}
+      {flags.timeTracking && <TabsContent value="timeTrackingConfig" id="settings-content-timeTrackingConfig"><TimeTrackingConfig /></TabsContent>}
     </AsyncBoundary>
   );
 }
@@ -155,6 +166,7 @@ export default async function SettingsPage() {
     oauth: Boolean(flags['OAUTH_LOGIN']),
     messaging: Boolean(flags['MESSAGING']),
     notification: Boolean(flags['NOTIFICATION']),
+    timeTracking: Boolean(flags['FEATURE_TIME_TRACKING']),
   };
 
   const sections = getSettingsSections(settingsFlags);

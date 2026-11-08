@@ -97,6 +97,7 @@ interface DataTableProps<TData> {
   children?: React.ReactNode;
   full?: boolean
   border?: boolean
+  getRowClassName?: (row: Row<TData>) => string | undefined;
 }
 
 interface DataTableInputProps {
@@ -532,10 +533,12 @@ function DataTableMobileRow<TData>({
   row,
   headerGroup,
   t,
+  getRowClassName,
 }: {
   row: Row<TData>;
   headerGroup?: HeaderGroup<TData>;
   t: (k: string) => string;
+  getRowClassName?: (row: Row<TData>) => string | undefined;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -557,7 +560,12 @@ function DataTableMobileRow<TData>({
   const collapsibleCells = dataCells.filter((c, i) => isCollapsibleColumn(c.column.id, i, c.column.columnDef.meta));
 
   return (
-    <div className="rounded-xl border border-border/70 bg-card p-3.5 shadow-2xs transition-shadow w-full min-w-0 max-w-full overflow-hidden">
+    <div
+      className={cn(
+        "rounded-xl border border-border/70 bg-card p-3.5 shadow-2xs transition-shadow w-full min-w-0 max-w-full overflow-hidden",
+        getRowClassName?.(row)
+      )}
+    >
       <div className="grid grid-cols-12 gap-x-3 gap-y-2 items-start w-full min-w-0 max-w-full overflow-hidden">
         {primaryCells.map((cell) => (
           <DataTableMobileCellItem key={cell.id} cell={cell} headerGroup={headerGroup} />
@@ -589,18 +597,26 @@ function DataTableMobileView<TData>({
   entityName,
   entityNamePlural,
   t,
+  getRowClassName,
 }: {
   table: TableInstance<TData>;
   meta?: PaginatedResponse<TData>['meta'] | null;
   entityName: string;
   entityNamePlural: string;
   t: (k: string) => string;
+  getRowClassName?: (row: Row<TData>) => string | undefined;
 }) {
   const headerGroup = table.getHeaderGroups()[0];
   return (
     <div className="space-y-3">
       {table.getRowModel().rows.map((row) => (
-        <DataTableMobileRow key={row.id} row={row} headerGroup={headerGroup} t={t} />
+        <DataTableMobileRow
+          key={row.id}
+          row={row}
+          headerGroup={headerGroup}
+          t={t}
+          getRowClassName={getRowClassName}
+        />
       ))}
       {meta && (
         <div className="flex px-1 items-center justify-between border-t border-border/30 pt-3 pb-24 sm:pb-2">
@@ -699,6 +715,7 @@ function DataTableDesktopView<TData>({
   entityName,
   entityNamePlural,
   t,
+  getRowClassName,
 }: {
   table: TableInstance<TData>;
   columns: ColumnDef<TData, unknown>[];
@@ -706,6 +723,7 @@ function DataTableDesktopView<TData>({
   entityName: string;
   entityNamePlural: string;
   t: (k: string) => string;
+  getRowClassName?: (row: Row<TData>) => string | undefined;
 }) {
   return (
     <>
@@ -739,7 +757,8 @@ function DataTableDesktopView<TData>({
                   {
                     'bg-info-50/30 dark:bg-info-950/5': index % 2 === 1,
                     'bg-transparent': index % 2 === 0,
-                  }
+                  },
+                  getRowClassName?.(row)
                 )}
               >
                 {row
@@ -890,6 +909,7 @@ function DataTableBodyView<TData>({
   entityName,
   entityNamePlural,
   t,
+  getRowClassName,
 }: {
   hasRows: boolean;
   isMobile: boolean;
@@ -899,6 +919,7 @@ function DataTableBodyView<TData>({
   entityName: string;
   entityNamePlural: string;
   t: (k: string) => string;
+  getRowClassName?: (row: Row<TData>) => string | undefined;
 }) {
   if (!hasRows) return null;
   return (
@@ -910,6 +931,7 @@ function DataTableBodyView<TData>({
           entityName={entityName}
           entityNamePlural={entityNamePlural}
           t={t}
+          getRowClassName={getRowClassName}
         />
       ) : (
         <DataTableDesktopView
@@ -919,6 +941,7 @@ function DataTableBodyView<TData>({
           entityName={entityName}
           entityNamePlural={entityNamePlural}
           t={t}
+          getRowClassName={getRowClassName}
         />
       )}
     </div>
@@ -1088,6 +1111,7 @@ export function DataTable<TData>(props: DataTableProps<TData>) {
             entityName={entityName}
             entityNamePlural={entityNamePlural}
             t={t}
+            getRowClassName={props.getRowClassName}
           />
         </Container>
       </div>

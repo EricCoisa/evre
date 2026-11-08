@@ -36,6 +36,11 @@
   "system_captcha_secret_key_desc": "Private key, used only for server-to-server verification. Never leaves the backend.",
   "userConfiguration": "User Configuration",
   "systemConfiguration": "System Configuration",
+  "timeTrackingConfiguration": "Time Tracking",
+  "time_tracking_config_title": "Time Tracking Parameters",
+  "time_tracking_config_desc": "Operational settings for work hours tracking and timer alerts.",
+  "time_tracking_forgotten_threshold_hours": "Forgotten timer threshold hours",
+  "time_tracking_forgotten_threshold_hours_desc": "Number of continuous running hours after which an active timer is considered potentially forgotten and flagged with an alert.",
   "emailConfiguration": "Email Configuration",
   "oauthConfiguration": "Social Login (OAuth)",
   "system_oauth_redirect_uri": "Register {url} as the redirect URL in the provider. Leave the credentials blank to hide the button on the login screen.",
@@ -304,5 +309,6 @@
   "tour_settings_oauth": "Manage social authentication providers (Google, GitHub, etc.) for simplified login.",
   "tour_settings_notification": "Configure channels and preferences for sending system notifications via email or WhatsApp.",
   "tour_settings_messaging": "Connect WhatsApp Business channels (Meta Cloud API or Evolution) for automated messaging.",
-  "tour_settings_ai": "Manage artificial intelligence providers (OpenAI, Anthropic) and customize the Agent behavior."
+  "tour_settings_ai": "Manage artificial intelligence providers (OpenAI, Anthropic) and customize the Agent behavior.",
+  "tour_settings_time_tracking": "Adjust operational parameters for work hours tracking and forgotten timer alerts."
 }

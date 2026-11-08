@@ -127,7 +127,7 @@ export function HeaderTimeTracker() {
       <div
         className={`flex items-center gap-2 px-2.5 py-1 rounded-md border text-xs transition-colors ${
           isForgotten
-            ? 'bg-destructive/10 border-destructive/40 text-destructive'
+            ? 'bg-amber-500/10 border-amber-500/40 text-amber-600 dark:text-amber-400'
             : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
         }`}
       >
@@ -135,14 +135,14 @@ export function HeaderTimeTracker() {
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex items-center gap-1 cursor-help">
-                <AlertTriangle className="h-4 w-4 text-destructive animate-pulse" />
-                <span className="font-mono font-bold text-destructive">
+                <AlertTriangle className="h-4 w-4 text-amber-500 animate-pulse" />
+                <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
                   {formatElapsed(elapsedSeconds)}
                 </span>
               </div>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="max-w-xs">
-              <p className="font-semibold text-destructive">{t('forgotten_alert')}</p>
+              <p className="font-semibold text-amber-600 dark:text-amber-400">{t('forgotten_alert')}</p>
               <p className="text-xs">
                 {t('forgotten_description')} ({thresholdHours}h)
               </p>

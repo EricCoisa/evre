@@ -148,11 +148,14 @@ export class ListTimeEntriesUseCase {
     }, 0);
     const currentMonthSeconds = monthCompletedSeconds + monthRunningSeconds;
 
+    const thresholdSeconds = thresholdHours * 3600;
     const enrichedItems = items.map((item) => {
       let isForgotten = false;
       if (!item.endTime) {
         const elapsedMs = Date.now() - new Date(item.startTime).getTime();
-        isForgotten = elapsedMs >= thresholdHours * 3600 * 1000;
+        isForgotten = elapsedMs >= thresholdSeconds * 1000;
+      } else {
+        isForgotten = (item.duration ?? 0) >= thresholdSeconds;
       }
       return {
         ...item,
@@ -170,6 +173,7 @@ export class ListTimeEntriesUseCase {
         totalSeconds,
         currentMonthSeconds,
         monthRunningCount: monthRunningEntries.length,
+        thresholdHours,
       },
     };
   }

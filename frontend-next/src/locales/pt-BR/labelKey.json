@@ -5,6 +5,7 @@
     "ROUTE_PROJECT": "Projetos",
     "ROUTE_MY_PROJECT": "Meus Projetos",
     "ROUTE_TIME_TRACKER": "Tempo Trabalhado",
+    "TIME_TRACKING_FORGOTTEN_THRESHOLD_HOURS": "Limite de horas para timer esquecido",
     "ROUTE_DASHBOARD": "Dashboard",
     "ROUTE_USERS": "Usuários",
     "ROUTE_PROFILE": "Perfil",

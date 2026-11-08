@@ -8,6 +8,7 @@
   "non_billable": "Não Faturável",
   "forgotten_alert": "Possível timer esquecido",
   "forgotten_description": "Ultrapassou o limite operacional configurado no sistema.",
+  "forgotten_threshold_exceeded": "Registro ultrapassou o limite contínuo de horas configurado no sistema (TIME_TRACKING_FORGOTTEN_THRESHOLD_HOURS).",
   "manual_badge": "Manual",
   "manual_audit": "Lançado ou editado manualmente",
   "totalTime": "Tempo Total (Mês Vigente)",

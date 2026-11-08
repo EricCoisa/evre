@@ -8,6 +8,7 @@
   "non_billable": "Non-billable",
   "forgotten_alert": "Possible forgotten timer",
   "forgotten_description": "Exceeded the operational threshold configured in the system.",
+  "forgotten_threshold_exceeded": "Entry exceeded continuous threshold hours configured in the system (TIME_TRACKING_FORGOTTEN_THRESHOLD_HOURS).",
   "manual_badge": "Manual",
   "manual_audit": "Created or edited manually",
   "totalTime": "Total Time (Current Month)",

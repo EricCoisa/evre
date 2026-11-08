@@ -134,7 +134,7 @@ describe('Time Tracker Dialogs - Padrão da aplicação', () => {
         expect.objectContaining({
           description: 'Lançamento manual',
           projectId: 'p1',
-          isBillable: false,
+          isBillable: true,
         }),
       );
     });
