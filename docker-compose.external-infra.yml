@@ -31,9 +31,7 @@ services:
   # Ver docs/guides/deploy.md § "Múltiplos projetos, uma infra compartilhada".
 
   backend:
-    build:
-      context: .
-      dockerfile: backend-nest/Dockerfile
+    image: registry.evre.com.br/evre-backend:latest
     restart: unless-stopped
     networks:
       - default
@@ -77,9 +75,7 @@ services:
       start_period: 40s
 
   frontend:
-    build:
-      context: .
-      dockerfile: frontend-next/Dockerfile
+    image: registry.evre.com.br/evre-frontend:latest
     restart: unless-stopped
     networks:
       - default
