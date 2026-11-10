@@ -38,6 +38,7 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
+    environment: Evre
     defaults:
       run:
         working-directory: backend-nest
@@ -97,6 +98,7 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
+    environment: Evre
     defaults:
       run:
         working-directory: frontend-next
