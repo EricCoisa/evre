@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
+import { I18nService } from 'nestjs-i18n';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { LoggingService } from 'src/modules/logging/logging.service';
 import { LogActions } from 'src/domain/logging/log-actions';
@@ -15,6 +16,7 @@ export class UpdateTimeEntryUseCase {
   constructor(
     private readonly prisma: PrismaService,
     private readonly logging: LoggingService,
+    private readonly i18n: I18nService,
   ) {}
 
   async execute(id: string, dto: UpdateTimeEntryDto, user: AuthenticatedUser) {
@@ -23,12 +25,12 @@ export class UpdateTimeEntryUseCase {
     });
 
     if (!existing) {
-      throw new NotFoundException('Registro de tempo não encontrado');
+      throw new NotFoundException(this.i18n.t('time_tracking.errors.not_found'));
     }
 
     if (user.roleName !== 'ADMIN' && existing.userId !== user.id) {
       throw new ForbiddenException(
-        'Você não tem permissão para editar este registro de tempo',
+        this.i18n.t('time_tracking.errors.forbidden_edit'),
       );
     }
 
@@ -46,7 +48,7 @@ export class UpdateTimeEntryUseCase {
     if (newEndTime && newStartTime) {
       if (newEndTime.getTime() <= newStartTime.getTime()) {
         throw new BadRequestException(
-          'A hora de término deve ser posterior à hora de início',
+          this.i18n.t('time_tracking.errors.end_before_start'),
         );
       }
       newDuration = Math.round(

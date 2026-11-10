@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { z } from 'zod';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,7 +48,7 @@ export function ProposalAcceptanceForm({
       toast.error(t('acceptFieldsRequired'));
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    if (!z.string().email().safeParse(email.trim()).success) {
       toast.error(t('invalidEmail'));
       return;
     }

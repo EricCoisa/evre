@@ -1,0 +1,13 @@
+{
+  "errors": {
+    "not_found": "Registro de tempo não encontrado",
+    "forbidden_edit": "Você não tem permissão para editar este registro de tempo",
+    "forbidden_delete": "Você não tem permissão para excluir este registro de tempo",
+    "end_before_start": "A hora de término deve ser posterior à hora de início",
+    "no_active_timer": "Nenhum cronômetro ativo encontrado",
+    "invalid_date_format": "Formato de data inválido.",
+    "date_range_required": "Data de início e data de fim são obrigatórias ao exportar.",
+    "end_date_after_start": "A data de fim deve ser posterior à data de início.",
+    "date_range_too_large": "O intervalo de datas não pode exceder 365 dias."
+  }
+}

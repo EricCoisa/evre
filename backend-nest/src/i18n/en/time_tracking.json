@@ -1,0 +1,13 @@
+{
+  "errors": {
+    "not_found": "Time entry not found",
+    "forbidden_edit": "You do not have permission to edit this time entry",
+    "forbidden_delete": "You do not have permission to delete this time entry",
+    "end_before_start": "End time must be after start time",
+    "no_active_timer": "No active timer found",
+    "invalid_date_format": "Invalid date format.",
+    "date_range_required": "Start date and end date are required when exporting.",
+    "end_date_after_start": "End date must be after start date.",
+    "date_range_too_large": "Date range cannot exceed 365 days."
+  }
+}
