@@ -11,6 +11,7 @@ import {
   useStartTimer,
   useStopTimer,
   useActiveTimer,
+  useExportTimeEntries,
 } from '@/lib/actions/time-tracking/queries';
 import { useProjects } from '@/lib/actions/project/queries';
 import { getTimeTrackingColumns, formatDuration } from './time-tracker-columns';
@@ -26,7 +27,17 @@ import {
   PlusCircle,
   Clock,
   Briefcase,
+  Download,
+  ChevronDown,
+  FileText,
+  FileSpreadsheet,
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export function TimeTrackerTab() {
   const { t } = useTranslation('time-tracking');
@@ -43,6 +54,7 @@ export function TimeTrackerTab() {
   const startTimerMutation = useStartTimer();
   const stopTimerMutation = useStopTimer();
   const deleteMutation = useDeleteTimeEntry();
+  const exportMutation = useExportTimeEntries();
 
   // Multi-aba: escuta bus de eventos em tempo real
   useEffect(() => {
@@ -162,6 +174,84 @@ export function TimeTrackerTab() {
     }
   }, [stopTimerMutation]);
 
+  const validateExportPeriod = useCallback((): boolean => {
+    const startDate = filters.startDate;
+    const endDate = filters.endDate;
+
+    if (!startDate && !endDate) {
+      toast.warning(t('exportPeriodUndefined'));
+      return false;
+    }
+
+    if (!startDate || !endDate) {
+      toast.warning(t('exportPeriodDatesRequired'));
+      return false;
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      toast.warning(t('exportPeriodDatesRequired'));
+      return false;
+    }
+
+    if (start > end) {
+      toast.warning(t('exportPeriodInvalid'));
+      return false;
+    }
+
+    const diffDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays > 90) {
+      toast.warning(t('exportPeriodExceeded', { days: diffDays }));
+      return false;
+    }
+
+    return true;
+  }, [filters.startDate, filters.endDate, t]);
+
+  const handleExportCsv = useCallback(() => {
+    if (!validateExportPeriod()) return;
+
+    const params: Record<string, any> = {};
+    if (globalFilter) params.search = globalFilter;
+    if (filters.projectId) params.projectId = filters.projectId;
+    if (filters.startDate) params.startDate = filters.startDate;
+    if (filters.endDate) params.endDate = filters.endDate;
+    if (Object.keys(filters).length > 0) {
+      params.filter = JSON.stringify(filters);
+    }
+
+    const activeProject = projects.find((p: any) => p.id === filters.projectId);
+
+    exportMutation.mutate({
+      ...params,
+      format: 'csv',
+      projectName: activeProject?.name,
+    });
+  }, [validateExportPeriod, exportMutation, filters, globalFilter, projects]);
+
+  const handleExportPdf = useCallback(() => {
+    if (!validateExportPeriod()) return;
+
+    const params: Record<string, any> = {};
+    if (globalFilter) params.search = globalFilter;
+    if (filters.projectId) params.projectId = filters.projectId;
+    if (filters.startDate) params.startDate = filters.startDate;
+    if (filters.endDate) params.endDate = filters.endDate;
+    if (Object.keys(filters).length > 0) {
+      params.filter = JSON.stringify(filters);
+    }
+
+    const activeProject = projects.find((p: any) => p.id === filters.projectId);
+
+    exportMutation.mutate({
+      ...params,
+      format: 'pdf',
+      projectName: activeProject?.name,
+    });
+  }, [validateExportPeriod, exportMutation, filters, globalFilter, projects]);
+
   const activeEntryId = activeTimerData?.entry?.id;
 
   const columns = useMemo(
@@ -252,6 +342,41 @@ export function TimeTrackerTab() {
         />
 
         <DataTable.Actions>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={exportMutation.isPending}
+                className="h-9 gap-1.5 text-xs font-medium"
+              >
+                <Download className="h-4 w-4" />
+                {exportMutation.isPending ? t('exporting') : t('exportReport')}
+                <ChevronDown className="h-3.5 w-3.5 opacity-60 ml-0.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuItem
+                onSelect={handleExportPdf}
+                onClick={handleExportPdf}
+                disabled={exportMutation.isPending}
+                className="gap-2 cursor-pointer font-medium text-xs py-2"
+              >
+                <FileText className="h-4 w-4 text-rose-500" />
+                {t('exportPdf')}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={handleExportCsv}
+                onClick={handleExportCsv}
+                disabled={exportMutation.isPending}
+                className="gap-2 cursor-pointer font-medium text-xs py-2"
+              >
+                <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
+                {t('exportCsv')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <Button
             variant="outline"
             size="sm"

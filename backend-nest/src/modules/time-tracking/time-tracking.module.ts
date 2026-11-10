@@ -8,6 +8,7 @@ import { StartTimerUseCase } from './use-cases/start-timer.use-case';
 import { StopTimerUseCase } from './use-cases/stop-timer.use-case';
 import { GetActiveTimerUseCase } from './use-cases/get-active-timer.use-case';
 import { ListTimeEntriesUseCase } from './use-cases/list-time-entries.use-case';
+import { ExportTimeEntriesUseCase } from './use-cases/export-time-entries.use-case';
 import { UpdateTimeEntryUseCase } from './use-cases/update-time-entry.use-case';
 import { DeleteTimeEntryUseCase } from './use-cases/delete-time-entry.use-case';
 import { CreateManualEntryUseCase } from './use-cases/create-manual-entry.use-case';
@@ -28,6 +29,7 @@ import { TimeTrackingRouteCeiling } from './time-tracking.route-ceiling';
     StopTimerUseCase,
     GetActiveTimerUseCase,
     ListTimeEntriesUseCase,
+    ExportTimeEntriesUseCase,
     UpdateTimeEntryUseCase,
     DeleteTimeEntryUseCase,
     CreateManualEntryUseCase,

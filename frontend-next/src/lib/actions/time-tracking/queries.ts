@@ -11,6 +11,7 @@ import {
   updateTimeEntry,
   deleteTimeEntry,
   listTimeEntries,
+  exportTimeEntries,
 } from './api';
 import { Collector, Alive } from '@/lib/api/collector';
 import { toast } from 'sonner';
@@ -236,5 +237,60 @@ export function useTimeEntries(params?: TimeTrackingControllerListTimeEntriesPar
     staleTime: 0,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
+  });
+}
+
+export function useExportTimeEntries() {
+  const { t } = useTranslation('time-tracking');
+
+  return useMutation({
+    mutationFn: async (variables?: {
+      format?: 'csv' | 'pdf';
+      projectName?: string;
+      userName?: string;
+      [key: string]: any;
+    }) => {
+      const { format = 'csv', projectName, userName, ...params } = variables || {};
+      const data = await Alive(() => exportTimeEntries(params))();
+      return { data, format, projectName, userName };
+    },
+    onSuccess: async ({ data, format, projectName, userName }) => {
+      if (!data) return;
+
+      if (format === 'pdf') {
+        try {
+          const { generateTimeTrackerPdf } = await import('@/lib/pdf/time-tracker-pdf');
+          await generateTimeTrackerPdf({
+            entries: data.entries || [],
+            totalSeconds: data.totalSeconds || 0,
+            billableSeconds: data.billableSeconds || 0,
+            totalEntries: data.totalEntries || 0,
+            period: data.period,
+            projectName,
+            generatedBy: userName,
+          });
+          toast.success(t('exportPdfSuccess'));
+        } catch (err) {
+          console.error('[useExportTimeEntries] Erro ao gerar PDF:', err);
+          toast.error(t('exportError'));
+        }
+      } else if (format === 'csv') {
+        if (data.csv) {
+          const blob = new Blob([data.csv], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.setAttribute('download', data.filename || 'relatorio-tempo.csv');
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          toast.success(t('exportSuccess'));
+        }
+      }
+    },
+    onError: () => {
+      toast.error(t('exportError'));
+    },
   });
 }

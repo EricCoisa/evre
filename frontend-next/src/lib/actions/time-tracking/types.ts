@@ -3,6 +3,7 @@ export type {
   UpdateTimeEntryDto,
   CreateManualEntryDto,
   TimeTrackingControllerListTimeEntriesParams,
+  TimeTrackingControllerExportTimeEntriesParams,
 } from '@/lib/generated/schemas';
 
 export interface TimeEntry {
@@ -43,4 +44,36 @@ export interface ActiveTimerResponse {
   entry: TimeEntry | null;
   isForgotten: boolean;
   thresholdHours: number;
+}
+
+export interface ExportTimeEntryRow {
+  id: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  duration: number;
+  durationFormatted: string;
+  durationHours: string;
+  projectName: string;
+  description: string;
+  entityType?: string;
+  entityTitle?: string;
+  userName: string;
+  userEmail: string;
+  isBillable: boolean;
+  source: string;
+  isForgotten: boolean;
+}
+
+export interface ExportTimeEntriesResponse {
+  csv: string;
+  filename: string;
+  totalEntries: number;
+  totalSeconds: number;
+  billableSeconds: number;
+  entries?: ExportTimeEntryRow[];
+  period?: {
+    startDate: string | null;
+    endDate: string | null;
+  };
 }

@@ -8,6 +8,7 @@ import type {
   StartTimerDto,
   UpdateTimeEntryDto,
   CreateManualEntryDto,
+  ExportTimeEntriesResponse,
 } from './types';
 import type { PaginatedResponse } from '@/lib/types/pagination.types';
 import { wrapAs } from '../wrap';
@@ -57,5 +58,13 @@ export async function listTimeEntries(
 ): Promise<ApiResponse<PaginatedResponse<TimeEntry>>> {
   return wrapAs<PaginatedResponse<TimeEntry>>(() =>
     api.timeTrackingControllerListTimeEntries((params ?? {}) as any),
+  );
+}
+
+export async function exportTimeEntries(
+  params?: Record<string, any>,
+): Promise<ApiResponse<ExportTimeEntriesResponse>> {
+  return wrapAs<ExportTimeEntriesResponse>(() =>
+    api.timeTrackingControllerExportTimeEntries((params ?? {}) as any),
   );
 }

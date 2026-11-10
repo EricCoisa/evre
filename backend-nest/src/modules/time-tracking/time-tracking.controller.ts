@@ -33,6 +33,7 @@ import { StartTimerUseCase } from './use-cases/start-timer.use-case';
 import { StopTimerUseCase } from './use-cases/stop-timer.use-case';
 import { GetActiveTimerUseCase } from './use-cases/get-active-timer.use-case';
 import { ListTimeEntriesUseCase } from './use-cases/list-time-entries.use-case';
+import { ExportTimeEntriesUseCase } from './use-cases/export-time-entries.use-case';
 import { UpdateTimeEntryUseCase } from './use-cases/update-time-entry.use-case';
 import { DeleteTimeEntryUseCase } from './use-cases/delete-time-entry.use-case';
 import { CreateManualEntryUseCase } from './use-cases/create-manual-entry.use-case';
@@ -49,6 +50,7 @@ export class TimeTrackingController {
     private readonly stopTimerUseCase: StopTimerUseCase,
     private readonly getActiveTimerUseCase: GetActiveTimerUseCase,
     private readonly listTimeEntriesUseCase: ListTimeEntriesUseCase,
+    private readonly exportTimeEntriesUseCase: ExportTimeEntriesUseCase,
     private readonly updateTimeEntryUseCase: UpdateTimeEntryUseCase,
     private readonly deleteTimeEntryUseCase: DeleteTimeEntryUseCase,
     private readonly createManualEntryUseCase: CreateManualEntryUseCase,
@@ -98,6 +100,19 @@ export class TimeTrackingController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.listTimeEntriesUseCase.execute(dto, user);
+  }
+
+  @GetApi({
+    path: 'export',
+    summary: 'Exporta relatório de registros de tempo em formato CSV',
+    status: 'OK',
+    authenticated: true,
+  })
+  async exportTimeEntries(
+    @Query(new ZodValidationPipe(ListTimeEntriesDto)) dto: ListTimeEntriesDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.exportTimeEntriesUseCase.execute(dto, user);
   }
 
   @PostApi({

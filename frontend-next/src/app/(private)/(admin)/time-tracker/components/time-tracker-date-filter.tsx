@@ -28,6 +28,7 @@ export type DatePresetKey =
   | 'today'
   | 'last_7_days'
   | 'last_30_days'
+  | 'last_90_days'
   | 'custom';
 
 export function TimeTrackerDateFilter({
@@ -67,12 +68,17 @@ export function TimeTrackerDateFilter({
     const last30Start = new Date(curYear, curMonth, curDate - 30, 0, 0, 0, 0).toISOString();
     const last30End = new Date(curYear, curMonth, curDate, 23, 59, 59, 999).toISOString();
 
+    // Últimos 90 dias
+    const last90Start = new Date(curYear, curMonth, curDate - 90, 0, 0, 0, 0).toISOString();
+    const last90End = new Date(curYear, curMonth, curDate, 23, 59, 59, 999).toISOString();
+
     return {
       current_month: { start: curMonthStart, end: curMonthEnd },
       previous_month: { start: prevMonthStart, end: prevMonthEnd },
       today: { start: todayStart, end: todayEnd },
       last_7_days: { start: last7Start, end: last7End },
       last_30_days: { start: last30Start, end: last30End },
+      last_90_days: { start: last90Start, end: last90End },
     };
   }, []);
 
@@ -118,6 +124,13 @@ export function TimeTrackerDateFilter({
       isSameDayRange(endDateIso, presetBounds.last_30_days.end)
     ) {
       return 'last_30_days';
+    }
+
+    if (
+      isSameDayRange(startDateIso, presetBounds.last_90_days.start) &&
+      isSameDayRange(endDateIso, presetBounds.last_90_days.end)
+    ) {
+      return 'last_90_days';
     }
 
     return 'custom';
@@ -221,6 +234,7 @@ export function TimeTrackerDateFilter({
             <SelectItem value="today">{t('preset_today')}</SelectItem>
             <SelectItem value="last_7_days">{t('preset_last_7_days')}</SelectItem>
             <SelectItem value="last_30_days">{t('preset_last_30_days')}</SelectItem>
+            <SelectItem value="last_90_days">{t('preset_last_90_days')}</SelectItem>
             <SelectItem value="custom">{t('preset_custom')}</SelectItem>
           </SelectContent>
         </Select>
