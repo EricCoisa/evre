@@ -3,8 +3,10 @@ import {
   Controller,
   Param,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { ApiTags } from '@nestjs/swagger';
 import { ZodValidationPipe } from 'nestjs-zod';
 import {
@@ -37,6 +39,7 @@ import { ExportTimeEntriesUseCase } from './use-cases/export-time-entries.use-ca
 import { UpdateTimeEntryUseCase } from './use-cases/update-time-entry.use-case';
 import { DeleteTimeEntryUseCase } from './use-cases/delete-time-entry.use-case';
 import { CreateManualEntryUseCase } from './use-cases/create-manual-entry.use-case';
+import { ExportTimeEntriesPdfUseCase } from './use-cases/export-time-entries-pdf.use-case';
 
 @ApiTags('Time Tracking')
 @Controller('time-tracking')
@@ -51,6 +54,7 @@ export class TimeTrackingController {
     private readonly getActiveTimerUseCase: GetActiveTimerUseCase,
     private readonly listTimeEntriesUseCase: ListTimeEntriesUseCase,
     private readonly exportTimeEntriesUseCase: ExportTimeEntriesUseCase,
+    private readonly exportTimeEntriesPdfUseCase: ExportTimeEntriesPdfUseCase,
     private readonly updateTimeEntryUseCase: UpdateTimeEntryUseCase,
     private readonly deleteTimeEntryUseCase: DeleteTimeEntryUseCase,
     private readonly createManualEntryUseCase: CreateManualEntryUseCase,
@@ -113,6 +117,28 @@ export class TimeTrackingController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.exportTimeEntriesUseCase.execute(dto, user);
+  }
+
+  @GetApi({
+    path: 'export/pdf',
+    summary: 'Exporta relatório de registros de tempo em formato PDF',
+    status: 'OK',
+    authenticated: true,
+  })
+  async exportTimeEntriesPdf(
+    @Query(new ZodValidationPipe(ListTimeEntriesDto)) dto: ListTimeEntriesDto,
+    @CurrentUser() user: AuthenticatedUser,
+    @Res() res: Response,
+  ): Promise<void> {
+    const buffer = await this.exportTimeEntriesPdfUseCase.execute(dto, user);
+    const start = dto.startDate ? String(dto.startDate).slice(0, 10) : '';
+    const end = dto.endDate ? String(dto.endDate).slice(0, 10) : '';
+    const filename = `relatorio-tempo-${start}-a-${end}.pdf`;
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+    });
+    res.send(buffer);
   }
 
   @PostApi({

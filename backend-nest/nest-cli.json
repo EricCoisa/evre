@@ -14,6 +14,10 @@
       {
         "include": "modules/email/template/**/*",
         "outDir": "dist/src"
+      },
+      {
+        "include": "modules/time-tracking/pdf/**/*",
+        "outDir": "dist/src"
       }
     ]
   }

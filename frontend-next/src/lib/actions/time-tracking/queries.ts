@@ -251,42 +251,43 @@ export function useExportTimeEntries() {
       [key: string]: any;
     }) => {
       const { format = 'csv', projectName, userName, ...params } = variables || {};
-      const data = await Alive(() => exportTimeEntries(params))();
-      return { data, format, projectName, userName };
-    },
-    onSuccess: async ({ data, format, projectName, userName }) => {
-      if (!data) return;
 
       if (format === 'pdf') {
-        try {
-          const { generateTimeTrackerPdf } = await import('@/lib/pdf/time-tracker-pdf');
-          await generateTimeTrackerPdf({
-            entries: data.entries || [],
-            totalSeconds: data.totalSeconds || 0,
-            billableSeconds: data.billableSeconds || 0,
-            totalEntries: data.totalEntries || 0,
-            period: data.period,
-            projectName,
-            generatedBy: userName,
-          });
-          toast.success(t('exportPdfSuccess'));
-        } catch (err) {
-          console.error('[useExportTimeEntries] Erro ao gerar PDF:', err);
-          toast.error(t('exportError'));
-        }
-      } else if (format === 'csv') {
-        if (data.csv) {
-          const blob = new Blob([data.csv], { type: 'text/csv;charset=utf-8;' });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.setAttribute('download', data.filename || 'relatorio-tempo.csv');
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-          toast.success(t('exportSuccess'));
-        }
+        const searchParams = new URLSearchParams();
+        Object.entries(params).forEach(([k, v]) => v != null && searchParams.set(k, String(v)));
+        const response = await fetch(`/api/time-tracking/export/pdf?${searchParams}`, {
+          credentials: 'include',
+        });
+        if (!response.ok) throw new Error('export_pdf_failed');
+        const blob = await response.blob();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'relatorio-tempo.pdf';
+        a.click();
+        URL.revokeObjectURL(a.href);
+        return { data: null as any, format: 'pdf' as const, projectName, userName };
+      }
+
+      const data = await Alive(() => exportTimeEntries(params))();
+      return { data, format: 'csv' as const, projectName, userName };
+    },
+    onSuccess: async ({ data, format }) => {
+      if (format === 'pdf') {
+        toast.success(t('exportPdfSuccess'));
+        return;
+      }
+      if (!data) return;
+      if (data.csv) {
+        const blob = new Blob([data.csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', data.filename || 'relatorio-tempo.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        toast.success(t('exportSuccess'));
       }
     },
     onError: () => {

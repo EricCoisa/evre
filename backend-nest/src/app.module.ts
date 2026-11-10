@@ -52,6 +52,7 @@ import { ShortUrlModule } from './modules/short-url/short-url.module';
 import { SentryModule } from '@sentry/nestjs/setup';
 import { ProjectModule } from './modules/project/project.module';
 import { TimeTrackingModule } from './modules/time-tracking/time-tracking.module';
+import { PdfModule } from './modules/pdf/pdf.module';
 
 @Module({
   imports: [
@@ -134,6 +135,7 @@ import { TimeTrackingModule } from './modules/time-tracking/time-tracking.module
     CaptchaModule,
     SentryConfigModule,
     StorageModule,
+    PdfModule,
     McpModule,
     MessagingModule,
     VerificationModule,

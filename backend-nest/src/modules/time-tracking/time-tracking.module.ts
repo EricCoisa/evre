@@ -3,6 +3,7 @@ import { PrismaModule } from 'src/prisma/prisma.module';
 import { SystemConfigurationModule } from 'src/modules/system-configuration/system-configuration.module';
 import { LoggingModule } from 'src/modules/logging/logging.module';
 import { FeatureFlagModule } from 'src/modules/feature-flag/feature-flag.module';
+import { PdfModule } from 'src/modules/pdf/pdf.module';
 import { TimeTrackingController } from './time-tracking.controller';
 import { StartTimerUseCase } from './use-cases/start-timer.use-case';
 import { StopTimerUseCase } from './use-cases/stop-timer.use-case';
@@ -12,6 +13,7 @@ import { ExportTimeEntriesUseCase } from './use-cases/export-time-entries.use-ca
 import { UpdateTimeEntryUseCase } from './use-cases/update-time-entry.use-case';
 import { DeleteTimeEntryUseCase } from './use-cases/delete-time-entry.use-case';
 import { CreateManualEntryUseCase } from './use-cases/create-manual-entry.use-case';
+import { ExportTimeEntriesPdfUseCase } from './use-cases/export-time-entries-pdf.use-case';
 import { StartTimerTool } from './ai-tools/start-timer.tool';
 import { StopTimerTool } from './ai-tools/stop-timer.tool';
 import { TimeTrackingRouteCeiling } from './time-tracking.route-ceiling';
@@ -22,6 +24,7 @@ import { TimeTrackingRouteCeiling } from './time-tracking.route-ceiling';
     SystemConfigurationModule,
     LoggingModule,
     FeatureFlagModule,
+    PdfModule,
   ],
   controllers: [TimeTrackingController],
   providers: [
@@ -33,6 +36,7 @@ import { TimeTrackingRouteCeiling } from './time-tracking.route-ceiling';
     UpdateTimeEntryUseCase,
     DeleteTimeEntryUseCase,
     CreateManualEntryUseCase,
+    ExportTimeEntriesPdfUseCase,
     StartTimerTool,
     StopTimerTool,
     TimeTrackingRouteCeiling,

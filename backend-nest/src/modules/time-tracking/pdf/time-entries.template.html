@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatório de Registros de Tempo</title>
+  <style>
+    @page { size: A4 landscape; margin: 12mm 14mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 10px; color: #1a1a1a; background: #fff; }
+
+    header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; border-bottom: 2px solid #2563eb; padding-bottom: 8px; }
+    header h1 { font-size: 16px; font-weight: 700; color: #1e3a8a; }
+    header .meta { text-align: right; color: #6b7280; font-size: 9px; line-height: 1.6; }
+
+    .kpis { display: flex; gap: 10px; margin-bottom: 10px; }
+    .kpi { flex: 1; border: 1px solid #e5e7eb; border-radius: 6px; padding: 8px 12px; }
+    .kpi .label { font-size: 8.5px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+    .kpi .value { font-size: 18px; font-weight: 700; color: #1e3a8a; font-variant-numeric: tabular-nums; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 9px; }
+    thead tr { background: #1e3a8a; color: #fff; }
+    thead th { padding: 5px 6px; text-align: left; font-weight: 600; white-space: nowrap; }
+    tbody tr:nth-child(even) { background: #f8fafc; }
+    tbody td { padding: 4px 6px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+    tbody td.mono { font-variant-numeric: tabular-nums; white-space: nowrap; }
+    tbody tr.forgotten { background: #fef3c7; }
+    tbody tr.forgotten td { border-bottom-color: #fde68a; }
+    .badge { display: inline-block; padding: 1px 5px; border-radius: 3px; font-size: 8px; font-weight: 600; }
+    .badge-amber { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+    .badge-green { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .badge-gray { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
+
+    footer { margin-top: 8px; padding-top: 6px; border-top: 1px solid #e5e7eb; color: #9ca3af; font-size: 8px; display: flex; justify-content: space-between; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>{{ title }}</h1>
+      <div style="color:#6b7280;font-size:9px;margin-top:3px;">Período: {{ periodStart }} a {{ periodEnd }}</div>
+    </div>
+    <div class="meta">
+      <div>Gerado em {{ generatedAt }}</div>
+    </div>
+  </header>
+
+  <div class="kpis">
+    <div class="kpi">
+      <div class="label">Registros</div>
+      <div class="value">{{ totalEntries }}</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Tempo Total</div>
+      <div class="value">{{ totalTime }}</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Tempo Faturável</div>
+      <div class="value">{{ billableTime }}</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Início</th>
+        <th>Término</th>
+        <th>Duração</th>
+        <th>Projeto</th>
+        <th>Descrição / Atividade</th>
+        <th>Operador</th>
+        <th>Tipo</th>
+        <th>Origem</th>
+        <th>Faturável</th>
+        <th>Alerta</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{ tableRows }}
+    </tbody>
+  </table>
+
+  <footer>
+    <span>{{ title }} · {{ periodStart }} a {{ periodEnd }}</span>
+    <span>Gerado em {{ generatedAt }}</span>
+  </footer>
+</body>
+</html>

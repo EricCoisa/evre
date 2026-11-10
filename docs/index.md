@@ -31,6 +31,7 @@ Porta de entrada do vault. Monorepo com **backend NestJS** (`backend-nest/`) e *
 - [[notifications]] — inbox in-app agnóstico (NotificationService.notify), fan-out por usuário/role/todos, relay opcional de email/WhatsApp, flag `NOTIFICATION`
 - [[messaging-providers]] — detalhes por provider (Meta, Evolution API, Evolution Go)
 - [[storage]] — S3/RustFS, multi-provider
+- [[pdf]] — geração server-side via Gotenberg: PdfModule, PdfService, templates HTML por domínio
 - [[observability]] — pino, sentry, health, throttler
 - [[system-configuration]] — config global chave/valor em runtime
 - [[feature-flags-backend]] — flags runtime, guard @RequireFeature, cache Redis

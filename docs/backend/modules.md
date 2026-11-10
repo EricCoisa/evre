@@ -30,6 +30,7 @@ Registrados em `backend-nest/src/app.module.ts`. Cada módulo segue a mesma anat
 | `CaptchaModule` | `/captcha` | Config pública do widget e verificação anti-bot; guard `@RequireCaptcha`. Ver [[captcha]]. |
 | `SentryConfigModule` | `/sentry` | DSN do Sentry em runtime, por `PUT /sentry/config`. A leitura usa o endpoint genérico de SystemConfiguration. Ver [[observability]]. |
 | `StorageModule` | `/storage` | Upload/download S3 (RustFS local) ou disco (LOCAL), com provider trocável em runtime. Ver [[storage]]. |
+| `PdfModule` | `/pdf` | Geração de PDF server-side via Gotenberg: `PdfService.generate(html, options?)` → `Buffer`; `GET /pdf/health` (ADMIN). Agnóstico de domínio — cada módulo é responsável pelo seu template HTML e factory. Ver [[pdf]]. |
 | `MessagingModule` | `/messaging` | WhatsApp multi-provider (`EVOLUTION_API`, `EVOLUTION_GO`, `META`) em **conexões**: cada uma é um número, com credencial própria. Facade `MessagingService` resolve a conexão, valida credencial em duas camadas (schema + sonda) e serve health cacheado; `send()` lança e `trySend()` devolve `null` para quem a mensagem é opcional. Provider e número são imutáveis por conexão — trocar é arquivar e criar outra. Flag `MESSAGING` é kill-switch, avaliada com `roleName` vazio, então vale para cron e webhook. |
 | `HealthModule` | `/health` | Liveness/readiness (@nestjs/terminus). Ver [[observability]]. |
 | `TasksModule` | — | Jobs agendados (cron). Ver [[queues-and-jobs]]. |

@@ -32,6 +32,7 @@ O código manda. A documentação viva fica em **`docs/`** (vault Obsidian, PT-B
 | Notificação in-app agnóstica (notify() por usuário/role/todos, relay email/WhatsApp, sininho) | [docs/backend/notifications.md](docs/backend/notifications.md) |
 | Detalhes **por provider** de mensageria (Meta, Evolution API/Go) | [docs/backend/messaging-providers.md](docs/backend/messaging-providers.md) |
 | Storage S3/MinIO | [docs/backend/storage.md](docs/backend/storage.md) |
+| Geração de PDF server-side (PdfModule, PdfService, templates, Gotenberg) | [docs/backend/pdf.md](docs/backend/pdf.md) |
 | Logs, Sentry, health, throttler | [docs/backend/observability.md](docs/backend/observability.md) |
 | Config global chave/valor em runtime | [docs/backend/system-configuration.md](docs/backend/system-configuration.md) |
 | Feature flags (backend) | [docs/backend/feature-flags-backend.md](docs/backend/feature-flags-backend.md) |

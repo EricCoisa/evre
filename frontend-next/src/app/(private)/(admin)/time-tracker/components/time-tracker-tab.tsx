@@ -358,7 +358,6 @@ export function TimeTrackerTab() {
             <DropdownMenuContent align="end" className="w-52">
               <DropdownMenuItem
                 onSelect={handleExportPdf}
-                onClick={handleExportPdf}
                 disabled={exportMutation.isPending}
                 className="gap-2 cursor-pointer font-medium text-xs py-2"
               >
@@ -367,7 +366,6 @@ export function TimeTrackerTab() {
               </DropdownMenuItem>
               <DropdownMenuItem
                 onSelect={handleExportCsv}
-                onClick={handleExportCsv}
                 disabled={exportMutation.isPending}
                 className="gap-2 cursor-pointer font-medium text-xs py-2"
               >
