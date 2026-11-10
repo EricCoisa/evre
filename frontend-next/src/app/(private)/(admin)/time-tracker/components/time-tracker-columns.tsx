@@ -58,8 +58,8 @@ export function getTimeTrackingColumns({
       meta: {
         groupBy: true,
         hideGroupCount: true,
-        groupLabel: (value: unknown, groupData: { allSubRows?: { original?: TimeEntry }[] }) => {
-          const subRows = groupData?.allSubRows ?? [];
+        groupLabel: (value: unknown, groupData?: unknown) => {
+          const subRows = (groupData as { allSubRows?: { original?: TimeEntry }[] } | undefined)?.allSubRows ?? [];
           const count = subRows.length;
           const firstEntry = (subRows[0]?.original || {}) as TimeEntry;
           const totalDuration = subRows.reduce(

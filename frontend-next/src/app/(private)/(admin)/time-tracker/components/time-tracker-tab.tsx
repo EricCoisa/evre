@@ -74,7 +74,7 @@ export function TimeTrackerTab() {
 
   const meta = useMemo(() => {
     if (!data || Array.isArray(data)) return null;
-    return (data as { meta?: { total: number; page: number; limit: number; totalPages: number } })?.meta;
+    return (data as { meta?: { total: number; page: number; limit: number; totalPages: number; totalSeconds?: number; currentMonthSeconds?: number; monthRunningCount?: number; thresholdHours?: number } })?.meta;
   }, [data]);
 
   // Cálculos do Tempo Total do Mês Vigente (sem filtro) com ticker em tempo real
