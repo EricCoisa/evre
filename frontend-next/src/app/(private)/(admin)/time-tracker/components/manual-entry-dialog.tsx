@@ -25,7 +25,7 @@ export function ManualEntryDialog({
   const projects = useMemo(() => {
     if (!projectsData) return [];
     if (Array.isArray(projectsData)) return projectsData;
-    return (projectsData as { data?: any[] })?.data ?? [];
+    return (projectsData as { data?: { id: string; name: string }[] })?.data ?? [];
   }, [projectsData]);
 
   const manualEntrySchema = useMemo(
@@ -66,7 +66,7 @@ export function ManualEntryDialog({
         placeholder: t('selectProjectPlaceholder'),
         options: [
           { value: 'none', label: t('noProjectAvulso') },
-          ...projects.map((proj: any) => ({
+          ...projects.map((proj) => ({
             value: proj.id,
             label: proj.name,
           })),

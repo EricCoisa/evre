@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import ptBRVocabulary from '../locales/pt-BR/vocabulary.json';
-import enVocabulary from '../locales/en/vocabulary.json';
+import ptBRVocabulary from '../../../locales/pt-BR/vocabulary.json';
+import enVocabulary from '../../../locales/en/vocabulary.json';
 import {
   PROPOSAL_STATUSES,
   PUBLICATION_STATES,

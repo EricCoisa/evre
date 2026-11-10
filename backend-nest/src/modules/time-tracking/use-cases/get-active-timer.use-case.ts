@@ -30,7 +30,11 @@ export class GetActiveTimerUseCase {
     });
 
     if (!active) {
-      return { entry: null, isForgotten: false, thresholdHours: TIME_TRACKING_DEFAULT_FORGOTTEN_THRESHOLD_HOURS };
+      return {
+        entry: null,
+        isForgotten: false,
+        thresholdHours: TIME_TRACKING_DEFAULT_FORGOTTEN_THRESHOLD_HOURS,
+      };
     }
 
     let thresholdHours = TIME_TRACKING_DEFAULT_FORGOTTEN_THRESHOLD_HOURS;

@@ -1,13 +1,10 @@
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Container } from "@/components/container";
 import { PageHeader } from "@/components/page-header";
 import { ItemNotFound } from "@/components/ui/item-not-found";
 import LangLabel from "@/components/ui/langLabel";
 import { getProposal } from "@/lib/actions/proposal/api";
-import { proposalStatusLabelKey } from "@/lib/vocabulary";
+import { proposalStatusLabelKey } from "@/lib/actions/proposal/vocabulary";
 import { ProposalCompanyField } from "../components/proposal-company-field";
 import { ProposalDetailTabs } from "../components/proposal-detail-tabs";
 

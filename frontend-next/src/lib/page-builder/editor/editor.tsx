@@ -23,7 +23,7 @@ import {
   useSaveSystemPageLayout,
 } from '@/lib/actions/pageBuilder/queries';
 import { DEFAULT_PROFILE, type LayoutProfileName } from '../profiles';
-import type { ProposalTerms } from '../proposal-terms-context';
+import type { PageRenderContext } from '../page-render-context';
 import { BlockGrid, LayoutBody } from '../renderer';
 import type { PageLayout } from '../schema';
 import {
@@ -36,7 +36,7 @@ import { BlockInserter } from './block-inserter';
 import { DescribeModal } from './describe-modal';
 import { EditorContext, EditorProvider, useEditorOrThrow } from './context';
 import { findBlock } from './mutations';
-import { EditorPanel } from './panel';
+import { EditorPanel, type ArtifactPickerSlot } from './panel';
 import { EditorTopBar } from './top-bar';
 
 /** Modo de edição da página: renderiza os blocos reais com o chrome de edição por cima. */
@@ -49,6 +49,8 @@ export default function PageEditor({
   onSave,
   saving,
   proposalTerms,
+  artifactPickerSlot,
+  storageHealthy,
 }: {
   pageKey: string;
   initial: PageLayout;
@@ -64,7 +66,9 @@ export default function PageEditor({
   saving?: boolean;
   /** Envelope comercial lido por contexto no preview (ex: iframe público vs rascunho).
    * `undefined` fora do profile `proposal`. */
-  proposalTerms?: ProposalTerms;
+  proposalTerms?: PageRenderContext;
+  artifactPickerSlot?: ArtifactPickerSlot;
+  storageHealthy?: boolean;
 }) {
   return (
     <EditorProvider initial={initial} profile={profile} recordId={recordId}>
@@ -74,6 +78,8 @@ export default function PageEditor({
         onSave={onSave}
         saving={saving}
         proposalTerms={proposalTerms}
+        artifactPickerSlot={artifactPickerSlot}
+        storageHealthy={storageHealthy}
       />
     </EditorProvider>
   );
@@ -95,12 +101,16 @@ function EditorShell({
   onSave: externalSave,
   saving: externalSaving,
   proposalTerms,
+  artifactPickerSlot,
+  storageHealthy,
 }: {
   pageKey: string;
   onExit: () => void;
   onSave?: (layout: PageLayout) => void;
   saving?: boolean;
-  proposalTerms?: ProposalTerms;
+  proposalTerms?: PageRenderContext;
+  artifactPickerSlot?: ArtifactPickerSlot;
+  storageHealthy?: boolean;
 }) {
   const { t } = useTranslation('page-builder');
   const editor = useEditorOrThrow();
@@ -301,6 +311,8 @@ function EditorShell({
           onSave={handleSave}
           onSaveAsDefault={onSaveAsDefaultProp}
           onCancel={handleCancel}
+          artifactPickerSlot={artifactPickerSlot}
+          storageHealthy={storageHealthy}
         />
       ) : null}
     </div>

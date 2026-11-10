@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient, type QueryKey } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import {
-  getCompanys, createCompany, updateCompany, archiveCompany,
+  getCompanies, getCompany, createCompany, updateCompany, archiveCompany,
   getCompanyContacts, createCompanyContact, updateCompanyContact, archiveCompanyContact,
   getCompanyMembers, addCompanyMember, inviteCompanyMember, removeCompanyMember, updateCompanyMember, getCompanyInvites,
 } from "./api";
@@ -13,19 +13,19 @@ import { toast } from "sonner";
 import { useTranslation } from "@/hooks/use-translation";
 import { CreateCompanyDto, UpdateCompanyDto, CreateContactDto, UpdateContactDto, AddCompanyMemberDto, InviteCompanyMemberDto, UpdateCompanyMemberDto } from "./types";
 
-export function useCompanys(params?: PaginationParams, options?: { enabled?: boolean }) {
+export function useCompanies(params?: PaginationParams, options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: ['companys', params],
-    queryFn: Collector(() => getCompanys(params)),
+    queryKey: ['companies', params],
+    queryFn: Collector(() => getCompanies(params)),
     enabled: options?.enabled ?? true,
-    ...getQueryConfig('COMPANYS'),
+    ...getQueryConfig('COMPANIES'),
   });
 }
 
 export function useCompany(id: string | null | undefined) {
   return useQuery({
     queryKey: ['company', id],
-    queryFn: Collector(() => import('./api').then((m) => m.getCompany(id!))),
+    queryFn: Collector(() => getCompany(id!)),
     enabled: !!id,
     ...getQueryConfig('COMPANY'),
   });
@@ -38,7 +38,7 @@ export function useCreateCompany() {
   return useMutation({
     mutationFn: (data: CreateCompanyDto) => createCompany(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['companys'] });
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
       toast.success(t('createdSuccess'));
     }
   });
@@ -65,7 +65,7 @@ export function useUpdateCompany() {
     mutationFn: ({ id, data }: { id: string; data: UpdateCompanyDto }) =>
       updateCompany(id, data),
     onSuccess: (_, variables) => {
-      sync([['companys'], ['company', variables.id]]);
+      sync([['companies'], ['company', variables.id]]);
       toast.success(t('updatedSuccess'));
     }
   });
@@ -78,7 +78,7 @@ export function useArchiveCompany() {
   return useMutation({
     mutationFn: archiveCompany,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['companys'] });
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
       toast.success(t('archivedSuccess'));
     }
   });
@@ -153,46 +153,50 @@ export function useCompanyInvites(companyId: string) {
 
 export function useAddCompanyMember(companyId: string) {
   const queryClient = useQueryClient();
+  const { t } = useTranslation('company');
   return useMutation({
     mutationFn: (data: AddCompanyMemberDto) => addCompanyMember(companyId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company', companyId, 'members'] });
-      toast.success('Membro adicionado');
+      toast.success(t('members.addedSuccess'));
     },
   });
 }
 
 export function useInviteCompanyMember(companyId: string) {
   const queryClient = useQueryClient();
+  const { t } = useTranslation('company');
   return useMutation({
     mutationFn: (data: InviteCompanyMemberDto) => inviteCompanyMember(companyId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company', companyId, 'members'] });
       queryClient.invalidateQueries({ queryKey: ['company', companyId, 'invites'] });
-      toast.success('Convite enviado');
+      toast.success(t('members.invitedSuccess'));
     },
   });
 }
 
 export function useUpdateCompanyMember(companyId: string) {
   const queryClient = useQueryClient();
+  const { t } = useTranslation('company');
   return useMutation({
     mutationFn: ({ membershipId, data }: { membershipId: string; data: UpdateCompanyMemberDto }) =>
       updateCompanyMember(companyId, membershipId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company', companyId, 'members'] });
-      toast.success('Permissão atualizada');
+      toast.success(t('members.updatedSuccess'));
     },
   });
 }
 
 export function useRemoveCompanyMember(companyId: string) {
   const queryClient = useQueryClient();
+  const { t } = useTranslation('company');
   return useMutation({
     mutationFn: (membershipId: string) => removeCompanyMember(companyId, membershipId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company', companyId, 'members'] });
-      toast.success('Membro removido');
+      toast.success(t('members.removedSuccess'));
     },
   });
 }

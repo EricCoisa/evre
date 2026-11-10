@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  BLUR_COMMAND,
   COMMAND_PRIORITY_LOW,
   FOCUS_COMMAND,
   KEY_ENTER_COMMAND,
@@ -104,14 +103,6 @@ function ActiveSyncPlugin({
       COMMAND_PRIORITY_LOW,
     );
 
-    const unregBlur = lexicalEditor.registerCommand(
-      BLUR_COMMAND,
-      () => {
-        return false;
-      },
-      COMMAND_PRIORITY_LOW,
-    );
-
     const unregEsc = lexicalEditor.registerCommand(
       KEY_ESCAPE_COMMAND,
       () => {
@@ -124,7 +115,6 @@ function ActiveSyncPlugin({
 
     return () => {
       unregFocus();
-      unregBlur();
       unregEsc();
     };
   }, [lexicalEditor, blockId, propName, showFontSize, variables, setIsFocused]);

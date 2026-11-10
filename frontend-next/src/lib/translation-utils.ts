@@ -53,7 +53,6 @@ import enTimeTracking from '../locales/en/time-tracking.json';
 export const resources = {
 	'pt-BR': {
 		'time-tracking': ptBRTimeTracking,
-		timeTracking: ptBRTimeTracking,
 		proposal: ptBRProposal,
 		company: ptBRCompany,
 		artifact: ptBRArtifact,
@@ -81,7 +80,6 @@ export const resources = {
 	},
 	en: {
 		'time-tracking': enTimeTracking,
-		timeTracking: enTimeTracking,
 		proposal: enProposal,
 		company: enCompany,
 		artifact: enArtifact,

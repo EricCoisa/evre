@@ -27,21 +27,31 @@ export class UpdateTimeEntryUseCase {
     }
 
     if (user.roleName !== 'ADMIN' && existing.userId !== user.id) {
-      throw new ForbiddenException('Você não tem permissão para editar este registro de tempo');
+      throw new ForbiddenException(
+        'Você não tem permissão para editar este registro de tempo',
+      );
     }
 
-    const newStartTime = dto.startTime ? new Date(dto.startTime) : existing.startTime;
+    const newStartTime = dto.startTime
+      ? new Date(dto.startTime)
+      : existing.startTime;
     const newEndTime =
       dto.endTime !== undefined
-        ? dto.endTime ? new Date(dto.endTime) : null
+        ? dto.endTime
+          ? new Date(dto.endTime)
+          : null
         : existing.endTime;
 
     let newDuration = existing.duration;
     if (newEndTime && newStartTime) {
       if (newEndTime.getTime() <= newStartTime.getTime()) {
-        throw new BadRequestException('A hora de término deve ser posterior à hora de início');
+        throw new BadRequestException(
+          'A hora de término deve ser posterior à hora de início',
+        );
       }
-      newDuration = Math.round((newEndTime.getTime() - newStartTime.getTime()) / 1000);
+      newDuration = Math.round(
+        (newEndTime.getTime() - newStartTime.getTime()) / 1000,
+      );
     } else if (!newEndTime) {
       newDuration = null;
     }
@@ -51,15 +61,24 @@ export class UpdateTimeEntryUseCase {
     const updated = await this.prisma.timeEntry.update({
       where: { id },
       data: {
-        description: dto.description !== undefined ? dto.description : existing.description,
+        description:
+          dto.description !== undefined
+            ? dto.description
+            : existing.description,
         startTime: newStartTime,
         endTime: newEndTime,
         duration: newDuration,
-        isBillable: dto.isBillable != null ? dto.isBillable : existing.isBillable,
-        projectId: dto.projectId !== undefined ? dto.projectId : existing.projectId,
-        entityType: dto.entityType !== undefined ? dto.entityType : existing.entityType,
+        isBillable:
+          dto.isBillable != null ? dto.isBillable : existing.isBillable,
+        projectId:
+          dto.projectId !== undefined ? dto.projectId : existing.projectId,
+        entityType:
+          dto.entityType !== undefined ? dto.entityType : existing.entityType,
         entityId: dto.entityId !== undefined ? dto.entityId : existing.entityId,
-        entityTitle: dto.entityTitle !== undefined ? dto.entityTitle : existing.entityTitle,
+        entityTitle:
+          dto.entityTitle !== undefined
+            ? dto.entityTitle
+            : existing.entityTitle,
         isManual: true,
         editedById: user.id,
         editedAt: now,

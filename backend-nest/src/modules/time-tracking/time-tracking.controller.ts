@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  Param,
-  Query,
-  Res,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Param, Query, Res, UseGuards } from '@nestjs/common';
 import type { Response } from 'express';
 import { ApiTags } from '@nestjs/swagger';
 import { ZodValidationPipe } from 'nestjs-zod';
@@ -85,7 +78,8 @@ export class TimeTrackingController {
 
   @GetApi({
     path: 'active',
-    summary: 'Retorna o cronômetro ativo do usuário com indicador de esquecimento',
+    summary:
+      'Retorna o cronômetro ativo do usuário com indicador de esquecimento',
     status: 'OK',
     authenticated: true,
   })
@@ -148,7 +142,8 @@ export class TimeTrackingController {
     authenticated: true,
   })
   async createManualEntry(
-    @Body(new ZodValidationPipe(CreateManualEntryDto)) dto: CreateManualEntryDto,
+    @Body(new ZodValidationPipe(CreateManualEntryDto))
+    dto: CreateManualEntryDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.createManualEntryUseCase.execute(user.id, dto);
@@ -156,7 +151,8 @@ export class TimeTrackingController {
 
   @PatchApi({
     path: ':id',
-    summary: 'Edita um registro de tempo existente, marcando-o como editado manualmente',
+    summary:
+      'Edita um registro de tempo existente, marcando-o como editado manualmente',
     status: 'OK',
     authenticated: true,
   })

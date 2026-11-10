@@ -8,7 +8,7 @@ import { Copy, Archive } from "lucide-react";
 import { DataCell, TableHead } from "@/components/table-utils";
 import { Badge, type badgeVariants } from "@/components/ui/badge";
 import { formatCents, formatDate } from "@/lib/utils";
-import { proposalStatusLabelKey } from "@/lib/vocabulary";
+import { proposalStatusLabelKey } from "@/lib/actions/proposal/vocabulary";
 import type { TFunc } from "@/hooks/use-translation";
 import type { VariantProps } from "class-variance-authority";
 

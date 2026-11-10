@@ -13,7 +13,11 @@ export class StartTimerUseCase {
     let resolvedTitle = dto.entityTitle;
 
     // Se vinculado a uma TASK e sem projectId ou entityTitle explícitos, busca para auto-preenchimento
-    if (dto.entityType === 'TASK' && dto.entityId && (!resolvedProjectId || !resolvedTitle)) {
+    if (
+      dto.entityType === 'TASK' &&
+      dto.entityId &&
+      (!resolvedProjectId || !resolvedTitle)
+    ) {
       const task = await this.prisma.projectTask.findUnique({
         where: { id: dto.entityId },
         include: {

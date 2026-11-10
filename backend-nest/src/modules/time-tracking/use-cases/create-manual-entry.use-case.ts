@@ -16,7 +16,9 @@ export class CreateManualEntryUseCase {
     const end = new Date(dto.endTime);
 
     if (end.getTime() <= start.getTime()) {
-      throw new BadRequestException('A hora de término deve ser posterior à hora de início');
+      throw new BadRequestException(
+        'A hora de término deve ser posterior à hora de início',
+      );
     }
 
     const duration = Math.round((end.getTime() - start.getTime()) / 1000);

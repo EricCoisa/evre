@@ -93,6 +93,7 @@
   "acceptEmailPlaceholder": "Enter your email",
   "acceptButton": "Accept proposal",
   "acceptFieldsRequired": "Enter name and email to accept",
+  "invalidEmail": "Invalid email",
   "acceptConfirmTitle": "Confirm acceptance",
   "acceptConfirmDescription": "You are accepting this proposal under the terms below. This action cannot be undone.",
   "acceptConfirmButton": "Confirm acceptance",

@@ -79,6 +79,10 @@
   "tabMembers": "Membros",
   "members": {
     "empty": "Nenhum membro encontrado",
+    "addedSuccess": "Membro adicionado",
+    "invitedSuccess": "Convite enviado",
+    "updatedSuccess": "Permissão atualizada",
+    "removedSuccess": "Membro removido",
     "addExisting": "Adicionar Membro",
     "inviteClient": "Convidar Cliente",
     "addTitle": "Adicionar Membro",

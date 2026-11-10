@@ -25,7 +25,7 @@ import {
 import { filterClassName } from './class-names';
 import { getDataSource } from './data-sources';
 import { LAYOUT_PROFILES, type LayoutProfileName } from './profiles';
-import { ProposalTermsProvider, type ProposalTerms } from './proposal-terms-context';
+import { PageRenderContextProvider, usePageRenderContext, type PageRenderContext } from './page-render-context';
 import {
   BlockChrome,
   EmptySlotDropZone,
@@ -98,14 +98,14 @@ export function LayoutBody({
 }: {
   layout: PageLayout;
   profile: LayoutProfileName;
-  proposalTerms?: ProposalTerms;
+  proposalTerms?: PageRenderContext;
 }) {
   const allowed = new Set<string>(LAYOUT_PROFILES[profile].blocks);
   // Bloco fora do profile é descartado como `type` desconhecido: a escrita já o recusa,
   // inclusive nos `children`, então aqui basta a folha de topo.
   const grid = <BlockGrid blocks={layout.blocks.filter((b) => allowed.has(b.type))} />;
   return proposalTerms ? (
-    <ProposalTermsProvider terms={proposalTerms}>{grid}</ProposalTermsProvider>
+    <PageRenderContextProvider terms={proposalTerms}>{grid}</PageRenderContextProvider>
   ) : (
     grid
   );
@@ -272,6 +272,7 @@ function BlockBody({
   variables?: RichTextVariableOption[];
 }) {
   const editor = useEditor();
+  const renderContext = usePageRenderContext();
   const onPropChange = editor
     ? (name: string, value: unknown) => editor.setProp(block.id, name, value)
     : undefined;
@@ -292,6 +293,7 @@ function BlockBody({
       onPropChange={onPropChange}
       editing={editing}
       variables={variables}
+      renderContext={renderContext ? { ...renderContext } : undefined}
     >
       <BlockChildren block={block} meta={meta} editing={editing} />
     </Component>

@@ -62,9 +62,6 @@ export function CompanyContactEdit({ companyId, contact, onCancel, onSuccess }: 
                 queryClient.invalidateQueries({ queryKey: ['company', companyId, 'contacts'] });
                 onSuccess?.();
             }}
-            onError={(error) => {
-                console.error('Error updating contact:', error);
-            }}
             submitLabel={t('save')}
             cancelLabel={t('cancel')}
         />

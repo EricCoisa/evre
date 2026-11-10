@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BLOCK_REGISTRY, isKnownBlock } from './registry';
-import { ProposalTermsProvider, type ProposalTerms } from './proposal-terms-context';
+import type { PageRenderContext } from './page-render-context';
 
 vi.mock('@/hooks/use-translation', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -606,7 +606,7 @@ describe('divider', () => {
 
 describe('iframe', () => {
   const NO_SAME_ORIGIN_SANDBOX = 'allow-scripts allow-popups allow-modals allow-forms';
-  const baseTerms: ProposalTerms = {
+  const baseTerms: PageRenderContext = {
     totalCents: null,
     currency: 'BRL',
     recurrence: 'ONE_TIME',
@@ -636,9 +636,9 @@ describe('iframe', () => {
   it('versão publicada: src aponta pra rota pública por token', () => {
     const IframeBlock = BLOCK_REGISTRY.iframe;
     render(
-      React.createElement(ProposalTermsProvider, {
-        terms: { ...baseTerms, published: true },
-        children: React.createElement(IframeBlock, { props: { artifactId: 'public-token-1' } }),
+      React.createElement(IframeBlock, {
+        props: { artifactId: 'public-token-1' },
+        renderContext: { ...baseTerms, published: true },
       }),
     );
 

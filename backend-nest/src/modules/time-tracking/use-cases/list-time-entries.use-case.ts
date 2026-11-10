@@ -23,17 +23,23 @@ export class ListTimeEntriesUseCase {
 
     const where: Prisma.TimeEntryWhereInput = {};
 
-    let parsedFilter: Record<string, any> = {};
+    let parsedFilter: Record<string, unknown> = {};
     if (dto.filter) {
       try {
-        parsedFilter = JSON.parse(dto.filter);
-      } catch {}
+        parsedFilter = JSON.parse(dto.filter) as Record<string, unknown>;
+      } catch {
+        /* ignore parse error */
+      }
     }
 
-    const resolvedProjectId = dto.projectId || parsedFilter.projectId;
-    const resolvedUserId = dto.userId || parsedFilter.userId;
-    const resolvedEntityType = dto.entityType || parsedFilter.entityType;
-    const resolvedEntityId = dto.entityId || parsedFilter.entityId;
+    const resolvedProjectId = (dto.projectId || parsedFilter.projectId) as
+      string | undefined;
+    const resolvedUserId = (dto.userId || parsedFilter.userId) as
+      string | undefined;
+    const resolvedEntityType = (dto.entityType || parsedFilter.entityType) as
+      string | undefined;
+    const resolvedEntityId = (dto.entityId || parsedFilter.entityId) as
+      string | undefined;
 
     // Restrição de role: se for MODERATOR, lista apenas as suas horas a menos que seja ADMIN
     if (user.roleName !== 'ADMIN') {
@@ -61,8 +67,10 @@ export class ListTimeEntriesUseCase {
       ];
     }
 
-    const resolvedStartDate = dto.startDate || parsedFilter.startDate;
-    const resolvedEndDate = dto.endDate || parsedFilter.endDate;
+    const resolvedStartDate = (dto.startDate || parsedFilter.startDate) as
+      string | undefined;
+    const resolvedEndDate = (dto.endDate || parsedFilter.endDate) as
+      string | undefined;
 
     if (resolvedStartDate || resolvedEndDate) {
       where.startTime = {};
@@ -71,7 +79,10 @@ export class ListTimeEntriesUseCase {
       }
       if (resolvedEndDate) {
         const end = new Date(resolvedEndDate);
-        if (typeof resolvedEndDate === 'string' && resolvedEndDate.length === 10) {
+        if (
+          typeof resolvedEndDate === 'string' &&
+          resolvedEndDate.length === 10
+        ) {
           end.setHours(23, 59, 59, 999);
         }
         where.startTime.lte = end;
@@ -91,7 +102,15 @@ export class ListTimeEntriesUseCase {
     }
 
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    const startOfMonth = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      1,
+      0,
+      0,
+      0,
+      0,
+    );
 
     const monthWhere: Prisma.TimeEntryWhereInput = {
       startTime: { gte: startOfMonth },
@@ -145,13 +164,25 @@ export class ListTimeEntriesUseCase {
     const completedSeconds = durationAggregate._sum.duration ?? 0;
     const nowMs = Date.now();
     const runningSeconds = runningEntries.reduce((acc, r) => {
-      return acc + Math.max(0, Math.floor((nowMs - new Date(r.startTime).getTime()) / 1000));
+      return (
+        acc +
+        Math.max(
+          0,
+          Math.floor((nowMs - new Date(r.startTime).getTime()) / 1000),
+        )
+      );
     }, 0);
     const totalSeconds = completedSeconds + runningSeconds;
 
     const monthCompletedSeconds = monthDurationAggregate._sum.duration ?? 0;
     const monthRunningSeconds = monthRunningEntries.reduce((acc, r) => {
-      return acc + Math.max(0, Math.floor((nowMs - new Date(r.startTime).getTime()) / 1000));
+      return (
+        acc +
+        Math.max(
+          0,
+          Math.floor((nowMs - new Date(r.startTime).getTime()) / 1000),
+        )
+      );
     }, 0);
     const currentMonthSeconds = monthCompletedSeconds + monthRunningSeconds;
 

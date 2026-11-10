@@ -7,7 +7,6 @@ import { Plus, X } from 'lucide-react';
 import { InlineRichText } from './editor/inline-rich-text';
 import type { RichTextVariableOption } from '@/components/rich-text-input';
 import { innerAlignClass } from './class-names';
-import { useProposalTerms } from './proposal-terms-context';
 
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, XAxis } from 'recharts';
 import {
@@ -69,6 +68,7 @@ export interface BlockProps {
   onPropChange?: (name: string, value: unknown) => void;
   editing?: boolean;
   variables?: RichTextVariableOption[];
+  renderContext?: Record<string, unknown>;
 }
 
 /** Mapa de componentes dos blocos do page builder, amarrado a BLOCK_META. */
@@ -432,10 +432,9 @@ const ARTIFACT_SANDBOX = 'allow-scripts allow-popups allow-modals allow-forms';
  * sem poder importar de lá (módulo `"use server"`, só exporta função async pro client). */
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 
-function IframeBlock({ props, bare, className }: BlockProps) {
+function IframeBlock({ props, bare, className, renderContext }: BlockProps) {
   const { t } = useTranslation('page-builder');
   const [open, setOpen] = React.useState(false);
-  const terms = useProposalTerms();
   const artifactId = typeof props.artifactId === 'string' ? props.artifactId : undefined;
   const title = str(props.title);
   const height = typeof props.height === 'number' && props.height > 0 ? props.height : undefined;
@@ -459,7 +458,7 @@ function IframeBlock({ props, bare, className }: BlockProps) {
 
   // Publicado: visualização anônima por publicToken. Rascunho/preview: autenticado por id,
   // mesmo guard de roles do resto do admin. Redirect 302 pra presigned URL — iframe segue nativo.
-  const url = terms?.published
+  const url = renderContext?.published
     ? `${API_BASE_URL}/artifacts/public/${artifactId}`
     : `${API_BASE_URL}/artifacts/${artifactId}/view`;
 

@@ -8,15 +8,17 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
 import { useUpdateProposalLayout } from '@/lib/actions/proposal/queries';
+import { useStorageHealth } from '@/lib/actions/user/queries';
+import { ArtifactPickerDialog } from '@/components/artifact-picker-dialog';
 import type { Proposal } from '@/lib/actions/proposal/types';
-import type { ProposalTerms } from '@/lib/page-builder/proposal-terms-context';
+import type { PageRenderContext } from '@/lib/page-builder/page-render-context';
 import { LayoutBody } from '@/lib/page-builder/renderer';
 import { parseRecordLayout } from '@/lib/page-builder/schema';
 
 // Import dinâmico: mesma técnica do PageRenderer — mantém dnd-kit fora do bundle de quem só visualiza.
 const PageEditor = dynamic(() => import('@/lib/page-builder/editor/editor'), { ssr: false });
 
-function toProposalTerms(proposal: Proposal): ProposalTerms {
+function toProposalTerms(proposal: Proposal): PageRenderContext {
   return {
     totalCents: proposal.totalCents,
     currency: proposal.currency,
@@ -44,6 +46,7 @@ export function ProposalContentTab({
   const { t } = useTranslation('proposal');
   const [editing, setEditing] = useState(false);
   const updateLayout = useUpdateProposalLayout();
+  const { data: storageHealth } = useStorageHealth();
   const layout = parseRecordLayout(proposal.layout);
   const isDraft = proposal.status === 'DRAFT';
 
@@ -59,6 +62,8 @@ export function ProposalContentTab({
         recordId={proposal.id}
         initial={layout}
         proposalTerms={toProposalTerms(proposal)}
+        artifactPickerSlot={ArtifactPickerDialog}
+        storageHealthy={storageHealth?.operational !== false}
         saving={updateLayout.isPending}
         onSave={(nextLayout) => {
           updateLayout.mutate(

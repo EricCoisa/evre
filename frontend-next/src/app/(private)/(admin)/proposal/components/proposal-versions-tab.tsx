@@ -7,11 +7,11 @@ import { getProposalVersionColumns } from './proposal-version-columns';
 import { useTranslation } from '@/hooks/use-translation';
 import { useProposalVersions } from '@/lib/actions/proposal/queries';
 import type { Proposal, ProposalVersionDto } from '@/lib/actions/proposal/types';
-import type { ProposalTerms } from '@/lib/page-builder/proposal-terms-context';
+import type { PageRenderContext } from '@/lib/page-builder/page-render-context';
 import { LayoutBody } from '@/lib/page-builder/renderer';
 import { parseRecordLayout } from '@/lib/page-builder/schema';
 
-function toProposalTerms(version: ProposalVersionDto): ProposalTerms {
+function toProposalTerms(version: ProposalVersionDto): PageRenderContext {
   return {
     totalCents: version.totalCents,
     currency: version.currency,

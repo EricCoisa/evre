@@ -22,7 +22,7 @@ vi.mock('@/lib/actions/proposal/queries', () => ({
 }));
 
 vi.mock('@/lib/actions/company/queries', () => ({
-  useCompanys: () => ({ data: [] }),
+  useCompanies: () => ({ data: [] }),
   useCreateCompany: () => ({ mutateAsync: vi.fn() }),
 }));
 

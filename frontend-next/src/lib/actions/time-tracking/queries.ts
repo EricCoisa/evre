@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
+import type { PaginatedResponse } from '@/lib/types/pagination.types';
 import { useTranslation } from '@/hooks/use-translation';
 import {
   getActiveTimer,
@@ -20,12 +21,13 @@ import type {
   UpdateTimeEntryDto,
   CreateManualEntryDto,
   TimeTrackingControllerListTimeEntriesParams,
+  TimeTrackingControllerExportTimeEntriesParams,
   TimeEntry,
 } from './types';
 
 const TIME_TRACKING_CHANNEL = 'evre_time_tracking_bus';
 
-function notifyChannel(entry: any) {
+function notifyChannel(entry: Partial<TimeEntry> & { id: string }) {
   if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
     const channel = new BroadcastChannel(TIME_TRACKING_CHANNEL);
     channel.postMessage({ type: 'TIMER_CHANGED', entry });
@@ -33,61 +35,67 @@ function notifyChannel(entry: any) {
   }
 }
 
-function updateListCacheOnStart(queryClient: any, newEntry: TimeEntry) {
-  queryClient.setQueriesData({ queryKey: ['time-tracking', 'list'] }, (old: any) => {
-    if (!old) return old;
-    const items = Array.isArray(old) ? old : old?.data;
-    if (!Array.isArray(items)) return old;
+function updateListCacheOnStart(queryClient: QueryClient, newEntry: TimeEntry) {
+  queryClient.setQueriesData<PaginatedResponse<TimeEntry> | TimeEntry[]>(
+    { queryKey: ['time-tracking', 'list'] },
+    (old) => {
+      if (!old) return old;
+      const items = Array.isArray(old) ? old : old.data;
+      if (!Array.isArray(items)) return old;
 
-    // Se havia algum timer rodando sem endTime (switch automático), encerra-o
-    const updatedItems = items.map((item: any) => {
-      if (!item.endTime && item.id !== newEntry.id) {
-        const duration = Math.max(
-          0,
-          Math.round(
-            (new Date(newEntry.startTime).getTime() - new Date(item.startTime).getTime()) / 1000,
-          ),
-        );
-        return { ...item, endTime: newEntry.startTime, duration };
-      }
-      return item;
-    });
+      // Se havia algum timer rodando sem endTime (switch automático), encerra-o
+      const updatedItems = items.map((item: TimeEntry) => {
+        if (!item.endTime && item.id !== newEntry.id) {
+          const duration = Math.max(
+            0,
+            Math.round(
+              (new Date(newEntry.startTime).getTime() - new Date(item.startTime).getTime()) / 1000,
+            ),
+          );
+          return { ...item, endTime: newEntry.startTime, duration };
+        }
+        return item;
+      });
 
-    const alreadyExists = updatedItems.some((i: any) => i.id === newEntry.id);
-    const finalItems = alreadyExists ? updatedItems : [newEntry, ...updatedItems];
+      const alreadyExists = updatedItems.some((i: TimeEntry) => i.id === newEntry.id);
+      const finalItems = alreadyExists ? updatedItems : [newEntry, ...updatedItems];
 
-    if (Array.isArray(old)) return finalItems;
-    return {
-      ...old,
-      data: finalItems,
-      meta: old.meta ? { ...old.meta, total: (old.meta.total ?? 0) + (alreadyExists ? 0 : 1) } : old.meta,
-    };
-  });
+      if (Array.isArray(old)) return finalItems;
+      return {
+        ...old,
+        data: finalItems,
+        meta: { ...old.meta, total: old.meta.total + (alreadyExists ? 0 : 1) },
+      };
+    },
+  );
 }
 
-function updateListCacheOnStop(queryClient: any, stoppedEntry: TimeEntry) {
-  queryClient.setQueriesData({ queryKey: ['time-tracking', 'list'] }, (old: any) => {
-    if (!old) return old;
-    const items = Array.isArray(old) ? old : old?.data;
-    if (!Array.isArray(items)) return old;
+function updateListCacheOnStop(queryClient: QueryClient, stoppedEntry: TimeEntry) {
+  queryClient.setQueriesData<PaginatedResponse<TimeEntry> | TimeEntry[]>(
+    { queryKey: ['time-tracking', 'list'] },
+    (old) => {
+      if (!old) return old;
+      const items = Array.isArray(old) ? old : old.data;
+      if (!Array.isArray(items)) return old;
 
-    const finalItems = items.map((item: any) => {
-      if (item.id === stoppedEntry.id) {
-        return {
-          ...item,
-          endTime: stoppedEntry.endTime,
-          duration: stoppedEntry.duration,
-        };
-      }
-      return item;
-    });
+      const finalItems = items.map((item: TimeEntry) => {
+        if (item.id === stoppedEntry.id) {
+          return {
+            ...item,
+            endTime: stoppedEntry.endTime,
+            duration: stoppedEntry.duration,
+          };
+        }
+        return item;
+      });
 
-    if (Array.isArray(old)) return finalItems;
-    return { ...old, data: finalItems };
-  });
+      if (Array.isArray(old)) return finalItems;
+      return { ...old, data: finalItems };
+    },
+  );
 }
 
-function invalidateTimeTracking(queryClient: any) {
+function invalidateTimeTracking(queryClient: QueryClient) {
   queryClient.invalidateQueries({ queryKey: ['time-tracking'], refetchType: 'all' });
 }
 
@@ -248,7 +256,7 @@ export function useExportTimeEntries() {
       format?: 'csv' | 'pdf';
       projectName?: string;
       userName?: string;
-      [key: string]: any;
+      [key: string]: unknown;
     }) => {
       const { format = 'csv', projectName, userName, ...params } = variables || {};
 
@@ -265,10 +273,10 @@ export function useExportTimeEntries() {
         a.download = 'relatorio-tempo.pdf';
         a.click();
         URL.revokeObjectURL(a.href);
-        return { data: null as any, format: 'pdf' as const, projectName, userName };
+        return { data: null, format: 'pdf' as const, projectName, userName };
       }
 
-      const data = await Alive(() => exportTimeEntries(params))();
+      const data = await Alive(() => exportTimeEntries(params as TimeTrackingControllerExportTimeEntriesParams))();
       return { data, format: 'csv' as const, projectName, userName };
     },
     onSuccess: async ({ data, format }) => {

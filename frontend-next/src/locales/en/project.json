@@ -38,7 +38,6 @@
   "tabApprovals": "Approvals",
   "tabInfoRequests": "Info requests",
   "tabConfig": "Details",
-
   "infoRequestsTitle": "Client Requests",
   "infoRequestsClientTitle": "Team Requests",
   "infoRequestsDescription": "Request sensitive data (passwords, accesses, tax data) with AES-256 database encryption.",
@@ -89,7 +88,6 @@
   "richTextItalic": "Italic (_text_)",
   "richTextStrikethrough": "Strikethrough (~text~)",
   "richTextCode": "Code (```text```)",
-
   "bannerClientTitle": "Attention: The team needs your input to continue!",
   "bannerAdminTitle": "Pending Items with Client",
   "bannerPendingSingle": "pending item",
@@ -98,7 +96,6 @@
   "bannerWaitingClient": "Waiting for client response for: {label}",
   "bannerViewRequests": "View Requests",
   "bannerRespondNow": "Respond Now",
-
   "approvalPendingValidation": "Validation Pending",
   "approvalPendingTooltip": "Click to view validation status and history",
   "approvalEvaluateStage": "Evaluate Stage",
@@ -160,7 +157,6 @@
   "approvalFeedbackDetailTooltip": "Click to view detailed client feedback",
   "approvalRequestApproval": "Request approval",
   "approvalResend": "Resend",
-
   "boardSearchPlaceholder": "Search tasks in project...",
   "boardKanban": "Board",
   "boardKanbanTooltip": "Board View (Kanban)",
@@ -200,5 +196,11 @@
   "boardStatusWaiting": "Waiting",
   "boardStatusInProgress": "In Progress",
   "boardStatusBlocked": "Blocked",
-  "boardStatusDone": "Done"
+  "boardStatusDone": "Done",
+  "myProjects": "My Projects",
+  "clientProjectsSubtitle": "Track your projects and company information",
+  "noProjects": "No projects found",
+  "noProjectsHint": "Your projects will appear here when they are created",
+  "clientMilestones": "milestones",
+  "clientTasks": "tasks"
 }

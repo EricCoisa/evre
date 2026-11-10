@@ -17,13 +17,14 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "outline"> = {
 
 export function CompanyProjectsTab({ companyId }: { companyId?: string }) {
   const { t } = useTranslation('project');
+  const { t: tc } = useTranslation('company');
   const { data, isLoading } = useProjects(
     companyId ? { companyId, limit: 50, pagination: false } as PaginationParams & { companyId: string } : undefined,
   );
 
   const projects = Array.isArray(data) ? data : data?.data ?? [];
 
-  if (isLoading) return <p className="text-sm text-muted-foreground">Carregando...</p>;
+  if (isLoading) return <p className="text-sm text-muted-foreground">{tc('loading')}</p>;
   if (projects.length === 0) return <p className="text-sm text-muted-foreground">{t('empty')}</p>;
 
   return (

@@ -10,13 +10,17 @@ import type { ListTimeEntriesDto } from '../dto/list-time-entries.dto';
 import type { AuthenticatedUser } from 'src/common/types/auth.types';
 import dayjs from 'dayjs';
 
-function escapeCsv(val: unknown): string {
+function escapeCsv(val: string | null | undefined): string {
   if (val == null) return '';
-  const str = String(val);
-  if (str.includes(';') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
-    return `"${str.replace(/"/g, '""')}"`;
+  if (
+    val.includes(';') ||
+    val.includes('"') ||
+    val.includes('\n') ||
+    val.includes('\r')
+  ) {
+    return `"${val.replace(/"/g, '""')}"`;
   }
-  return str;
+  return val;
 }
 
 function formatDurationHms(seconds: number): string {
@@ -37,17 +41,23 @@ export class ExportTimeEntriesUseCase {
   async execute(dto: ListTimeEntriesDto, user: AuthenticatedUser) {
     const where: Prisma.TimeEntryWhereInput = {};
 
-    let parsedFilter: Record<string, any> = {};
+    let parsedFilter: Record<string, unknown> = {};
     if (dto.filter) {
       try {
-        parsedFilter = JSON.parse(dto.filter);
-      } catch {}
+        parsedFilter = JSON.parse(dto.filter) as Record<string, unknown>;
+      } catch {
+        /* ignore parse error */
+      }
     }
 
-    const resolvedProjectId = dto.projectId || parsedFilter.projectId;
-    const resolvedUserId = dto.userId || parsedFilter.userId;
-    const resolvedEntityType = dto.entityType || parsedFilter.entityType;
-    const resolvedEntityId = dto.entityId || parsedFilter.entityId;
+    const resolvedProjectId = (dto.projectId || parsedFilter.projectId) as
+      string | undefined;
+    const resolvedUserId = (dto.userId || parsedFilter.userId) as
+      string | undefined;
+    const resolvedEntityType = (dto.entityType || parsedFilter.entityType) as
+      string | undefined;
+    const resolvedEntityId = (dto.entityId || parsedFilter.entityId) as
+      string | undefined;
 
     if (user.roleName !== 'ADMIN') {
       where.userId = user.id;
@@ -74,8 +84,10 @@ export class ExportTimeEntriesUseCase {
       ];
     }
 
-    const resolvedStartDate = dto.startDate || parsedFilter.startDate;
-    const resolvedEndDate = dto.endDate || parsedFilter.endDate;
+    const resolvedStartDate = (dto.startDate || parsedFilter.startDate) as
+      string | undefined;
+    const resolvedEndDate = (dto.endDate || parsedFilter.endDate) as
+      string | undefined;
 
     if (!resolvedStartDate || !resolvedEndDate) {
       throw new BadRequestException(
@@ -91,19 +103,24 @@ export class ExportTimeEntriesUseCase {
     }
 
     if (start > end) {
-      throw new BadRequestException('A data inicial não pode ser posterior à data final.');
+      throw new BadRequestException(
+        'A data inicial não pode ser posterior à data final.',
+      );
     }
 
-    const diffDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    const diffDays = Math.ceil(
+      (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
+    );
     if (diffDays > 90) {
       throw new BadRequestException(
         `O período selecionado para exportação (${diffDays} dias) excede o limite máximo permitido de 90 dias.`,
       );
     }
 
-    const endFilter = typeof resolvedEndDate === 'string' && resolvedEndDate.length === 10
-      ? new Date(new Date(resolvedEndDate).setHours(23, 59, 59, 999))
-      : end;
+    const endFilter =
+      typeof resolvedEndDate === 'string' && resolvedEndDate.length === 10
+        ? new Date(new Date(resolvedEndDate).setHours(23, 59, 59, 999))
+        : end;
 
     where.startTime = {
       gte: start,
@@ -186,7 +203,10 @@ export class ExportTimeEntriesUseCase {
       let isForgotten = false;
 
       if (!item.endTime) {
-        duration = Math.max(0, Math.floor((nowMs - new Date(item.startTime).getTime()) / 1000));
+        duration = Math.max(
+          0,
+          Math.floor((nowMs - new Date(item.startTime).getTime()) / 1000),
+        );
         isForgotten = duration >= thresholdSeconds;
       } else {
         isForgotten = duration >= thresholdSeconds;
@@ -216,7 +236,8 @@ export class ExportTimeEntriesUseCase {
         userName: item.user?.name || item.user?.email || 'N/A',
         userEmail: item.user?.email || '',
         isBillable: item.isBillable,
-        source: item.source === 'MANUAL' || item.isManual ? 'Manual' : 'Cronômetro',
+        source:
+          item.source === 'MANUAL' || item.isManual ? 'Manual' : 'Cronômetro',
         isForgotten,
       });
 
@@ -233,7 +254,9 @@ export class ExportTimeEntriesUseCase {
         item.user?.name || '',
         item.user?.email || '',
         item.source === 'MANUAL' || item.isManual ? 'Manual' : 'Cronômetro',
-        item.editedById ? `Editado manualmente por ${item.editedBy?.name || item.editedById}` : 'Original',
+        item.editedById
+          ? `Editado manualmente por ${item.editedBy?.name || item.editedById}`
+          : 'Original',
         isForgotten ? 'Possível Timer Esquecido' : 'Normal',
       ]
         .map(escapeCsv)
@@ -259,7 +282,9 @@ export class ExportTimeEntriesUseCase {
       billableSeconds,
       entries: formattedEntries,
       period: {
-        startDate: resolvedStartDate ? String(resolvedStartDate).slice(0, 10) : null,
+        startDate: resolvedStartDate
+          ? String(resolvedStartDate).slice(0, 10)
+          : null,
         endDate: resolvedEndDate ? String(resolvedEndDate).slice(0, 10) : null,
       },
     };

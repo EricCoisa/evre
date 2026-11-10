@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { LoggingService } from 'src/modules/logging/logging.service';
 import { LogActions } from 'src/domain/logging/log-actions';
@@ -21,7 +25,9 @@ export class DeleteTimeEntryUseCase {
     }
 
     if (user.roleName !== 'ADMIN' && existing.userId !== user.id) {
-      throw new ForbiddenException('Você não tem permissão para excluir este registro de tempo');
+      throw new ForbiddenException(
+        'Você não tem permissão para excluir este registro de tempo',
+      );
     }
 
     await this.prisma.timeEntry.delete({

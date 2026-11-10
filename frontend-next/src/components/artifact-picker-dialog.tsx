@@ -2,9 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslation } from '@/hooks/use-translation';
-import { useQuery } from '@tanstack/react-query';
-import { Collector } from '@/lib/api/collector';
-import { getArtifacts } from '@/lib/actions/artifact/api';
+import { useArtifacts } from '@/lib/actions/artifact/queries';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -72,11 +70,7 @@ function ExistingTab({ onSelect, filter }: { onSelect: (artifact: Artifact) => v
     pagination: true,
     ...(search && { search }),
   };
-  const { data } = useQuery({
-    queryKey: ['artifacts', params],
-    queryFn: Collector(() => getArtifacts(params)),
-    refetchOnMount: 'always' as const,
-  });
+  const { data } = useArtifacts(params);
 
   const items: Artifact[] = Array.isArray(data) ? data : data?.data ?? [];
 

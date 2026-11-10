@@ -23,7 +23,7 @@ import { wrap, wrapAs } from '../wrap';
 
 const api = getCompanyFactory();
 
-export async function getCompanys(
+export async function getCompanies(
   params?: PaginationParams,
 ): Promise<ApiResponse<PaginatedResponse<Company> | Company[]>> {
   return wrapAs(() =>

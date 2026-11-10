@@ -10,7 +10,7 @@ import {
   publicationStateLabelKey,
   PUBLICATION_STATE_BADGE_VARIANT,
   type PublicationState,
-} from "@/lib/vocabulary";
+} from "@/lib/actions/proposal/vocabulary";
 import type { ProposalVersionDto } from "@/lib/actions/proposal/types";
 import type { TFunc } from "@/hooks/use-translation";
 

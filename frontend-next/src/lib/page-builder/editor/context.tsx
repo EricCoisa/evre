@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -158,20 +159,17 @@ export function EditorProvider({
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
 
-  // ponytail: `undo`/`redo` são `useCallback` com deps `[]` (identidade estável entre renders) mas
-  // precisam do draft/selectedId mais recentes no momento em que são chamados — por isso leem a
-  // ref em vez de capturar a variável. Mutação síncrona durante o render (não num useEffect) é
-  // proposital: um useEffect só atualizaria a ref depois do commit, deixando a própria chamada de
-  // `undo`/`redo` neste commit (ex.: atalho de teclado) ler um valor de uma tecla atrás.
+  // ponytail: `undo`/`redo` leem refs em vez de capturar variáveis para garantir o valor mais
+  // recente quando chamados (ex.: atalho de teclado). useLayoutEffect corre antes do paint, então
+  // event handlers disparados após o commit já leem o valor atualizado.
   const draftRef = useRef(draft);
-  // eslint-disable-next-line react-hooks/refs
-  draftRef.current = draft;
   const selectedIdRef = useRef(selectedId);
-  // eslint-disable-next-line react-hooks/refs
-  selectedIdRef.current = selectedId;
   const activeRichTextRef = useRef(activeRichText);
-  // eslint-disable-next-line react-hooks/refs
-  activeRichTextRef.current = activeRichText;
+  useLayoutEffect(() => {
+    draftRef.current = draft;
+    selectedIdRef.current = selectedId;
+    activeRichTextRef.current = activeRichText;
+  });
 
   // ponytail: JSON.stringify fora do useMemo — não bloqueia o path de digitação
   useEffect(() => {

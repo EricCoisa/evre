@@ -45,4 +45,6 @@ export const CreateManualEntrySchema = z
   })
   .strip();
 
-export class CreateManualEntryDto extends createZodDto(CreateManualEntrySchema) {}
+export class CreateManualEntryDto extends createZodDto(
+  CreateManualEntrySchema,
+) {}

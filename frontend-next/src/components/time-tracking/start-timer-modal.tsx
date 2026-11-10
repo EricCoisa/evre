@@ -48,10 +48,12 @@ export function StartTimerModal({
   const [projectId, setProjectId] = useState<string | undefined>(defaultProjectId);
 
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+    const t = setTimeout(() => {
       setDescription(defaultDescription || defaultEntityTitle || '');
       setProjectId(defaultProjectId);
-    }
+    });
+    return () => clearTimeout(t);
   }, [open, defaultDescription, defaultEntityTitle, defaultProjectId]);
 
   const startTimerMutation = useStartTimer();
@@ -59,7 +61,7 @@ export function StartTimerModal({
 
   const projects = Array.isArray(projectsData)
     ? projectsData
-    : (projectsData as { data?: any[] })?.data ?? [];
+    : (projectsData as { data?: { id: string; name: string }[] })?.data ?? [];
 
   const handleStart = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,8 +76,8 @@ export function StartTimerModal({
       });
       onOpenChange(false);
       setDescription('');
-    } catch (err) {
-      console.error('[StartTimerModal] Error starting timer:', err);
+    } catch {
+      // Erro tratado via Alive
     }
   };
 
@@ -116,7 +118,7 @@ export function StartTimerModal({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">{t('noProjectAvulso')}</SelectItem>
-                  {projects.map((proj: any) => (
+                  {projects.map((proj) => (
                     <SelectItem key={proj.id} value={proj.id}>
                       {proj.name}
                     </SelectItem>

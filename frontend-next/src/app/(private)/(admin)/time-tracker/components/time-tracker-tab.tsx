@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '@/hooks/use-translation';
 import { DataTable } from '@/components/data-table';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import {
   useTimeEntries,
   useDeleteTimeEntry,
@@ -41,7 +41,6 @@ import {
 
 export function TimeTrackerTab() {
   const { t } = useTranslation('time-tracking');
-  const queryClient = useQueryClient();
 
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 20 });
   const [globalFilter, setGlobalFilter] = useState('');
@@ -49,6 +48,7 @@ export function TimeTrackerTab() {
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
   const [isStartModalOpen, setIsStartModalOpen] = useState(false);
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
+  const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null);
 
   const { data: activeTimerData } = useActiveTimer();
   const startTimerMutation = useStartTimer();
@@ -56,20 +56,8 @@ export function TimeTrackerTab() {
   const deleteMutation = useDeleteTimeEntry();
   const exportMutation = useExportTimeEntries();
 
-  // Multi-aba: escuta bus de eventos em tempo real
-  useEffect(() => {
-    if (typeof window === 'undefined' || !('BroadcastChannel' in window)) return;
-    const channel = new BroadcastChannel('evre_time_tracking_bus');
-    channel.onmessage = () => {
-      queryClient.invalidateQueries({ queryKey: ['time-tracking'], refetchType: 'all' });
-    };
-    return () => {
-      channel.close();
-    };
-  }, [queryClient]);
-
   const queryParams = buildTableQueryParams(pagination, globalFilter, filters);
-  const { data, error, isLoading } = useTimeEntries(queryParams as any);
+  const { data, error, isLoading } = useTimeEntries(queryParams as Parameters<typeof useTimeEntries>[0]);
   const { data: projectsData } = useProjects({ limit: 50 });
 
   const entries: TimeEntry[] = useMemo(() => {
@@ -81,12 +69,12 @@ export function TimeTrackerTab() {
   const projects = useMemo(() => {
     if (!projectsData) return [];
     if (Array.isArray(projectsData)) return projectsData;
-    return (projectsData as { data?: any[] })?.data ?? [];
+    return (projectsData as { data?: { id: string; name: string }[] })?.data ?? [];
   }, [projectsData]);
 
   const meta = useMemo(() => {
     if (!data || Array.isArray(data)) return null;
-    return (data as any)?.meta;
+    return (data as { meta?: { total: number; page: number; limit: number; totalPages: number } })?.meta;
   }, [data]);
 
   // Cálculos do Tempo Total do Mês Vigente (sem filtro) com ticker em tempo real
@@ -100,9 +88,6 @@ export function TimeTrackerTab() {
       const entryTime = e.startTime ? new Date(e.startTime).getTime() : 0;
       if (entryTime >= startOfMonth) {
         if (e.duration != null) return acc + e.duration;
-        if (!e.endTime && e.startTime) {
-          return acc + Math.max(0, Math.floor((Date.now() - entryTime) / 1000));
-        }
       }
       return acc;
     }, 0);
@@ -121,6 +106,7 @@ export function TimeTrackerTab() {
   const [elapsedTick, setElapsedTick] = useState(0);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resets ticker on subscription change
     setElapsedTick(0);
     if (monthRunningCount === 0) return;
     const interval = setInterval(() => {
@@ -135,18 +121,9 @@ export function TimeTrackerTab() {
     setEditingEntry(entry);
   }, []);
 
-  const handleDelete = useCallback(
-    async (id: string) => {
-      if (confirm(t('confirmDelete'))) {
-        try {
-          await deleteMutation.mutateAsync(id);
-        } catch {
-          // Erro tratado via Alive
-        }
-      }
-    },
-    [deleteMutation, t],
-  );
+  const handleDelete = useCallback((id: string) => {
+    setDeletingEntryId(id);
+  }, []);
 
   const handleRestart = useCallback(
     async (entry: TimeEntry) => {
@@ -159,8 +136,8 @@ export function TimeTrackerTab() {
           entityTitle: entry.entityTitle || undefined,
           isBillable: entry.isBillable ?? true,
         });
-      } catch (err) {
-        console.error('[TimeTrackerTab] Erro ao reiniciar timer:', err);
+      } catch {
+        // Erro tratado via Alive
       }
     },
     [startTimerMutation],
@@ -169,8 +146,8 @@ export function TimeTrackerTab() {
   const handleStop = useCallback(async () => {
     try {
       await stopTimerMutation.mutateAsync();
-    } catch (err) {
-      console.error('[TimeTrackerTab] Erro ao parar timer:', err);
+    } catch {
+      // Erro tratado via Alive
     }
   }, [stopTimerMutation]);
 
@@ -213,7 +190,7 @@ export function TimeTrackerTab() {
   const handleExportCsv = useCallback(() => {
     if (!validateExportPeriod()) return;
 
-    const params: Record<string, any> = {};
+    const params: Record<string, string> = {};
     if (globalFilter) params.search = globalFilter;
     if (filters.projectId) params.projectId = filters.projectId;
     if (filters.startDate) params.startDate = filters.startDate;
@@ -222,7 +199,7 @@ export function TimeTrackerTab() {
       params.filter = JSON.stringify(filters);
     }
 
-    const activeProject = projects.find((p: any) => p.id === filters.projectId);
+    const activeProject = projects.find((p) => p.id === filters.projectId);
 
     exportMutation.mutate({
       ...params,
@@ -234,7 +211,7 @@ export function TimeTrackerTab() {
   const handleExportPdf = useCallback(() => {
     if (!validateExportPeriod()) return;
 
-    const params: Record<string, any> = {};
+    const params: Record<string, string> = {};
     if (globalFilter) params.search = globalFilter;
     if (filters.projectId) params.projectId = filters.projectId;
     if (filters.startDate) params.startDate = filters.startDate;
@@ -243,7 +220,7 @@ export function TimeTrackerTab() {
       params.filter = JSON.stringify(filters);
     }
 
-    const activeProject = projects.find((p: any) => p.id === filters.projectId);
+    const activeProject = projects.find((p) => p.id === filters.projectId);
 
     exportMutation.mutate({
       ...params,
@@ -299,7 +276,7 @@ export function TimeTrackerTab() {
       {/* Tabela Padrão DataTable com Suporte a SSR, Agrupamento e Filtros */}
       <DataTable
         columns={columns}
-        data={data as any}
+        data={data}
         error={error}
         isLoading={isLoading}
         queryKey={['time-tracking', queryParams]}
@@ -330,7 +307,7 @@ export function TimeTrackerTab() {
           title={t('filterByProject')}
           accessorKey="projectId"
           placeholder={t('allProjects')}
-          options={projects.map((p: any) => ({
+          options={projects.map((p) => ({
             value: p.id,
             label: p.name,
           }))}
@@ -403,6 +380,22 @@ export function TimeTrackerTab() {
         entry={editingEntry}
         open={!!editingEntry}
         onOpenChange={(open) => !open && setEditingEntry(null)}
+      />
+      <ConfirmDialog
+        open={!!deletingEntryId}
+        onOpenChange={(open) => !open && setDeletingEntryId(null)}
+        title={t('deleteEntry')}
+        description={t('confirmDelete')}
+        confirmVariant="destructive"
+        onConfirm={async () => {
+          if (!deletingEntryId) return;
+          try {
+            await deleteMutation.mutateAsync(deletingEntryId);
+          } catch {
+            // Erro tratado via Alive
+          }
+          setDeletingEntryId(null);
+        }}
       />
     </div>
   );

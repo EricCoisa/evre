@@ -31,9 +31,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUpdateMilestone } from '@/lib/actions/project/queries';
-import { useActiveTimer, useStartTimer, useStopTimer } from '@/lib/actions/time-tracking/queries';
+import type { TimerControl } from './task-card';
 import { useTranslation } from '@/hooks/use-translation';
-import { Feature } from '@/components/feature';
 import type { Milestone, MilestoneTask } from '@/lib/actions/project/types';
 
 interface MilestoneColumnProps {
@@ -45,6 +44,7 @@ interface MilestoneColumnProps {
   onAddTask?: (milestoneId: string, title: string) => void;
   onDeleteTask?: (taskId: string) => void;
   onDeleteMilestone?: (milestoneId: string) => void;
+  timer?: TimerControl;
 }
 
 export function MilestoneColumn({
@@ -55,33 +55,16 @@ export function MilestoneColumn({
   onOpenCreateTask,
   onDeleteTask,
   onDeleteMilestone,
+  timer,
 }: MilestoneColumnProps) {
   const { t: tTime } = useTranslation('time-tracking');
   const updateMilestoneMutation = useUpdateMilestone(projectId);
-  const { data: activeTimerData } = useActiveTimer({ enabled: canEdit });
-  const startTimerMutation = useStartTimer();
-  const stopTimerMutation = useStopTimer();
 
-  const isMilestoneActive = activeTimerData?.entry?.entityId === milestone.id;
+  const isMilestoneActive = timer?.activeEntityId === milestone.id;
 
-  const handleToggleMilestoneTimer = async (e: React.MouseEvent) => {
+  const handleToggleMilestoneTimer = (e: React.MouseEvent) => {
     e.stopPropagation();
-    try {
-      if (isMilestoneActive) {
-        await stopTimerMutation.mutateAsync();
-      } else {
-        await startTimerMutation.mutateAsync({
-          entityType: 'MILESTONE',
-          entityId: milestone.id,
-          entityTitle: milestone.title,
-          description: `Etapa: ${milestone.title}`,
-          projectId,
-          isBillable: true,
-        });
-      }
-    } catch {
-      // Toast via Collector
-    }
+    timer?.onToggle('MILESTONE', milestone);
   };
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -206,11 +189,11 @@ export function MilestoneColumn({
                   : tasks.length}
               </Badge>
 
-              <Feature flag="FEATURE_TIME_TRACKING">
+              {timer && (<>
                 <button
                   type="button"
                   onClick={handleToggleMilestoneTimer}
-                  disabled={startTimerMutation.isPending || stopTimerMutation.isPending}
+                  disabled={timer?.pending}
                   className={`p-1 rounded-sm transition-colors cursor-pointer ${
                     isMilestoneActive
                       ? 'text-destructive bg-destructive/15 hover:bg-destructive/25'
@@ -228,7 +211,7 @@ export function MilestoneColumn({
                     <Play className="h-3 w-3 fill-current" />
                   )}
                 </button>
-              </Feature>
+              </>)}
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -308,6 +291,7 @@ export function MilestoneColumn({
                 canEdit={canEdit}
                 onSelect={(t) => onSelectTask(t, milestone.title)}
                 onDelete={onDeleteTask}
+                timer={timer}
               />
             ))}
           </SortableContext>

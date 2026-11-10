@@ -1,4 +1,5 @@
 import { Container } from "@/components/container";
+import { isClientUser } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import LangLabel from "@/components/ui/langLabel";
 import { ProjectTab } from "./components/project-tab";
@@ -7,7 +8,7 @@ import { ClientProjectsList } from "./components/client-projects-list";
 
 export default async function ProjectPage() {
   const me = await serverMe();
-  const isClient = me?.roleName === 'USER';
+  const isClient = isClientUser(me);
 
   if (isClient) {
     return <ClientProjectsList />;

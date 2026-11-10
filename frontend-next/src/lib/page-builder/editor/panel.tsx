@@ -29,8 +29,6 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/hooks/use-translation';
 import { usePageSources } from '@/lib/actions/pageBuilder/queries';
-import { useStorageHealth } from '@/lib/actions/user/queries';
-import { ArtifactPickerDialog } from '@/components/artifact-picker-dialog';
 import type { PageSourceDto } from '@/lib/generated/schemas';
 import type { SourceKind } from '../types';
 import {
@@ -53,6 +51,12 @@ import {
 } from '../schema';
 import { useEditorOrThrow } from './context';
 
+export type ArtifactPickerSlot = React.ComponentType<{
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSelect: (artifact: { id: string }) => void;
+}>;
+
 /** Painel de propriedades do bloco selecionado, gerado a partir de BLOCK_META. */
 export function EditorPanel({
   pageKey,
@@ -61,6 +65,8 @@ export function EditorPanel({
   onSave,
   onSaveAsDefault,
   onCancel,
+  artifactPickerSlot,
+  storageHealthy,
 }: {
   pageKey: string;
   dirty: boolean;
@@ -69,6 +75,8 @@ export function EditorPanel({
   /** Só ADMIN recebe: publica o layout como padrão de quem não tem o próprio. */
   onSaveAsDefault?: () => void;
   onCancel: () => void;
+  artifactPickerSlot?: ArtifactPickerSlot;
+  storageHealthy?: boolean;
 }) {
   const { t } = useTranslation('page-builder');
   const editor = useEditorOrThrow();
@@ -97,7 +105,12 @@ export function EditorPanel({
           <Palette />
           <Separator />
           {editor.selected ? (
-            <BlockForm sources={sources} sourcesLoading={isLoading} />
+            <BlockForm
+            sources={sources}
+            sourcesLoading={isLoading}
+            artifactPickerSlot={artifactPickerSlot}
+            storageHealthy={storageHealthy}
+          />
           ) : (
             <p className="text-muted-foreground py-8 text-center text-sm">
               {t('editor.nothingSelected')}
@@ -202,9 +215,13 @@ function Palette() {
 function BlockForm({
   sources,
   sourcesLoading,
+  artifactPickerSlot,
+  storageHealthy,
 }: {
   sources: PageSourceDto[];
   sourcesLoading: boolean;
+  artifactPickerSlot?: ArtifactPickerSlot;
+  storageHealthy?: boolean;
 }) {
   const { t } = useTranslation('page-builder');
   const editor = useEditorOrThrow();
@@ -294,6 +311,8 @@ function BlockForm({
           fields={source?.fields ?? []}
           variables={availableVariables}
           onChange={(v) => editor.setProp(block.id, prop.name, v)}
+          artifactPickerSlot={artifactPickerSlot}
+          storageHealthy={storageHealthy}
         />
       ))}
 
@@ -450,14 +469,17 @@ function ContentRichField({
 function ArtifactStorageKeyField({
   value,
   onChange,
+  PickerSlot,
+  storageHealthy = true,
 }: {
   value: unknown;
   onChange: (value: unknown) => void;
+  PickerSlot?: ArtifactPickerSlot;
+  storageHealthy?: boolean;
 }) {
   const { t } = useTranslation('page-builder');
-  const { data: health } = useStorageHealth();
   const [pickerOpen, setPickerOpen] = React.useState(false);
-  const storageDisabled = health?.operational === false;
+  const storageDisabled = !storageHealthy;
 
   return (
     <div className="space-y-1.5">
@@ -485,11 +507,13 @@ function ArtifactStorageKeyField({
           {t('editor.artifactStorageDisabled')}
         </p>
       ) : null}
-      <ArtifactPickerDialog
-        open={pickerOpen}
-        onOpenChange={setPickerOpen}
-        onSelect={(artifact) => onChange(artifact.id)}
-      />
+      {PickerSlot ? (
+        <PickerSlot
+          open={pickerOpen}
+          onOpenChange={setPickerOpen}
+          onSelect={(artifact) => onChange(artifact.id)}
+        />
+      ) : null}
     </div>
   );
 }
@@ -581,6 +605,8 @@ function PropField({
   fields,
   variables,
   onChange,
+  artifactPickerSlot,
+  storageHealthy,
 }: {
   meta: BlockPropMeta;
   value: unknown;
@@ -589,6 +615,8 @@ function PropField({
   /** Variáveis disponíveis na fonte de dados para interpolação `{{var}}` em RichTextInput. */
   variables?: RichTextVariableOption[];
   onChange: (value: unknown) => void;
+  artifactPickerSlot?: ArtifactPickerSlot;
+  storageHealthy?: boolean;
 }) {
   const { t } = useTranslation('page-builder');
   const label = (
@@ -603,6 +631,8 @@ function PropField({
       <ArtifactStorageKeyField
         value={value}
         onChange={onChange}
+        PickerSlot={artifactPickerSlot}
+        storageHealthy={storageHealthy}
       />
     );
   }

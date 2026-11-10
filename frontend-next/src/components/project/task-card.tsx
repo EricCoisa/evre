@@ -16,9 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { GripVertical, Trash2, AlignLeft, MessageSquare, AlertTriangle, ChevronDown, User, UserX, Check, Play, Square, Link2 } from 'lucide-react';
 import { copyTaskLink } from './task-link';
-import { useActiveTimer, useStartTimer, useStopTimer } from '@/lib/actions/time-tracking/queries';
 import { useTranslation } from '@/hooks/use-translation';
-import { Feature } from '@/components/feature';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { TASK_STATUS_CONFIG } from './milestone-progress';
 import { UserAvatar } from './user-avatar';
@@ -28,7 +26,14 @@ import { toast } from 'sonner';
 import type { MilestoneTask, ProjectTaskStatus } from '@/lib/actions/project/types';
 import type { UserDto } from '@/lib/generated/schemas';
 
+export interface TimerControl {
+  activeEntityId?: string;
+  pending?: boolean;
+  onToggle: (entityType: 'TASK' | 'MILESTONE', entity: { id: string; title: string }) => void;
+}
+
 interface TaskCardProps {
+  timer?: TimerControl;
   projectId?: string;
   task: MilestoneTask;
   canEdit?: boolean;
@@ -36,34 +41,16 @@ interface TaskCardProps {
   onDelete?: (taskId: string) => void;
 }
 
-export function TaskCard({ projectId, task, canEdit = true, onSelect, onDelete }: TaskCardProps) {
+export function TaskCard({ projectId, task, canEdit = true, onSelect, onDelete, timer }: TaskCardProps) {
   const { t: tTime } = useTranslation('time-tracking');
   const updateTaskMutation = useUpdateTask(projectId ?? '');
   const { data: usersData } = useUsers(undefined, { enabled: canEdit });
-  const { data: activeTimerData } = useActiveTimer({ enabled: canEdit });
-  const startTimerMutation = useStartTimer();
-  const stopTimerMutation = useStopTimer();
 
-  const isTimerActiveForThisTask = activeTimerData?.entry?.entityId === task.id;
+  const isTimerActiveForThisTask = timer?.activeEntityId === task.id;
 
-  const handleToggleTimer = async (e: React.MouseEvent) => {
+  const handleToggleTimer = (e: React.MouseEvent) => {
     e.stopPropagation();
-    try {
-      if (isTimerActiveForThisTask) {
-        await stopTimerMutation.mutateAsync();
-      } else {
-        await startTimerMutation.mutateAsync({
-          entityType: 'TASK',
-          entityId: task.id,
-          entityTitle: task.title,
-          description: task.title,
-          projectId: projectId ?? undefined,
-          isBillable: true,
-        });
-      }
-    } catch {
-      // Toast gerenciado pelo Collector
-    }
+    timer?.onToggle('TASK', task);
   };
 
   const users = React.useMemo(() => {
@@ -216,13 +203,13 @@ export function TaskCard({ projectId, task, canEdit = true, onSelect, onDelete }
             </div>
 
             <div className="flex items-center gap-0.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-              <Feature flag="FEATURE_TIME_TRACKING">
+              {timer && (<>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
                       type="button"
                       onClick={handleToggleTimer}
-                      disabled={startTimerMutation.isPending || stopTimerMutation.isPending}
+                      disabled={timer?.pending}
                       className={`p-1 rounded-sm transition-all cursor-pointer ${
                         isTimerActiveForThisTask
                           ? 'text-destructive bg-destructive/15 hover:bg-destructive/25'
@@ -247,7 +234,7 @@ export function TaskCard({ projectId, task, canEdit = true, onSelect, onDelete }
                       : tTime('trackTimeInTask')}
                   </TooltipContent>
                 </Tooltip>
-              </Feature>
+              </>)}
 
               {projectId && (
                 <Tooltip>

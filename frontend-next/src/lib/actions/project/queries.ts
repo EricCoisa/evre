@@ -1,6 +1,5 @@
 "use client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import {
   getProjects, getProject, createProject, updateProject, archiveProject,
   getProjectBoard,
@@ -56,11 +55,9 @@ export function useCreateProject() {
 
 function useProjectSync() {
   const queryClient = useQueryClient();
-  const router = useRouter();
   return (projectId: string) => {
     queryClient.invalidateQueries({ queryKey: ['projects'] });
     queryClient.invalidateQueries({ queryKey: ['project', projectId] });
-    router.refresh();
   };
 }
 

@@ -30,7 +30,7 @@ import {
   PUBLICATION_STATE_BADGE_VARIANT,
   sendChannelLabelKey,
   type PublicationState,
-} from '@/lib/vocabulary';
+} from '@/lib/actions/proposal/vocabulary';
 
 /** Deriva o que a tela precisa mostrar a partir da versão mais recente — extraído para manter a
  * complexidade do componente baixa (regra do projeto: `complexity` é warn em 10). */
@@ -110,7 +110,7 @@ export function ProposalPublicationTab({ proposal }: { proposal: Proposal }) {
             <Ban className="size-4 mr-1.5" />
             {t('revokePublication')}
           </Button>
-          <Button onClick={() => setConfirmOpen(true)} disabled={publish.isPending}>
+          <Button onClick={() => setConfirmOpen(true)} disabled={publish.isPending || proposal.status !== 'DRAFT'}>
             <Send className="size-4 mr-1.5" />
             {t('publishProposal')}
           </Button>
@@ -246,8 +246,8 @@ export function ProposalPublicationTab({ proposal }: { proposal: Proposal }) {
         onOpenChange={setSendOpen}
         proposal={proposal}
         contacts={sendableContacts.map((c) => ({
-          phone: c.messagingContact.phone,
-          name: c.messagingContact.name ?? c.messagingContact.pushName,
+          phone: c.messagingContact?.phone ?? '',
+          name: c.messagingContact?.name ?? c.messagingContact?.pushName ?? '',
         }))}
         pending={send.isPending}
         onSubmit={handleSend}

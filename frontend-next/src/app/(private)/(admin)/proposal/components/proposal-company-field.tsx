@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/use-translation';
-import { useCompanys } from '@/lib/actions/company/queries';
+import { useCompanies } from '@/lib/actions/company/queries';
 import { useUpdateProposal } from '@/lib/actions/proposal/queries';
 import type { Proposal } from '@/lib/actions/proposal/types';
 
@@ -21,7 +21,7 @@ const NO_COMPANY = '__none__';
  * cabeçalho do detalhe porque "a quem pertence" não é específico de nenhuma aba. */
 export function ProposalCompanyField({ proposal }: { proposal: Proposal }) {
   const { t } = useTranslation('proposal');
-  const { data: companiesData } = useCompanys({ pagination: false });
+  const { data: companiesData } = useCompanies({ pagination: false });
   const companies = Array.isArray(companiesData) ? companiesData : companiesData?.data ?? [];
   const updateProposal = useUpdateProposal();
 

@@ -78,7 +78,7 @@ export function useCreateProposal() {
       return proposal;
     },
     onSuccess: () => {
-      sync([['proposals'], ['companys']]);
+      sync([['proposals'], ['companies']]);
     },
   });
 }

@@ -1,4 +1,5 @@
 'use client';
+import { isClientUser } from "@/lib/utils";
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -31,7 +32,9 @@ import {
   useReorderTasks,
 } from '@/lib/actions/project/queries';
 import { MilestoneColumn } from './milestone-column';
-import { TaskCard } from './task-card';
+import { TaskCard, type TimerControl } from './task-card';
+import { useFeatureFlag } from '@/lib/actions/feature-flag/queries';
+import { useActiveTimer, useStartTimer, useStopTimer } from '@/lib/actions/time-tracking/queries';
 import { TaskListView } from './task-list-view';
 import { TaskDetailSheet } from './task-detail-sheet';
 import { CreateMilestoneDialog } from './create-milestone-dialog';
@@ -170,6 +173,34 @@ export function ProjectBoard({
   const targetTaskId = initialTaskId || searchParamTaskId;
 
   const { data: boardData, isLoading } = useProjectBoard(projectId);
+  const timeTrackingEnabled = useFeatureFlag('FEATURE_TIME_TRACKING');
+  const { data: activeTimerData } = useActiveTimer({ enabled: canEdit && timeTrackingEnabled });
+  const startTimerMutation = useStartTimer();
+  const stopTimerMutation = useStopTimer();
+  const timer: TimerControl | undefined = timeTrackingEnabled
+    ? {
+        activeEntityId: activeTimerData?.entry?.entityId ?? undefined,
+        pending: startTimerMutation.isPending || stopTimerMutation.isPending,
+        onToggle: async (entityType, entity) => {
+          try {
+            if (activeTimerData?.entry?.entityId === entity.id) {
+              await stopTimerMutation.mutateAsync();
+            } else {
+              await startTimerMutation.mutateAsync({
+                entityType,
+                entityId: entity.id,
+                entityTitle: entity.title,
+                description: entityType === 'MILESTONE' ? `Etapa: ${entity.title}` : entity.title,
+                projectId,
+                isBillable: true,
+              });
+            }
+          } catch {
+            // Toast gerenciado pelo Collector
+          }
+        },
+      }
+    : undefined;
   const deleteMilestoneMutation = useDeleteMilestone(projectId);
   const reorderMilestonesMutation = useReorderMilestones(projectId);
   const createTaskMutation = useCreateTask(projectId);
@@ -267,7 +298,7 @@ export function ProjectBoard({
 
   const { data: meData } = useMe();
   const currentUserId = meData?.id;
-  const isClient = mode === 'client' || meData?.role === 'USER' || (meData as { roleName?: string })?.roleName === 'USER';
+  const isClient = mode === 'client' || isClientUser(meData);
   const { data: usersData } = useUsers(undefined, { enabled: !isClient });
 
   const users = useMemo(() => {
@@ -823,6 +854,7 @@ export function ProjectBoard({
                   onAddTask={canEdit ? handleAddTask : undefined}
                   onDeleteTask={canEdit ? handleDeleteTask : undefined}
                   onDeleteMilestone={canEdit ? handleDeleteMilestone : undefined}
+                  timer={timer}
                 />
               ))}
             </SortableContext>

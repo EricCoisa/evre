@@ -6,6 +6,7 @@ import { useCompanyContacts, useCreateCompanyContact, useArchiveCompanyContact }
 import { DataTable } from "@/components/data-table";
 import { getCompanyContactColumns } from "./company-contact-columns";
 import Modal from "@/components/modal";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { FormBuilderModal, type FormBuilderField } from "@/components/form/form-builder";
 import { CompanyContactEdit } from "./company-contact-edit";
 import type { Contact } from "@/lib/actions/company/types";
@@ -25,7 +26,6 @@ export function CompanyContactsTab({ companyId }: CompanyContactsTabProps) {
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [archivingContact, setArchivingContact] = useState<Contact | null>(null);
-  const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const handleEdit = useCallback((item: Contact) => {
@@ -35,7 +35,6 @@ export function CompanyContactsTab({ companyId }: CompanyContactsTabProps) {
 
   const handleArchive = useCallback((item: Contact) => {
     setArchivingContact(item);
-    setIsArchiveDialogOpen(true);
   }, []);
 
   const { data, error } = useCompanyContacts(companyId);
@@ -109,9 +108,6 @@ export function CompanyContactsTab({ companyId }: CompanyContactsTabProps) {
           }))();
           return result;
         }}
-        onError={(error) => {
-          console.error('Error creating contact:', error);
-        }}
         submitLabel={t('create')}
       />
 
@@ -138,38 +134,19 @@ export function CompanyContactsTab({ companyId }: CompanyContactsTabProps) {
         />
       </Modal>
 
-      <Modal
-        open={isArchiveDialogOpen}
-        onOpenChange={(open) => {
-          setIsArchiveDialogOpen(open);
-          if (!open) setArchivingContact(null);
-        }}
+      <ConfirmDialog
+        open={!!archivingContact}
+        onOpenChange={(open) => !open && setArchivingContact(null)}
         title={t('archiveConfirm')}
         description={archivingContact ? `${t('archiveConfirmDescription')} "${contactDisplayName(archivingContact)}"?` : ''}
-      >
-        <div className="flex gap-2 justify-end">
-          <Button
-            variant="outline"
-            onClick={() => {
-              setIsArchiveDialogOpen(false);
-              setArchivingContact(null);
-            }}
-          >
-            {t('cancel')}
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={async () => {
-              if (!archivingContact) return;
-              await Alive(() => archiveContactMutation.mutateAsync(archivingContact.id))();
-              setIsArchiveDialogOpen(false);
-              setArchivingContact(null);
-            }}
-          >
-            {t('archive')}
-          </Button>
-        </div>
-      </Modal>
+        confirmLabel={t('archive')}
+        confirmVariant="destructive"
+        onConfirm={async () => {
+          if (!archivingContact) return;
+          await Alive(() => archiveContactMutation.mutateAsync(archivingContact.id))();
+          setArchivingContact(null);
+        }}
+      />
     </>
   );
 }

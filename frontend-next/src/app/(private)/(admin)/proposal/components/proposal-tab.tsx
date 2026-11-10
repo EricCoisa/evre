@@ -7,7 +7,7 @@ import {
   useArchiveProposal,
   useDuplicateProposal,
 } from "@/lib/actions/proposal/queries";
-import { useCompanys } from "@/lib/actions/company/queries";
+import { useCompanies } from "@/lib/actions/company/queries";
 import { useState, useCallback, useMemo } from 'react';
 import { DataTable } from "@/components/data-table";
 import { getProposalColumns } from "./proposal-columns";
@@ -17,7 +17,7 @@ import type { Proposal } from "@/lib/actions/proposal/types";
 import { z } from "zod";
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { PROPOSAL_STATUSES, proposalStatusLabelKey } from "@/lib/vocabulary";
+import { PROPOSAL_STATUSES, proposalStatusLabelKey } from "@/lib/actions/proposal/vocabulary";
 
 // Sentinel do Select: Radix não aceita `value=""` num `SelectItem` — "sem empresa" precisa de
 // um valor não-vazio próprio, convertido de volta a `undefined` no submit.
@@ -48,7 +48,7 @@ export function ProposalTab({ companyId }: ProposalTabProps = {}) {
   };
 
   const { data, error } = useProposals(queryParams);
-  const { data: companiesData } = useCompanys({ pagination: false });
+  const { data: companiesData } = useCompanies({ pagination: false });
   const companies = useMemo(
     () => (Array.isArray(companiesData) ? companiesData : companiesData?.data ?? []),
     [companiesData],
@@ -149,9 +149,6 @@ export function ProposalTab({ companyId }: ProposalTabProps = {}) {
             name: data.name,
             companyId: targetCompanyId === NO_COMPANY ? undefined : targetCompanyId,
           });
-        }}
-        onError={(error) => {
-          console.error('Error creating proposal:', error);
         }}
         submitLabel={t('create')}
       />

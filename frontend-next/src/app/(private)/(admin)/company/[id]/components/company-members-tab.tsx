@@ -59,8 +59,7 @@ export function CompanyMembersTab({ companyId }: { companyId: string }) {
     return Array.isArray(membersData) ? membersData : membersData.data ?? [];
   }, [membersData]);
 
-  const allInvites: CompanyInvite[] = invitesData ?? [];
-  const invites = useMemo(() => allInvites.filter((i) => !i.usedAt), [allInvites]);
+  const invites = useMemo(() => (invitesData ?? []).filter((i) => !i.usedAt), [invitesData]);
 
   const existingMemberUserIds = useMemo(
     () => new Set(members.map((m) => m.userId)),

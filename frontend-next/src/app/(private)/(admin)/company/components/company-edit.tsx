@@ -20,7 +20,7 @@ export function CompanyEdit({ company, onCancel, onSuccess }: CompanyEditProps) 
     const queryClient = useQueryClient();
     const updateCompanyMutation = useUpdateCompany();
     // Diz ao agente qual registro está aberto na tela (ver screen-registry).
-    useScreenItem('record', 'companys', company?.id);
+    useScreenItem('record', 'companies', company?.id);
 
     const updateCompanySchema = useMemo(() =>
         z.object({
@@ -64,11 +64,8 @@ export function CompanyEdit({ company, onCancel, onSuccess }: CompanyEditProps) 
                 return result;
             }}
             onSuccess={() => {
-                queryClient.invalidateQueries({ queryKey: ['companys'] });
+                queryClient.invalidateQueries({ queryKey: ['companies'] });
                 onSuccess?.();
-            }}
-            onError={(error) => {
-                console.error('Error updating company:', error);
             }}
             submitLabel={t('save')}
             cancelLabel={t('cancel')}

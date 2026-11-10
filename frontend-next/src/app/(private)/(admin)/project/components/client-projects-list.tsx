@@ -23,7 +23,7 @@ const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'outline'> = {
 };
 
 export function ClientProjectsList() {
-  const { t } = useTranslation('home');
+  const { t } = useTranslation('project');
   const { data: projectsData, isLoading } = useProjects({
     limit: 100,
     pagination: false,
@@ -35,7 +35,7 @@ export function ClientProjectsList() {
     <Container border={false}>
       <PageHeader
         title={t('myProjects')}
-        description={t('subtitle')}
+        description={t('clientProjectsSubtitle')}
       />
 
       {isLoading && (
@@ -95,13 +95,13 @@ export function ClientProjectsList() {
                     {project._count?.milestones != null && (
                       <span className="flex items-center gap-1">
                         <Layers className="h-3 w-3" />
-                        {project._count.milestones} {t('milestones')}
+                        {project._count.milestones} {t('clientMilestones')}
                       </span>
                     )}
                     {project._count?.tasks != null && (
                       <span className="flex items-center gap-1">
                         <CheckSquare className="h-3 w-3" />
-                        {project._count.tasks} {t('tasks')}
+                        {project._count.tasks} {t('clientTasks')}
                       </span>
                     )}
                   </div>

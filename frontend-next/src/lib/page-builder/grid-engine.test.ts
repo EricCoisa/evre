@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { PageLayoutSchema, type PageLayout } from './schema';
+import { PageLayoutSchema, type PageLayout, type PageBlock } from './schema';
 import {
   resolveGridLayout,
   findEmptyGridSlots,

@@ -3,7 +3,7 @@
 import { useTranslation } from '@/hooks/use-translation';
 import { LayoutBody } from '@/lib/page-builder/renderer';
 import { parseRecordLayout } from '@/lib/page-builder/schema';
-import type { ProposalTerms } from '@/lib/page-builder/proposal-terms-context';
+import type { PageRenderContext } from '@/lib/page-builder/page-render-context';
 import type { PublicProposalDto } from '@/lib/generated/schemas';
 import { formatDateOnly } from '@/lib/utils';
 import { ProposalAcceptanceForm } from './proposal-acceptance-form';
@@ -20,7 +20,7 @@ export function PublicProposalView({
   const { t } = useTranslation('proposal');
   const layout = parseRecordLayout(proposal.layout);
   const validUntil = proposal.envelope.validUntil ? formatDateOnly(proposal.envelope.validUntil) : null;
-  const terms: ProposalTerms = {
+  const terms: PageRenderContext = {
     totalCents: proposal.envelope.totalCents,
     currency: proposal.envelope.currency,
     recurrence: proposal.envelope.recurrence,

@@ -93,6 +93,7 @@
   "acceptEmailPlaceholder": "Digite seu email",
   "acceptButton": "Aceitar proposta",
   "acceptFieldsRequired": "Informe nome e email para aceitar",
+  "invalidEmail": "E-mail inválido",
   "acceptConfirmTitle": "Confirmar aceite",
   "acceptConfirmDescription": "Você está aceitando esta proposta nas condições abaixo. Essa ação não pode ser desfeita.",
   "acceptConfirmButton": "Confirmar aceite",

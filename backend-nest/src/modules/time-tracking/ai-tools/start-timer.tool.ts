@@ -23,10 +23,7 @@ const StartTimerInputSchema = z
       .string()
       .optional()
       .describe('Tipo de entidade vinculada (ex: TASK, MILESTONE, PROJECT)'),
-    entityId: z
-      .string()
-      .optional()
-      .describe('ID da entidade vinculada'),
+    entityId: z.string().optional().describe('ID da entidade vinculada'),
     entityTitle: z
       .string()
       .optional()

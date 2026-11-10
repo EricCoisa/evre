@@ -39,7 +39,9 @@ function escapeHtml(str: string): string {
     .replace(/"/g, '&quot;');
 }
 
-export async function buildTimeEntriesHtml(data: TimeEntriesExportData): Promise<string> {
+export async function buildTimeEntriesHtml(
+  data: TimeEntriesExportData,
+): Promise<string> {
   const tableRows = data.entries
     .map((e) => {
       const cls = e.isForgotten ? ' class="forgotten"' : '';
@@ -66,7 +68,9 @@ export async function buildTimeEntriesHtml(data: TimeEntriesExportData): Promise
     .join('\n');
 
   const now = new Date();
-  const generatedAt = now.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+  const generatedAt = now.toLocaleString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+  });
 
   const templatePath = path.join(__dirname, 'time-entries.template.html');
   return renderTemplateFromFile(templatePath, {

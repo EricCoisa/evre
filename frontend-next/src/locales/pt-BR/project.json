@@ -38,7 +38,6 @@
   "tabApprovals": "Aprovações",
   "tabInfoRequests": "Solicitações",
   "tabConfig": "Detalhes",
-
   "infoRequestsTitle": "Solicitações ao Cliente",
   "infoRequestsClientTitle": "Solicitações da Equipe",
   "infoRequestsDescription": "Solicite dados sensíveis (senhas, acessos, dados fiscais) com criptografia AES-256 no banco de dados.",
@@ -89,7 +88,6 @@
   "richTextItalic": "Itálico (_texto_)",
   "richTextStrikethrough": "Riscado (~texto~)",
   "richTextCode": "Código (```texto```)",
-
   "bannerClientTitle": "Atenção: A equipe precisa de você para continuar!",
   "bannerAdminTitle": "Pendências com o Cliente",
   "bannerPendingSingle": "pendência",
@@ -98,7 +96,6 @@
   "bannerWaitingClient": "Aguardando resposta do cliente para: {label}",
   "bannerViewRequests": "Ver Solicitações",
   "bannerRespondNow": "Responder Agora",
-
   "approvalPendingValidation": "Validação Pendente",
   "approvalPendingTooltip": "Clique para ver o status da validação e histórico",
   "approvalEvaluateStage": "Avaliar Etapa",
@@ -160,7 +157,6 @@
   "approvalFeedbackDetailTooltip": "Clique para ver o feedback detalhado do cliente",
   "approvalRequestApproval": "Pedir aprovação",
   "approvalResend": "Reenviar",
-
   "boardSearchPlaceholder": "Buscar tarefas no projeto...",
   "boardKanban": "Quadro",
   "boardKanbanTooltip": "Visualização em Quadro (Kanban)",
@@ -200,5 +196,11 @@
   "boardStatusWaiting": "Aguardando",
   "boardStatusInProgress": "Em Andamento",
   "boardStatusBlocked": "Bloqueada",
-  "boardStatusDone": "Concluída"
+  "boardStatusDone": "Concluída",
+  "myProjects": "Meus Projetos",
+  "clientProjectsSubtitle": "Acompanhe seus projetos e informações da sua empresa",
+  "noProjects": "Nenhum projeto encontrado",
+  "noProjectsHint": "Seus projetos aparecerão aqui quando forem criados",
+  "clientMilestones": "etapas",
+  "clientTasks": "tarefas"
 }

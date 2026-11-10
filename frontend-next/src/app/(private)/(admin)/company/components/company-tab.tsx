@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslation } from "@/hooks/use-translation";
-import { useCompanys, useCreateCompany, useArchiveCompany } from "@/lib/actions/company/queries";
+import { useCompanies, useCreateCompany, useArchiveCompany } from "@/lib/actions/company/queries";
 import { useState, useCallback, useMemo } from 'react';
 import { DataTable } from "@/components/data-table";
 import { getCompanyColumns } from "./company-columns";
@@ -44,7 +44,7 @@ export function CompanyTab() {
     ...(Object.keys(filters).length > 0 && { filter: JSON.stringify(filters) }),
   };
 
-  const { data, error } = useCompanys(queryParams);
+  const { data, error } = useCompanies(queryParams);
 
   const createCompanyMutation = useCreateCompany();
   const archiveCompanyMutation = useArchiveCompany();
@@ -80,7 +80,7 @@ export function CompanyTab() {
         columns={columns}
         data={data}
         error={error}
-        queryKey={['companys', queryParams]}
+        queryKey={['companies', queryParams]}
         pagination={pagination}
         onPaginationChange={setPagination}
         globalFilter={globalFilter}
@@ -127,10 +127,7 @@ export function CompanyTab() {
           return result;
         }}
         onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ['companys'] });
-        }}
-        onError={(error) => {
-          console.error('Error creating company:', error);
+          queryClient.invalidateQueries({ queryKey: ['companies'] });
         }}
         submitLabel={t('create')}
       />
@@ -167,7 +164,6 @@ export function CompanyTab() {
         onConfirm={async () => {
           if (!archivingCompany) return;
           await Alive(() => archiveCompanyMutation.mutateAsync(archivingCompany.id))();
-          queryClient.invalidateQueries({ queryKey: ['companys'] });
           setArchivingCompany(null);
         }}
       />

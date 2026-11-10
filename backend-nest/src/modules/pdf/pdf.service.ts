@@ -1,4 +1,8 @@
-import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { RedisService } from 'src/common/infrastructure/redis/redis.service';
 
 const PDF_HEALTH_KEY = 'pdf:health';
@@ -31,16 +35,17 @@ export class PdfService {
       form.append('paperHeight', '8.27');
     }
     if (options?.marginTop) form.append('marginTop', options.marginTop);
-    if (options?.marginBottom) form.append('marginBottom', options.marginBottom);
+    if (options?.marginBottom)
+      form.append('marginBottom', options.marginBottom);
     if (options?.marginLeft) form.append('marginLeft', options.marginLeft);
     if (options?.marginRight) form.append('marginRight', options.marginRight);
 
     let response: Response;
     try {
-      response = await fetch(
-        `${this.baseUrl}/forms/chromium/convert/html`,
-        { method: 'POST', body: form },
-      );
+      response = await fetch(`${this.baseUrl}/forms/chromium/convert/html`, {
+        method: 'POST',
+        body: form,
+      });
     } catch (err) {
       this.logger.error(`Gotenberg unreachable: ${String(err)}`);
       throw new ServiceUnavailableException('PDF service unavailable');
@@ -72,7 +77,11 @@ export class PdfService {
       result = { operational: false, reason: String(err) };
     }
 
-    await this.redis.set(PDF_HEALTH_KEY, JSON.stringify(result), PDF_HEALTH_TTL);
+    await this.redis.set(
+      PDF_HEALTH_KEY,
+      JSON.stringify(result),
+      PDF_HEALTH_TTL,
+    );
     return result;
   }
 

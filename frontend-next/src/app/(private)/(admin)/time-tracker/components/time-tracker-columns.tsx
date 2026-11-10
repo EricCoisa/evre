@@ -58,18 +58,18 @@ export function getTimeTrackingColumns({
       meta: {
         groupBy: true,
         hideGroupCount: true,
-        groupLabel: (value: unknown, groupData: any) => {
-          const subRows: any[] = groupData?.allSubRows ?? [];
+        groupLabel: (value: unknown, groupData: { allSubRows?: { original?: TimeEntry }[] }) => {
+          const subRows = groupData?.allSubRows ?? [];
           const count = subRows.length;
           const firstEntry = (subRows[0]?.original || {}) as TimeEntry;
           const totalDuration = subRows.reduce(
-            (acc: number, r: any) => acc + (r.original?.duration ?? 0),
+            (acc: number, r) => acc + (r.original?.duration ?? 0),
             0,
           );
           const hasRunning =
-            subRows.some((r: any) => !r.original?.endTime) ||
-            (activeEntryId ? subRows.some((r: any) => r.original?.id === activeEntryId) : false);
-          const hasForgotten = subRows.some((r: any) => r.original?.isForgotten);
+            subRows.some((r) => !r.original?.endTime) ||
+            (activeEntryId ? subRows.some((r) => r.original?.id === activeEntryId) : false);
+          const hasForgotten = subRows.some((r) => r.original?.isForgotten);
           const title = firstEntry?.description || firstEntry?.entityTitle || t('noDescription');
 
           return (

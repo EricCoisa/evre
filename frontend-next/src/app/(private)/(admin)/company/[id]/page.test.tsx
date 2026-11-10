@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen } from '@/test-utils';
 import CompanyDetailPage from './page';
 import { getCompany } from '@/lib/actions/company/api';
 import { getCurrentUser } from '@/lib/actions/auth/api';

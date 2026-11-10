@@ -40,7 +40,7 @@ export function ArtifactTab() {
     ...(globalFilter && { search: globalFilter }),
   };
 
-  const { data, error } = useArtifacts(queryParams);
+  const { data, error, isLoading } = useArtifacts(queryParams);
   const archiveArtifactMutation = useArchiveArtifact();
   const deleteArtifactMutation = useDeleteArtifact();
 
@@ -52,6 +52,7 @@ export function ArtifactTab() {
         columns={columns}
         data={data}
         error={error}
+        isLoading={isLoading}
         queryKey={['artifacts', queryParams]}
         pagination={pagination}
         onPaginationChange={setPagination}

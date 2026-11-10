@@ -1,6 +1,7 @@
 'use client';
 
-import { ProposalTab } from "../../../proposal/components/proposal-tab";
+// ponytail: cross-module import, decouple when proposal exposes a shared component
+import { ProposalTab } from "@/app/(private)/(admin)/proposal/components/proposal-tab";
 
 interface CompanyProposalsTabProps {
   companyId: string;

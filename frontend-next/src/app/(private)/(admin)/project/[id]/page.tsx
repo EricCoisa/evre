@@ -1,4 +1,5 @@
 import { Container } from "@/components/container";
+import { isClientUser } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { SubNavLayout, type SubNavSection, TabsContent } from "@/components/sub-nav-layout";
 import { ItemNotFound } from "@/components/ui/item-not-found";
@@ -44,7 +45,7 @@ export default async function ProjectDetailPage({
   const id = resolvedParams.id;
   const taskId = initialTaskId ?? resolvedParams.taskId;
   const me = await serverMe();
-  const isClient = me?.roleName === 'USER';
+  const isClient = isClientUser(me);
   const response = await getProject(id);
 
   if (!response.success || !response.data) {

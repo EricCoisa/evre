@@ -47,6 +47,10 @@ export function ProposalAcceptanceForm({
       toast.error(t('acceptFieldsRequired'));
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      toast.error(t('invalidEmail'));
+      return;
+    }
     setConfirmOpen(true);
   }
 

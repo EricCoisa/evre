@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { Play, Square, AlertTriangle, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -30,32 +30,22 @@ export function HeaderTimeTracker() {
   const { data: activeTimerData, isLoading, isError, refetch } = useActiveTimer();
   const stopTimerMutation = useStopTimer();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-
   const entry = activeTimerData?.entry;
   const isForgotten = activeTimerData?.isForgotten ?? false;
   const thresholdHours = activeTimerData?.thresholdHours ?? 8;
 
-  // Cronômetro dinâmico com tick a cada 1 segundo
-  useEffect(() => {
-    if (!entry?.startTime) {
-      setElapsedSeconds(0);
-      return;
-    }
-
-    const calcElapsed = () => {
-      const startMs = new Date(entry.startTime).getTime();
-      const nowMs = Date.now();
-      return Math.max(0, Math.floor((nowMs - startMs) / 1000));
-    };
-
-    setElapsedSeconds(calcElapsed());
-    const interval = setInterval(() => {
-      setElapsedSeconds(calcElapsed());
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [entry?.startTime]);
+  const startTime = entry?.startTime ?? null;
+  const elapsedSeconds = useSyncExternalStore(
+    (onChange) => {
+      if (!startTime) return () => {};
+      const interval = setInterval(onChange, 1000);
+      return () => clearInterval(interval);
+    },
+    () => startTime
+      ? Math.max(0, Math.floor((Date.now() - new Date(startTime).getTime()) / 1000))
+      : 0,
+    () => 0,
+  );
 
   const handleStop = async () => {
     try {

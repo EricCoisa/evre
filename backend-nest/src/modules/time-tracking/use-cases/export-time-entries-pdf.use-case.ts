@@ -12,7 +12,10 @@ export class ExportTimeEntriesPdfUseCase {
     private readonly pdf: PdfService,
   ) {}
 
-  async execute(dto: ListTimeEntriesDto, user: AuthenticatedUser): Promise<Buffer> {
+  async execute(
+    dto: ListTimeEntriesDto,
+    user: AuthenticatedUser,
+  ): Promise<Buffer> {
     const data = await this.exportTimeEntries.execute(dto, user);
     const html = await buildTimeEntriesHtml(data);
     return this.pdf.generate(html, { orientation: 'landscape' });

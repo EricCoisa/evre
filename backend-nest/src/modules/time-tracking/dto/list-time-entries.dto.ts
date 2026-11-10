@@ -19,11 +19,23 @@ export const ListTimeEntriesSchema = z
       }),
     pagination: z.union([z.boolean(), z.string()]).optional(),
     search: z.string().trim().optional(),
-    filter: z.string().optional().describe('Filtros em JSON string gerados pelo DataTable'),
-    startDate: z.string().optional().describe('Data de início para filtro (ISO ou YYYY-MM-DD)'),
-    endDate: z.string().optional().describe('Data final para filtro (ISO ou YYYY-MM-DD)'),
+    filter: z
+      .string()
+      .optional()
+      .describe('Filtros em JSON string gerados pelo DataTable'),
+    startDate: z
+      .string()
+      .optional()
+      .describe('Data de início para filtro (ISO ou YYYY-MM-DD)'),
+    endDate: z
+      .string()
+      .optional()
+      .describe('Data final para filtro (ISO ou YYYY-MM-DD)'),
     projectId: z.string().optional().describe('Filtrar por ID do projeto'),
-    userId: z.string().optional().describe('Filtrar por ID do usuário (restrito a ADMIN)'),
+    userId: z
+      .string()
+      .optional()
+      .describe('Filtrar por ID do usuário (restrito a ADMIN)'),
     entityType: z.string().optional().describe('Filtrar por tipo de entidade'),
     entityId: z.string().optional().describe('Filtrar por ID da entidade'),
   })

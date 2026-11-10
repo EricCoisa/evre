@@ -12,7 +12,7 @@ export const QUERY_CONFIG = {
     USER: 10 * 60 * 1000,              // 5 minutos - usuário
     ME: 10 * 60 * 1000,              // 5 minutos - usuário
     COMPANY: 5 * 60 * 1000, // 5 minutos - Company
-    COMPANYS: 5 * 60 * 1000, // 5 minutos - Companys
+    COMPANIES: 5 * 60 * 1000, // 5 minutos - Companies
 
     PROPOSAL: 5 * 60 * 1000, // 5 minutos - Proposal
     PROPOSALS: 5 * 60 * 1000, // 5 minutos - Proposals
@@ -34,7 +34,7 @@ export const QUERY_CONFIG = {
     USER: 15 * 60 * 1000,              // 15 minutos - usuário
     ME: 15 * 60 * 1000,              // 15 minutos - usuário
     COMPANY: 10 * 60 * 1000, // 10 minutos - Company
-    COMPANYS: 10 * 60 * 1000, // 10 minutos - Companys
+    COMPANIES: 10 * 60 * 1000, // 10 minutos - Companies
 
     PROPOSAL: 10 * 60 * 1000, // 10 minutos - Proposal
     PROPOSALS: 10 * 60 * 1000, // 10 minutos - Proposals
