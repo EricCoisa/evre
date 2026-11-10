@@ -25,7 +25,9 @@ export class UpdateTimeEntryUseCase {
     });
 
     if (!existing) {
-      throw new NotFoundException(this.i18n.t('time_tracking.errors.not_found'));
+      throw new NotFoundException(
+        this.i18n.t('time_tracking.errors.not_found'),
+      );
     }
 
     if (user.roleName !== 'ADMIN' && existing.userId !== user.id) {

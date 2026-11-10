@@ -140,7 +140,8 @@ describe('TimeTracking Use Cases', () => {
         create: vi.fn().mockResolvedValue(undefined),
       } as unknown as LoggingService;
 
-      const useCase = new UpdateTimeEntryUseCase(prisma, logging);
+      const i18n = { t: vi.fn((k: string) => k) } as any;
+      const useCase = new UpdateTimeEntryUseCase(prisma, logging, i18n);
       const user = { id: 'u1', roleName: 'MODERATOR', email: 'mod@example.com' } as any;
 
       const result = await useCase.execute(
@@ -173,7 +174,8 @@ describe('TimeTracking Use Cases', () => {
       } as unknown as PrismaService;
       const logging = { create: vi.fn() } as unknown as LoggingService;
 
-      const useCase = new UpdateTimeEntryUseCase(prisma, logging);
+      const i18n = { t: vi.fn((k: string) => k) } as any;
+      const useCase = new UpdateTimeEntryUseCase(prisma, logging, i18n);
       const user = { id: 'u1', roleName: 'MODERATOR' } as any;
 
       await expect(useCase.execute('t-1', {}, user)).rejects.toThrow(ForbiddenException);

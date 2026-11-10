@@ -367,7 +367,7 @@ export function EditorProvider({
       setSource: (id, source) => applyChange((d) => setBlockSource(d, id, source)),
       setInline: (id, inline) => applyChange((d) => setBlockInline(d, id, inline)),
       setParam: (id, name, v) => applyChange((d) => setBlockParam(d, id, name, v)),
-      canAddTo: (parentId) => canAdd(draftRef.current, parentId, undefined, profile),
+      canAddTo: (parentId) => canAdd(draft, parentId, undefined, profile),
       canUndo: past.length > 0,
       canRedo: future.length > 0,
       undo,

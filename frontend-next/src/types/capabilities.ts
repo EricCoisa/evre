@@ -5,6 +5,7 @@ export const CAPABILITIES = {
   captcha: 'CAPTCHA',
   notificationEmail: 'NOTIFICATION_EMAIL',
   notificationWhatsapp: 'NOTIFICATION_WHATSAPP',
+  pdf: 'PDF',
 } as const;
 
 export type CapabilityKey = (typeof CAPABILITIES)[keyof typeof CAPABILITIES];
