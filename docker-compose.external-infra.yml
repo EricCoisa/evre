@@ -33,7 +33,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: ghcr.io/ericcoisa/template-backend:latest
+      dockerfile: backend-nest/Dockerfile
     restart: unless-stopped
     networks:
       - default
@@ -79,7 +79,7 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: ghcr.io/ericcoisa/template-frontend:latest
+      dockerfile: frontend-next/Dockerfile
     restart: unless-stopped
     networks:
       - default
