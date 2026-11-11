@@ -1,5 +1,5 @@
 'use client';
-import { isClientUser } from "@/lib/utils";
+import { isClientUser } from "@/lib/role-utils";
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';

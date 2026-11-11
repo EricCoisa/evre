@@ -1,5 +1,5 @@
 'use client';
-import { isClientUser } from "@/lib/utils";
+import { isClientUser } from "@/lib/role-utils";
 
 import { useTranslation } from "@/hooks/use-translation";
 import { useProjects, useCreateProject, useArchiveProject } from "@/lib/actions/project/queries";

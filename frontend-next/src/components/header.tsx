@@ -1,5 +1,5 @@
 'use client';
-import { isClientUser } from "@/lib/utils";
+import { isClientUser } from "@/lib/role-utils";
 
 import { SidebarTrigger } from './ui/sidebar';
 import { Separator } from '@/components/ui/separator';

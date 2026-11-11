@@ -1,5 +1,5 @@
 import { Container } from "@/components/container";
-import { isClientUser } from "@/lib/utils";
+import { isClientUser } from "@/lib/role-utils";
 import { PageHeader } from "@/components/page-header";
 import LangLabel from "@/components/ui/langLabel";
 import { ProjectTab } from "./components/project-tab";

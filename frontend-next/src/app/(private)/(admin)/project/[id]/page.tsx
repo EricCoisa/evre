@@ -1,5 +1,5 @@
 import { Container } from "@/components/container";
-import { isClientUser } from "@/lib/utils";
+import { isClientUser } from "@/lib/role-utils";
 import { PageHeader } from "@/components/page-header";
 import { SubNavLayout, type SubNavSection, TabsContent } from "@/components/sub-nav-layout";
 import { ItemNotFound } from "@/components/ui/item-not-found";
