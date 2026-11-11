@@ -28,7 +28,6 @@ import type {
 import type { Artifact } from '@/lib/actions/artifact/types';
 import type { Proposal } from '@/lib/actions/proposal/types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 
 const IMAGE_FILTER = (a: Artifact) =>
   a.kind === 'FILE' && typeof a.contentType === 'string' && a.contentType.startsWith('image/');
@@ -143,7 +142,7 @@ export function ProposalSendModal({
         draftArtifact.published && draftArtifact.publicToken
           ? draftArtifact
           : await publishArtifact.mutateAsync({ id: draftArtifact.id, isPublic: true });
-      headerImageUrl = `${API_BASE_URL}/artifacts/public/${target.publicToken}`;
+      headerImageUrl = `${window.location.origin}/api/artifacts/public/${target.publicToken}`;
     }
     onSubmit({
       templateId: selected!.id,
