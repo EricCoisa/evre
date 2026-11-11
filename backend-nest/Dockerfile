@@ -48,6 +48,8 @@ COPY --from=build /app/backend-nest/dist    ./dist
 # prisma migrations + schema (needed for migrate deploy at startup)
 COPY --from=build /app/backend-nest/prisma  ./prisma
 COPY --from=build /app/backend-nest/prisma.config.ts ./prisma.config.ts
+# seed imports from src/ at runtime via tsx (e.g. route-path.const)
+COPY --from=build /app/backend-nest/src     ./src
 # regenerate the client against the prod-only store (hashed .pnpm paths
 # differ from the build stage, so the generated client can't be copied)
 RUN pnpm exec prisma generate
