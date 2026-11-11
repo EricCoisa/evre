@@ -12,9 +12,11 @@ import {
 import { EMAIL_CONFIG_KEYS } from '../../dist/src/domain/mail/mail.const';
 import { STORAGE_CONFIG_KEYS } from '../../dist/src/domain/storage/storage.const';
 import {
-  PROPOSAL_ARTIFACT_CONFIG_KEYS,
-  PROPOSAL_ARTIFACT_DEFAULT_MAX_SIZE_BYTES,
-} from '../../dist/src/domain/proposal/proposal-artifact.const';
+  ARTIFACT_CONFIG_KEYS,
+  ARTIFACT_FILE_DEFAULT_MAX_SIZE_BYTES,
+  ARTIFACT_ZIP_DEFAULT_MAX_SIZE_BYTES,
+  ARTIFACT_FOLDER_DEFAULT_MAX_SIZE_BYTES,
+} from '../../dist/src/domain/artifact/artifact.const';
 
 export async function seedSystemConfigurations(prisma: PrismaClient) {
   const sysConfigs: Array<{
@@ -328,9 +330,19 @@ export async function seedSystemConfigurations(prisma: PrismaClient) {
     // Tamanho máximo (bytes) do upload de artefato do bloco `iframe`. Sem tela de ajuste nesta
     // etapa (ver docs da F1-03) — editável só por quem grava SystemConfiguration diretamente.
     {
-      labelKey: PROPOSAL_ARTIFACT_CONFIG_KEYS.maxSizeBytes,
+      labelKey: ARTIFACT_CONFIG_KEYS.fileMaxSizeBytes,
       valueType: 'NUMBER',
-      value: String(PROPOSAL_ARTIFACT_DEFAULT_MAX_SIZE_BYTES),
+      value: String(ARTIFACT_FILE_DEFAULT_MAX_SIZE_BYTES),
+    },
+    {
+      labelKey: ARTIFACT_CONFIG_KEYS.zipMaxSizeBytes,
+      valueType: 'NUMBER',
+      value: String(ARTIFACT_ZIP_DEFAULT_MAX_SIZE_BYTES),
+    },
+    {
+      labelKey: ARTIFACT_CONFIG_KEYS.folderMaxSizeBytes,
+      valueType: 'NUMBER',
+      value: String(ARTIFACT_FOLDER_DEFAULT_MAX_SIZE_BYTES),
     },
     {
       labelKey: 'TIME_TRACKING_FORGOTTEN_THRESHOLD_HOURS',
