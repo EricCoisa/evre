@@ -1,5 +1,5 @@
 import { Controller, Get, HttpStatus, Param, Res } from '@nestjs/common';
-import { ApiExcludeEndpoint, ApiTags } from '@nestjs/swagger';
+import { ApiParam, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { ViewPublicArtifactUseCase } from './use-cases/view-public-artifact.use-case';
@@ -14,7 +14,7 @@ export class ArtifactPublicController {
 
   @Get([':token', ':token/*path'])
   @Throttle({ default: { limit: 30, ttl: 60000 } })
-  @ApiExcludeEndpoint()
+  @ApiParam({ name: 'path', required: true, schema: { type: 'string' }, description: 'Sub-path inside a folder artifact' })
   async view(
     @Param('token') token: string,
     @Param('path') path: string | string[] | undefined,

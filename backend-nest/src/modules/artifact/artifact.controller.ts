@@ -11,7 +11,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBearerAuth, ApiExcludeEndpoint, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiExcludeEndpoint, ApiParam, ApiTags } from '@nestjs/swagger';
 import { ZodValidationPipe } from 'nestjs-zod';
 import type { Response } from 'express';
 import type { Artifact } from '@prisma/client';
@@ -200,7 +200,7 @@ export class ArtifactController {
   @UseGuards(JwtOrApiKeyAuthGuard, ScopeGuard, RolesGuard)
   @Roles(...ARTIFACT_ROLES)
   @ApiBearerAuth()
-  @ApiExcludeEndpoint()
+  @ApiParam({ name: 'path', required: true, schema: { type: 'string' }, description: 'Sub-path inside a folder artifact' })
   async view(
     @Param('id') id: string,
     @Param('path') path: string | string[] | undefined,

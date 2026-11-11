@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { API_PATHS } from '@/lib/generated/paths';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 
@@ -8,7 +9,7 @@ export async function GET(
 ) {
   const { token } = await params;
 
-  const res = await fetch(`${API_BASE}/artifacts/public/${token}`);
+  const res = await fetch(`${API_BASE}${API_PATHS.ARTIFACTS_PUBLIC_BY_TOKEN(token)}`);
 
   if (!res.ok || !res.body) return new NextResponse(null, { status: res.status });
 
