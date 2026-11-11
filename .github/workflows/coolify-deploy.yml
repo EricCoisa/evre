@@ -37,7 +37,7 @@ jobs:
   backend:
     needs: detect-changes
     if: needs.detect-changes.outputs.backend == 'true'
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     environment: Evre
     defaults:
       run:
@@ -101,7 +101,7 @@ jobs:
   frontend:
     needs: detect-changes
     if: needs.detect-changes.outputs.frontend == 'true'
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     environment: Evre
     defaults:
       run:
