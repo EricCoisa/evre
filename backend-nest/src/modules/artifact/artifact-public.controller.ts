@@ -14,7 +14,12 @@ export class ArtifactPublicController {
 
   @Get([':token', ':token/*path'])
   @Throttle({ default: { limit: 30, ttl: 60000 } })
-  @ApiParam({ name: 'path', required: true, schema: { type: 'string' }, description: 'Sub-path inside a folder artifact' })
+  @ApiParam({
+    name: 'path',
+    required: true,
+    schema: { type: 'string' },
+    description: 'Sub-path inside a folder artifact',
+  })
   async view(
     @Param('token') token: string,
     @Param('path') path: string | string[] | undefined,
