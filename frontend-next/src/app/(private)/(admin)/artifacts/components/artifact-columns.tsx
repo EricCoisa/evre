@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 import type { TFunc } from "@/hooks/use-translation";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -132,7 +131,7 @@ export function getArtifactColumns({ t, onArchive, onDelete }: GetArtifactColumn
                 className="h-6 p-0 min-h-0"
               >
                 <a
-                  href={`${API_BASE_URL}/artifacts/${item.id}/view`}
+                  href={`/api/artifacts/${item.id}/view`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >

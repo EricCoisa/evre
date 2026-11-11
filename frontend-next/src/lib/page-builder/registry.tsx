@@ -428,10 +428,6 @@ const ARTIFACT_SANDBOX = 'allow-scripts allow-popups allow-modals allow-forms';
 
 /** Demonstração HTML/imagem em sandbox: preview capturado por uma camada de clique (sem scroll
  * nem interação própria), toque abre modal 98vw×90vh com scroll e interação liberados. */
-/** `NEXT_PUBLIC_*` é inlined no bundle do client — mesmo valor de `lib/api/orval-instance.ts`,
- * sem poder importar de lá (módulo `"use server"`, só exporta função async pro client). */
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
-
 function IframeBlock({ props, bare, className, renderContext }: BlockProps) {
   const { t } = useTranslation('page-builder');
   const [open, setOpen] = React.useState(false);
@@ -459,8 +455,8 @@ function IframeBlock({ props, bare, className, renderContext }: BlockProps) {
   // Publicado: visualização anônima por publicToken. Rascunho/preview: autenticado por id,
   // mesmo guard de roles do resto do admin. Redirect 302 pra presigned URL — iframe segue nativo.
   const url = renderContext?.published
-    ? `${API_BASE_URL}/artifacts/public/${artifactId}`
-    : `${API_BASE_URL}/artifacts/${artifactId}/view`;
+    ? `/api/artifacts/public/${artifactId}`
+    : `/api/artifacts/${artifactId}/view`;
 
   return (
     <Panel bare={bare} className={className}>
