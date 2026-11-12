@@ -8,6 +8,8 @@ import { DataTable } from "@/components/data-table";
 import { getArtifactColumns } from "./artifact-columns";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { UploadArtifactDialog } from "@/components/upload-artifact-dialog";
+import { ArtifactEdit } from "./edit-artifact-dialog";
+import Modal from "@/components/modal";
 import type { Artifact } from "@/lib/actions/artifact/types";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from '@/components/ui/button';
@@ -17,6 +19,7 @@ export function ArtifactTab() {
   const { t } = useTranslation('artifact');
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
   const [globalFilter, setGlobalFilter] = useState('');
+  const [editingArtifact, setEditingArtifact] = useState<Artifact | null>(null);
   const [archivingArtifact, setArchivingArtifact] = useState<Artifact | null>(null);
   const [deletingArtifact, setDeletingArtifact] = useState<Artifact | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -24,6 +27,10 @@ export function ArtifactTab() {
 
   const { data: health } = useStorageHealth();
   const storageDisabled = health?.operational === false;
+
+  const handleEdit = useCallback((item: Artifact) => {
+    setEditingArtifact(item);
+  }, []);
 
   const handleArchive = useCallback((item: Artifact) => {
     setArchivingArtifact(item);
@@ -44,7 +51,7 @@ export function ArtifactTab() {
   const archiveArtifactMutation = useArchiveArtifact();
   const deleteArtifactMutation = useDeleteArtifact();
 
-  const columns = getArtifactColumns({ t, onArchive: handleArchive, onDelete: handleDelete });
+  const columns = getArtifactColumns({ t, onEdit: handleEdit, onArchive: handleArchive, onDelete: handleDelete });
 
   return (
     <>
@@ -84,6 +91,18 @@ export function ArtifactTab() {
         onOpenChange={setUploadOpen}
         onSuccess={() => queryClient.invalidateQueries({ queryKey: ['artifacts'] })}
       />
+
+      <Modal
+        open={!!editingArtifact}
+        onOpenChange={(open) => !open && setEditingArtifact(null)}
+        title={editingArtifact ? `${t('editTitle')} — ${editingArtifact.name || editingArtifact.fileName}` : t('editTitle')}
+      >
+        <ArtifactEdit
+          artifact={editingArtifact}
+          onCancel={() => setEditingArtifact(null)}
+          onSuccess={() => setEditingArtifact(null)}
+        />
+      </Modal>
 
       <ConfirmDialog
         open={!!archivingArtifact}

@@ -18,6 +18,7 @@ export const ArtifactSchema = z.object({
   files: z.array(ArtifactFileEntrySchema),
   sizeBytes: z.number().int(),
   published: z.boolean(),
+  public: z.boolean(),
   publicToken: z.string().optional().nullable(),
   createdById: z.string().uuid().optional().nullable(),
   archivedAt: z.string().datetime().optional().nullable(),

@@ -3,7 +3,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Artifact } from "@/lib/actions/artifact/types";
 import { Button } from "@/components/ui/button";
-import { ArrowDown, ArrowUp, ArrowUpDown, Archive, ExternalLink, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Archive, ExternalLink, Pencil, Trash2 } from "lucide-react";
 import { DataCell, TableHead } from "@/components/table-utils";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
@@ -18,11 +18,12 @@ function formatFileSize(bytes: number): string {
 
 interface GetArtifactColumnsProps {
   t: TFunc;
+  onEdit?: (item: Artifact) => void;
   onArchive?: (item: Artifact) => void;
   onDelete?: (item: Artifact) => void;
 }
 
-export function getArtifactColumns({ t, onArchive, onDelete }: GetArtifactColumnsProps): ColumnDef<Artifact>[] {
+export function getArtifactColumns({ t, onEdit, onArchive, onDelete }: GetArtifactColumnsProps): ColumnDef<Artifact>[] {
   return [
     {
       accessorKey: "name",
@@ -138,6 +139,17 @@ export function getArtifactColumns({ t, onArchive, onDelete }: GetArtifactColumn
                   <ExternalLink className="h-4 w-4" />
                 </a>
               </Button>
+              {onEdit && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onEdit(item)}
+                  title={t("editTooltip")}
+                  className="h-6 p-0 min-h-0"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              )}
               {onArchive && !item.archivedAt && (
                 <Button
                   variant="ghost"

@@ -10,6 +10,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { UpdateArtifactUseCase } from './use-cases/update-artifact.use-case';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
@@ -23,6 +24,7 @@ import type { Artifact } from '@prisma/client';
 import {
   DeleteApi,
   GetApi,
+  PatchApi,
   PostApi,
 } from '../../common/decorators/api-method.decorator';
 import { JwtOrApiKeyAuthGuard } from '../../common/guards/jwt-or-api-key.guard';
@@ -67,6 +69,7 @@ export class ArtifactController {
     private readonly deleteArtifact: DeleteArtifactUseCase,
     private readonly viewArtifact: ViewArtifactUseCase,
     private readonly publishArtifact: PublishArtifactUseCase,
+    private readonly updateArtifact: UpdateArtifactUseCase,
   ) {}
 
   @GetApi({
@@ -120,6 +123,28 @@ export class ArtifactController {
       currentUser,
       name?.trim() || undefined,
     );
+  }
+
+  @PatchApi({
+    path: ':id',
+    summary: 'artifact.update.title',
+    status: 'OK',
+    roles: ARTIFACT_ROLES,
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Artefato atualizado',
+          schema: { dto: ArtifactDto },
+        },
+      ],
+    },
+  })
+  async update(
+    @Param('id') id: string,
+    @Body('name') name?: string,
+  ): Promise<Artifact> {
+    return this.updateArtifact.execute(id, { name });
   }
 
   @DeleteApi({

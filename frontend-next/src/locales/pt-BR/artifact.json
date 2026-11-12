@@ -17,6 +17,12 @@
   "publishedNo": "Rascunho",
   "createdAt": "Enviado em",
   "actions": "Ações",
+  "editTooltip": "Editar",
+  "editTitle": "Editar artefato",
+  "editIsPublic": "Público",
+  "editIsPublicDescription": "Publica o artefato como URL pública sem autenticação (irreversível)",
+  "save": "Salvar",
+  "nameRequired": "Nome é obrigatório",
   "viewTooltip": "Visualizar",
   "archiveTooltip": "Arquivar",
   "deleteTooltip": "Excluir permanentemente",
@@ -46,5 +52,7 @@
   "pickerExisting": "Existente",
   "pickerUpload": "Enviar novo",
   "uploadFileTooLarge": "Arquivo muito grande: máximo {maxMB} MB.",
-  "uploadAspectRatioMismatch": "Proporção incorreta: esperada {expected}, imagem enviada é {actual}."
+  "uploadAspectRatioMismatch": "Proporção incorreta: esperada {expected}, imagem enviada é {actual}.",
+  "uploadIsPublic": "Tornar público",
+  "uploadIsPublicDescription": "Publica o artefato imediatamente como URL pública sem autenticação"
 }

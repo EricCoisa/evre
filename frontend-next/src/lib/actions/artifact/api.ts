@@ -58,6 +58,16 @@ export async function publishArtifact(id: string, isPublic = false): Promise<Api
   );
 }
 
+export async function updateArtifact(id: string, data: { name: string }): Promise<ApiResponse<Artifact>> {
+  return wrap(() =>
+    customInstance<Artifact>({
+      url: API_PATHS.ARTIFACTS_BY_ID(id),
+      method: 'PATCH',
+      data,
+    }),
+  );
+}
+
 /** Multipart puro (sem DTO de body) — o Orval não gera client para isso, mesmo caso de
  * `updateProfile` em `lib/actions/user/api.ts` para o upload de avatar. Aceita arquivo único
  * (html/imagem) ou `.zip` (pasta/site estático), extraído no backend. */

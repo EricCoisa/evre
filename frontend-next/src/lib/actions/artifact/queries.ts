@@ -4,13 +4,25 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Alive, Collector } from '@/lib/api/collector';
 import { getQueryConfig } from '../../utils';
 import type { PaginationParams } from '../../types/pagination.types';
-import { archiveArtifact, deleteArtifactPermanently, getArtifactPreviewUrl, getArtifacts, publishArtifact, uploadArtifact } from './api';
+import { archiveArtifact, deleteArtifactPermanently, getArtifactPreviewUrl, getArtifacts, publishArtifact, updateArtifact, uploadArtifact } from './api';
 
 export function useArtifacts(params?: PaginationParams) {
   return useQuery({
     queryKey: ['artifacts', params],
     queryFn: Collector(() => getArtifacts(params)),
     ...getQueryConfig('ARTIFACTS'),
+  });
+}
+
+export function useUpdateArtifact() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    // mutationFn retorna ApiResponse — compatível com Alive(() => mutation.mutateAsync())()
+    mutationFn: ({ id, data }: { id: string; data: { name: string } }) =>
+      updateArtifact(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['artifacts'] });
+    },
   });
 }
 

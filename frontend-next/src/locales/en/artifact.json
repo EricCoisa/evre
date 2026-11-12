@@ -17,6 +17,12 @@
   "publishedNo": "Draft",
   "createdAt": "Uploaded at",
   "actions": "Actions",
+  "editTooltip": "Edit",
+  "editTitle": "Edit artifact",
+  "editIsPublic": "Public",
+  "editIsPublicDescription": "Publishes the artifact as a public URL without authentication (irreversible)",
+  "save": "Save",
+  "nameRequired": "Name is required",
   "viewTooltip": "View",
   "archiveTooltip": "Archive",
   "deleteTooltip": "Delete permanently",
@@ -46,5 +52,7 @@
   "pickerExisting": "Existing",
   "pickerUpload": "Upload new",
   "uploadFileTooLarge": "File too large: maximum {maxMB} MB.",
-  "uploadAspectRatioMismatch": "Wrong aspect ratio: expected {expected}, image is {actual}."
+  "uploadAspectRatioMismatch": "Wrong aspect ratio: expected {expected}, image is {actual}.",
+  "uploadIsPublic": "Make public",
+  "uploadIsPublicDescription": "Publishes the artifact immediately as a public URL without authentication"
 }

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useTranslation } from '@/hooks/use-translation';
 import { useQueryClient } from '@tanstack/react-query';
-import { useUploadArtifact } from '@/lib/actions/artifact/queries';
+import { useUploadArtifact, usePublishArtifact } from '@/lib/actions/artifact/queries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,6 +14,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { SwitchField } from '@/components/switch-field';
 import { Upload } from 'lucide-react';
 import type { Artifact } from '@/lib/actions/artifact/types';
 
@@ -41,9 +42,11 @@ export function UploadArtifactForm({ onSuccess, constraints }: UploadArtifactFor
   const { t } = useTranslation('artifact');
   const [name, setName] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const [isPublic, setIsPublic] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const upload = useUploadArtifact();
+  const publish = usePublishArtifact();
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
@@ -91,10 +94,18 @@ export function UploadArtifactForm({ onSuccess, constraints }: UploadArtifactFor
       { file, name: name.trim() },
       {
         onSuccess: (artifact) => {
-          setName('');
-          setFile(null);
-          queryClient.invalidateQueries({ queryKey: ['artifacts'] });
-          onSuccess(artifact);
+          const reset = () => {
+            setName('');
+            setFile(null);
+            setIsPublic(false);
+            queryClient.invalidateQueries({ queryKey: ['artifacts'] });
+            onSuccess(artifact);
+          };
+          if (isPublic) {
+            publish.mutate({ id: artifact.id, isPublic: true }, { onSuccess: reset });
+          } else {
+            reset();
+          }
         },
       },
     );
@@ -119,10 +130,17 @@ export function UploadArtifactForm({ onSuccess, constraints }: UploadArtifactFor
           <p className="text-destructive text-sm">{validationError}</p>
         )}
       </div>
+      <SwitchField
+        id="upload-is-public"
+        checked={isPublic}
+        onCheckedChange={setIsPublic}
+        label={t('uploadIsPublic')}
+        description={t('uploadIsPublicDescription')}
+      />
       <DialogFooter>
         <Button
           onClick={handleSubmit}
-          disabled={!file || !name.trim() || !!validationError || upload.isPending}
+          disabled={!file || !name.trim() || !!validationError || upload.isPending || publish.isPending}
         >
           <Upload />
           {upload.isPending ? t('uploading') : t('upload')}
