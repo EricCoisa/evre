@@ -14,6 +14,9 @@
   "publish": {
     "title": "Publicar artefato"
   },
+  "update": {
+    "title": "Atualizar artefato"
+  },
   "not_found": "Artefato não encontrado",
   "invalid_content_type": "Tipo de arquivo não permitido para artefato",
   "too_large": "Arquivo excede o tamanho máximo permitido",
