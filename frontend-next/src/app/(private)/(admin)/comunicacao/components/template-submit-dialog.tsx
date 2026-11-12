@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { ImageIcon, X } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +29,12 @@ import {
   useSubmitTemplate,
   useTemplateVariables,
 } from '@/lib/actions/messaging/queries';
+import { ArtifactPickerDialog } from '@/components/artifact-picker-dialog';
+import {
+  useTemplateHeaderImage,
+  WHATSAPP_HEADER_IMAGE_FILTER,
+  WHATSAPP_HEADER_IMAGE_UPLOAD_CONSTRAINTS,
+} from '@/lib/messaging/template-header-image';
 import { MetaRulesPanel } from './meta-rules-panel';
 import type {
   MessagingConnection,
@@ -113,8 +120,8 @@ export function TemplateSubmitDialog({
             isPending={submit.isPending}
             error={submit.error?.message}
             onCancel={() => onOpenChange(false)}
-            onSubmit={async (connectionId, examples) => {
-              await submit.mutateAsync({ id: template.id, payload: { connectionId, examples } });
+            onSubmit={async (connectionId, examples, headerImageUrl) => {
+              await submit.mutateAsync({ id: template.id, payload: { connectionId, examples, headerImageUrl } });
               onOpenChange(false);
             }}
           />
@@ -184,12 +191,14 @@ function SubmitExampleInputs({
 function SubmitPreview({
   template,
   headerText,
+  headerImage,
   values,
   dummies,
   t,
 }: {
   template: MessagingTemplateCatalogItem;
   headerText?: string;
+  headerImage?: string | null;
   values: Record<string, string>;
   dummies: Record<string, string>;
   t: (key: string) => string;
@@ -204,6 +213,7 @@ function SubmitPreview({
       <p className="text-sm font-medium">{t('examplesPreview')}</p>
       <WhatsappSimulator
         headerText={headerText}
+        headerImage={headerImage}
         body={body}
         footer={template.footer || undefined}
       />
@@ -233,6 +243,9 @@ function useSubmitFormState({
     Object.fromEntries(variables.map((v) => [v.name, suggestedExample(v)])),
   );
 
+  const hasImage = template.header?.kind === 'IMAGE';
+  const headerImage = useTemplateHeaderImage();
+
   const missing = useMemo(
     () =>
       variables.filter(
@@ -252,7 +265,13 @@ function useSubmitFormState({
     true,
   );
   const metaBlocked = metaIssues.some((issue) => issue.severity === 'error');
-  const canSubmit = Boolean(connectionId) && missing.length === 0 && !isPending && !metaBlocked;
+  const canSubmit =
+    Boolean(connectionId) &&
+    missing.length === 0 &&
+    !isPending &&
+    !headerImage.isPending &&
+    !metaBlocked &&
+    (!hasImage || Boolean(headerImage.draftArtifact));
 
   const headerText =
     template.header?.kind === 'TEXT' ? fillExamples(template.header.text, values, dummies) : undefined;
@@ -268,6 +287,8 @@ function useSubmitFormState({
     metaIssues,
     canSubmit,
     headerText,
+    hasImage,
+    headerImage,
   };
 }
 
@@ -286,7 +307,7 @@ function SubmitForm({
   isPending: boolean;
   error?: string;
   onCancel: () => void;
-  onSubmit: (connectionId: string, examples: Record<string, string>) => Promise<void>;
+  onSubmit: (connectionId: string, examples: Record<string, string>, headerImageUrl?: string) => Promise<void>;
 }) {
   const { t } = useTranslation('messaging');
   const {
@@ -300,72 +321,154 @@ function SubmitForm({
     metaIssues,
     canSubmit,
     headerText,
+    hasImage,
+    headerImage,
   } = useSubmitFormState({ template, type, connections, isPending });
 
-  return (
-    <div className="grid gap-5">
-      <div className="grid gap-2">
-        <Label>{t('connection')}</Label>
-        <Select value={connectionId} onValueChange={setConnectionId}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder={t('connection')} />
-          </SelectTrigger>
-          <SelectContent>
-            {connections.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {connectionDisplayName(c)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+  async function submitWithArtifact() {
+    const headerImageUrl = hasImage ? await headerImage.resolveUrl() : undefined;
+    await onSubmit(connectionId, trimmed(values), headerImageUrl);
+  }
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="grid content-start gap-3">
-          <div>
-            <p className="text-sm font-medium">{t('examplesTitle')}</p>
-            <p className="text-sm text-muted-foreground">{t('examplesHelp')}</p>
-          </div>
-          <SubmitExampleInputs
-            variables={variables}
-            values={values}
-            missing={missing}
-            onChange={(name, val) => setValues((prev) => ({ ...prev, [name]: val }))}
-            t={t}
-          />
-          <p className="text-xs text-muted-foreground">{t('examplesReserved')}</p>
+  function handleSubmitClick() {
+    if (hasImage && headerImage.needsPublishConfirm) {
+      headerImage.setConfirmOpen(true);
+      return;
+    }
+    void submitWithArtifact().catch(() => undefined);
+  }
+
+  return (
+    <>
+      <div className="grid gap-5">
+        <div className="grid gap-2">
+          <Label>{t('connection')}</Label>
+          <Select value={connectionId} onValueChange={setConnectionId}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder={t('connection')} />
+            </SelectTrigger>
+            <SelectContent>
+              {connections.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {connectionDisplayName(c)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        <SubmitPreview
-          template={template}
-          headerText={headerText}
-          values={values}
-          dummies={dummies}
-          t={t}
-        />
+        {hasImage && (
+          <div className="grid gap-1.5">
+            <Label>{t('submitHeaderImage')}</Label>
+            {headerImage.draftArtifact ? (
+              <div className="flex items-center gap-2">
+                {headerImage.previewUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={headerImage.previewUrl} alt="" className="h-16 w-16 rounded object-cover border" />
+                ) : (
+                  <div className="flex h-16 w-16 items-center justify-center rounded border bg-muted">
+                    <ImageIcon className="size-6 text-muted-foreground" />
+                  </div>
+                )}
+                <span className="flex-1 truncate text-sm">{headerImage.draftArtifact.name ?? headerImage.draftArtifact.fileName}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-6 shrink-0"
+                  onClick={() => headerImage.setDraftArtifact(null)}
+                >
+                  <X className="size-3.5" />
+                </Button>
+              </div>
+            ) : (
+              <Button type="button" variant="outline" size="sm" onClick={() => headerImage.setPickerOpen(true)}>
+                {t('selectImage')}
+              </Button>
+            )}
+          </div>
+        )}
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid content-start gap-3">
+            <div>
+              <p className="text-sm font-medium">{t('examplesTitle')}</p>
+              <p className="text-sm text-muted-foreground">{t('examplesHelp')}</p>
+            </div>
+            <SubmitExampleInputs
+              variables={variables}
+              values={values}
+              missing={missing}
+              onChange={(name, val) => setValues((prev) => ({ ...prev, [name]: val }))}
+              t={t}
+            />
+            <p className="text-xs text-muted-foreground">{t('examplesReserved')}</p>
+          </div>
+
+          <SubmitPreview
+            template={template}
+            headerText={headerText}
+            headerImage={hasImage ? (headerImage.previewUrl ?? null) : undefined}
+            values={values}
+            dummies={dummies}
+            t={t}
+          />
+        </div>
+
+        <MetaRulesPanel issues={metaIssues} />
+
+        {error && (
+          <p role="alert" className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+            {error}
+          </p>
+        )}
+
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onCancel}>
+            {t('cancel')}
+          </Button>
+          <Button
+            type="button"
+            disabled={!canSubmit}
+            onClick={handleSubmitClick}
+          >
+            {t('submitToMeta')}
+          </Button>
+        </DialogFooter>
       </div>
 
-      <MetaRulesPanel issues={metaIssues} />
+      <ArtifactPickerDialog
+        open={headerImage.pickerOpen}
+        onOpenChange={headerImage.setPickerOpen}
+        onSelect={(artifact) => { headerImage.setDraftArtifact(artifact); headerImage.setPickerOpen(false); }}
+        filter={WHATSAPP_HEADER_IMAGE_FILTER}
+        uploadConstraints={WHATSAPP_HEADER_IMAGE_UPLOAD_CONSTRAINTS}
+      />
 
-      {error && (
-        <p role="alert" className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-          {error}
-        </p>
-      )}
-
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={onCancel}>
-          {t('cancel')}
-        </Button>
-        <Button
-          type="button"
-          disabled={!canSubmit}
-          onClick={() => void onSubmit(connectionId, trimmed(values)).catch(() => undefined)}
-        >
-          {t('submitToMeta')}
-        </Button>
-      </DialogFooter>
-    </div>
+      {/* Confirmação de que a imagem se tornará pública */}
+      <Dialog open={headerImage.confirmOpen} onOpenChange={headerImage.setConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('confirmPublicImageTitle')}</DialogTitle>
+            <DialogDescription>{t('confirmPublicImageDescription')}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => headerImage.setConfirmOpen(false)} disabled={headerImage.isPending}>
+              {t('cancel')}
+            </Button>
+            <Button
+              onClick={async () => {
+                headerImage.setConfirmOpen(false);
+                await submitWithArtifact();
+              }}
+              disabled={headerImage.isPending}
+            >
+              {t('confirmPublicImageConfirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

@@ -322,5 +322,10 @@
   "remoteTemplatesLoading": "Buscando templates na Meta...",
   "cannotDeleteSystemTemplate": "Templates do sistema não podem ser excluídos.",
   "cannotDeleteSystemTemplateType": "Tipos de template do sistema não podem ser excluídos.",
+  "submitHeaderImage": "Imagem de exemplo para aprovação",
+  "selectImage": "Selecionar imagem",
+  "confirmPublicImageTitle": "Esta imagem se tornará pública",
+  "confirmPublicImageDescription": "Para que o provedor consiga exibir a imagem no WhatsApp, ela precisa de uma URL permanente. Ao confirmar, o artefato selecionado ficará acessível publicamente.",
+  "confirmPublicImageConfirm": "Confirmar e submeter",
   "close": "Fechar"
 }

@@ -5,6 +5,7 @@ import { z } from 'zod';
 export const SubmitTemplateSchema = z.object({
   connectionId: z.string().min(1),
   examples: z.record(z.string()).default({}),
+  headerImageUrl: z.string().url().optional(),
 });
 
 export class SubmitTemplateDto extends createZodDto(SubmitTemplateSchema) {
@@ -19,6 +20,12 @@ export class SubmitTemplateDto extends createZodDto(SubmitTemplateSchema) {
       'Valor de exemplo por variável, exigido pela Meta para revisar o template (inclusive as obrigatórias)',
   })
   examples: Record<string, string>;
+
+  @ApiPropertyOptional({
+    description:
+      'URL pública da imagem de cabeçalho (IMAGE). Sobrescreve a URL armazenada no template apenas para esta submissão.',
+  })
+  headerImageUrl?: string;
 }
 
 export class MessagingTemplateSubmissionDto {
@@ -62,7 +69,10 @@ export const CheckMetaTemplateSchema = z.object({
   category: z.enum(['AUTHENTICATION', 'UTILITY', 'MARKETING']),
   body: z.string().max(4096).default(''),
   header: z
-    .object({ kind: z.literal('TEXT'), text: z.string().max(200) })
+    .discriminatedUnion('kind', [
+      z.object({ kind: z.literal('TEXT'), text: z.string().max(200) }),
+      z.object({ kind: z.literal('IMAGE'), url: z.string().url() }),
+    ])
     .nullish(),
   footer: z.string().max(200).nullish(),
   buttons: z.array(z.any()).max(20).nullish(),
@@ -74,10 +84,10 @@ export class CheckMetaTemplateDto extends createZodDto(
   @ApiProperty({ enum: ['AUTHENTICATION', 'UTILITY', 'MARKETING'] })
   category: 'AUTHENTICATION' | 'UTILITY' | 'MARKETING';
   @ApiProperty() body: string;
-  @ApiPropertyOptional({ type: Object, nullable: true }) header?: {
-    kind: 'TEXT';
-    text: string;
-  } | null;
+  @ApiPropertyOptional({ type: Object, nullable: true }) header?:
+    | { kind: 'TEXT'; text: string }
+    | { kind: 'IMAGE'; url: string }
+    | null;
   @ApiPropertyOptional({ type: String, nullable: true }) footer?: string | null;
   @ApiPropertyOptional({ type: [Object], nullable: true }) buttons?:
     unknown[] | null;

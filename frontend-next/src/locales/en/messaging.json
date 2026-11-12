@@ -322,5 +322,10 @@
   "remoteTemplatesLoading": "Fetching templates from Meta...",
   "cannotDeleteSystemTemplate": "System templates cannot be deleted.",
   "cannotDeleteSystemTemplateType": "System template types cannot be deleted.",
+  "submitHeaderImage": "Example image for review",
+  "selectImage": "Select image",
+  "confirmPublicImageTitle": "This image will become public",
+  "confirmPublicImageDescription": "For the provider to display the image on WhatsApp, it needs a permanent URL. By confirming, the selected artifact will be publicly accessible.",
+  "confirmPublicImageConfirm": "Confirm and submit",
   "close": "Close"
 }

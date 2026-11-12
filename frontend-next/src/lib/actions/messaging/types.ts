@@ -221,6 +221,7 @@ export interface UpdateTemplatePayload {
 export interface SubmitTemplatePayload {
   connectionId: string;
   examples?: Record<string, string>;
+  headerImageUrl?: string;
 }
 export type MessagingTemplateSubmission = MessagingTemplateSubmissionDto;
 

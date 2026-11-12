@@ -145,7 +145,10 @@ export class SubmitTemplateUseCase {
       name: catalogName(template.key),
       language: template.language,
       category: template.category,
-      header,
+      header:
+        header?.kind === 'IMAGE' && dto.headerImageUrl
+          ? { kind: 'IMAGE' as const, url: dto.headerImageUrl }
+          : header,
       body: template.body,
       footer: template.footer ?? undefined,
       buttons,

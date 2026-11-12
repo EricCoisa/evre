@@ -16,28 +16,20 @@ import {
 import { PhoneInput } from '@/components/ui/phone-input';
 import { ArtifactPickerDialog } from '@/components/artifact-picker-dialog';
 import { useTranslation } from '@/hooks/use-translation';
-import { useArtifactPreviewUrl, usePublishArtifact } from '@/lib/actions/artifact/queries';
 import { useCompany } from '@/lib/actions/company/queries';
 import { useTemplateTypes, useTemplates, useTemplateVariables } from '@/lib/actions/messaging/queries';
+import {
+  useTemplateHeaderImage,
+  WHATSAPP_HEADER_IMAGE_FILTER,
+  WHATSAPP_HEADER_IMAGE_UPLOAD_CONSTRAINTS,
+} from '@/lib/messaging/template-header-image';
 import type {
   MessagingTemplateCatalogItem,
   MessagingTemplateType,
   ReservedVariable,
   TemplateVariable,
 } from '@/lib/actions/messaging/types';
-import type { Artifact } from '@/lib/actions/artifact/types';
 import type { Proposal } from '@/lib/actions/proposal/types';
-
-
-const IMAGE_FILTER = (a: Artifact) =>
-  a.kind === 'FILE' && typeof a.contentType === 'string' && a.contentType.startsWith('image/');
-
-// Meta: imagem de cabeçalho — JPEG/PNG/WEBP, ≤5 MB, proporção 1.91:1 (800×418).
-const IMAGE_UPLOAD_CONSTRAINTS = {
-  maxSizeBytes: 5_000_000,
-  aspectRatio: { width: 191, height: 100, tolerancePct: 0.15 },
-  accept: 'image/jpeg,image/png,image/webp',
-};
 
 export interface ProposalSendDraft {
   templateId?: string;
@@ -78,18 +70,11 @@ export function ProposalSendModal({
   const { data: typesPage } = useTemplateTypes({ pagination: false } as never);
   const { data: reservedData } = useTemplateVariables();
   const { data: company } = useCompany(proposal.companyId);
-  const publishArtifact = usePublishArtifact();
 
   const [templateId, setTemplateId] = useState('');
   const [values, setValues] = useState<Record<string, string>>({});
-  const [draftArtifact, setDraftArtifact] = useState<Artifact | null>(null);
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
   const [phone, setPhone] = useState(contacts.length === 1 ? contacts[0].phone : '');
-
-  // URL de preview (presigned, autenticada) — só para exibir a miniatura antes de publicar.
-  const { data: previewData } = useArtifactPreviewUrl(draftArtifact?.id);
-  const previewUrl = previewData?.url;
+  const headerImage = useTemplateHeaderImage();
 
   const templates: MessagingTemplateCatalogItem[] = Array.isArray(templatesPage)
     ? templatesPage
@@ -115,35 +100,27 @@ export function ProposalSendModal({
   const valid =
     Boolean(selected) &&
     variables.every((v) => v.required === false || Boolean(effectiveValues[v.name]?.trim())) &&
-    (!hasImage || Boolean(draftArtifact)) &&
+    (!hasImage || Boolean(headerImage.draftArtifact)) &&
     Boolean(phone);
 
   function pickTemplate(id: string) {
     setTemplateId(id);
     setValues({});
-    setDraftArtifact(null);
+    headerImage.setDraftArtifact(null);
   }
 
-  // Clique em "Enviar" abre confirmação se houver imagem pendente de publicação.
   function handleFormSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!valid) return;
-    if (hasImage && draftArtifact && !(draftArtifact.published && draftArtifact.publicToken)) {
-      setConfirmOpen(true);
+    if (hasImage && headerImage.needsPublishConfirm) {
+      headerImage.setConfirmOpen(true);
       return;
     }
-    submitWithCurrentDraft();
+    void submitWithCurrentDraft();
   }
 
   async function submitWithCurrentDraft() {
-    let headerImageUrl: string | undefined;
-    if (hasImage && draftArtifact) {
-      const target =
-        draftArtifact.published && draftArtifact.publicToken
-          ? draftArtifact
-          : await publishArtifact.mutateAsync({ id: draftArtifact.id, isPublic: true });
-      headerImageUrl = `${window.location.origin}/api/artifacts/public/${target.publicToken}`;
-    }
+    const headerImageUrl = hasImage ? await headerImage.resolveUrl() : undefined;
     onSubmit({
       templateId: selected!.id,
       values: Object.keys(effectiveValues).length ? effectiveValues : undefined,
@@ -201,23 +178,23 @@ export function ProposalSendModal({
           {hasImage && (
             <div className="space-y-1.5">
               <Label>{t('sendHeaderImage')}</Label>
-              {draftArtifact ? (
+              {headerImage.draftArtifact ? (
                 <div className="flex items-center gap-2">
-                  {previewUrl ? (
+                  {headerImage.previewUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={previewUrl} alt="" className="h-16 w-16 rounded object-cover border" />
+                    <img src={headerImage.previewUrl} alt="" className="h-16 w-16 rounded object-cover border" />
                   ) : (
                     <div className="h-16 w-16 rounded border flex items-center justify-center bg-muted">
                       <ImageIcon className="size-6 text-muted-foreground" />
                     </div>
                   )}
-                  <span className="text-sm truncate flex-1">{draftArtifact.name ?? draftArtifact.fileName}</span>
+                  <span className="text-sm truncate flex-1">{headerImage.draftArtifact.name ?? headerImage.draftArtifact.fileName}</span>
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
                     className="size-6 shrink-0"
-                    onClick={() => setDraftArtifact(null)}
+                    onClick={() => headerImage.setDraftArtifact(null)}
                   >
                     <X className="size-3.5" />
                   </Button>
@@ -227,7 +204,7 @@ export function ProposalSendModal({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setPickerOpen(true)}
+                  onClick={() => headerImage.setPickerOpen(true)}
                 >
                   {t('selectImage')}
                 </Button>
@@ -267,30 +244,30 @@ export function ProposalSendModal({
       </Modal>
 
       <ArtifactPickerDialog
-        open={pickerOpen}
-        onOpenChange={setPickerOpen}
-        onSelect={(artifact) => { setDraftArtifact(artifact); setPickerOpen(false); }}
-        filter={IMAGE_FILTER}
-        uploadConstraints={IMAGE_UPLOAD_CONSTRAINTS}
+        open={headerImage.pickerOpen}
+        onOpenChange={headerImage.setPickerOpen}
+        onSelect={(artifact) => { headerImage.setDraftArtifact(artifact); headerImage.setPickerOpen(false); }}
+        filter={WHATSAPP_HEADER_IMAGE_FILTER}
+        uploadConstraints={WHATSAPP_HEADER_IMAGE_UPLOAD_CONSTRAINTS}
       />
 
       {/* Confirmação de que a imagem se tornará pública */}
       <Modal
-        open={confirmOpen}
-        onOpenChange={setConfirmOpen}
+        open={headerImage.confirmOpen}
+        onOpenChange={headerImage.setConfirmOpen}
         title={t('confirmPublicImageTitle')}
         description={t('confirmPublicImageDescription')}
       >
         <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={publishArtifact.isPending}>
+          <Button variant="outline" onClick={() => headerImage.setConfirmOpen(false)} disabled={headerImage.isPending}>
             {t('cancel')}
           </Button>
           <Button
             onClick={async () => {
-              setConfirmOpen(false);
+              headerImage.setConfirmOpen(false);
               await submitWithCurrentDraft();
             }}
-            disabled={publishArtifact.isPending}
+            disabled={headerImage.isPending}
           >
             {t('confirmPublicImageConfirm')}
           </Button>

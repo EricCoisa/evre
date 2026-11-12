@@ -8,6 +8,24 @@ const mocks = vi.hoisted(() => ({
   issues: [] as unknown[],
 }));
 
+vi.mock('@/lib/messaging/template-header-image', () => ({
+  WHATSAPP_HEADER_IMAGE_FILTER: () => false,
+  WHATSAPP_HEADER_IMAGE_UPLOAD_CONSTRAINTS: {},
+  useTemplateHeaderImage: () => ({
+    draftArtifact: null,
+    setDraftArtifact: vi.fn(),
+    pickerOpen: false,
+    setPickerOpen: vi.fn(),
+    confirmOpen: false,
+    setConfirmOpen: vi.fn(),
+    previewUrl: undefined,
+    isPending: false,
+    publishArtifact: { mutateAsync: vi.fn() },
+    resolveUrl: vi.fn(),
+    needsPublishConfirm: false,
+  }),
+}));
+
 vi.mock('@/lib/actions/messaging/queries', () => ({
   useMessagingConnections: () => ({ data: [{ id: 'conn-1', provider: 'META', phone: '5511' }] }),
   useNativeButtonsSupport: () => ({ approval: true, supported: true, approvalConnectionIds: ['conn-1'], isLoading: false }),
