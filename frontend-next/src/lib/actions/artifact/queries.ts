@@ -50,8 +50,8 @@ export function useArtifactPreviewUrl(id: string | null | undefined) {
 export function usePublishArtifact() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, isPublic = false }: { id: string; isPublic?: boolean }) =>
-      Alive(() => publishArtifact(id, isPublic))(),
+    mutationFn: ({ id, published = true, isPublic = false }: { id: string; published?: boolean; isPublic?: boolean }) =>
+      Alive(() => publishArtifact(id, { published, public: isPublic }))(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['artifacts'] });
     },

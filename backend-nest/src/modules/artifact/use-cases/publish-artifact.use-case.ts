@@ -6,29 +6,30 @@ const TOKEN_CHARS =
   'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 const TOKEN_LENGTH = 16;
 
-/** Publica um artefato existente: define `published: true` e gera `publicToken` único quando ausente.
- * Idempotente — já publicado devolve o mesmo registro. */
+/** Controla o estado de publicação de um artefato. Idempotente — sem mudança retorna o mesmo registro.
+ * published=false despublica (links param); public=false volta a exigir autenticação.
+ * publicToken é preservado ao despublicar para reusar se republicar — evita mudar URL. */
 @Injectable()
 export class PublishArtifactUseCase {
   constructor(private readonly prisma: PrismaService) {}
 
-  async execute(id: string, isPublic = false): Promise<Artifact> {
+  async execute(id: string, data: { published: boolean; public: boolean }): Promise<Artifact> {
     const artifact = await this.prisma.artifact.findUnique({ where: { id } });
     if (!artifact || artifact.archivedAt) {
       throw new NotFoundException('artifact.not_found');
     }
-    const alreadyDone =
-      artifact.published &&
-      artifact.publicToken &&
-      (!isPublic || artifact.public);
-    if (alreadyDone) return artifact;
 
-    const publicToken = artifact.publicToken ?? (await this.generateToken());
+    const noChange = artifact.published === data.published && artifact.public === data.public;
+    if (noChange && artifact.publicToken) return artifact;
+
+    // Gera token na 1ª publicação e reusa sempre — URL nunca muda mesmo após despublicar/republicar
+    const publicToken = artifact.publicToken ?? (data.published ? await this.generateToken() : null);
+
     return this.prisma.artifact.update({
       where: { id },
       data: {
-        published: true,
-        public: isPublic || artifact.public,
+        published: data.published,
+        public: data.published && data.public,
         publicToken,
       },
     });

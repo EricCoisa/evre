@@ -46,14 +46,16 @@ export async function getArtifactPreviewUrl(id: string): Promise<ApiResponse<{ u
   );
 }
 
-/** Publica um artefato existente (define published + publicToken). Idempotente.
- * `isPublic: true` grava `public: true` → URL permanente em vez de presigned (necessário para Meta). */
-export async function publishArtifact(id: string, isPublic = false): Promise<ApiResponse<Artifact>> {
+/** Define o estado de publicação de um artefato. Ambos os sentidos: publish/unpublish, public/private. */
+export async function publishArtifact(
+  id: string,
+  data: { published: boolean; public: boolean },
+): Promise<ApiResponse<Artifact>> {
   return wrap(() =>
     customInstance<Artifact>({
       url: API_PATHS.ARTIFACTS_BY_ID(id) + '/publish',
       method: 'POST',
-      data: isPublic ? { public: true } : undefined,
+      data,
     }),
   );
 }

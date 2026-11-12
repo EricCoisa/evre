@@ -208,9 +208,13 @@ export class ArtifactController {
   })
   async publish(
     @Param('id') id: string,
+    @Body('published') published?: boolean,
     @Body('public') isPublic?: boolean,
   ): Promise<Artifact> {
-    return this.publishArtifact.execute(id, isPublic ?? false);
+    return this.publishArtifact.execute(id, {
+      published: published ?? true,
+      public: isPublic ?? false,
+    });
   }
 
   @Get(':id/preview')
