@@ -32,6 +32,7 @@ services:
 
   backend:
     image: registry.evre.com.br/evre-backend:latest
+    pull_policy: always
     restart: unless-stopped
     networks:
       - default
@@ -76,6 +77,7 @@ services:
 
   frontend:
     image: registry.evre.com.br/evre-frontend:latest
+    pull_policy: always
     restart: unless-stopped
     networks:
       - default
