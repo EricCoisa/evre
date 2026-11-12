@@ -20,10 +20,11 @@ export interface CmsSchemaResponse {
 export class CmsAgentBridgeService {
   constructor(private readonly configService: ConfigService) {}
 
-  // reusa NEXTAUTH_URL; rodar o backend em container exige o hostname do serviço aqui.
   private baseUrl(): string {
     return (
-      this.configService.get<string>('NEXTAUTH_URL') || 'http://localhost:3000'
+      this.configService.get<string>('FRONTEND_INTERNAL_URL') ||
+      this.configService.get<string>('NEXTAUTH_URL') ||
+      'http://localhost:3000'
     );
   }
 

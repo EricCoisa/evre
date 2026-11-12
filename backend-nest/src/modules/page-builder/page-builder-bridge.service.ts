@@ -33,7 +33,9 @@ export class PageBuilderBridgeService {
 
   private baseUrl(): string {
     return (
-      this.configService.get<string>('NEXTAUTH_URL') || 'http://localhost:3000'
+      this.configService.get<string>('FRONTEND_INTERNAL_URL') ||
+      this.configService.get<string>('NEXTAUTH_URL') ||
+      'http://localhost:3000'
     );
   }
 

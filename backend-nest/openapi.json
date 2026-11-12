@@ -7949,6 +7949,40 @@
       }
     },
     "/artifacts/{id}": {
+      "patch": {
+        "operationId": "ArtifactController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Artefato atualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "artifact.update.title",
+        "tags": [
+          "artifact"
+        ]
+      },
       "delete": {
         "operationId": "ArtifactController_archive",
         "parameters": [
@@ -13988,21 +14022,48 @@
             "default": ""
           },
           "header": {
-            "type": "object",
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": [
-                  "TEXT"
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "TEXT"
+                    ]
+                  },
+                  "text": {
+                    "type": "string",
+                    "maxLength": 200
+                  }
+                },
+                "required": [
+                  "kind",
+                  "text"
                 ]
               },
-              "text": {
-                "type": "string",
-                "maxLength": 200
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "IMAGE"
+                    ]
+                  },
+                  "url": {
+                    "type": "string",
+                    "format": "uri"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "url"
+                ]
               }
-            },
+            ],
             "nullable": true,
-            "x-nestjs_zod-self-required": false
+            "x-nestjs_zod-empty-type": true
           },
           "footer": {
             "type": "string",
@@ -14086,6 +14147,11 @@
             "default": {},
             "x-nestjs_zod-self-required": false,
             "description": "Valor de exemplo por variável, exigido pela Meta para revisar o template (inclusive as obrigatórias)"
+          },
+          "headerImageUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL pública da imagem de cabeçalho (IMAGE). Sobrescreve a URL armazenada no template apenas para esta submissão."
           }
         },
         "required": [
@@ -15548,6 +15614,9 @@
           "published": {
             "type": "boolean"
           },
+          "public": {
+            "type": "boolean"
+          },
           "publicToken": {
             "type": "string",
             "nullable": true
@@ -15582,6 +15651,7 @@
           "files",
           "sizeBytes",
           "published",
+          "public",
           "publicToken",
           "createdById",
           "archivedAt",

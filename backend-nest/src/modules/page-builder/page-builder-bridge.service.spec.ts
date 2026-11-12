@@ -27,7 +27,26 @@ describe('PageBuilderBridgeService', () => {
     expect(axios.get).not.toHaveBeenCalled();
   });
 
-  it('usa NEXTAUTH_URL e o header do secret quando configuradas', async () => {
+  it('prefere FRONTEND_INTERNAL_URL sobre NEXTAUTH_URL', async () => {
+    configGet.mockImplementation((key: string) => {
+      if (key === 'FRONTEND_INTERNAL_URL') return 'http://frontend:3000';
+      if (key === 'NEXTAUTH_URL') return 'https://app.exemplo.com';
+      if (key === 'AGENT_CMS_SECRET') return 'top-secret';
+      return undefined;
+    });
+    vi.mocked(axios.get).mockResolvedValue({
+      data: { blocks: [], pages: [], spans: [], classNames: [] },
+    });
+
+    await service.describeSchema();
+
+    expect(axios.get).toHaveBeenCalledWith(
+      'http://frontend:3000/api/agent/page-builder/schema',
+      expect.anything(),
+    );
+  });
+
+  it('usa NEXTAUTH_URL como fallback quando FRONTEND_INTERNAL_URL não está configurada', async () => {
     configGet.mockImplementation((key: string) =>
       key === 'NEXTAUTH_URL'
         ? 'https://app.exemplo.com'

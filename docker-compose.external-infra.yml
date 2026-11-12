@@ -62,6 +62,7 @@ services:
       S3_REGION:              ${S3_REGION}
       PAYLOAD_STORAGE_PROVIDER: ${PAYLOAD_STORAGE_PROVIDER}
       NEXTAUTH_URL:           ${NEXTAUTH_URL}
+      FRONTEND_INTERNAL_URL:  http://frontend:3000
       AGENT_CMS_SECRET:       ${AGENT_CMS_SECRET}
       SENTRY_DSN:             ${SENTRY_DSN}
       PDF_SERVICE_URL:        ${PDF_SERVICE_URL}
