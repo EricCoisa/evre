@@ -709,7 +709,15 @@ export class MetaProvider implements IMessagingService<MetaConfig> {
     definition: TemplateDefinition,
     providerTemplateId?: string,
   ): Promise<{ providerTemplateId: string }> {
-    const payload = this.buildSubmissionPayload(definition);
+    let submissionDefinition = definition;
+    if (definition.header?.kind === 'IMAGE' && definition.header.url) {
+      const handle = await this._uploadTemplateImage(cfg, definition.header.url);
+      submissionDefinition = {
+        ...definition,
+        header: { kind: 'IMAGE' as const, url: handle },
+      };
+    }
+    const payload = this.buildSubmissionPayload(submissionDefinition);
     const path = providerTemplateId
       ? providerTemplateId
       : `${cfg.wabaId}/message_templates`;
@@ -723,6 +731,42 @@ export class MetaProvider implements IMessagingService<MetaConfig> {
     const id = providerTemplateId ?? body?.id;
     if (!id) throw new Error('Meta aceitou a submissão sem devolver id');
     return { providerTemplateId: String(id) };
+  }
+
+  /**
+   * Faz upload da imagem para a Resumable Upload API da Meta e devolve o handle.
+   * A Meta requer um handle (não uma URL) no campo `header_handle` ao criar templates IMAGE.
+   * Referência: https://developers.facebook.com/docs/whatsapp/cloud-api/reference/media
+   */
+  private async _uploadTemplateImage(
+    cfg: MetaConfig,
+    imageUrl: string,
+  ): Promise<string> {
+    const imgResp = await providerFetch(imageUrl, { redirect: 'follow' }, uploadTimeoutMs(5_000_000));
+    if (!imgResp.ok) {
+      throw new Error(`Meta: não foi possível buscar a imagem em ${imageUrl} (HTTP ${imgResp.status})`);
+    }
+    const buffer = Buffer.from(await imgResp.arrayBuffer());
+    const contentType = imgResp.headers.get('content-type') ?? 'image/jpeg';
+
+    const sessionUrl =
+      `${this.graph(cfg, `${cfg.wabaId}/uploads`)}` +
+      `?file_length=${buffer.length}` +
+      `&file_type=${encodeURIComponent(contentType)}` +
+      `&file_name=header_image`;
+    const session = (await requestJson('Meta', sessionUrl, {
+      method: 'POST',
+      headers: this.auth(cfg),
+    })) as { id?: string } | null;
+    if (!session?.id) throw new Error('Meta: upload session não criado');
+
+    const upload = (await requestJson('Meta', this.graph(cfg, session.id), {
+      method: 'POST',
+      headers: { ...this.auth(cfg), 'file_offset': '0', 'Content-Type': contentType },
+      body: buffer,
+    }, uploadTimeoutMs(buffer.length))) as { h?: string } | null;
+    if (!upload?.h) throw new Error('Meta: handle não retornado após upload da imagem');
+    return upload.h;
   }
 
   /** AUTHENTICATION tem corpo fixo da Meta — nosso body/header/footer/buttons são ignorados nela. */
