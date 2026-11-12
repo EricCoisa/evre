@@ -85,9 +85,7 @@ export class CheckMetaTemplateDto extends createZodDto(
   category: 'AUTHENTICATION' | 'UTILITY' | 'MARKETING';
   @ApiProperty() body: string;
   @ApiPropertyOptional({ type: Object, nullable: true }) header?:
-    | { kind: 'TEXT'; text: string }
-    | { kind: 'IMAGE'; url: string }
-    | null;
+    { kind: 'TEXT'; text: string } | { kind: 'IMAGE'; url: string } | null;
   @ApiPropertyOptional({ type: String, nullable: true }) footer?: string | null;
   @ApiPropertyOptional({ type: [Object], nullable: true }) buttons?:
     unknown[] | null;

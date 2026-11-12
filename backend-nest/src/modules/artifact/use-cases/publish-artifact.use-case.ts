@@ -13,17 +13,23 @@ const TOKEN_LENGTH = 16;
 export class PublishArtifactUseCase {
   constructor(private readonly prisma: PrismaService) {}
 
-  async execute(id: string, data: { published: boolean; public: boolean }): Promise<Artifact> {
+  async execute(
+    id: string,
+    data: { published: boolean; public: boolean },
+  ): Promise<Artifact> {
     const artifact = await this.prisma.artifact.findUnique({ where: { id } });
     if (!artifact || artifact.archivedAt) {
       throw new NotFoundException('artifact.not_found');
     }
 
-    const noChange = artifact.published === data.published && artifact.public === data.public;
+    const noChange =
+      artifact.published === data.published && artifact.public === data.public;
     if (noChange && artifact.publicToken) return artifact;
 
     // Gera token na 1ª publicação e reusa sempre — URL nunca muda mesmo após despublicar/republicar
-    const publicToken = artifact.publicToken ?? (data.published ? await this.generateToken() : null);
+    const publicToken =
+      artifact.publicToken ??
+      (data.published ? await this.generateToken() : null);
 
     return this.prisma.artifact.update({
       where: { id },
