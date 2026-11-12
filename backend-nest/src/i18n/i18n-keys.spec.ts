@@ -42,7 +42,6 @@ const ptKeys = keysOf('pt-BR');
 const enKeys = keysOf('en');
 const namespaces = new Set([...ptKeys].map((k) => k.split('.')[0]));
 
-/** Chaves referenciadas no código, com o arquivo onde aparecem. */
 function referencedKeys(): Map<string, string> {
   const found = new Map<string, string>();
   for (const file of tsFiles(SRC_DIR)) {
@@ -61,16 +60,19 @@ function referencedKeys(): Map<string, string> {
   return found;
 }
 
+// varredura única — chamada repetida por teste multiplicaria o I/O pelo número de testes
+const refKeys = referencedKeys();
+
 describe('chaves i18n', () => {
   it('toda chave referenciada no código existe em pt-BR', () => {
-    const missing = [...referencedKeys()]
+    const missing = [...refKeys]
       .filter(([k]) => !ptKeys.has(k))
       .map(([k, f]) => `${k}  <- ${f}`);
     expect(missing, `chaves ausentes em pt-BR:\n${missing.join('\n')}`).toEqual([]);
   });
 
   it('toda chave referenciada no código existe em en', () => {
-    const missing = [...referencedKeys()]
+    const missing = [...refKeys]
       .filter(([k]) => !enKeys.has(k))
       .map(([k, f]) => `${k}  <- ${f}`);
     expect(missing, `chaves ausentes em en:\n${missing.join('\n')}`).toEqual([]);
@@ -84,7 +86,7 @@ describe('chaves i18n', () => {
 
   for (const locale of LOCALES) {
     it(`${locale} não tem namespace órfão (arquivo sem nenhuma referência no código)`, () => {
-      const used = new Set([...referencedKeys().keys()].map((k) => k.split('.')[0]));
+      const used = new Set([...refKeys.keys()].map((k) => k.split('.')[0]));
       const files = fs
         .readdirSync(path.join(I18N_DIR, locale))
         .filter((f) => f.endsWith('.json'))
