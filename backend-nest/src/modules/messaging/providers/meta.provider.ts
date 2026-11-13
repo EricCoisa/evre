@@ -769,9 +769,11 @@ export class MetaProvider implements IMessagingService<MetaConfig> {
     })) as { id?: string } | null;
     if (!session?.id) throw new Error('Meta: upload session não criado');
 
+    // A Meta retorna só o ID numérico; o endpoint de upload exige o prefixo "upload:".
+    const uploadPath = session.id.startsWith('upload:') ? session.id : `upload:${session.id}`;
     const upload = (await requestJson(
       'Meta',
-      this.graph(cfg, session.id),
+      this.graph(cfg, uploadPath),
       {
         method: 'POST',
         // Resumable Upload API exige OAuth (não Bearer) neste step.
