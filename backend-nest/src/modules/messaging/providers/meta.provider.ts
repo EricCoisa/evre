@@ -758,8 +758,11 @@ export class MetaProvider implements IMessagingService<MetaConfig> {
     const buffer = Buffer.from(await imgResp.arrayBuffer());
     const contentType = imgResp.headers.get('content-type') ?? 'image/jpeg';
 
+    // Resumable Upload API usa {app-id}/uploads, não {waba-id}/uploads.
+    // Com wabaId o endpoint retorna o próprio WABA ID como "id", não um session ID.
+    const uploadBase = cfg.appId ?? cfg.wabaId;
     const sessionUrl =
-      `${this.graph(cfg, `${cfg.wabaId}/uploads`)}` +
+      `${this.graph(cfg, `${uploadBase}/uploads`)}` +
       `?file_length=${buffer.length}` +
       `&file_type=${encodeURIComponent(contentType)}` +
       `&file_name=header_image`;
