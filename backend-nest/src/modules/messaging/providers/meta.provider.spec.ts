@@ -302,6 +302,87 @@ describe('MetaProvider', () => {
         { type: 'BUTTONS', buttons: [{ type: 'OTP', otp_type: 'COPY_CODE' }] },
       ]);
     });
+
+    it('URL button: placeholder named → {{1}} no payload enviado à Meta', async () => {
+      const f = mockFetch({ body: { id: 'wa-url' } });
+      await provider.use(cfg).submitTemplate!({
+        name: 'proposal_link',
+        language: 'pt-BR',
+        category: 'UTILITY',
+        body: 'Acesse',
+        buttons: [{ kind: 'URL', label: 'Abrir', url: 'https://app.example.com/p/{{open}}' }],
+        examples: { open: 'abc123' },
+      });
+
+      const body = JSON.parse((f.mock.calls[0][1] as RequestInit).body as string);
+      const btns = body.components.find((c: { type: string }) => c.type === 'BUTTONS');
+      expect(btns?.buttons[0]?.url).toBe('https://app.example.com/p/{{1}}');
+      expect(btns?.buttons[0]?.example).toEqual(['abc123']);
+    });
+
+    it('URL button estático (sem placeholder) não inclui example', async () => {
+      const f = mockFetch({ body: { id: 'wa-static' } });
+      await provider.use(cfg).submitTemplate!({
+        name: 'static_link',
+        language: 'pt-BR',
+        category: 'UTILITY',
+        body: 'Acesse',
+        buttons: [{ kind: 'URL', label: 'Abrir', url: 'https://app.example.com' }],
+        examples: {},
+      });
+
+      const body = JSON.parse((f.mock.calls[0][1] as RequestInit).body as string);
+      const btns = body.components.find((c: { type: string }) => c.type === 'BUTTONS');
+      expect(btns?.buttons[0]?.url).toBe('https://app.example.com');
+      expect(btns?.buttons[0]?.example).toBeUndefined();
+    });
+  });
+
+  describe('send — template com botão URL dinâmico', () => {
+    it('envia parâmetro do botão URL como { type: text, text } sem parameter_name', async () => {
+      const f = mockFetch({ body: { messages: [{ id: 'wamid.URL' }] } });
+      await provider.use(cfg).send({
+        type: 'TEMPLATE',
+        phone: '5511999999999',
+        template: {
+          name: 'proposal_link',
+          language: 'pt-BR',
+          category: 'UTILITY',
+          values: { open: 'abc123' },
+          body: 'Acesse',
+          buttons: [{ kind: 'URL', label: 'Abrir', url: 'https://app.example.com/p/{{open}}' }],
+        },
+      });
+
+      const body = JSON.parse((f.mock.calls[0][1] as RequestInit).body as string);
+      const urlComp = body.template?.components?.find(
+        (c: { type: string; sub_type?: string }) => c.type === 'button' && c.sub_type === 'url',
+      );
+      expect(urlComp?.parameters).toEqual([{ type: 'text', text: 'abc123' }]);
+      expect(urlComp?.parameters?.[0]).not.toHaveProperty('parameter_name');
+    });
+
+    it('URL button estático não inclui componente de botão no envio', async () => {
+      const f = mockFetch({ body: { messages: [{ id: 'wamid.STATIC' }] } });
+      await provider.use(cfg).send({
+        type: 'TEMPLATE',
+        phone: '5511999999999',
+        template: {
+          name: 'static_link',
+          language: 'pt-BR',
+          category: 'UTILITY',
+          values: {},
+          body: 'Acesse',
+          buttons: [{ kind: 'URL', label: 'Abrir', url: 'https://app.example.com' }],
+        },
+      });
+
+      const body = JSON.parse((f.mock.calls[0][1] as RequestInit).body as string);
+      const urlComp = body.template?.components?.find(
+        (c: { type: string; sub_type?: string }) => c.type === 'button' && c.sub_type === 'url',
+      );
+      expect(urlComp).toBeUndefined();
+    });
   });
 
   describe('deleteRemoteTemplate / fetchTemplateStatuses', () => {

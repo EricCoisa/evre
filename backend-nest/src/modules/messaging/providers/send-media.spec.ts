@@ -265,7 +265,7 @@ describe('envio de mídia e template', () => {
           type: 'button',
           sub_type: 'url',
           index: '0',
-          parameters: [{ type: 'text', parameter_name: 'track', text: 'abc' }],
+          parameters: [{ type: 'text', text: 'abc' }],
         },
         {
           type: 'button',
@@ -326,7 +326,7 @@ describe('envio de mídia e template', () => {
           type: 'button',
           sub_type: 'url',
           index: '0',
-          parameters: [{ type: 'text', parameter_name: 'order', text: '42' }],
+          parameters: [{ type: 'text', text: '42' }],
         },
       ]);
     });

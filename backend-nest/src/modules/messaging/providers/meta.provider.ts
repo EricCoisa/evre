@@ -423,15 +423,15 @@ export class MetaProvider implements IMessagingService<MetaConfig> {
         return;
       }
       if (button.kind !== 'URL') return;
-      const parameters = this.namedParameters(button.url, template.values);
-      if (parameters.length) {
-        components.push({
-          type: 'button',
-          sub_type: 'url',
-          index: String(index),
-          parameters,
-        });
-      }
+      const urlNames = extractPlaceholders(button.url);
+      if (!urlNames.length) return;
+      // Meta só aceita { type: 'text', text } para botão URL — sem parameter_name.
+      components.push({
+        type: 'button',
+        sub_type: 'url',
+        index: String(index),
+        parameters: [{ type: 'text', text: sanitizeParameter(template.values[urlNames[0]] ?? '') }],
+      });
     });
 
     return {
@@ -888,10 +888,15 @@ export class MetaProvider implements IMessagingService<MetaConfig> {
     switch (button.kind) {
       case 'URL': {
         const names = extractPlaceholders(button.url);
+        // Meta exige {{1}} nas URLs de botão — named placeholders são tratados como texto literal.
+        const metaUrl = names.reduce(
+          (u, name, i) => u.replace(`{{${name}}}`, `{{${i + 1}}}`),
+          compactPlaceholders(button.url),
+        );
         return {
           type: 'URL',
           text: button.label,
-          url: compactPlaceholders(button.url),
+          url: metaUrl,
           ...(names.length ? { example: [examples[names[0]] ?? ''] } : {}),
         };
       }
