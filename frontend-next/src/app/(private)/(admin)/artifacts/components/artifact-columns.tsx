@@ -3,7 +3,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Artifact } from "@/lib/actions/artifact/types";
 import { Button } from "@/components/ui/button";
-import { ArrowDown, ArrowUp, ArrowUpDown, Archive, ExternalLink, Pencil, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Archive, ExternalLink, Link, Pencil, Trash2 } from "lucide-react";
 import { DataCell, TableHead } from "@/components/table-utils";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
@@ -139,6 +139,17 @@ export function getArtifactColumns({ t, onEdit, onArchive, onDelete }: GetArtifa
                   <ExternalLink className="h-4 w-4" />
                 </a>
               </Button>
+              {item.public && item.published && item.publicToken && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigator.clipboard.writeText(`${window.location.origin}/api/artifacts/public/${item.publicToken}`)}
+                  title={t("copyPublicLinkTooltip")}
+                  className="h-6 p-0 min-h-0"
+                >
+                  <Link className="h-4 w-4" />
+                </Button>
+              )}
               {onEdit && (
                 <Button
                   variant="ghost"

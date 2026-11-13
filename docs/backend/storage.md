@@ -17,8 +17,9 @@ Toda leitura de configuração acontece por chamada, então **todo método é `a
 class StorageService {
   upload(key, buffer, contentType): Promise<string>                  // retorna a key
   delete(key): Promise<void>                                         // best-effort (loga warn se falhar)
-  getPublicUrl(key): Promise<string>                                 // URL pública do provider ativo
-  getPresignedUrl(key, ttlSeconds?): Promise<string>                 // URL assinada do provider ativo
+  getShareableUrl(key): Promise<string>                              // URL acessível externamente sem auth (presigned)
+  getPublicUrl(key): Promise<string>                                 // uso interno: parse de URL gravada no banco
+  getPresignedUrl(key, ttlSeconds?): Promise<string>                 // URL assinada com TTL customizável
   validateConfiguration(): Promise<ProviderResult>                   // valida o que está gravado
   validateCandidate(candidate): Promise<ProviderResult>              // valida credencial ainda não gravada
   checkHealth(): Promise<{ operational: boolean, reason?: string }>  // serve do cache Redis (TTL 300 s)
@@ -29,6 +30,12 @@ class StorageService {
   getLocalStorageDir(): Promise<string>                              // diretório resolvido do provider LOCAL
 }
 ```
+
+> **Storage é sempre privado.** O bucket nunca precisa de ACL pública. O controle de acesso fica
+> na aplicação: `getShareableUrl` gera uma URL com credencial embutida (presigned) que qualquer um
+> com o link consegue acessar — sem depender de política de bucket. `getPublicUrl` existe só para
+> uso interno (`resolveKeyFromUrl`/`resolveFileFromUrl`) e não deve ser usado para servir arquivos
+> externamente.
 
 `resolveKeyFromUrl` só reconhece URL do provider ativo; `resolveFileFromUrl` testa S3 **e** LOCAL e
 devolve o provider dono junto da key, então arquivo gravado antes de uma troca de provider continua
@@ -238,15 +245,19 @@ agente não gravar credencial sem validar — ver [[ai-tools]].
        return {
          upload: (key, buf, ct)        => ...,   // Promise<string>
          delete: (key)                 => ...,   // Promise<void>
-         getPublicUrl: (key)           => `${cfg.baseUrl}/${key}`,   // síncrono
+         getPublicUrl: (key)           => `${cfg.baseUrl}/${key}`,   // síncrono, uso interno
          getPresignedUrl: (key, ttl?)  => ...,   // Promise<string>
+         getShareableUrl: (key)        => ...,   // Promise<string> — URL externamente acessível
          validateConfiguration: ()     => ...,   // Promise<ProviderResult>
        };
      }
    }
    ```
    `getPublicUrl` é o único síncrono da interface — `resolveFileFromUrl` a chama em loop para
-   descobrir o dono de uma URL, sem `await` por candidato.
+   descobrir o dono de uma URL, sem `await` por candidato. `getShareableUrl` é o que deve ser usado
+   para gerar URLs servidas externamente (ex.: artefatos públicos, imagens de template); implemente
+   como presigned com TTL generoso (ex.: 7 dias) — o endpoint de acesso da app regenera a cada
+   request, então o TTL só precisa cobrir o tempo entre o redirect e o download.
 
 3. **Registrar no `StorageEngineConst`** — `src/domain/storage/storage.const.ts`:
    ```ts

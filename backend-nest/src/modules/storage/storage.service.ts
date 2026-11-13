@@ -51,6 +51,10 @@ export class StorageService {
     return (await this.provider()).getPresignedUrl(key, ttlSeconds);
   }
 
+  async getShareableUrl(key: string): Promise<string> {
+    return (await this.provider()).getShareableUrl(key);
+  }
+
   async validateConfiguration(): Promise<ProviderResult> {
     return (await this.provider()).validateConfiguration();
   }

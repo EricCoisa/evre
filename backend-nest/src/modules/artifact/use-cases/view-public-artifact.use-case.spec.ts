@@ -17,7 +17,7 @@ const publishedArtifact = {
 
 const mockPrisma = { artifact: { findUnique: vi.fn() } };
 const mockI18n = { t: vi.fn().mockReturnValue('mensagem') };
-const mockStorage = { getPresignedUrl: vi.fn() };
+const mockStorage = { getPresignedUrl: vi.fn(), getShareableUrl: vi.fn() };
 
 describe('ViewPublicArtifactUseCase', () => {
   let useCase: ViewPublicArtifactUseCase;
@@ -34,7 +34,7 @@ describe('ViewPublicArtifactUseCase', () => {
     useCase = module.get(ViewPublicArtifactUseCase);
 
     vi.clearAllMocks();
-    mockStorage.getPresignedUrl.mockImplementation((key: string) =>
+    mockStorage.getShareableUrl.mockImplementation((key: string) =>
       Promise.resolve(`https://signed/${key}`),
     );
   });

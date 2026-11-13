@@ -26,6 +26,7 @@
   "save": "Save",
   "nameRequired": "Name is required",
   "viewTooltip": "View",
+  "copyPublicLinkTooltip": "Copy public link",
   "archiveTooltip": "Archive",
   "deleteTooltip": "Delete permanently",
   "deleteConfirm": "Confirm permanent deletion",

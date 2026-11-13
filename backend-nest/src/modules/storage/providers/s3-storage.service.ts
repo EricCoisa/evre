@@ -36,6 +36,8 @@ export class S3StorageService implements IStorageService<S3ConfigDto> {
       getPublicUrl: (key) => `${cfg.publicUrl}/${key}`,
       getPresignedUrl: (key, ttl) =>
         this._getPresignedUrl(client, cfg.bucket, key, ttl),
+      getShareableUrl: (key) =>
+        this._getPresignedUrl(client, cfg.bucket, key, 7 * 24 * 3600),
       validateConfiguration: () => this._validate(client, cfg.bucket),
     };
   }

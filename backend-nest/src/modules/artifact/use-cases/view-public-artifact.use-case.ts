@@ -24,6 +24,6 @@ export class ViewPublicArtifactUseCase {
     }
 
     const key = resolveArtifactViewKey(artifact, subPath, this.i18n);
-    return this.storageService.getPresignedUrl(key);
+    return this.storageService.getShareableUrl(key);
   }
 }

@@ -19,6 +19,8 @@ export class LocalStorageService implements IStorageService<LocalConfigDto> {
       getPublicUrl: (key) => `${cfg.baseUrl}/uploads/${key}`,
       getPresignedUrl: (key) =>
         Promise.resolve(`${cfg.baseUrl}/uploads/${key}`),
+      getShareableUrl: (key) =>
+        Promise.resolve(`${cfg.baseUrl}/uploads/${key}`),
       validateConfiguration: () => this._validate(cfg.dir),
     };
   }

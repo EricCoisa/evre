@@ -711,7 +711,10 @@ export class MetaProvider implements IMessagingService<MetaConfig> {
   ): Promise<{ providerTemplateId: string }> {
     let submissionDefinition = definition;
     if (definition.header?.kind === 'IMAGE' && definition.header.url) {
-      const handle = await this._uploadTemplateImage(cfg, definition.header.url);
+      const handle = await this._uploadTemplateImage(
+        cfg,
+        definition.header.url,
+      );
       submissionDefinition = {
         ...definition,
         header: { kind: 'IMAGE' as const, url: handle },
@@ -742,9 +745,15 @@ export class MetaProvider implements IMessagingService<MetaConfig> {
     cfg: MetaConfig,
     imageUrl: string,
   ): Promise<string> {
-    const imgResp = await providerFetch(imageUrl, { redirect: 'follow' }, uploadTimeoutMs(5_000_000));
+    const imgResp = await providerFetch(
+      imageUrl,
+      { redirect: 'follow' },
+      uploadTimeoutMs(5_000_000),
+    );
     if (!imgResp.ok) {
-      throw new Error(`Meta: não foi possível buscar a imagem em ${imageUrl} (HTTP ${imgResp.status})`);
+      throw new Error(
+        `Meta: não foi possível buscar a imagem em ${imageUrl} (HTTP ${imgResp.status})`,
+      );
     }
     const buffer = Buffer.from(await imgResp.arrayBuffer());
     const contentType = imgResp.headers.get('content-type') ?? 'image/jpeg';
@@ -760,12 +769,23 @@ export class MetaProvider implements IMessagingService<MetaConfig> {
     })) as { id?: string } | null;
     if (!session?.id) throw new Error('Meta: upload session não criado');
 
-    const upload = (await requestJson('Meta', this.graph(cfg, session.id), {
-      method: 'POST',
-      headers: { ...this.auth(cfg), 'file_offset': '0', 'Content-Type': contentType },
-      body: buffer,
-    }, uploadTimeoutMs(buffer.length))) as { h?: string } | null;
-    if (!upload?.h) throw new Error('Meta: handle não retornado após upload da imagem');
+    const upload = (await requestJson(
+      'Meta',
+      this.graph(cfg, session.id),
+      {
+        method: 'POST',
+        // Resumable Upload API exige OAuth (não Bearer) neste step.
+        headers: {
+          Authorization: `OAuth ${cfg.accessToken}`,
+          file_offset: '0',
+          'Content-Type': contentType,
+        },
+        body: buffer,
+      },
+      uploadTimeoutMs(buffer.length),
+    )) as { h?: string } | null;
+    if (!upload?.h)
+      throw new Error('Meta: handle não retornado após upload da imagem');
     return upload.h;
   }
 
