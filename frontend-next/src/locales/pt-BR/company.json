@@ -74,7 +74,11 @@
     "isPrimary": "Contato principal",
     "isDecisionMaker": "Tomador de decisão",
     "primary": "Principal",
-    "decisionMaker": "Tomador de decisão"
+    "decisionMaker": "Tomador de decisão",
+    "modePhone": "Novo número",
+    "modeExisting": "Contato existente",
+    "searchContactPlaceholder": "Buscar por nome ou telefone...",
+    "searchContactEmpty": "Nenhum contato encontrado"
   },
   "tabMembers": "Membros",
   "members": {

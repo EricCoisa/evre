@@ -17,7 +17,7 @@ const user: AuthenticatedUser = {
 
 const mockPrisma = {
   messagingContact: { findUnique: vi.fn() },
-  companyContact: { findUnique: vi.fn(), create: vi.fn() },
+  companyContact: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
 };
 const mockI18n = { t: vi.fn().mockReturnValue('mensagem') };
 const mockLogging = { create: vi.fn() };
@@ -53,15 +53,36 @@ describe('CreateCompanyContactUseCase', () => {
     expect(mockPrisma.companyContact.create).not.toHaveBeenCalled();
   });
 
-  it('lança ConflictException quando o vínculo já existe', async () => {
+  it('lança ConflictException quando o vínculo já existe e está ativo', async () => {
     mockResourceAccess.assertCanRead.mockResolvedValue(undefined);
     mockPrisma.messagingContact.findUnique.mockResolvedValue({ id: 'mc-1' });
-    mockPrisma.companyContact.findUnique.mockResolvedValue({ id: 'cc-existente' });
+    mockPrisma.companyContact.findUnique.mockResolvedValue({ id: 'cc-existente', archivedAt: null });
 
     await expect(
       useCase.execute('company-1', { phone: '5511999990000' } as never, user),
     ).rejects.toThrow(ConflictException);
     expect(mockCreateMessagingContact.execute).not.toHaveBeenCalled();
+    expect(mockPrisma.companyContact.create).not.toHaveBeenCalled();
+  });
+
+  it('reativa o vínculo quando o contato existe mas está arquivado', async () => {
+    mockResourceAccess.assertCanRead.mockResolvedValue(undefined);
+    mockPrisma.messagingContact.findUnique.mockResolvedValue({ id: 'mc-1' });
+    mockPrisma.companyContact.findUnique.mockResolvedValue({ id: 'cc-arquivado', archivedAt: new Date() });
+    mockPrisma.companyContact.update.mockResolvedValue({
+      id: 'cc-arquivado',
+      companyId: 'company-1',
+      messagingContactId: 'mc-1',
+      archivedAt: null,
+      messagingContact: { id: 'mc-1', phone: '5511999990000', name: 'Fulano' },
+    });
+
+    const result = await useCase.execute('company-1', { phone: '5511999990000' } as never, user);
+
+    expect(result.id).toBe('cc-arquivado');
+    expect(mockPrisma.companyContact.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ archivedAt: null }) }),
+    );
     expect(mockPrisma.companyContact.create).not.toHaveBeenCalled();
   });
 

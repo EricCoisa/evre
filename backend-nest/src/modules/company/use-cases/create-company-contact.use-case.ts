@@ -51,15 +51,33 @@ export class CreateCompanyContactUseCase {
       where: {
         companyId_messagingContactId: { companyId, messagingContactId: mcId },
       },
-      select: { id: true },
+      select: { id: true, archivedAt: true },
     });
-    if (existing) {
+    if (existing && !existing.archivedAt) {
       throw new ConflictException(
         this.i18n.t('company.contact_already_linked'),
       );
     }
 
     const { phone: _phone, name: _name, ...contactFields } = dto;
+
+    if (existing?.archivedAt) {
+      const unarchived = await this.prisma.companyContact.update({
+        where: { id: existing.id },
+        data: { ...contactFields, archivedAt: null },
+        include: { messagingContact: true },
+      });
+      await this.loggingService.create(
+        {
+          module: 'COMPANY',
+          action: LogActions.CREATE,
+          message: `Contato reativado: ${unarchived.messagingContact.name ?? unarchived.messagingContact.phone}`,
+          metadata: { companyId, contactId: unarchived.id },
+        },
+        user.id,
+      );
+      return unarchived;
+    }
 
     const created = await this.prisma.companyContact.create({
       data: { ...contactFields, companyId, messagingContactId: mcId },

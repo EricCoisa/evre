@@ -74,7 +74,11 @@
     "isPrimary": "Primary contact",
     "isDecisionMaker": "Decision maker",
     "primary": "Primary",
-    "decisionMaker": "Decision maker"
+    "decisionMaker": "Decision maker",
+    "modePhone": "New number",
+    "modeExisting": "Existing contact",
+    "searchContactPlaceholder": "Search by name or phone...",
+    "searchContactEmpty": "No contacts found"
   },
   "tabMembers": "Members",
   "members": {

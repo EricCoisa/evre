@@ -17,7 +17,7 @@ import { PhoneInput } from '@/components/ui/phone-input';
 import { ArtifactPickerDialog } from '@/components/artifact-picker-dialog';
 import { useTranslation } from '@/hooks/use-translation';
 import { useCompany } from '@/lib/actions/company/queries';
-import { useTemplateTypes, useTemplates, useTemplateVariables } from '@/lib/actions/messaging/queries';
+import { useTemplateTypes, useTemplates } from '@/lib/actions/messaging/queries';
 import {
   useTemplateHeaderImage,
   WHATSAPP_HEADER_IMAGE_FILTER,
@@ -26,7 +26,6 @@ import {
 import type {
   MessagingTemplateCatalogItem,
   MessagingTemplateType,
-  ReservedVariable,
   TemplateVariable,
 } from '@/lib/actions/messaging/types';
 import type { Proposal } from '@/lib/actions/proposal/types';
@@ -38,15 +37,12 @@ export interface ProposalSendDraft {
   phone?: string;
 }
 
-function nonReservedVariables(
+function templateVariables(
   selected: MessagingTemplateCatalogItem | undefined,
   types: MessagingTemplateType[],
-  reserved: ReservedVariable[],
 ): TemplateVariable[] {
   if (!selected) return [];
-  const reservedNames = new Set(reserved.map((r) => r.name));
-  const allVars = types.find((t) => t.id === selected.typeId)?.variables ?? [];
-  return allVars.filter((v) => !reservedNames.has(v.name));
+  return types.find((t) => t.id === selected.typeId)?.variables ?? [];
 }
 
 /** Modal de envio de proposta por WhatsApp. */
@@ -68,7 +64,6 @@ export function ProposalSendModal({
   const { t } = useTranslation('proposal');
   const { data: templatesPage } = useTemplates({ pagination: false } as never);
   const { data: typesPage } = useTemplateTypes({ pagination: false } as never);
-  const { data: reservedData } = useTemplateVariables();
   const { data: company } = useCompany(proposal.companyId);
 
   const [templateId, setTemplateId] = useState('');
@@ -82,20 +77,25 @@ export function ProposalSendModal({
   const types: MessagingTemplateType[] = Array.isArray(typesPage)
     ? typesPage
     : (typesPage as { data?: MessagingTemplateType[] } | undefined)?.data ?? [];
-  const reserved: ReservedVariable[] = reservedData ?? [];
 
   const available = templates.filter((tpl) => !tpl.invalidReason);
   const selected = available.find((tpl) => tpl.id === templateId);
-  const variables = nonReservedVariables(selected, types, reserved);
+  const variables = templateVariables(selected, types);
+  const selectedContact = contacts.find((c) => c.phone === phone);
+  const contactFirstName = selectedContact?.name?.split(' ')[0] ?? '';
   const hasImage = selected?.header?.kind === 'IMAGE';
 
-  // company_name é pré-preenchida via memo: defaults abaixo, overrides do usuário acima.
+  // Variáveis reservadas pré-preenchidas; o operador pode sobrescrever qualquer campo.
   const effectiveValues = useMemo(() => {
+    const defaults: Record<string, string> = {};
     if (company?.name && variables.some((v) => v.name === 'company_name')) {
-      return { company_name: company.name, ...values };
+      defaults.company_name = company.name;
     }
-    return values;
-  }, [company?.name, values, variables]);
+    if (contactFirstName && variables.some((v) => v.name === 'first_name')) {
+      defaults.first_name = contactFirstName;
+    }
+    return { ...defaults, ...values };
+  }, [company?.name, contactFirstName, values, variables]);
 
   const valid =
     Boolean(selected) &&
@@ -228,7 +228,7 @@ export function ProposalSendModal({
                 </SelectContent>
               </Select>
             )}
-            <Label htmlFor="prop-phone">{t('sendManualPhone')}</Label>
+            <Label htmlFor="prop-phone">{contacts.length > 0 ? t('sendManualPhone') : t('sendPhone')}</Label>
             <PhoneInput id="prop-phone" value={phone} onChange={setPhone} disabled={pending} />
           </div>
 

@@ -124,6 +124,7 @@
   "sendChooseContactDescription": "Choose a company contact or enter another number.",
   "sendChooseContactPlaceholder": "Select a contact",
   "sendManualPhone": "Or enter another number",
+  "sendPhone": "WhatsApp number",
   "sendConfirm": "Send",
   "shortUrl": "Short link",
   "sendHistory": "Send history",
