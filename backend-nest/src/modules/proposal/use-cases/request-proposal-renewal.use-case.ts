@@ -47,6 +47,7 @@ export class RequestProposalRenewalUseCase {
       message: this.i18n.t('proposal.public.renew_requested_message', {
         args: { name: version.proposal.name },
       }),
+      payload: { name: version.proposal.name },
       actionUrl: `/proposal/${version.proposal.id}?tab=publicacao`,
       channels: { whatsapp: true },
     });

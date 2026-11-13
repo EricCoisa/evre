@@ -187,6 +187,7 @@ export class AcceptProposalVersionUseCase {
         message: this.i18n.t('proposal.acceptance_notified_message', {
           args: { name: result.proposalName },
         }),
+        payload: { name: result.proposalName },
         actionUrl: `/proposal/${result.proposalId}?tab=publicacao`,
         channels: { whatsapp: true },
       });

@@ -145,5 +145,7 @@
     "MESSAGING": "Mensageria",
     "CAPTCHA": "Captcha",
     "NOTIFICATION_EMAIL": "Notificações por email",
-    "NOTIFICATION_WHATSAPP": "Notificações por WhatsApp"
+    "NOTIFICATION_WHATSAPP": "Notificações por WhatsApp",
+
+    "ARCHIVE": "Arquivado"
 }
