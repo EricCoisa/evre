@@ -16,6 +16,7 @@ export class GetInvitesUseCase {
         roleId: true,
         createdById: true,
         expiresAt: true,
+        actionUrl: true,
         usedAt: true,
         createdAt: true,
         updatedAt: true,
@@ -25,7 +26,6 @@ export class GetInvitesUseCase {
     });
     return invites.map(({ role, ...rest }) => ({
       ...rest,
-      actionUrl: null,
       roleName: role.name,
     }));
   }

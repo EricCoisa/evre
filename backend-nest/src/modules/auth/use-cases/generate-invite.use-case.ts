@@ -245,6 +245,11 @@ export class GenerateInviteUseCase {
       throw error;
     }
 
+    await this.prisma.invite.updateMany({
+      where: channel === 'WHATSAPP' ? { phone, tokenHash: inviteTokenHash } : { email, tokenHash: inviteTokenHash },
+      data: { actionUrl },
+    });
+
     return { actionUrl };
   }
 
