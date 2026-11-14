@@ -95,6 +95,86 @@ const edgeFirstCollision: CollisionDetection = (args) => {
   return edges.length ? edges : hits;
 };
 
+/** `isSaving` combinado: salvamento externo (storage: 'record') ou as duas mutações internas. */
+function resolveSaving(
+  externalSaving: boolean | undefined,
+  savePending: boolean,
+  saveAsDefaultPending: boolean,
+): boolean {
+  if (externalSaving !== undefined) return externalSaving;
+  return savePending || saveAsDefaultPending;
+}
+
+/** "Salvar como Padrão" só existe para quem não tem `onSave` próprio (sem layout padrão do
+ * sistema) e é admin. */
+function resolveSaveAsDefaultHandler(
+  hasExternalSave: boolean,
+  isAdmin: boolean,
+  handler: () => void,
+): (() => void) | undefined {
+  if (hasExternalSave || !isAdmin) return undefined;
+  return handler;
+}
+
+function shellOuterClass(panelOpen: boolean): string {
+  return cn(
+    'relative min-h-[calc(100vh-4rem)] flex flex-col bg-muted/10 -m-4 sm:-m-6 lg:-m-8 transition-all duration-300',
+    panelOpen ? 'lg:pr-80' : '',
+  );
+}
+
+/** Estado vazio amigável quando a página ainda não tem blocos. */
+function EmptyCanvasState({ t }: { t: ReturnType<typeof useTranslation>['t'] }) {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border/80 bg-background/50 p-12 text-center shadow-xs">
+      <div className="rounded-2xl border bg-muted/60 p-4 shadow-inner mb-4">
+        <LayoutGrid className="size-8 text-primary/80" />
+      </div>
+      <h3 className="text-base font-semibold text-foreground mb-1">
+        {t('editor.emptyTitle', { defaultValue: 'Página em branco' })}
+      </h3>
+      <p className="text-sm text-muted-foreground max-w-md mb-6">
+        {t('editor.emptyPage')}
+      </p>
+      <BlockInserter index={0} className="h-auto opacity-100" />
+    </div>
+  );
+}
+
+/** Conteúdo do canvas: blocos existentes com pontos de inserção, ou o estado vazio. */
+function CanvasContent({
+  blocks,
+  t,
+}: {
+  blocks: PageLayout['blocks'];
+  t: ReturnType<typeof useTranslation>['t'];
+}) {
+  if (blocks.length === 0) return <EmptyCanvasState t={t} />;
+
+  return (
+    <div className="space-y-3">
+      {/* Ponto de inserção inicial no topo */}
+      <BlockInserter index={0} />
+
+      <SortableList ids={blocks.map((b) => b.id)}>
+        <BlockGrid blocks={blocks} />
+      </SortableList>
+
+      {/* Ponto de inserção no final da página */}
+      <BlockInserter index={blocks.length} />
+    </div>
+  );
+}
+
+/** Painel lateral retrátil de propriedades — renderizado sempre, se auto-oculta quando fechado. */
+function SidePanel({
+  open,
+  ...panelProps
+}: { open: boolean } & React.ComponentProps<typeof EditorPanel>) {
+  if (!open) return null;
+  return <EditorPanel {...panelProps} />;
+}
+
 function EditorShell({
   pageKey,
   onExit,
@@ -207,16 +287,11 @@ function EditorShell({
   // Calculados uma vez, usados pelos dois lugares que desenham a mesma barra de ações
   // (top bar + painel) — "Salvar como Padrão" não existe para quem tem `onSave` próprio
   // (storage: 'record' não tem layout padrão do sistema).
-  const isSaving = externalSaving ?? (save.isPending || saveAsDefault.isPending);
-  const onSaveAsDefaultProp = !externalSave && isAdmin ? handleSaveAsDefault : undefined;
+  const isSaving = resolveSaving(externalSaving, save.isPending, saveAsDefault.isPending);
+  const onSaveAsDefaultProp = resolveSaveAsDefaultHandler(!!externalSave, isAdmin, handleSaveAsDefault);
 
   return (
-    <div
-      className={cn(
-        'relative min-h-[calc(100vh-4rem)] flex flex-col bg-muted/10 -m-4 sm:-m-6 lg:-m-8 transition-all duration-300',
-        panelOpen ? 'lg:pr-80' : '',
-      )}
-    >
+    <div className={shellOuterClass(panelOpen)}>
       {/* Barra de Ferramentas Superior (WordPress/Excalidraw Style) */}
       <EditorTopBar
         pageKey={pageKey}
@@ -267,33 +342,7 @@ function EditorShell({
             onDragEnd={handleDragEnd}
             onDragCancel={handleDragCancel}
           >
-            {editor.draft.blocks.length > 0 ? (
-              <div className="space-y-3">
-                {/* Ponto de inserção inicial no topo */}
-                <BlockInserter index={0} />
-
-                <SortableList ids={editor.draft.blocks.map((b) => b.id)}>
-                  <BlockGrid blocks={editor.draft.blocks} />
-                </SortableList>
-
-                {/* Ponto de inserção no final da página */}
-                <BlockInserter index={editor.draft.blocks.length} />
-              </div>
-            ) : (
-              /* Estado Vazio Amigável para Leigos */
-              <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border/80 bg-background/50 p-12 text-center shadow-xs">
-                <div className="rounded-2xl border bg-muted/60 p-4 shadow-inner mb-4">
-                  <LayoutGrid className="size-8 text-primary/80" />
-                </div>
-                <h3 className="text-base font-semibold text-foreground mb-1">
-                  {t('editor.emptyTitle', { defaultValue: 'Página em branco' })}
-                </h3>
-                <p className="text-sm text-muted-foreground max-w-md mb-6">
-                  {t('editor.emptyPage')}
-                </p>
-                <BlockInserter index={0} className="h-auto opacity-100" />
-              </div>
-            )}
+            <CanvasContent blocks={editor.draft.blocks} t={t} />
 
             <DragOverlay>
               {activeBlock ? <DragPreview block={activeBlock} /> : null}
@@ -303,18 +352,17 @@ function EditorShell({
       </div>
 
       {/* Painel Lateral Retrátil de Propriedades Avançadas */}
-      {panelOpen ? (
-        <EditorPanel
-          pageKey={pageKey}
-          dirty={editor.dirty}
-          saving={isSaving}
-          onSave={handleSave}
-          onSaveAsDefault={onSaveAsDefaultProp}
-          onCancel={handleCancel}
-          artifactPickerSlot={artifactPickerSlot}
-          storageHealthy={storageHealthy}
-        />
-      ) : null}
+      <SidePanel
+        open={panelOpen}
+        pageKey={pageKey}
+        dirty={editor.dirty}
+        saving={isSaving}
+        onSave={handleSave}
+        onSaveAsDefault={onSaveAsDefaultProp}
+        onCancel={handleCancel}
+        artifactPickerSlot={artifactPickerSlot}
+        storageHealthy={storageHealthy}
+      />
     </div>
   );
 }

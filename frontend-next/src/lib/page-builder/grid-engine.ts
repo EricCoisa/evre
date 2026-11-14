@@ -100,6 +100,50 @@ export function compactEmptyRows(placed: PlacedBlock[], _cols = 12): PlacedBlock
  *   a altura exata para comportar itens, textos e paginação sem truncar nem sobrepor;
  * - Respeita o rowSpan explicitamente definido pelo usuário quando for maior.
  */
+/** Altura automática para blocos textuais fluidos (text.rich, topic, divider) de largura total. */
+function calculateFluidTextRowSpan(block: PageBlock, cols: number): BlockRowSpan {
+  const span = normalizeSpan(block.span);
+  if (span >= cols) {
+    return 1;
+  }
+  const estimator = BLOCK_ROW_SPAN_ESTIMATORS[block.type];
+  if (estimator) {
+    return estimator(block, cols);
+  }
+  return 1;
+}
+
+/** Altura mínima de um container (group) para abraçar a altura total dos filhos + cabeçalho. */
+function calculateContainerRowSpan(
+  block: PageBlock,
+  cols: number,
+  minNeeded: BlockRowSpan,
+): BlockRowSpan {
+  const parentSpan = normalizeSpan(block.span);
+  // Para estimar os filhos com precisão de quebra de linha, passa a largura real que o container oferece aos filhos.
+  const mappedChildren = block.children!.map((c) => ({
+    ...c,
+    span: normalizeSpan(
+      Math.max(1, Math.round((parentSpan * normalizeSpan(c.span)) / cols)),
+    ),
+    rowSpan: isAutoHeightBlockType(c.type)
+      ? (BLOCK_ROW_SPAN_ESTIMATORS[c.type]?.(c, cols) ?? 1)
+      : c.rowSpan,
+  }));
+  const placedChildren = resolveGridLayout(mappedChildren, cols);
+  const maxChildBottom = Math.max(0, ...placedChildren.map((c) => c.y + c.rowSpan));
+  const hasTitle = Boolean(block.props?.title);
+  const hasDesc = Boolean(block.props?.description);
+  // Invólucro do Card:
+  // - Padding py-6 (24px topo + 24px base = 48px) + gap-6 (24px) + inserter no editor (44px) => 1 linha base
+  // - Título: +1 linha
+  // - Descrição: +1 linha adicional
+  const basePaddingRows = 1;
+  const headerRows = hasTitle && hasDesc ? 2 : hasTitle || hasDesc ? 1 : 0;
+  const containerNeeded = maxChildBottom + basePaddingRows + headerRows;
+  return normalizeRowSpan(Math.max(minNeeded, containerNeeded), block.type);
+}
+
 export function calculateEffectiveRowSpan(block: PageBlock, cols = 12): BlockRowSpan {
   // Para blocos de conteúdo textual/inline, a altura é automática com base no conteúdo real e preset.
   // Blocos auto-height de largura total (span >= cols) ocupam a linha inteira da grade;
@@ -109,46 +153,14 @@ export function calculateEffectiveRowSpan(block: PageBlock, cols = 12): BlockRow
   // expandem suavemente via CSS minmax(44px, auto) ocupando 1 linha na grade quando largura total.
   const isFluidText = block.type === 'text.rich' || block.type === 'topic' || block.type === 'divider';
   if (isFluidText) {
-    const span = normalizeSpan(block.span);
-    if (span >= cols) {
-      return 1;
-    }
-    const estimator = BLOCK_ROW_SPAN_ESTIMATORS[block.type];
-    if (estimator) {
-      return estimator(block, cols);
-    }
-    return 1;
+    return calculateFluidTextRowSpan(block, cols);
   }
 
   let minNeeded = normalizeRowSpan(block.rowSpan, block.type);
 
   // 1. Containers (group ou qualquer bloco com children): abraça a altura total dos filhos
   if (block.children && block.children.length > 0) {
-    const parentSpan = normalizeSpan(block.span);
-    // Para estimar os filhos com precisão de quebra de linha, passa a largura real que o container oferece aos filhos.
-    // Dentro de um container (group), calcula a altura estimada real dos filhos textuais
-    // para que o Card do container abraçar todo o conteúdo sem truncar.
-    const mappedChildren = block.children.map((c) => ({
-      ...c,
-      span: normalizeSpan(
-        Math.max(1, Math.round((parentSpan * normalizeSpan(c.span)) / cols)),
-      ),
-      rowSpan: isAutoHeightBlockType(c.type)
-        ? (BLOCK_ROW_SPAN_ESTIMATORS[c.type]?.(c, cols) ?? 1)
-        : c.rowSpan,
-    }));
-    const placedChildren = resolveGridLayout(mappedChildren, cols);
-    const maxChildBottom = Math.max(0, ...placedChildren.map((c) => c.y + c.rowSpan));
-    const hasTitle = Boolean(block.props?.title);
-    const hasDesc = Boolean(block.props?.description);
-    // Invólucro do Card:
-    // - Padding py-6 (24px topo + 24px base = 48px) + gap-6 (24px) + inserter no editor (44px) => 1 linha base
-    // - Título: +1 linha
-    // - Descrição: +1 linha adicional
-    const basePaddingRows = 1;
-    const headerRows = hasTitle && hasDesc ? 2 : hasTitle || hasDesc ? 1 : 0;
-    const containerNeeded = maxChildBottom + basePaddingRows + headerRows;
-    minNeeded = normalizeRowSpan(Math.max(minNeeded, containerNeeded), block.type);
+    minNeeded = calculateContainerRowSpan(block, cols, minNeeded);
   }
 
   // 2. Estimador agnóstico por tipo de bloco (baseado no conteúdo, props e parâmetros de dados)
@@ -266,6 +278,99 @@ export function autoPackBlocks(blocks: PageBlock[], cols = 12): PageBlock[] {
  * Descobre todos os espaços livres na grade (inclusive buracos ao lado ou abaixo de blocos)
  * para que o usuário possa arrastar e encaixar blocos livremente onde houver espaço.
  */
+/** Marca quais colunas [0..cols-1] estão ocupadas na linha `y`. */
+function computeOccupiedColumns(placed: PlacedBlock[], y: number, cols: number): boolean[] {
+  const colOccupied = new Array<boolean>(cols).fill(false);
+  for (const p of placed) {
+    if (y >= p.y && y < p.y + p.rowSpan) {
+      for (let c = p.x; c < Math.min(cols, p.x + p.span); c++) {
+        colOccupied[c] = true;
+      }
+    }
+  }
+  return colOccupied;
+}
+
+/** Transforma um trecho de colunas livres contíguas [startX, startX+freeWidth) em 1 ou 2 slots. */
+function buildFreeSlotsForRun(
+  placed: PlacedBlock[],
+  y: number,
+  startX: number,
+  freeWidth: number,
+  cols: number,
+): EmptyGridSlot[] {
+  // Se a linha inteira (12 colunas) está livre, divide em 2 slots de 6 colunas (esq e dir)
+  // para permitir soltar tanto na esquerda quanto na direita!
+  if (freeWidth === cols) {
+    return [
+      { x: 0, y, span: (cols / 2) as BlockSpan, rowSpan: 1 },
+      { x: cols / 2, y, span: (cols / 2) as BlockSpan, rowSpan: 1 },
+    ];
+  }
+  if (freeWidth >= 8) {
+    const half = Math.floor(freeWidth / 2) as BlockSpan;
+    const rest = (freeWidth - half) as BlockSpan;
+    return [
+      { x: startX, y, span: half, rowSpan: 1 },
+      { x: startX + half, y, span: rest, rowSpan: 1 },
+    ];
+  }
+
+  // Verifica se este buraco vazio em `y` está sendo dividido em 2 pedaços diferentes
+  // por blocos na linha de cima (`y - 1`), por exemplo: um Texto (`x=0, span=2`) em `y=0`
+  // e um espaço vazio ao lado (`x=2, span=2`). Se sim, divide os slots em `y=1` para que
+  // o vácuo abaixo do Texto (`x=0, y=1, span=2`) apareça separadamente como slot preenchível!
+  const blockAboveAtStart =
+    y > 0
+      ? placed.find(
+          (p) =>
+            p.x === startX &&
+            p.y + p.rowSpan === y &&
+            p.span < freeWidth,
+        )
+      : undefined;
+
+  if (blockAboveAtStart) {
+    const firstSpan = blockAboveAtStart.span;
+    const restSpan = (freeWidth - firstSpan) as BlockSpan;
+    return [
+      { x: startX, y, span: firstSpan, rowSpan: 1 },
+      { x: startX + firstSpan, y, span: restSpan, rowSpan: 1 },
+    ];
+  }
+
+  return [
+    {
+      x: startX,
+      y,
+      span: Math.max(1, Math.min(cols, freeWidth)) as BlockSpan,
+      rowSpan: 1,
+    },
+  ];
+}
+
+/** Agrupa colunas livres contíguas na linha `y` em slots vazios. */
+function findEmptySlotsInRow(placed: PlacedBlock[], y: number, cols: number): EmptyGridSlot[] {
+  const colOccupied = computeOccupiedColumns(placed, y, cols);
+  const slots: EmptyGridSlot[] = [];
+
+  let c = 0;
+  while (c < cols) {
+    if (colOccupied[c]) {
+      c++;
+      continue;
+    }
+    const startX = c;
+    while (c < cols && !colOccupied[c]) {
+      c++;
+    }
+    const freeWidth = c - startX;
+    slots.push(...buildFreeSlotsForRun(placed, y, startX, freeWidth, cols));
+  }
+
+  return slots;
+}
+
 export function findEmptyGridSlots(
   placed: PlacedBlock[],
   cols = 12,
@@ -278,69 +383,7 @@ export function findEmptyGridSlots(
   const slots: EmptyGridSlot[] = [];
 
   for (let y = 0; y < totalRows; y++) {
-    // Marca quais colunas [0..cols-1] estão ocupadas na linha `y`
-    const colOccupied = new Array<boolean>(cols).fill(false);
-    for (const p of placed) {
-      if (y >= p.y && y < p.y + p.rowSpan) {
-        for (let c = p.x; c < Math.min(cols, p.x + p.span); c++) {
-          colOccupied[c] = true;
-        }
-      }
-    }
-
-    // Agrupa colunas livres contíguas
-    let c = 0;
-    while (c < cols) {
-      if (colOccupied[c]) {
-        c++;
-        continue;
-      }
-      const startX = c;
-      while (c < cols && !colOccupied[c]) {
-        c++;
-      }
-      const freeWidth = c - startX;
-
-      // Se a linha inteira (12 colunas) está livre, divide em 2 slots de 6 colunas (esq e dir)
-      // para permitir soltar tanto na esquerda quanto na direita!
-      if (freeWidth === cols) {
-        slots.push({ x: 0, y, span: (cols / 2) as BlockSpan, rowSpan: 1 });
-        slots.push({ x: cols / 2, y, span: (cols / 2) as BlockSpan, rowSpan: 1 });
-      } else if (freeWidth >= 8) {
-        const half = Math.floor(freeWidth / 2) as BlockSpan;
-        const rest = (freeWidth - half) as BlockSpan;
-        slots.push({ x: startX, y, span: half, rowSpan: 1 });
-        slots.push({ x: startX + half, y, span: rest, rowSpan: 1 });
-      } else {
-        // Verifica se este buraco vazio em `y` está sendo dividido em 2 pedaços diferentes
-        // por blocos na linha de cima (`y - 1`), por exemplo: um Texto (`x=0, span=2`) em `y=0`
-        // e um espaço vazio ao lado (`x=2, span=2`). Se sim, divide os slots em `y=1` para que
-        // o vácuo abaixo do Texto (`x=0, y=1, span=2`) apareça separadamente como slot preenchível!
-        const blockAboveAtStart =
-          y > 0
-            ? placed.find(
-                (p) =>
-                  p.x === startX &&
-                  p.y + p.rowSpan === y &&
-                  p.span < freeWidth,
-              )
-            : undefined;
-
-        if (blockAboveAtStart) {
-          const firstSpan = blockAboveAtStart.span;
-          const restSpan = (freeWidth - firstSpan) as BlockSpan;
-          slots.push({ x: startX, y, span: firstSpan, rowSpan: 1 });
-          slots.push({ x: startX + firstSpan, y, span: restSpan, rowSpan: 1 });
-        } else {
-          slots.push({
-            x: startX,
-            y,
-            span: Math.max(1, Math.min(cols, freeWidth)) as BlockSpan,
-            rowSpan: 1,
-          });
-        }
-      }
-    }
+    slots.push(...findEmptySlotsInRow(placed, y, cols));
   }
 
   return mergeContiguousEmptySlots(slots);
@@ -379,6 +422,96 @@ export function mergeContiguousEmptySlots(slots: EmptyGridSlot[]): EmptyGridSlot
  * Como os dois blocos assumem exatamente a geometria um do outro, nenhum outro bloco
  * na página é empurrado ou desorganizado!
  */
+/** Caso 1 de swapBlocksInGrid: mesma linha vertical — troca horizontal simples de colunas. */
+function swapSameRow(
+  placed: PlacedBlock[],
+  top: PlacedBlock,
+  bottom: PlacedBlock,
+  cols: number,
+): PlacedBlock[] {
+  const targetXTop = Math.max(0, Math.min(cols - top.span, bottom.x));
+  const targetXBottom = Math.max(0, Math.min(cols - bottom.span, top.x));
+
+  return placed.map((p) => {
+    if (p.block.id === top.block.id) {
+      return { ...p, x: targetXTop, y: top.y, span: top.span, rowSpan: top.rowSpan };
+    }
+    if (p.block.id === bottom.block.id) {
+      return { ...p, x: targetXBottom, y: bottom.y, span: bottom.span, rowSpan: bottom.rowSpan };
+    }
+    return p;
+  });
+}
+
+/** Caso 2 de swapBlocksInGrid: linhas verticais diferentes — troca de ordem no fluxo vertical. */
+function swapDifferentRows(
+  placed: PlacedBlock[],
+  top: PlacedBlock,
+  bottom: PlacedBlock,
+  cols: number,
+): PlacedBlock[] {
+  const hTop = top.rowSpan;
+  const hBottom = bottom.rowSpan;
+  const deltaH = hBottom - hTop;
+
+  const topStartY = top.y;
+  const topEndY = top.y + top.rowSpan;
+  const bottomStartY = bottom.y;
+
+  return placed.map((p) => {
+    // O bloco de baixo sobe para o topo
+    if (p.block.id === bottom.block.id) {
+      const targetX = Math.max(0, Math.min(cols - bottom.span, top.x));
+      return {
+        ...p,
+        x: targetX,
+        y: topStartY,
+        span: bottom.span,
+        rowSpan: bottom.rowSpan,
+      };
+    }
+
+    // O bloco de cima desce para a posição de baixo, ajustado por deltaH
+    if (p.block.id === top.block.id) {
+      const targetX = Math.max(0, Math.min(cols - top.span, bottom.x));
+      return {
+        ...p,
+        x: targetX,
+        y: bottomStartY + deltaH,
+        span: top.span,
+        rowSpan: top.rowSpan,
+      };
+    }
+
+    // Blocos intermediários entre top e bottom deslizam por deltaH
+    if (p.y >= topEndY && p.y < bottomStartY) {
+      return {
+        ...p,
+        y: Math.max(0, p.y + deltaH),
+      };
+    }
+
+    // Demais blocos permanecem inalterados
+    return p;
+  });
+}
+
+/** Troca a ordem de dois blocos no array para que o bloco que subiu tenha prioridade de resolução. */
+function reorderSwappedBlocks(
+  nextPlaced: PlacedBlock[],
+  topId: string,
+  bottomId: string,
+): PlacedBlock[] {
+  const idxTop = nextPlaced.findIndex((p) => p.block.id === topId);
+  const idxBottom = nextPlaced.findIndex((p) => p.block.id === bottomId);
+  if (idxTop === -1 || idxBottom === -1) return nextPlaced;
+
+  const temp = nextPlaced[idxTop];
+  nextPlaced[idxTop] = nextPlaced[idxBottom];
+  nextPlaced[idxBottom] = temp;
+  return nextPlaced;
+}
+
 export function swapBlocksInGrid(
   blocks: PageBlock[],
   idA: string,
@@ -396,78 +529,12 @@ export function swapBlocksInGrid(
   const top = isABeforeB ? a : b;
   const bottom = isABeforeB ? b : a;
 
-  let nextPlaced: PlacedBlock[];
+  const nextPlaced =
+    top.y === bottom.y
+      ? swapSameRow(placed, top, bottom, cols)
+      : swapDifferentRows(placed, top, bottom, cols);
 
-  if (top.y === bottom.y) {
-    // Caso 1: Mesma linha vertical — troca horizontal simples de colunas
-    const targetXTop = Math.max(0, Math.min(cols - top.span, bottom.x));
-    const targetXBottom = Math.max(0, Math.min(cols - bottom.span, top.x));
-
-    nextPlaced = placed.map((p) => {
-      if (p.block.id === top.block.id) {
-        return { ...p, x: targetXTop, y: top.y, span: top.span, rowSpan: top.rowSpan };
-      }
-      if (p.block.id === bottom.block.id) {
-        return { ...p, x: targetXBottom, y: bottom.y, span: bottom.span, rowSpan: bottom.rowSpan };
-      }
-      return p;
-    });
-  } else {
-    // Caso 2: Linhas verticais diferentes — troca de ordem no fluxo vertical
-    const hTop = top.rowSpan;
-    const hBottom = bottom.rowSpan;
-    const deltaH = hBottom - hTop;
-
-    const topStartY = top.y;
-    const topEndY = top.y + top.rowSpan;
-    const bottomStartY = bottom.y;
-
-    nextPlaced = placed.map((p) => {
-      // O bloco de baixo sobe para o topo
-      if (p.block.id === bottom.block.id) {
-        const targetX = Math.max(0, Math.min(cols - bottom.span, top.x));
-        return {
-          ...p,
-          x: targetX,
-          y: topStartY,
-          span: bottom.span,
-          rowSpan: bottom.rowSpan,
-        };
-      }
-
-      // O bloco de cima desce para a posição de baixo, ajustado por deltaH
-      if (p.block.id === top.block.id) {
-        const targetX = Math.max(0, Math.min(cols - top.span, bottom.x));
-        return {
-          ...p,
-          x: targetX,
-          y: bottomStartY + deltaH,
-          span: top.span,
-          rowSpan: top.rowSpan,
-        };
-      }
-
-      // Blocos intermediários entre top e bottom deslizam por deltaH
-      if (p.y >= topEndY && p.y < bottomStartY) {
-        return {
-          ...p,
-          y: Math.max(0, p.y + deltaH),
-        };
-      }
-
-      // Demais blocos permanecem inalterados
-      return p;
-    });
-  }
-
-  // Troca a ordem dos dois blocos no array para que o bloco que subiu tenha prioridade de resolução
-  const idxTop = nextPlaced.findIndex((p) => p.block.id === top.block.id);
-  const idxBottom = nextPlaced.findIndex((p) => p.block.id === bottom.block.id);
-  if (idxTop !== -1 && idxBottom !== -1) {
-    const temp = nextPlaced[idxTop];
-    nextPlaced[idxTop] = nextPlaced[idxBottom];
-    nextPlaced[idxBottom] = temp;
-  }
+  reorderSwappedBlocks(nextPlaced, top.block.id, bottom.block.id);
 
   // Re-resolve para garantir ordenação limpa e sem sobreposições
   const resolved = resolveGridLayout(
@@ -554,6 +621,137 @@ export function moveBlockToCell(
  *   (ex: mover um card 50% para cima onde há 3 cards de 33% troca o card de 50% com o card de 33% correspondente, sem empurrar os outros).
  * - Se o espaço na direção escolhida estiver vazio, move o bloco para o espaço vazio.
  */
+/** nudgeBlockInGrid: direção 'left' — troca com o vizinho encostado ou move para o espaço vazio. */
+function nudgeLeft(
+  blocks: PageBlock[],
+  id: string,
+  others: PlacedBlock[],
+  target: PlacedBlock,
+  cols: number,
+): PageBlock[] {
+  // Procura vizinho à esquerda na mesma faixa vertical
+  const leftNeighbors = others
+    .filter(
+      (o) =>
+        o.y < target.y + target.rowSpan &&
+        o.y + o.rowSpan > target.y &&
+        o.x + o.span <= target.x,
+    )
+    .sort((a, b) => b.x + b.span - (a.x + a.span));
+
+  const immediateLeft = leftNeighbors[0];
+  // Se está encostado no vizinho da esquerda, troca de lugar e de tamanho com ele
+  if (immediateLeft && immediateLeft.x + immediateLeft.span === target.x) {
+    return swapBlocksInGrid(blocks, id, immediateLeft.block.id, cols);
+  }
+
+  // Caso contrário, move para o espaço vazio à esquerda
+  const minFreeX = immediateLeft ? immediateLeft.x + immediateLeft.span : 0;
+  const stepX = target.span <= 6 ? target.span : 3;
+  const nextX = Math.max(minFreeX, target.x - stepX);
+  return moveBlockToCell(blocks, id, nextX, target.y, cols);
+}
+
+/** nudgeBlockInGrid: direção 'right' — troca com o vizinho encostado ou move para o espaço vazio. */
+function nudgeRight(
+  blocks: PageBlock[],
+  id: string,
+  others: PlacedBlock[],
+  target: PlacedBlock,
+  cols: number,
+): PageBlock[] {
+  // Procura vizinho à direita na mesma faixa vertical
+  const rightNeighbors = others
+    .filter(
+      (o) =>
+        o.y < target.y + target.rowSpan &&
+        o.y + o.rowSpan > target.y &&
+        o.x >= target.x + target.span,
+    )
+    .sort((a, b) => a.x - b.x);
+
+  const immediateRight = rightNeighbors[0];
+  // Se está encostado no vizinho da direita, troca de lugar e de tamanho com ele
+  if (immediateRight && immediateRight.x === target.x + target.span) {
+    return swapBlocksInGrid(blocks, id, immediateRight.block.id, cols);
+  }
+
+  // Caso contrário, move para o espaço vazio à direita
+  const maxFreeRight = immediateRight ? immediateRight.x : cols;
+  const stepX = target.span <= 6 ? target.span : 3;
+  const nextX = Math.min(maxFreeRight - target.span, target.x + stepX);
+  return moveBlockToCell(blocks, id, nextX, target.y, cols);
+}
+
+/** nudgeBlockInGrid: direção 'up' — sobe para o espaço vazio ou troca com o bloco mais alinhado acima. */
+function nudgeUp(
+  blocks: PageBlock[],
+  id: string,
+  others: PlacedBlock[],
+  target: PlacedBlock,
+  targetCenterX: number,
+  cols: number,
+): PageBlock[] {
+  if (target.y === 0) return blocks;
+  const stepUp = Math.min(target.y, target.rowSpan);
+  const desiredY = target.y - stepUp;
+  const probe: GridRect = {
+    x: target.x,
+    y: desiredY,
+    span: target.span,
+    rowSpan: target.rowSpan,
+  };
+  const collidingAbove = others.filter((o) => rectsOverlap(probe, o));
+
+  // Se a faixa de cima está livre nessa coluna, sobe para o espaço vazio
+  if (collidingAbove.length === 0) {
+    return moveBlockToCell(blocks, id, target.x, desiredY, cols);
+  }
+
+  // Se há blocos na faixa de cima (ex: 3 cards de 33% acima de 2 cards de 50%),
+  // escolhe o bloco mais alinhado horizontalmente e TROCA DE LUGAR E DE TAMANHO com ele!
+  const bestAbove = [...collidingAbove].sort((a, b) => {
+    const distA = Math.abs(a.x + a.span / 2 - targetCenterX);
+    const distB = Math.abs(b.x + b.span / 2 - targetCenterX);
+    return distA - distB;
+  })[0];
+
+  return swapBlocksInGrid(blocks, id, bestAbove.block.id, cols);
+}
+
+/** nudgeBlockInGrid: direção 'down' — desce para o espaço vazio ou troca com o bloco mais alinhado abaixo. */
+function nudgeDown(
+  blocks: PageBlock[],
+  id: string,
+  others: PlacedBlock[],
+  target: PlacedBlock,
+  targetCenterX: number,
+  cols: number,
+): PageBlock[] {
+  const desiredY = target.y + target.rowSpan;
+  const probe: GridRect = {
+    x: target.x,
+    y: desiredY,
+    span: target.span,
+    rowSpan: target.rowSpan,
+  };
+  const collidingBelow = others.filter((o) => rectsOverlap(probe, o));
+
+  // Se a faixa de baixo está livre nessa coluna, desce para o espaço vazio
+  if (collidingBelow.length === 0) {
+    return moveBlockToCell(blocks, id, target.x, desiredY, cols);
+  }
+
+  // Se há blocos na faixa de baixo, escolhe o mais alinhado horizontalmente e TROCA DE LUGAR E DE TAMANHO!
+  const bestBelow = [...collidingBelow].sort((a, b) => {
+    const distA = Math.abs(a.x + a.span / 2 - targetCenterX);
+    const distB = Math.abs(b.x + b.span / 2 - targetCenterX);
+    return distA - distB;
+  })[0];
+
+  return swapBlocksInGrid(blocks, id, bestBelow.block.id, cols);
+}
+
 export function nudgeBlockInGrid(
   blocks: PageBlock[],
   id: string,
@@ -568,104 +766,16 @@ export function nudgeBlockInGrid(
   const targetCenterX = target.x + target.span / 2;
 
   if (direction === 'left') {
-    // Procura vizinho à esquerda na mesma faixa vertical
-    const leftNeighbors = others
-      .filter(
-        (o) =>
-          o.y < target.y + target.rowSpan &&
-          o.y + o.rowSpan > target.y &&
-          o.x + o.span <= target.x,
-      )
-      .sort((a, b) => b.x + b.span - (a.x + a.span));
-
-    const immediateLeft = leftNeighbors[0];
-    // Se está encostado no vizinho da esquerda, troca de lugar e de tamanho com ele
-    if (immediateLeft && immediateLeft.x + immediateLeft.span === target.x) {
-      return swapBlocksInGrid(blocks, id, immediateLeft.block.id, cols);
-    }
-
-    // Caso contrário, move para o espaço vazio à esquerda
-    const minFreeX = immediateLeft ? immediateLeft.x + immediateLeft.span : 0;
-    const stepX = target.span <= 6 ? target.span : 3;
-    const nextX = Math.max(minFreeX, target.x - stepX);
-    return moveBlockToCell(blocks, id, nextX, target.y, cols);
+    return nudgeLeft(blocks, id, others, target, cols);
   }
-
   if (direction === 'right') {
-    // Procura vizinho à direita na mesma faixa vertical
-    const rightNeighbors = others
-      .filter(
-        (o) =>
-          o.y < target.y + target.rowSpan &&
-          o.y + o.rowSpan > target.y &&
-          o.x >= target.x + target.span,
-      )
-      .sort((a, b) => a.x - b.x);
-
-    const immediateRight = rightNeighbors[0];
-    // Se está encostado no vizinho da direita, troca de lugar e de tamanho com ele
-    if (immediateRight && immediateRight.x === target.x + target.span) {
-      return swapBlocksInGrid(blocks, id, immediateRight.block.id, cols);
-    }
-
-    // Caso contrário, move para o espaço vazio à direita
-    const maxFreeRight = immediateRight ? immediateRight.x : cols;
-    const stepX = target.span <= 6 ? target.span : 3;
-    const nextX = Math.min(maxFreeRight - target.span, target.x + stepX);
-    return moveBlockToCell(blocks, id, nextX, target.y, cols);
+    return nudgeRight(blocks, id, others, target, cols);
   }
-
   if (direction === 'up') {
-    if (target.y === 0) return blocks;
-    const stepUp = Math.min(target.y, target.rowSpan);
-    const desiredY = target.y - stepUp;
-    const probe: GridRect = {
-      x: target.x,
-      y: desiredY,
-      span: target.span,
-      rowSpan: target.rowSpan,
-    };
-    const collidingAbove = others.filter((o) => rectsOverlap(probe, o));
-
-    // Se a faixa de cima está livre nessa coluna, sobe para o espaço vazio
-    if (collidingAbove.length === 0) {
-      return moveBlockToCell(blocks, id, target.x, desiredY, cols);
-    }
-
-    // Se há blocos na faixa de cima (ex: 3 cards de 33% acima de 2 cards de 50%),
-    // escolhe o bloco mais alinhado horizontalmente e TROCA DE LUGAR E DE TAMANHO com ele!
-    const bestAbove = [...collidingAbove].sort((a, b) => {
-      const distA = Math.abs(a.x + a.span / 2 - targetCenterX);
-      const distB = Math.abs(b.x + b.span / 2 - targetCenterX);
-      return distA - distB;
-    })[0];
-
-    return swapBlocksInGrid(blocks, id, bestAbove.block.id, cols);
+    return nudgeUp(blocks, id, others, target, targetCenterX, cols);
   }
-
   if (direction === 'down') {
-    const desiredY = target.y + target.rowSpan;
-    const probe: GridRect = {
-      x: target.x,
-      y: desiredY,
-      span: target.span,
-      rowSpan: target.rowSpan,
-    };
-    const collidingBelow = others.filter((o) => rectsOverlap(probe, o));
-
-    // Se a faixa de baixo está livre nessa coluna, desce para o espaço vazio
-    if (collidingBelow.length === 0) {
-      return moveBlockToCell(blocks, id, target.x, desiredY, cols);
-    }
-
-    // Se há blocos na faixa de baixo, escolhe o mais alinhado horizontalmente e TROCA DE LUGAR E DE TAMANHO!
-    const bestBelow = [...collidingBelow].sort((a, b) => {
-      const distA = Math.abs(a.x + a.span / 2 - targetCenterX);
-      const distB = Math.abs(b.x + b.span / 2 - targetCenterX);
-      return distA - distB;
-    })[0];
-
-    return swapBlocksInGrid(blocks, id, bestBelow.block.id, cols);
+    return nudgeDown(blocks, id, others, target, targetCenterX, cols);
   }
 
   return blocks;
@@ -761,6 +871,26 @@ export function resizeBlockLeftInGrid(
  * - Ancora a borda inferior (`bottomEdge = target.y + target.rowSpan`) e desloca `y` para cima/baixo.
  * - Limita o crescimento acima pela linha `0` ou pela borda inferior de um bloco acima.
  */
+/** Limite superior de redimensionamento: topo da grade (0) ou borda inferior do bloco acima. */
+function computeMinTopFromAbove(others: PlacedBlock[], target: PlacedBlock): number {
+  let minTop = 0;
+  for (const other of others) {
+    const overlapsHorizontally =
+      target.x < other.x + other.span && target.x + target.span > other.x;
+    if (overlapsHorizontally && other.y + other.rowSpan <= target.y) {
+      minTop = Math.max(minTop, other.y + other.rowSpan);
+    }
+  }
+  return minTop;
+}
+
+/** Altura mínima permitida ao redimensionar: abraça os filhos se for container, senão o mínimo do tipo. */
+function resolveMinRowSpanForResize(target: PlacedBlock, cols: number): BlockRowSpan {
+  return isContainerType(target.block.type) && (target.block.children?.length ?? 0) > 0
+    ? calculateEffectiveRowSpan({ ...target.block, rowSpan: 1 }, cols)
+    : minRowSpanForType(target.block.type);
+}
+
 export function resizeBlockTopInGrid(
   blocks: PageBlock[],
   id: string,
@@ -775,20 +905,8 @@ export function resizeBlockTopInGrid(
   const others = placed.filter((p) => p.block.id !== id);
   const fixedBottom = target.y + target.rowSpan;
 
-  // Limite superior: não pode ultrapassar o topo da grade (0) nem a borda inferior do bloco acima
-  let minTop = 0;
-  for (const other of others) {
-    const overlapsHorizontally =
-      target.x < other.x + other.span && target.x + target.span > other.x;
-    if (overlapsHorizontally && other.y + other.rowSpan <= target.y) {
-      minTop = Math.max(minTop, other.y + other.rowSpan);
-    }
-  }
-
-  const minRowSpan =
-    isContainerType(target.block.type) && (target.block.children?.length ?? 0) > 0
-      ? calculateEffectiveRowSpan({ ...target.block, rowSpan: 1 }, cols)
-      : minRowSpanForType(target.block.type);
+  const minTop = computeMinTopFromAbove(others, target);
+  const minRowSpan = resolveMinRowSpanForResize(target, cols);
   const clampedY = Math.max(minTop, Math.min(fixedBottom - minRowSpan, newY));
   const clampedRowSpan = normalizeRowSpan(fixedBottom - clampedY, target.block.type);
 
@@ -823,6 +941,147 @@ export function resizeBlockSpanInGrid(
  * - Se a altura diminuiu (delta < 0): puxa os blocos abaixo para cima para colapsar o vácuo.
  * - Compacta linhas vazias órfãs ao final.
  */
+/** Para cada bloco colidindo em cascata abaixo de `curr`, acha a menor Y permitida sem sobreposição. */
+function computeMinAllowedY(
+  curr: PlacedBlock,
+  currPos: { x: number; y: number; span: BlockSpan; rowSpan: BlockRowSpan },
+  updatedPositions: Map<string, { x: number; y: number; span: BlockSpan; rowSpan: BlockRowSpan }>,
+): number {
+  let minAllowedY = currPos.y;
+  for (const [otherId, pos] of updatedPositions.entries()) {
+    if (otherId === curr.block.id) continue;
+    const overlapsH =
+      currPos.x < pos.x + pos.span && currPos.x + currPos.span > pos.x;
+    // Obstáculo acima ou colidindo com currPos
+    if (overlapsH && pos.y < currPos.y + currPos.rowSpan) {
+      const obstacleBottom = pos.y + pos.rowSpan;
+      if (obstacleBottom > minAllowedY) {
+        minAllowedY = obstacleBottom;
+      }
+    }
+  }
+  return minAllowedY;
+}
+
+/** syncBlockRowSpanChange: delta > 0 — o bloco alvo cresce para baixo, empurrando em cascata. */
+function growBlockRowSpan(
+  placed: PlacedBlock[],
+  id: string,
+  target: PlacedBlock,
+  newRowSpan: number,
+  cols: number,
+): PageBlock[] {
+  const updatedPositions = new Map<
+    string,
+    { x: number; y: number; span: BlockSpan; rowSpan: BlockRowSpan }
+  >();
+
+  for (const p of placed) {
+    if (p.block.id === id) {
+      updatedPositions.set(p.block.id, {
+        x: p.x,
+        y: p.y,
+        span: p.span,
+        rowSpan: newRowSpan as BlockRowSpan,
+      });
+    } else {
+      updatedPositions.set(p.block.id, {
+        x: p.x,
+        y: p.y,
+        span: p.span,
+        rowSpan: p.rowSpan,
+      });
+    }
+  }
+
+  // Cascade de absorção e colisão para baixo:
+  // Ordenamos os outros blocos abaixo de target.y por y crescente.
+  // Cada bloco só é empurrado se colidir diretamente com o obstáculo mais baixo acima dele
+  // em qualquer uma de suas colunas. Se houver espaço vazio entre o obstáculo e o bloco,
+  // o obstáculo consome/dissolve o espaço vazio e os blocos abaixo NÃO se movem!
+  const othersBelow = placed
+    .filter((p) => p.block.id !== id && p.y >= target.y)
+    .sort((a, b) => a.y - b.y || a.x - b.x);
+
+  for (const curr of othersBelow) {
+    const currPos = updatedPositions.get(curr.block.id)!;
+    const minAllowedY = computeMinAllowedY(curr, currPos, updatedPositions);
+
+    if (minAllowedY !== currPos.y) {
+      updatedPositions.set(curr.block.id, {
+        ...currPos,
+        y: minAllowedY,
+      });
+    }
+  }
+
+  const shifted = placed.map((p) => {
+    const pos = updatedPositions.get(p.block.id)!;
+    return {
+      ...p.block,
+      x: pos.x,
+      y: pos.y,
+      span: pos.span,
+      rowSpan: pos.rowSpan,
+    };
+  });
+
+  const sortedShifted = [...shifted].sort(
+    (a, b) => (a.y ?? 0) - (b.y ?? 0) || (a.x ?? 0) - (b.x ?? 0),
+  );
+  const resolved = resolveGridLayout(sortedShifted, cols);
+  return persistPlacedBlocks(resolved);
+}
+
+/** syncBlockRowSpanChange: delta < 0 — puxa os blocos abaixo para cima para colapsar o vácuo. */
+function shrinkBlockRowSpan(
+  placed: PlacedBlock[],
+  id: string,
+  target: PlacedBlock,
+  newRowSpan: number,
+  newTargetBottom: number,
+  pullAmount: number,
+  cols: number,
+): PageBlock[] {
+  const shifted = placed.map((p) => {
+    if (p.block.id === id) {
+      return {
+        ...p.block,
+        x: p.x,
+        y: p.y,
+        span: p.span,
+        rowSpan: newRowSpan as BlockRowSpan,
+      };
+    }
+    if (
+      currOverlapsTargetHorizontally(p, target) &&
+      p.y >= newTargetBottom
+    ) {
+      return {
+        ...p.block,
+        x: p.x,
+        y: Math.max(newTargetBottom, p.y - pullAmount),
+        span: p.span,
+        rowSpan: p.rowSpan,
+      };
+    }
+    return {
+      ...p.block,
+      x: p.x,
+      y: p.y,
+      span: p.span,
+      rowSpan: p.rowSpan,
+    };
+  });
+
+  const sortedShifted = [...shifted].sort(
+    (a, b) => (a.y ?? 0) - (b.y ?? 0) || (a.x ?? 0) - (b.x ?? 0),
+  );
+  const resolved = resolveGridLayout(sortedShifted, cols);
+  const compacted = compactEmptyRows(resolved, cols);
+  return persistPlacedBlocks(compacted);
+}
+
 export function syncBlockRowSpanChange(
   blocks: PageBlock[],
   id: string,
@@ -839,124 +1098,13 @@ export function syncBlockRowSpanChange(
     return persistPlacedBlocks(placed);
   }
 
-  const newTargetBottom = target.y + newRowSpan;
-
   if (delta > 0) {
-    // 1. O bloco alvo cresce para baixo até sua nova altura
-    const updatedPositions = new Map<
-      string,
-      { x: number; y: number; span: BlockSpan; rowSpan: BlockRowSpan }
-    >();
-
-    for (const p of placed) {
-      if (p.block.id === id) {
-        updatedPositions.set(p.block.id, {
-          x: p.x,
-          y: p.y,
-          span: p.span,
-          rowSpan: newRowSpan as BlockRowSpan,
-        });
-      } else {
-        updatedPositions.set(p.block.id, {
-          x: p.x,
-          y: p.y,
-          span: p.span,
-          rowSpan: p.rowSpan,
-        });
-      }
-    }
-
-    // 2. Cascade de absorção e colisão para baixo:
-    // Ordenamos os outros blocos abaixo de target.y por y crescente.
-    // Cada bloco só é empurrado se colidir diretamente com o obstáculo mais baixo acima dele
-    // em qualquer uma de suas colunas. Se houver espaço vazio entre o obstáculo e o bloco,
-    // o obstáculo consome/dissolve o espaço vazio e os blocos abaixo NÃO se movem!
-    const othersBelow = placed
-      .filter((p) => p.block.id !== id && p.y >= target.y)
-      .sort((a, b) => a.y - b.y || a.x - b.x);
-
-    for (const curr of othersBelow) {
-      const currPos = updatedPositions.get(curr.block.id)!;
-      let minAllowedY = currPos.y;
-
-      for (const [otherId, pos] of updatedPositions.entries()) {
-        if (otherId === curr.block.id) continue;
-        const overlapsH =
-          currPos.x < pos.x + pos.span && currPos.x + currPos.span > pos.x;
-        // Obstáculo acima ou colidindo com currPos
-        if (overlapsH && pos.y < currPos.y + currPos.rowSpan) {
-          const obstacleBottom = pos.y + pos.rowSpan;
-          if (obstacleBottom > minAllowedY) {
-            minAllowedY = obstacleBottom;
-          }
-        }
-      }
-
-      if (minAllowedY !== currPos.y) {
-        updatedPositions.set(curr.block.id, {
-          ...currPos,
-          y: minAllowedY,
-        });
-      }
-    }
-
-    const shifted = placed.map((p) => {
-      const pos = updatedPositions.get(p.block.id)!;
-      return {
-        ...p.block,
-        x: pos.x,
-        y: pos.y,
-        span: pos.span,
-        rowSpan: pos.rowSpan,
-      };
-    });
-
-    const sortedShifted = [...shifted].sort(
-      (a, b) => (a.y ?? 0) - (b.y ?? 0) || (a.x ?? 0) - (b.x ?? 0),
-    );
-    const resolved = resolveGridLayout(sortedShifted, cols);
-    return persistPlacedBlocks(resolved);
-  } else {
-    // Redução de altura (delta < 0): puxa os blocos abaixo para cima para colapsar o vácuo
-    const pullAmount = Math.abs(delta);
-    const shifted = placed.map((p) => {
-      if (p.block.id === id) {
-        return {
-          ...p.block,
-          x: p.x,
-          y: p.y,
-          span: p.span,
-          rowSpan: newRowSpan as BlockRowSpan,
-        };
-      }
-      if (
-        currOverlapsTargetHorizontally(p, target) &&
-        p.y >= newTargetBottom
-      ) {
-        return {
-          ...p.block,
-          x: p.x,
-          y: Math.max(newTargetBottom, p.y - pullAmount),
-          span: p.span,
-          rowSpan: p.rowSpan,
-        };
-      }
-      return {
-        ...p.block,
-        x: p.x,
-        y: p.y,
-        span: p.span,
-        rowSpan: p.rowSpan,
-      };
-    });
-
-    const sortedShifted = [...shifted].sort(
-      (a, b) => (a.y ?? 0) - (b.y ?? 0) || (a.x ?? 0) - (b.x ?? 0),
-    );
-    const resolved = resolveGridLayout(sortedShifted, cols);
-    const compacted = compactEmptyRows(resolved, cols);
-    return persistPlacedBlocks(compacted);
+    return growBlockRowSpan(placed, id, target, newRowSpan, cols);
   }
+
+  const newTargetBottom = target.y + newRowSpan;
+  const pullAmount = Math.abs(delta);
+  return shrinkBlockRowSpan(placed, id, target, newRowSpan, newTargetBottom, pullAmount, cols);
 }
 
 function currOverlapsTargetHorizontally(a: PlacedBlock, b: PlacedBlock): boolean {
@@ -992,6 +1140,62 @@ export function resizeBlockRowSpanInGrid(
  *   até encostar no bloco superior ou topo, mantendo seu alinhamento e sem colidir com vizinhos;
  * - Compacta quaisquer linhas vazias órfãs ao final.
  */
+/** removeBlockFromGrid: caso limpo — as linhas do target eram 100% exclusivas dele (ex: span 12). */
+function pullFullRowsUp(
+  others: PlacedBlock[],
+  currentPositions: Map<string, PlacedBlock>,
+  target: PlacedBlock,
+  targetBottom: number,
+): void {
+  // Todos os blocos abaixo sobem exatamente target.rowSpan linhas, preservando a disposição relativa!
+  const pullAmount = target.rowSpan;
+  for (const o of others) {
+    if (o.y >= targetBottom) {
+      currentPositions.set(o.block.id, {
+        ...o,
+        y: Math.max(target.y, o.y - pullAmount),
+      });
+    }
+  }
+}
+
+/** removeBlockFromGrid: caso de coluna parcial — sobe apenas os blocos no footprint horizontal do target. */
+function pullPartialColumnUp(
+  others: PlacedBlock[],
+  currentPositions: Map<string, PlacedBlock>,
+  target: PlacedBlock,
+  targetBottom: number,
+): void {
+  const overlapsTargetHorizontally = (p: PlacedBlock) =>
+    p.x < target.x + target.span && p.x + p.span > target.x;
+
+  const belowTarget = others
+    .filter((o) => overlapsTargetHorizontally(o) && o.y >= targetBottom)
+    .sort((a, b) => a.y - b.y || a.x - b.x);
+
+  const pullAmount = target.rowSpan;
+  for (const b of belowTarget) {
+    const currentB = currentPositions.get(b.block.id)!;
+    // Procura o obstáculo mais baixo que está acima de currentB nas mesmas colunas
+    let minAllowedY = 0;
+    for (const [otherId, other] of currentPositions.entries()) {
+      if (otherId === b.block.id) continue;
+      const overlapsH =
+        currentB.x < other.x + other.span && currentB.x + currentB.span > other.x;
+      if (overlapsH && other.y + other.rowSpan <= currentB.y) {
+        minAllowedY = Math.max(minAllowedY, other.y + other.rowSpan);
+      }
+    }
+
+    // Sobe até encostar no obstáculo, respeitando o limite do espaço deixado pelo target
+    const desiredY = Math.max(minAllowedY, currentB.y - pullAmount);
+    currentPositions.set(b.block.id, {
+      ...currentB,
+      y: desiredY,
+    });
+  }
+}
+
 export function removeBlockFromGrid(
   blocks: PageBlock[],
   id: string,
@@ -1014,8 +1218,6 @@ export function removeBlockFromGrid(
   if (others.length === 0) return [];
 
   const targetBottom = target.y + target.rowSpan;
-  const overlapsTargetHorizontally = (p: PlacedBlock) =>
-    p.x < target.x + target.span && p.x + p.span > target.x;
 
   // Mapa de posições atualizadas
   const currentPositions = new Map<string, PlacedBlock>();
@@ -1029,48 +1231,12 @@ export function removeBlockFromGrid(
   );
 
   if (!rowsOccupiedByOthers) {
-    // Caso limpo: As linhas do target eram 100% exclusivas dele (ex: span 12).
-    // Todos os blocos abaixo sobem exatamente target.rowSpan linhas, preservando a disposição relativa!
-    const pullAmount = target.rowSpan;
-    for (const o of others) {
-      if (o.y >= targetBottom) {
-        currentPositions.set(o.block.id, {
-          ...o,
-          y: Math.max(target.y, o.y - pullAmount),
-        });
-      }
-    }
+    pullFullRowsUp(others, currentPositions, target, targetBottom);
   } else {
-    // Caso de coluna parcial: Sobe apenas os blocos no footprint horizontal do target
-    // ordenados de cima para baixo
-    const belowTarget = others
-      .filter((o) => overlapsTargetHorizontally(o) && o.y >= targetBottom)
-      .sort((a, b) => a.y - b.y || a.x - b.x);
-
-    for (const b of belowTarget) {
-      const currentB = currentPositions.get(b.block.id)!;
-      // Procura o obstáculo mais baixo que está acima de currentB nas mesmas colunas
-      let minAllowedY = 0;
-      for (const [otherId, other] of currentPositions.entries()) {
-        if (otherId === b.block.id) continue;
-        const overlapsH =
-          currentB.x < other.x + other.span && currentB.x + currentB.span > other.x;
-        if (overlapsH && other.y + other.rowSpan <= currentB.y) {
-          minAllowedY = Math.max(minAllowedY, other.y + other.rowSpan);
-        }
-      }
-
-      // Sobe até encostar no obstáculo, respeitando o limite do espaço deixado pelo target
-      const pullAmount = target.rowSpan;
-      const desiredY = Math.max(minAllowedY, currentB.y - pullAmount);
-      currentPositions.set(b.block.id, {
-        ...currentB,
-        y: desiredY,
-      });
-    }
+    pullPartialColumnUp(others, currentPositions, target, targetBottom);
   }
 
-  // 2. Resolve a grade com as novas posições e compacta quaisquer linhas vazias órfãs
+  // Resolve a grade com as novas posições e compacta quaisquer linhas vazias órfãs
   const updatedPlaced = others.map((o) => currentPositions.get(o.block.id)!);
   const resolved = resolveGridLayout(
     updatedPlaced.map((p) => ({
@@ -1104,6 +1270,28 @@ function persistPlacedBlocks(placed: PlacedBlock[]): PageBlock[] {
  * - Se a altura do bloco colidir com blocos abaixo naquela coluna, empurra-os para baixo em cascata
  *   (respeitando espaços vazios existentes), NUNCA faz swap nem move o bloco para x=0!
  */
+/** insertBlockIntoGrid: empurra em cascata os blocos abaixo que colidem com a nova altura do bloco inserido. */
+function pushCollidingBelow(
+  updatedBlocks: PageBlock[],
+  belowTarget: PlacedBlock[],
+  targetBottom: number,
+): void {
+  let pushThreshold = targetBottom;
+  const sortedBelow = [...belowTarget].sort((a, b) => a.y - b.y);
+
+  for (const b of sortedBelow) {
+    const current = updatedBlocks.find((ub) => ub.id === b.block.id);
+    if (!current) continue;
+
+    if ((current.y ?? 0) < pushThreshold) {
+      current.y = pushThreshold;
+      pushThreshold = (current.y ?? 0) + (current.rowSpan ?? 1);
+    } else {
+      break;
+    }
+  }
+}
+
 export function insertBlockIntoGrid(
   blocks: PageBlock[],
   block: PageBlock,
@@ -1147,20 +1335,7 @@ export function insertBlockIntoGrid(
   }));
 
   if (collidingBelow.length > 0) {
-    let pushThreshold = targetBottom;
-    const sortedBelow = [...belowTarget].sort((a, b) => a.y - b.y);
-
-    for (const b of sortedBelow) {
-      const current = updatedBlocks.find((ub) => ub.id === b.block.id);
-      if (!current) continue;
-
-      if ((current.y ?? 0) < pushThreshold) {
-        current.y = pushThreshold;
-        pushThreshold = (current.y ?? 0) + (current.rowSpan ?? 1);
-      } else {
-        break;
-      }
-    }
+    pushCollidingBelow(updatedBlocks, belowTarget, targetBottom);
   }
 
   const newPlacedBlock: PageBlock = {

@@ -45,6 +45,148 @@ function templateVariables(
   return types.find((t) => t.id === selected.typeId)?.variables ?? [];
 }
 
+function resolveListPage<T>(page: T[] | { data?: T[] } | undefined): T[] {
+  if (Array.isArray(page)) return page;
+  return page?.data ?? [];
+}
+
+function firstNameOf(contact: { name?: string | null } | undefined): string {
+  return contact?.name?.split(' ')[0] ?? '';
+}
+
+function isImageHeader(selected: MessagingTemplateCatalogItem | undefined): boolean {
+  return selected?.header?.kind === 'IMAGE';
+}
+
+function isSendValid({
+  selected,
+  variables,
+  effectiveValues,
+  hasImage,
+  hasHeaderImageDraft,
+  phone,
+}: {
+  selected: MessagingTemplateCatalogItem | undefined;
+  variables: TemplateVariable[];
+  effectiveValues: Record<string, string>;
+  hasImage: boolean;
+  hasHeaderImageDraft: boolean;
+  phone: string;
+}): boolean {
+  if (!selected || !phone) return false;
+  if (hasImage && !hasHeaderImageDraft) return false;
+  return variables.every((v) => v.required === false || Boolean(effectiveValues[v.name]?.trim()));
+}
+
+function TemplateSelect({
+  available,
+  templateId,
+  onChange,
+  t,
+}: {
+  available: MessagingTemplateCatalogItem[];
+  templateId: string;
+  onChange: (id: string) => void;
+  t: (key: string) => string;
+}) {
+  if (available.length === 0) {
+    return <p className="text-sm text-muted-foreground">{t('sendNoTemplates')}</p>;
+  }
+  return (
+    <Select value={templateId} onValueChange={onChange}>
+      <SelectTrigger id="proposal-template">
+        <SelectValue placeholder={t('sendTemplatePlaceholder')} />
+      </SelectTrigger>
+      <SelectContent>
+        {available.map((tpl) => (
+          <SelectItem key={tpl.id} value={tpl.id}>
+            {tpl.key} ({tpl.language})
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function HeaderImageSection({
+  show,
+  draftArtifact,
+  previewUrl,
+  onRemove,
+  onPick,
+  t,
+}: {
+  show: boolean;
+  draftArtifact: { name: string | null; fileName: string } | null | undefined;
+  previewUrl: string | undefined;
+  onRemove: () => void;
+  onPick: () => void;
+  t: (key: string) => string;
+}) {
+  if (!show) return null;
+  return (
+    <div className="space-y-1.5">
+      <Label>{t('sendHeaderImage')}</Label>
+      {draftArtifact ? (
+        <div className="flex items-center gap-2">
+          {previewUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={previewUrl} alt="" className="h-16 w-16 rounded object-cover border" />
+          ) : (
+            <div className="h-16 w-16 rounded border flex items-center justify-center bg-muted">
+              <ImageIcon className="size-6 text-muted-foreground" />
+            </div>
+          )}
+          <span className="text-sm truncate flex-1">{draftArtifact.name ?? draftArtifact.fileName}</span>
+          <Button type="button" variant="ghost" size="icon" className="size-6 shrink-0" onClick={onRemove}>
+            <X className="size-3.5" />
+          </Button>
+        </div>
+      ) : (
+        <Button type="button" variant="outline" size="sm" onClick={onPick}>
+          {t('selectImage')}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function PhoneSection({
+  contacts,
+  phone,
+  setPhone,
+  pending,
+  t,
+}: {
+  contacts: { phone: string; name?: string | null }[];
+  phone: string;
+  setPhone: (phone: string) => void;
+  pending: boolean;
+  t: (key: string) => string;
+}) {
+  const hasContacts = contacts.length > 0;
+  return (
+    <div className="space-y-1.5">
+      {hasContacts && (
+        <Select value={phone} onValueChange={setPhone}>
+          <SelectTrigger>
+            <SelectValue placeholder={t('sendChooseContactPlaceholder')} />
+          </SelectTrigger>
+          <SelectContent>
+            {contacts.map((c) => (
+              <SelectItem key={c.phone} value={c.phone}>
+                {c.name ? `${c.name} — ` : ''}{c.phone}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+      <Label htmlFor="prop-phone">{hasContacts ? t('sendManualPhone') : t('sendPhone')}</Label>
+      <PhoneInput id="prop-phone" value={phone} onChange={setPhone} disabled={pending} />
+    </div>
+  );
+}
+
 /** Modal de envio de proposta por WhatsApp. */
 export function ProposalSendModal({
   open,
@@ -71,19 +213,15 @@ export function ProposalSendModal({
   const [phone, setPhone] = useState(contacts.length === 1 ? contacts[0].phone : '');
   const headerImage = useTemplateHeaderImage();
 
-  const templates: MessagingTemplateCatalogItem[] = Array.isArray(templatesPage)
-    ? templatesPage
-    : (templatesPage as { data?: MessagingTemplateCatalogItem[] } | undefined)?.data ?? [];
-  const types: MessagingTemplateType[] = Array.isArray(typesPage)
-    ? typesPage
-    : (typesPage as { data?: MessagingTemplateType[] } | undefined)?.data ?? [];
+  const templates = resolveListPage<MessagingTemplateCatalogItem>(templatesPage);
+  const types = resolveListPage<MessagingTemplateType>(typesPage);
 
   const available = templates.filter((tpl) => !tpl.invalidReason);
   const selected = available.find((tpl) => tpl.id === templateId);
   const variables = templateVariables(selected, types);
   const selectedContact = contacts.find((c) => c.phone === phone);
-  const contactFirstName = selectedContact?.name?.split(' ')[0] ?? '';
-  const hasImage = selected?.header?.kind === 'IMAGE';
+  const contactFirstName = firstNameOf(selectedContact);
+  const hasImage = isImageHeader(selected);
 
   // Variáveis reservadas pré-preenchidas; o operador pode sobrescrever qualquer campo.
   const effectiveValues = useMemo(() => {
@@ -97,11 +235,14 @@ export function ProposalSendModal({
     return { ...defaults, ...values };
   }, [company?.name, contactFirstName, values, variables]);
 
-  const valid =
-    Boolean(selected) &&
-    variables.every((v) => v.required === false || Boolean(effectiveValues[v.name]?.trim())) &&
-    (!hasImage || Boolean(headerImage.draftArtifact)) &&
-    Boolean(phone);
+  const valid = isSendValid({
+    selected,
+    variables,
+    effectiveValues,
+    hasImage,
+    hasHeaderImageDraft: Boolean(headerImage.draftArtifact),
+    phone,
+  });
 
   function pickTemplate(id: string) {
     setTemplateId(id);
@@ -141,22 +282,7 @@ export function ProposalSendModal({
           {/* Template */}
           <div className="space-y-1.5">
             <Label htmlFor="proposal-template">{t('sendTemplateLabel')}</Label>
-            {available.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t('sendNoTemplates')}</p>
-            ) : (
-              <Select value={templateId} onValueChange={pickTemplate}>
-                <SelectTrigger id="proposal-template">
-                  <SelectValue placeholder={t('sendTemplatePlaceholder')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {available.map((tpl) => (
-                    <SelectItem key={tpl.id} value={tpl.id}>
-                      {tpl.key} ({tpl.language})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+            <TemplateSelect available={available} templateId={templateId} onChange={pickTemplate} t={t} />
           </div>
 
           {/* Variáveis */}
@@ -175,62 +301,17 @@ export function ProposalSendModal({
           ))}
 
           {/* Imagem de header */}
-          {hasImage && (
-            <div className="space-y-1.5">
-              <Label>{t('sendHeaderImage')}</Label>
-              {headerImage.draftArtifact ? (
-                <div className="flex items-center gap-2">
-                  {headerImage.previewUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={headerImage.previewUrl} alt="" className="h-16 w-16 rounded object-cover border" />
-                  ) : (
-                    <div className="h-16 w-16 rounded border flex items-center justify-center bg-muted">
-                      <ImageIcon className="size-6 text-muted-foreground" />
-                    </div>
-                  )}
-                  <span className="text-sm truncate flex-1">{headerImage.draftArtifact.name ?? headerImage.draftArtifact.fileName}</span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="size-6 shrink-0"
-                    onClick={() => headerImage.setDraftArtifact(null)}
-                  >
-                    <X className="size-3.5" />
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => headerImage.setPickerOpen(true)}
-                >
-                  {t('selectImage')}
-                </Button>
-              )}
-            </div>
-          )}
+          <HeaderImageSection
+            show={hasImage}
+            draftArtifact={headerImage.draftArtifact}
+            previewUrl={headerImage.previewUrl}
+            onRemove={() => headerImage.setDraftArtifact(null)}
+            onPick={() => headerImage.setPickerOpen(true)}
+            t={t}
+          />
 
           {/* Telefone */}
-          <div className="space-y-1.5">
-            {contacts.length > 0 && (
-              <Select value={phone} onValueChange={setPhone}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t('sendChooseContactPlaceholder')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {contacts.map((c) => (
-                    <SelectItem key={c.phone} value={c.phone}>
-                      {c.name ? `${c.name} — ` : ''}{c.phone}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-            <Label htmlFor="prop-phone">{contacts.length > 0 ? t('sendManualPhone') : t('sendPhone')}</Label>
-            <PhoneInput id="prop-phone" value={phone} onChange={setPhone} disabled={pending} />
-          </div>
+          <PhoneSection contacts={contacts} phone={phone} setPhone={setPhone} pending={pending} t={t} />
 
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>

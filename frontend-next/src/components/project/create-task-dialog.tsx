@@ -37,6 +37,25 @@ const RICH_TEXT_FORMAT_LABELS = {
   code: 'Código (```texto```)',
 };
 
+function resolveTaskAssigneeId(assigneeId: string, creatorId?: string): string | null | undefined {
+  if (assigneeId === '__UNASSIGNED__') return null;
+  if (assigneeId === '__CREATOR__') return creatorId ?? undefined;
+  if (assigneeId) return assigneeId;
+  return undefined;
+}
+
+function isCreateTaskDisabled(isSubmitting: boolean, title: string, status: ProjectTaskStatus, blockedReason: string): boolean {
+  if (isSubmitting || !title.trim()) return true;
+  return status === 'BLOCKED' && !blockedReason.trim();
+}
+
+function resolveDefaultMilestoneId(
+  initialMilestoneId: string | undefined,
+  availableMilestones: { id: string; title: string }[]
+): string {
+  return initialMilestoneId ?? (availableMilestones.length > 0 ? availableMilestones[0].id : '');
+}
+
 interface CreateTaskDialogProps {
   projectId: string;
   milestoneId?: string;
@@ -101,15 +120,14 @@ function CreateTaskDialogContent({
     return raw;
   }, [usersData]);
 
-  const defaultMilestoneId =
-    initialMilestoneId ?? (availableMilestones.length > 0 ? availableMilestones[0].id : '');
-
-  const [selectedMilestoneId, setSelectedMilestoneId] = useState(defaultMilestoneId);
+  const [selectedMilestoneId, setSelectedMilestoneId] = useState(() =>
+    resolveDefaultMilestoneId(initialMilestoneId, availableMilestones)
+  );
   const [title, setTitle] = useState('');
   const [status, setStatus] = useState<ProjectTaskStatus>('WAITING');
   const [blockedReason, setBlockedReason] = useState('');
   // Por default, seleciona o criador (meData?.id)
-  const [assigneeId, setAssigneeId] = useState<string>(meData?.id ?? '__CREATOR__');
+  const [assigneeId, setAssigneeId] = useState<string>(() => meData?.id ?? '__CREATOR__');
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -131,14 +149,7 @@ function CreateTaskDialogContent({
     }
 
     // Define o assigneeId: se for '__UNASSIGNED__', envia null. Se for '__CREATOR__', usa meData?.id ou deixa undefined pro backend usar user.id
-    let resolvedAssigneeId: string | null | undefined = undefined;
-    if (assigneeId === '__UNASSIGNED__') {
-      resolvedAssigneeId = null;
-    } else if (assigneeId === '__CREATOR__') {
-      resolvedAssigneeId = meData?.id ?? undefined;
-    } else if (assigneeId) {
-      resolvedAssigneeId = assigneeId;
-    }
+    const resolvedAssigneeId = resolveTaskAssigneeId(assigneeId, meData?.id);
 
     setIsSubmitting(true);
     try {
@@ -371,7 +382,7 @@ function CreateTaskDialogContent({
           size="sm"
           className="text-xs gap-1.5"
           onClick={handleCreate}
-          disabled={isSubmitting || !title.trim() || (status === 'BLOCKED' && !blockedReason.trim())}
+          disabled={isCreateTaskDisabled(isSubmitting, title, status, blockedReason)}
         >
           {isSubmitting ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />

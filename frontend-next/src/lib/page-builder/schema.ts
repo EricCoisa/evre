@@ -201,8 +201,6 @@ export const ROW_START_CLASS: Record<number, string> = {
   59: 'lg:row-start-60',
 } as const;
 
-const MAX_ROW_START = Math.max(...Object.keys(ROW_START_CLASS).map(Number));
-
 /** Classe `row-start` para `y`, saturando no maior valor conhecido em vez de voltar `undefined`
  * (e perder o posicionamento) quando `y` excede o que a tabela cobre. */
 export function rowStartClass(y: number): string {

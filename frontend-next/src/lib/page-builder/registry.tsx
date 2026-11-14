@@ -136,61 +136,115 @@ function Panel({
   );
 }
 
+type HeaderEditMeta = {
+  blockId: string;
+  onPropChange: (name: string, value: unknown) => void;
+};
+
+function hasAnyHeaderContent(
+  hasTitle: boolean,
+  hasDescription: boolean,
+  hasChildren: boolean,
+  editMeta: HeaderEditMeta | undefined,
+): boolean {
+  return hasTitle || hasDescription || hasChildren || !!editMeta;
+}
+
+function shouldShowTitleBlock(
+  hasTitle: boolean,
+  hasDescription: boolean,
+  editMeta: HeaderEditMeta | undefined,
+): boolean {
+  return hasTitle || hasDescription || !!editMeta;
+}
+
+/** Título do cabeçalho (`CardTitle`) — self-oculta sem título e fora da edição. */
+function HeaderTitle({
+  hasTitle,
+  title,
+  editMeta,
+}: {
+  hasTitle: boolean;
+  title: unknown;
+  editMeta: HeaderEditMeta | undefined;
+}) {
+  if (!hasTitle && !editMeta) return null;
+  return (
+    <CardTitle>
+      {editMeta ? (
+        <InlineRichText
+          blockId={editMeta.blockId}
+          propName="title"
+          value={str(title)}
+          onChange={(val) => editMeta.onPropChange('title', val)}
+          placeholder="Título..."
+          showFontSize={false}
+          singleLine
+          className="font-semibold text-lg"
+        />
+      ) : (
+        <FormattedRichText text={str(title)} inline />
+      )}
+    </CardTitle>
+  );
+}
+
+/** Descrição do cabeçalho (`CardDescription`) — self-oculta sem descrição e fora da edição. */
+function HeaderDescription({
+  hasTitle,
+  hasDescription,
+  description,
+  editMeta,
+}: {
+  hasTitle: boolean;
+  hasDescription: boolean;
+  description: unknown;
+  editMeta: HeaderEditMeta | undefined;
+}) {
+  if (!hasDescription && !(editMeta && description !== undefined)) return null;
+  return (
+    <CardDescription className={hasTitle || editMeta ? 'mt-1' : undefined}>
+      {editMeta ? (
+        <InlineRichText
+          blockId={editMeta.blockId}
+          propName="description"
+          value={str(description)}
+          onChange={(val) => editMeta.onPropChange('description', val)}
+          placeholder="Descrição..."
+          showFontSize={false}
+          singleLine
+        />
+      ) : (
+        <FormattedRichText text={str(description)} inline />
+      )}
+    </CardDescription>
+  );
+}
+
 /** Renderiza o cabeçalho universal de Card (`title`, `description` e controles/children). */
 function renderBlockHeader(
   title?: unknown,
   description?: unknown,
   children?: React.ReactNode,
-  editMeta?: {
-    blockId: string;
-    onPropChange: (name: string, value: unknown) => void;
-  },
+  editMeta?: HeaderEditMeta,
 ): React.ReactNode {
   const hasTitle = Boolean(title);
   const hasDescription = Boolean(description);
   const hasChildren = Boolean(children);
 
-  if (!hasTitle && !hasDescription && !hasChildren && !editMeta) return undefined;
+  if (!hasAnyHeaderContent(hasTitle, hasDescription, hasChildren, editMeta)) return undefined;
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-2">
-      {hasTitle || hasDescription || editMeta ? (
+      {shouldShowTitleBlock(hasTitle, hasDescription, editMeta) ? (
         <div className="flex-1 min-w-0">
-          {hasTitle || editMeta ? (
-            <CardTitle>
-              {editMeta ? (
-                <InlineRichText
-                  blockId={editMeta.blockId}
-                  propName="title"
-                  value={str(title)}
-                  onChange={(val) => editMeta.onPropChange('title', val)}
-                  placeholder="Título..."
-                  showFontSize={false}
-                  singleLine
-                  className="font-semibold text-lg"
-                />
-              ) : (
-                <FormattedRichText text={str(title)} inline />
-              )}
-            </CardTitle>
-          ) : null}
-          {hasDescription || (editMeta && description !== undefined) ? (
-            <CardDescription className={hasTitle || editMeta ? 'mt-1' : undefined}>
-              {editMeta ? (
-                <InlineRichText
-                  blockId={editMeta.blockId}
-                  propName="description"
-                  value={str(description)}
-                  onChange={(val) => editMeta.onPropChange('description', val)}
-                  placeholder="Descrição..."
-                  showFontSize={false}
-                  singleLine
-                />
-              ) : (
-                <FormattedRichText text={str(description)} inline />
-              )}
-            </CardDescription>
-          ) : null}
+          <HeaderTitle hasTitle={hasTitle} title={title} editMeta={editMeta} />
+          <HeaderDescription
+            hasTitle={hasTitle}
+            hasDescription={hasDescription}
+            description={description}
+            editMeta={editMeta}
+          />
         </div>
       ) : null}
       {hasChildren ? (
@@ -426,21 +480,38 @@ function DividerBlock({ props, className }: BlockProps) {
  * sessão e cookie da aplicação através do mesmo iframe que executa o script dele. */
 const ARTIFACT_SANDBOX = 'allow-scripts allow-popups allow-modals allow-forms';
 
+function resolveIframeHeight(props: BlockProps['props']): number | undefined {
+  return typeof props.height === 'number' && props.height > 0 ? props.height : undefined;
+}
+
+function resolveIframeAspect(props: BlockProps['props']): 'video' | 'square' | undefined {
+  return props.aspect === 'video' || props.aspect === 'square' ? props.aspect : undefined;
+}
+
+function resolveIframePreviewStyle(
+  aspect: 'video' | 'square' | undefined,
+  height: number | undefined,
+): React.CSSProperties {
+  if (aspect) return { aspectRatio: aspect === 'video' ? '16 / 9' : '1 / 1' };
+  if (height) return { height };
+  return { height: '100%', minHeight: 140 };
+}
+
+/** Publicado: visualização anônima por publicToken. Rascunho/preview: autenticado por id, mesmo
+ * guard de roles do resto do admin. Redirect 302 pra presigned URL — iframe segue nativo. */
+function resolveArtifactUrl(artifactId: string, published: boolean | undefined): string {
+  if (published) return `/api/artifacts/public/${artifactId}`;
+  return `/api/artifacts/${artifactId}/view`;
+}
+
 /** Demonstração HTML/imagem em sandbox: preview capturado por uma camada de clique (sem scroll
  * nem interação própria), toque abre modal 98vw×90vh com scroll e interação liberados. */
 function IframeBlock({ props, bare, className, renderContext }: BlockProps) {
   const { t } = useTranslation('page-builder');
   const [open, setOpen] = React.useState(false);
   const artifactId = typeof props.artifactId === 'string' ? props.artifactId : undefined;
-  const title = str(props.title);
-  const height = typeof props.height === 'number' && props.height > 0 ? props.height : undefined;
-  const aspect = props.aspect === 'video' || props.aspect === 'square' ? props.aspect : undefined;
-
-  const previewStyle: React.CSSProperties = aspect
-    ? { aspectRatio: aspect === 'video' ? '16 / 9' : '1 / 1' }
-    : height
-      ? { height }
-      : { height: '100%', minHeight: 140 };
+  const iframeTitle = str(props.title) || 'Artefato';
+  const previewStyle = resolveIframePreviewStyle(resolveIframeAspect(props), resolveIframeHeight(props));
 
   if (!artifactId) {
     return (
@@ -452,18 +523,14 @@ function IframeBlock({ props, bare, className, renderContext }: BlockProps) {
     );
   }
 
-  // Publicado: visualização anônima por publicToken. Rascunho/preview: autenticado por id,
-  // mesmo guard de roles do resto do admin. Redirect 302 pra presigned URL — iframe segue nativo.
-  const url = renderContext?.published
-    ? `/api/artifacts/public/${artifactId}`
-    : `/api/artifacts/${artifactId}/view`;
+  const url = resolveArtifactUrl(artifactId, renderContext?.published as boolean | undefined);
 
   return (
     <Panel bare={bare} className={className}>
       <div className="relative h-full w-full min-h-[140px] overflow-hidden rounded-lg border" style={previewStyle}>
         <iframe
           src={url}
-          title={title || 'Artefato'}
+          title={iframeTitle}
           className="h-full w-full border-0"
           sandbox={ARTIFACT_SANDBOX}
           scrolling="no"
@@ -483,13 +550,13 @@ function IframeBlock({ props, bare, className, renderContext }: BlockProps) {
       <Modal
         open={open}
         onOpenChange={setOpen}
-        title={title || t('iframeModalTitle', { defaultValue: 'Demonstração' })}
+        title={str(props.title) || t('iframeModalTitle', { defaultValue: 'Demonstração' })}
         size="full"
         className="!flex !flex-col h-[90vh] max-h-[90vh] w-[98vw] max-w-[98vw]"
       >
         <iframe
           src={url}
-          title={title || 'Artefato'}
+          title={iframeTitle}
           className="flex-1 min-h-0 w-full border-0"
           sandbox={ARTIFACT_SANDBOX}
           scrolling="yes"
@@ -505,6 +572,53 @@ function IframeBlock({ props, bare, className, renderContext }: BlockProps) {
  * - `{{value}}` / `{{date}}`: último ponto de uma série temporal (`series`);
  * - `{{campo}}`: valor de `campo` do primeiro registro da lista (`data[0][campo]`).
  */
+/** `{{total}}` / `{{count}}` / `{{meta.total}}`: total de `meta.total`, senão último ponto da
+ * série, senão tamanho da lista. */
+function resolveTotalOrCount(listData: ListResponse, seriesData: SeriesResponse): string {
+  if (typeof listData.meta?.total === 'number') {
+    return String(listData.meta.total);
+  }
+  if (Array.isArray(seriesData.data) && seriesData.data.length > 0) {
+    const last = seriesData.data[seriesData.data.length - 1];
+    if (last && typeof last.value === 'number') {
+      return String(last.value);
+    }
+  }
+  if (Array.isArray(listData.data)) {
+    return String(listData.data.length);
+  }
+  return '—';
+}
+
+/** `{{value}}` / `{{date}}`: campo `key` do último ponto da série temporal. */
+function resolveSeriesField(seriesData: SeriesResponse, key: string): string | undefined {
+  if (!Array.isArray(seriesData.data) || seriesData.data.length === 0) return undefined;
+  const lastPoint = seriesData.data[seriesData.data.length - 1] as Record<string, unknown>;
+  if (lastPoint && key in lastPoint && lastPoint[key] !== undefined && lastPoint[key] !== null) {
+    return str(lastPoint[key]);
+  }
+  return undefined;
+}
+
+/** `{{campo}}`: valor de `campo` no primeiro registro da lista. */
+function resolveListField(listData: ListResponse, key: string): string | undefined {
+  if (!Array.isArray(listData.data) || listData.data.length === 0) return undefined;
+  const firstRow = listData.data[0];
+  if (firstRow && typeof firstRow === 'object' && key in firstRow) {
+    const val = firstRow[key];
+    if (val !== undefined && val !== null) return str(val);
+  }
+  return undefined;
+}
+
+/** `{{campo}}` fora da lista: valor de `campo` em `meta`. */
+function resolveMetaField(listData: ListResponse, key: string): string | undefined {
+  if (!listData.meta || !(key in listData.meta)) return undefined;
+  const metaVal = (listData.meta as Record<string, unknown>)[key];
+  if (metaVal !== undefined && metaVal !== null) return str(metaVal);
+  return undefined;
+}
+
 export function interpolateVariables(text: string, data?: SourceData): string {
   if (!text || !text.includes('{{')) return text;
 
@@ -515,42 +629,15 @@ export function interpolateVariables(text: string, data?: SourceData): string {
     const seriesData = data as SeriesResponse;
 
     if (key === 'total' || key === 'count' || key === 'meta.total') {
-      if (typeof listData.meta?.total === 'number') {
-        return String(listData.meta.total);
-      }
-      if (Array.isArray(seriesData.data) && seriesData.data.length > 0) {
-        const last = seriesData.data[seriesData.data.length - 1];
-        if (last && typeof last.value === 'number') {
-          return String(last.value);
-        }
-      }
-      if (Array.isArray(listData.data)) {
-        return String(listData.data.length);
-      }
-      return '—';
+      return resolveTotalOrCount(listData, seriesData);
     }
 
-    if (Array.isArray(seriesData.data) && seriesData.data.length > 0) {
-      const lastPoint = seriesData.data[seriesData.data.length - 1] as Record<string, unknown>;
-      if (lastPoint && key in lastPoint && lastPoint[key] !== undefined && lastPoint[key] !== null) {
-        return str(lastPoint[key]);
-      }
-    }
-
-    if (Array.isArray(listData.data) && listData.data.length > 0) {
-      const firstRow = listData.data[0];
-      if (firstRow && typeof firstRow === 'object' && key in firstRow) {
-        const val = firstRow[key];
-        if (val !== undefined && val !== null) return str(val);
-      }
-    }
-
-    if (listData.meta && key in listData.meta) {
-      const metaVal = (listData.meta as Record<string, unknown>)[key];
-      if (metaVal !== undefined && metaVal !== null) return str(metaVal);
-    }
-
-    return '—';
+    return (
+      resolveSeriesField(seriesData, key) ??
+      resolveListField(listData, key) ??
+      resolveMetaField(listData, key) ??
+      '—'
+    );
   });
 }
 

@@ -35,6 +35,259 @@ import type { TimerControl } from './task-card';
 import { useTranslation } from '@/hooks/use-translation';
 import type { Milestone, MilestoneTask } from '@/lib/actions/project/types';
 
+function getMilestoneColumnStyle(
+  transform: Parameters<typeof CSS.Translate.toString>[0],
+  transition: string | undefined,
+  isDragging: boolean,
+) {
+  return {
+    transform: CSS.Translate.toString(transform),
+    transition,
+    opacity: isDragging ? 0.3 : 1,
+    pointerEvents: isDragging ? ('none' as const) : undefined,
+  };
+}
+
+function MilestoneDragHandle({
+  canEdit,
+  attributes,
+  listeners,
+}: {
+  canEdit: boolean;
+  attributes: ReturnType<typeof useSortable>['attributes'];
+  listeners: ReturnType<typeof useSortable>['listeners'];
+}) {
+  if (!canEdit) return null;
+  return (
+    <div
+      {...attributes}
+      {...listeners}
+      className="cursor-grab active:cursor-grabbing p-0.5 text-muted-foreground/60 hover:text-foreground"
+      title="Arrastar etapa"
+    >
+      <GripVertical className="h-4 w-4" />
+    </div>
+  );
+}
+
+function MilestoneDescriptionButton({
+  description,
+  onOpenDetail,
+}: {
+  description?: string | null;
+  onOpenDetail: () => void;
+}) {
+  if (!description) return null;
+  return (
+    <button
+      type="button"
+      onClick={onOpenDetail}
+      className="text-left text-[11px] text-muted-foreground line-clamp-1 hover:text-foreground transition-colors cursor-pointer"
+      title="Clique para ver a descrição detalhada"
+    >
+      {description}
+    </button>
+  );
+}
+
+function EmptyTasksPlaceholder({ visible }: { visible: boolean }) {
+  if (!visible) return null;
+  return (
+    <div className="rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground/70">
+      Nenhuma tarefa nesta etapa.
+    </div>
+  );
+}
+
+function AddTaskFooterButton({
+  canEdit,
+  milestoneId,
+  milestoneTitle,
+  onOpenCreateTask,
+}: {
+  canEdit: boolean;
+  milestoneId: string;
+  milestoneTitle: string;
+  onOpenCreateTask?: (milestoneId: string, milestoneTitle: string) => void;
+}) {
+  if (!canEdit || !onOpenCreateTask) return null;
+  return (
+    <div className="p-2 border-t bg-card/60">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="w-full justify-start text-xs text-muted-foreground hover:text-foreground h-8 gap-1.5"
+        onClick={() => onOpenCreateTask(milestoneId, milestoneTitle)}
+      >
+        <Plus className="h-3.5 w-3.5 text-primary" />
+        <span>Adicionar tarefa</span>
+      </Button>
+    </div>
+  );
+}
+
+function MilestoneTitleEditor({
+  canEdit,
+  isEditingTitle,
+  title,
+  milestoneTitle,
+  onTitleChange,
+  onSave,
+  onCancel,
+  onStartEditing,
+}: {
+  canEdit: boolean;
+  isEditingTitle: boolean;
+  title: string;
+  milestoneTitle: string;
+  onTitleChange: (value: string) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  onStartEditing: () => void;
+}) {
+  if (isEditingTitle) {
+    return (
+      <div className="flex items-center gap-1 flex-1">
+        <Input
+          value={title}
+          onChange={(e) => onTitleChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') void onSave();
+            if (e.key === 'Escape') onCancel();
+          }}
+          className="h-7 text-xs font-semibold px-2"
+          autoFocus
+        />
+        <Button size="sm" className="h-7 w-7 p-0" onClick={onSave}>
+          <Check className="h-3 w-3" />
+        </Button>
+      </div>
+    );
+  }
+  return (
+    <span
+      className={`text-xs font-semibold tracking-tight text-foreground truncate ${
+        canEdit ? 'cursor-pointer hover:underline' : ''
+      }`}
+      onClick={() => canEdit && onStartEditing()}
+      title={milestoneTitle}
+    >
+      {milestoneTitle}
+    </span>
+  );
+}
+
+function TaskCountBadge({ tasks, allTasks }: { tasks: MilestoneTask[]; allTasks?: MilestoneTask[] }) {
+  const isFiltered = Boolean(allTasks && allTasks.length !== tasks.length);
+  return (
+    <Badge
+      variant="secondary"
+      className="h-5 px-1.5 text-[10px] font-normal"
+      title={
+        isFiltered
+          ? `${tasks.length} exibidas de ${allTasks?.length} tarefas nesta etapa`
+          : `${tasks.length} tarefas`
+      }
+    >
+      {isFiltered ? `${tasks.length}/${allTasks?.length}` : tasks.length}
+    </Badge>
+  );
+}
+
+function MilestoneTimerButton({
+  hasTimer,
+  isActive,
+  pending,
+  onToggle,
+  tTime,
+}: {
+  hasTimer: boolean;
+  isActive: boolean;
+  pending?: boolean;
+  onToggle: (e: React.MouseEvent) => void;
+  tTime: (key: string) => string;
+}) {
+  if (!hasTimer) return null;
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      disabled={pending}
+      className={`p-1 rounded-sm transition-colors cursor-pointer ${
+        isActive
+          ? 'text-destructive bg-destructive/15 hover:bg-destructive/25'
+          : 'text-muted-foreground/60 hover:text-emerald-600 hover:bg-emerald-500/10'
+      }`}
+      title={isActive ? tTime('stopMilestoneTimer') : tTime('startMilestoneTimer')}
+    >
+      {isActive ? (
+        <Square className="h-3 w-3 fill-current animate-pulse" />
+      ) : (
+        <Play className="h-3 w-3 fill-current" />
+      )}
+    </button>
+  );
+}
+
+function MilestoneColumnMenu({
+  canEdit,
+  milestoneId,
+  milestoneTitle,
+  onOpenCreateTask,
+  onOpenDetail,
+  onStartEditingTitle,
+  onDeleteMilestone,
+}: {
+  canEdit: boolean;
+  milestoneId: string;
+  milestoneTitle: string;
+  onOpenCreateTask?: (milestoneId: string, milestoneTitle: string) => void;
+  onOpenDetail: () => void;
+  onStartEditingTitle: () => void;
+  onDeleteMilestone?: (milestoneId: string) => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-muted-foreground">
+          <MoreVertical className="h-3.5 w-3.5" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {canEdit && onOpenCreateTask && (
+          <DropdownMenuItem onClick={() => onOpenCreateTask(milestoneId, milestoneTitle)}>
+            <Plus className="mr-2 h-3.5 w-3.5" />
+            Nova tarefa
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem onClick={onOpenDetail}>
+          <AlignLeft className="mr-2 h-3.5 w-3.5" />
+          {canEdit ? 'Detalhes e descrição' : 'Ver detalhes'}
+        </DropdownMenuItem>
+        {canEdit && (
+          <DropdownMenuItem onClick={onStartEditingTitle}>
+            <Edit2 className="mr-2 h-3.5 w-3.5" />
+            Renomear etapa
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem onClick={onOpenDetail}>
+          <MessageSquare className="mr-2 h-3.5 w-3.5" />
+          Comentários da etapa
+        </DropdownMenuItem>
+        {canEdit && onDeleteMilestone && (
+          <DropdownMenuItem
+            className="text-destructive focus:text-destructive"
+            onClick={() => onDeleteMilestone(milestoneId)}
+          >
+            <Trash2 className="mr-2 h-3.5 w-3.5" />
+            Excluir etapa
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 interface MilestoneColumnProps {
   projectId: string;
   milestone: Milestone;
@@ -87,12 +340,7 @@ export function MilestoneColumn({
     },
   });
 
-  const style = {
-    transform: CSS.Translate.toString(transform),
-    transition,
-    opacity: isDragging ? 0.3 : 1,
-    pointerEvents: isDragging ? ('none' as const) : undefined,
-  };
+  const style = getMilestoneColumnStyle(transform, transition, isDragging);
 
   const handleSaveTitle = async () => {
     const trimmed = title.trim();
@@ -127,130 +375,43 @@ export function MilestoneColumn({
         <CardHeader className="p-3 pb-2.5 border-b bg-muted/20 space-y-2.5">
           <div className="flex items-center justify-between gap-1">
             <div className="flex items-center gap-1.5 min-w-0 flex-1">
-              {canEdit && (
-                <div
-                  {...attributes}
-                  {...listeners}
-                  className="cursor-grab active:cursor-grabbing p-0.5 text-muted-foreground/60 hover:text-foreground"
-                  title="Arrastar etapa"
-                >
-                  <GripVertical className="h-4 w-4" />
-                </div>
-              )}
+              <MilestoneDragHandle canEdit={canEdit} attributes={attributes} listeners={listeners} />
 
-              {isEditingTitle ? (
-                <div className="flex items-center gap-1 flex-1">
-                  <Input
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') void handleSaveTitle();
-                      if (e.key === 'Escape') {
-                        setTitle(milestone.title);
-                        setIsEditingTitle(false);
-                      }
-                    }}
-                    className="h-7 text-xs font-semibold px-2"
-                    autoFocus
-                  />
-                  <Button
-                    size="sm"
-                    className="h-7 w-7 p-0"
-                    onClick={handleSaveTitle}
-                  >
-                    <Check className="h-3 w-3" />
-                  </Button>
-                </div>
-              ) : (
-                <span
-                  className={`text-xs font-semibold tracking-tight text-foreground truncate ${
-                    canEdit ? 'cursor-pointer hover:underline' : ''
-                  }`}
-                  onClick={() => canEdit && setIsEditingTitle(true)}
-                  title={milestone.title}
-                >
-                  {milestone.title}
-                </span>
-              )}
+              <MilestoneTitleEditor
+                canEdit={canEdit}
+                isEditingTitle={isEditingTitle}
+                title={title}
+                milestoneTitle={milestone.title}
+                onTitleChange={setTitle}
+                onSave={handleSaveTitle}
+                onCancel={() => {
+                  setTitle(milestone.title);
+                  setIsEditingTitle(false);
+                }}
+                onStartEditing={() => setIsEditingTitle(true)}
+              />
             </div>
 
             <div className="flex items-center gap-1">
-              <Badge
-                variant="secondary"
-                className="h-5 px-1.5 text-[10px] font-normal"
-                title={
-                  milestone.allTasks && milestone.allTasks.length !== tasks.length
-                    ? `${tasks.length} exibidas de ${milestone.allTasks.length} tarefas nesta etapa`
-                    : `${tasks.length} tarefas`
-                }
-              >
-                {milestone.allTasks && milestone.allTasks.length !== tasks.length
-                  ? `${tasks.length}/${milestone.allTasks.length}`
-                  : tasks.length}
-              </Badge>
+              <TaskCountBadge tasks={tasks} allTasks={milestone.allTasks} />
 
-              {timer && (<>
-                <button
-                  type="button"
-                  onClick={handleToggleMilestoneTimer}
-                  disabled={timer?.pending}
-                  className={`p-1 rounded-sm transition-colors cursor-pointer ${
-                    isMilestoneActive
-                      ? 'text-destructive bg-destructive/15 hover:bg-destructive/25'
-                      : 'text-muted-foreground/60 hover:text-emerald-600 hover:bg-emerald-500/10'
-                  }`}
-                  title={
-                    isMilestoneActive
-                      ? tTime('stopMilestoneTimer')
-                      : tTime('startMilestoneTimer')
-                  }
-                >
-                  {isMilestoneActive ? (
-                    <Square className="h-3 w-3 fill-current animate-pulse" />
-                  ) : (
-                    <Play className="h-3 w-3 fill-current" />
-                  )}
-                </button>
-              </>)}
+              <MilestoneTimerButton
+                hasTimer={Boolean(timer)}
+                isActive={isMilestoneActive}
+                pending={timer?.pending}
+                onToggle={handleToggleMilestoneTimer}
+                tTime={tTime}
+              />
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-muted-foreground">
-                    <MoreVertical className="h-3.5 w-3.5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {canEdit && onOpenCreateTask && (
-                    <DropdownMenuItem onClick={() => onOpenCreateTask(milestone.id, milestone.title)}>
-                      <Plus className="mr-2 h-3.5 w-3.5" />
-                      Nova tarefa
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem onClick={() => setIsDetailOpen(true)}>
-                    <AlignLeft className="mr-2 h-3.5 w-3.5" />
-                    {canEdit ? 'Detalhes e descrição' : 'Ver detalhes'}
-                  </DropdownMenuItem>
-                  {canEdit && (
-                    <DropdownMenuItem onClick={() => setIsEditingTitle(true)}>
-                      <Edit2 className="mr-2 h-3.5 w-3.5" />
-                      Renomear etapa
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem onClick={() => setIsDetailOpen(true)}>
-                    <MessageSquare className="mr-2 h-3.5 w-3.5" />
-                    Comentários da etapa
-                  </DropdownMenuItem>
-                  {canEdit && onDeleteMilestone && (
-                    <DropdownMenuItem
-                      className="text-destructive focus:text-destructive"
-                      onClick={() => onDeleteMilestone(milestone.id)}
-                    >
-                      <Trash2 className="mr-2 h-3.5 w-3.5" />
-                      Excluir etapa
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <MilestoneColumnMenu
+                canEdit={canEdit}
+                milestoneId={milestone.id}
+                milestoneTitle={milestone.title}
+                onOpenCreateTask={onOpenCreateTask}
+                onOpenDetail={() => setIsDetailOpen(true)}
+                onStartEditingTitle={() => setIsEditingTitle(true)}
+                onDeleteMilestone={onDeleteMilestone}
+              />
             </div>
           </div>
 
@@ -258,16 +419,10 @@ export function MilestoneColumn({
           <MilestoneProgressBar tasks={allMilestoneTasks} compact />
 
           {/* Descrição resumida da etapa (se houver) */}
-          {milestone.description && (
-            <button
-              type="button"
-              onClick={() => setIsDetailOpen(true)}
-              className="text-left text-[11px] text-muted-foreground line-clamp-1 hover:text-foreground transition-colors cursor-pointer"
-              title="Clique para ver a descrição detalhada"
-            >
-              {milestone.description}
-            </button>
-          )}
+          <MilestoneDescriptionButton
+            description={milestone.description}
+            onOpenDetail={() => setIsDetailOpen(true)}
+          />
 
           {/* Validação / Aprovação da Milestone */}
           <div className="flex items-center justify-between pt-0.5">
@@ -296,27 +451,16 @@ export function MilestoneColumn({
             ))}
           </SortableContext>
 
-          {tasks.length === 0 && (
-            <div className="rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground/70">
-              Nenhuma tarefa nesta etapa.
-            </div>
-          )}
+          <EmptyTasksPlaceholder visible={tasks.length === 0} />
         </CardContent>
 
         {/* Botão de Adicionar Tarefa com Modal */}
-        {canEdit && onOpenCreateTask && (
-          <div className="p-2 border-t bg-card/60">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full justify-start text-xs text-muted-foreground hover:text-foreground h-8 gap-1.5"
-              onClick={() => onOpenCreateTask(milestone.id, milestone.title)}
-            >
-              <Plus className="h-3.5 w-3.5 text-primary" />
-              <span>Adicionar tarefa</span>
-            </Button>
-          </div>
-        )}
+        <AddTaskFooterButton
+          canEdit={canEdit}
+          milestoneId={milestone.id}
+          milestoneTitle={milestone.title}
+          onOpenCreateTask={onOpenCreateTask}
+        />
       </Card>
 
       {/* Drawer de Detalhes, Descrição Rica e Comentários da Milestone */}

@@ -77,6 +77,55 @@ const PRESET_METRICS: Record<TextPreset, PresetMetric> = {
  * com base no preset selecionado (títulos h1–h4, parágrafo, etc.), quantidade real de caracteres
  * por linha e quebras de linha, garantindo que o bloco não invada nem sobreponha os blocos abaixo.
  */
+/** Detecta o tamanho de fonte inline (ex: [fs:text-4xl]) e mapeia para o preset correspondente. */
+function resolveEffectivePreset(preset: string | undefined, inlineSize: string | undefined): TextPreset {
+  if (inlineSize === 'text-4xl' || inlineSize === 'text-3xl') return 'heading1';
+  if (inlineSize === 'text-2xl') return 'heading2';
+  if (inlineSize === 'text-xl') return 'heading3';
+  if (inlineSize === 'text-lg') return 'heading4';
+  if (inlineSize === 'text-base') return 'lead';
+  if (inlineSize === 'text-sm') return 'paragraph';
+  if (inlineSize === 'text-xs') return 'caption';
+  return normalizeTextPreset(preset);
+}
+
+/** Altura total em pixels do texto: linhas visuais + padding extra + espaço reservado para heading markdown. */
+function computeTextContentHeight(
+  content: string,
+  lines: string[],
+  visualLinesCount: number,
+  metric: PresetMetric,
+  effectivePreset: TextPreset,
+): number {
+  const isSingleLine = visualLinesCount <= 1 && lines.length <= 1;
+  const extraPadding = isSingleLine ? 0 : metric.extraPaddingPx;
+  const hasHeadingMarkdown =
+    /^#{1,4}\s/m.test(content) || /^\s*\*[^*]+\*\s*$/m.test(content);
+
+  return (
+    visualLinesCount * metric.lineHeightPx +
+    extraPadding +
+    (hasHeadingMarkdown && effectivePreset === 'paragraph' ? 18 : 0)
+  );
+}
+
+/** Soma a altura visual (em linhas de texto) considerando quebras automáticas e itens de lista. */
+function countVisualLines(lines: string[], charsPerLine: number): number {
+  let visualLinesCount = 0;
+  for (const line of lines) {
+    if (line.trim().length === 0) {
+      // Cada linha vazia (Enter) ocupa uma linha visual completa no editor
+      visualLinesCount += 1;
+    } else {
+      const isListItem = /^\s*[-*•]\s/.test(line);
+      const trimmedLine = line.trimEnd();
+      const lineWraps = Math.max(1, Math.ceil(trimmedLine.length / charsPerLine));
+      visualLinesCount += isListItem ? lineWraps * 1.15 : lineWraps;
+    }
+  }
+  return visualLinesCount;
+}
+
 export function estimateTextRowSpan(
   content: string,
   span = 12,
@@ -88,23 +137,7 @@ export function estimateTextRowSpan(
   const fsMatch = /\[fs:(text-[^\]]+)\]/.exec(content);
   const inlineSize = fsMatch ? fsMatch[1] : undefined;
 
-  let effectivePreset = normalizeTextPreset(preset);
-  if (inlineSize === 'text-4xl' || inlineSize === 'text-3xl') {
-    effectivePreset = 'heading1';
-  } else if (inlineSize === 'text-2xl') {
-    effectivePreset = 'heading2';
-  } else if (inlineSize === 'text-xl') {
-    effectivePreset = 'heading3';
-  } else if (inlineSize === 'text-lg') {
-    effectivePreset = 'heading4';
-  } else if (inlineSize === 'text-base') {
-    effectivePreset = 'lead';
-  } else if (inlineSize === 'text-sm') {
-    effectivePreset = 'paragraph';
-  } else if (inlineSize === 'text-xs') {
-    effectivePreset = 'caption';
-  }
-
+  const effectivePreset = resolveEffectivePreset(preset, inlineSize);
   const metric = PRESET_METRICS[effectivePreset] ?? PRESET_METRICS.paragraph;
 
   // Remove marcações [fs:...], formatações de rich text (*negrito*, _itálico_, ~tachado~, `código`)
@@ -124,28 +157,14 @@ export function estimateTextRowSpan(
     Math.round((span / GRID_COLS) * metric.charsPer12Col),
   );
 
-  let visualLinesCount = 0;
-  for (const line of lines) {
-    if (line.trim().length === 0) {
-      // Cada linha vazia (Enter) ocupa uma linha visual completa no editor
-      visualLinesCount += 1;
-    } else {
-      const isListItem = /^\s*[-*•]\s/.test(line);
-      const trimmedLine = line.trimEnd();
-      const lineWraps = Math.max(1, Math.ceil(trimmedLine.length / charsPerLine));
-      visualLinesCount += isListItem ? lineWraps * 1.15 : lineWraps;
-    }
-  }
-
-  const isSingleLine = visualLinesCount <= 1 && lines.length <= 1;
-  const extraPadding = isSingleLine ? 0 : metric.extraPaddingPx;
-  const hasHeadingMarkdown =
-    /^#{1,4}\s/m.test(content) || /^\s*\*[^*]+\*\s*$/m.test(content);
-
-  const totalContentHeight =
-    visualLinesCount * metric.lineHeightPx +
-    extraPadding +
-    (hasHeadingMarkdown && effectivePreset === 'paragraph' ? 18 : 0);
+  const visualLinesCount = countVisualLines(lines, charsPerLine);
+  const totalContentHeight = computeTextContentHeight(
+    content,
+    lines,
+    visualLinesCount,
+    metric,
+    effectivePreset,
+  );
 
   return pixelsToRowSpan(totalContentHeight, 'text.rich');
 }
@@ -168,15 +187,26 @@ function blockHasHeader(block: PageBlock): boolean {
  * Extrai a quantidade de itens a serem exibidos por um bloco de dados (ex: feed ou tabela).
  * Prioridade: 1) data.params.limit, 2) data.inline.data.length, 3) props.items.length, 4) fallback.
  */
-export function extractDataBlockItemCount(block: PageBlock, defaultCount = 5): number {
+function limitFromParams(block: PageBlock): number | undefined {
   const paramLimit = Number(block.data?.params?.limit);
-  if (Number.isFinite(paramLimit) && paramLimit > 0) {
-    return paramLimit;
-  }
+  return Number.isFinite(paramLimit) && paramLimit > 0 ? paramLimit : undefined;
+}
+
+function countFromInlineData(block: PageBlock): number | undefined {
   const inline = block.data?.inline;
   if (inline && typeof inline === 'object' && Array.isArray((inline as { data?: unknown[] }).data)) {
     return (inline as { data: unknown[] }).data.length;
   }
+  return undefined;
+}
+
+export function extractDataBlockItemCount(block: PageBlock, defaultCount = 5): number {
+  const paramLimit = limitFromParams(block);
+  if (paramLimit !== undefined) return paramLimit;
+
+  const inlineCount = countFromInlineData(block);
+  if (inlineCount !== undefined) return inlineCount;
+
   if (Array.isArray(block.props?.items)) {
     return block.props.items.length;
   }
@@ -212,6 +242,18 @@ export function estimateTableRowSpan(block: PageBlock): BlockRowSpan {
 /**
  * Estima a altura necessária para o bloco topic (itens de escopo em proposta).
  */
+function computeTopicItemsHeight(items: unknown[], charsPerLine: number): number {
+  if (items.length === 0) return 24;
+  let itemsHeight = 0;
+  for (const item of items) {
+    const text = typeof item === 'string' ? item.trim() : '';
+    const lines = Math.max(1, Math.ceil(text.length / charsPerLine));
+    // Cada item text-sm tem line-height ~20px + space-y-1 (4px). O botão "+ Item" do editor não faz parte do conteúdo.
+    itemsHeight += lines * 20 + 4;
+  }
+  return itemsHeight;
+}
+
 export function estimateTopicRowSpan(block: PageBlock, cols = 12): BlockRowSpan {
   const hasTitle = Boolean(block.props?.title);
   const hasDesc = Boolean(block.props?.description);
@@ -223,17 +265,7 @@ export function estimateTopicRowSpan(block: PageBlock, cols = 12): BlockRowSpan 
   const charsPerLine = Math.max(25, Math.round((span / cols) * 100));
 
   const items = Array.isArray(block.props?.items) ? block.props.items : [];
-  let itemsHeight = 0;
-  if (items.length === 0) {
-    itemsHeight = 24;
-  } else {
-    for (const item of items) {
-      const text = typeof item === 'string' ? item.trim() : '';
-      const lines = Math.max(1, Math.ceil(text.length / charsPerLine));
-      // Cada item text-sm tem line-height ~20px + space-y-1 (4px). O botão "+ Item" do editor não faz parte do conteúdo.
-      itemsHeight += lines * 20 + 4;
-    }
-  }
+  const itemsHeight = computeTopicItemsHeight(items, charsPerLine);
 
   // Padding do card py-6 (24px topo + 24px base = 48px)
   const totalHeight = 48 + headerHeight + itemsHeight;

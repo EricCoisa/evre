@@ -57,19 +57,24 @@ export function orderButtons<T extends { kind: TemplateButtonKind }>(buttons: T[
 const URL_RE = /^https?:\/\/.+/;
 const PHONE_RE = /^\+?[0-9][0-9\s().-]{5,}$/;
 
+function validateUrlButton(button: Extract<TemplateButton, { kind: 'URL' }>): string | null {
+  const url = button.url ?? '';
+  if (!URL_RE.test(url.trim())) return 'buttonErrUrl';
+  const names = [...usedVariableNames(url)];
+  if (names.length > 1) return 'buttonErrUrlVars';
+  if (names.length === 1 && !url.trim().endsWith('}}')) return 'buttonErrUrlVars';
+  return null;
+}
+
+function validatePhoneButton(button: Extract<TemplateButton, { kind: 'PHONE_NUMBER' }>): string | null {
+  return PHONE_RE.test((button.phoneNumber ?? '').trim()) ? null : 'buttonErrPhone';
+}
+
 /** Chave i18n (namespace messaging) do problema do botão, ou `null` se estiver válido. */
 export function validateButton(button: TemplateButton): string | null {
   if (!(button.label ?? '').trim()) return 'buttonErrLabel';
-  if (button.kind === 'URL') {
-    const url = button.url ?? '';
-    if (!URL_RE.test(url.trim())) return 'buttonErrUrl';
-    const names = [...usedVariableNames(url)];
-    if (names.length > 1) return 'buttonErrUrlVars';
-    if (names.length === 1 && !url.trim().endsWith('}}')) return 'buttonErrUrlVars';
-  }
-  if (button.kind === 'PHONE_NUMBER' && !PHONE_RE.test((button.phoneNumber ?? '').trim())) {
-    return 'buttonErrPhone';
-  }
+  if (button.kind === 'URL') return validateUrlButton(button);
+  if (button.kind === 'PHONE_NUMBER') return validatePhoneButton(button);
   return null;
 }
 

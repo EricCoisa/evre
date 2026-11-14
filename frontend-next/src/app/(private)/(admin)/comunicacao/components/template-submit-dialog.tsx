@@ -40,6 +40,7 @@ import type {
   MessagingConnection,
   MessagingTemplateCatalogItem,
   MessagingTemplateType,
+  MetaTemplateDraft,
   TemplateVariable,
 } from '@/lib/actions/messaging/types';
 import { connectionDisplayName } from '@/lib/messaging/connection';
@@ -221,6 +222,46 @@ function SubmitPreview({
   );
 }
 
+function buildMetaCheckDraft(template: MessagingTemplateCatalogItem): MetaTemplateDraft {
+  return {
+    category: template.category,
+    body: template.body,
+    header: template.header ?? null,
+    footer: template.footer ?? null,
+    buttons: template.buttons ?? null,
+  };
+}
+
+function computeCanSubmit({
+  connectionId,
+  missing,
+  isPending,
+  headerImage,
+  metaBlocked,
+  hasImage,
+}: {
+  connectionId: string | undefined;
+  missing: TemplateVariable[];
+  isPending: boolean;
+  headerImage: ReturnType<typeof useTemplateHeaderImage>;
+  metaBlocked: boolean;
+  hasImage: boolean;
+}): boolean {
+  if (!connectionId || missing.length > 0 || isPending || headerImage.isPending || metaBlocked) {
+    return false;
+  }
+  return !hasImage || Boolean(headerImage.draftArtifact);
+}
+
+function resolveHeaderText(
+  template: MessagingTemplateCatalogItem,
+  values: Record<string, string>,
+  dummies: Record<string, string>,
+): string | undefined {
+  if (template.header?.kind !== 'TEXT') return undefined;
+  return fillExamples(template.header.text, values, dummies);
+}
+
 function useSubmitFormState({
   template,
   type,
@@ -254,27 +295,11 @@ function useSubmitFormState({
     [variables, values],
   );
 
-  const { issues: metaIssues } = useMetaTemplateCheck(
-    {
-      category: template.category,
-      body: template.body,
-      header: template.header ?? null,
-      footer: template.footer ?? null,
-      buttons: template.buttons ?? null,
-    },
-    true,
-  );
+  const { issues: metaIssues } = useMetaTemplateCheck(buildMetaCheckDraft(template), true);
   const metaBlocked = metaIssues.some((issue) => issue.severity === 'error');
-  const canSubmit =
-    Boolean(connectionId) &&
-    missing.length === 0 &&
-    !isPending &&
-    !headerImage.isPending &&
-    !metaBlocked &&
-    (!hasImage || Boolean(headerImage.draftArtifact));
+  const canSubmit = computeCanSubmit({ connectionId, missing, isPending, headerImage, metaBlocked, hasImage });
 
-  const headerText =
-    template.header?.kind === 'TEXT' ? fillExamples(template.header.text, values, dummies) : undefined;
+  const headerText = resolveHeaderText(template, values, dummies);
 
   return {
     dummies,

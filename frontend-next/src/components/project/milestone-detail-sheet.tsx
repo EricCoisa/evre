@@ -51,6 +51,183 @@ export function MilestoneDetailSheet({
   );
 }
 
+function MilestoneTitleSection({
+  canEdit,
+  isEditingTitle,
+  title,
+  milestoneTitle,
+  isSaving,
+  onTitleChange,
+  onSave,
+  onCancel,
+  onStartEditing,
+}: {
+  canEdit: boolean;
+  isEditingTitle: boolean;
+  title: string;
+  milestoneTitle: string;
+  isSaving: boolean;
+  onTitleChange: (value: string) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  onStartEditing: () => void;
+}) {
+  if (canEdit && isEditingTitle) {
+    return (
+      <div className="flex items-center gap-2 pt-1">
+        <Input
+          value={title}
+          onChange={(e) => onTitleChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') void onSave();
+            if (e.key === 'Escape') onCancel();
+          }}
+          className="text-base font-semibold h-9"
+          autoFocus
+          disabled={isSaving}
+        />
+        <Button
+          size="sm"
+          className="h-9 px-3"
+          onClick={onSave}
+          disabled={isSaving || !title.trim()}
+        >
+          <Check className="h-4 w-4" />
+        </Button>
+      </div>
+    );
+  }
+  return (
+    <div
+      className={`group flex items-start justify-between gap-2 pt-1 ${
+        canEdit
+          ? 'cursor-pointer hover:bg-muted/40 p-1.5 -ml-1.5 rounded-md transition-colors'
+          : ''
+      }`}
+      onClick={() => canEdit && onStartEditing()}
+    >
+      <SheetTitle className="text-lg font-semibold tracking-tight text-foreground text-left leading-snug">
+        {milestoneTitle}
+      </SheetTitle>
+      {canEdit && (
+        <Edit3 className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 flex-shrink-0 transition-opacity mt-1" />
+      )}
+    </div>
+  );
+}
+
+function MilestoneDescriptionSection({
+  canEdit,
+  isEditingDesc,
+  description,
+  milestoneDescription,
+  isSaving,
+  onDescriptionChange,
+  onStartEditing,
+  onCancel,
+  onSave,
+}: {
+  canEdit: boolean;
+  isEditingDesc: boolean;
+  description: string;
+  milestoneDescription?: string | null;
+  isSaving: boolean;
+  onDescriptionChange: (value: string) => void;
+  onStartEditing: () => void;
+  onCancel: () => void;
+  onSave: () => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+          <AlignLeft className="h-3.5 w-3.5" />
+          <span>Descrição da Etapa</span>
+        </div>
+        {canEdit && !isEditingDesc && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 text-xs text-muted-foreground hover:text-foreground"
+            onClick={onStartEditing}
+          >
+            <Edit3 className="mr-1 h-3 w-3" />
+            Editar
+          </Button>
+        )}
+      </div>
+
+      {canEdit && isEditingDesc ? (
+        <div className="space-y-2">
+          <RichTextInput
+            ariaLabel="Descrição da etapa"
+            placeholder="Descreva os objetivos, entregáveis e critérios de aceite desta etapa..."
+            value={description}
+            onChange={onDescriptionChange}
+            className="min-h-32 text-sm"
+            formatLabels={{
+              bold: 'Negrito (*texto*)',
+              italic: 'Itálico (_texto_)',
+              strikethrough: 'Riscado (~texto~)',
+              code: 'Código (```texto```)',
+            }}
+          />
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={onCancel}
+              disabled={isSaving}
+            >
+              Cancelar
+            </Button>
+            <Button size="sm" className="h-7 text-xs" onClick={onSave} disabled={isSaving}>
+              Salvar Descrição
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <DescriptionViewer
+          canEdit={canEdit}
+          milestoneDescription={milestoneDescription}
+          onStartEditing={onStartEditing}
+        />
+      )}
+    </div>
+  );
+}
+
+function DescriptionViewer({
+  canEdit,
+  milestoneDescription,
+  onStartEditing,
+}: {
+  canEdit: boolean;
+  milestoneDescription?: string | null;
+  onStartEditing: () => void;
+}) {
+  const isEmptyAndEditable = canEdit && !milestoneDescription;
+  return (
+    <div
+      className={`p-3 rounded-lg border bg-card text-sm leading-relaxed ${
+        isEmptyAndEditable ? 'cursor-pointer hover:bg-muted/30 transition-colors border-dashed' : ''
+      }`}
+      onClick={() => isEmptyAndEditable && onStartEditing()}
+    >
+      {milestoneDescription ? (
+        <RichTextViewer content={milestoneDescription} />
+      ) : (
+        <span className="text-xs text-muted-foreground italic">
+          {canEdit
+            ? 'Nenhuma descrição adicionada para esta etapa. Clique para adicionar detalhes com texto rico...'
+            : 'Nenhuma descrição informada pela equipe.'}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function MilestoneDetailSheetContent({
   projectId,
   milestone,
@@ -137,48 +314,20 @@ function MilestoneDetailSheetContent({
         </div>
 
         {/* Título com edição inline */}
-        {canEdit && isEditingTitle ? (
-          <div className="flex items-center gap-2 pt-1">
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void handleSaveTitle();
-                if (e.key === 'Escape') {
-                  setTitle(milestone.title);
-                  setIsEditingTitle(false);
-                }
-              }}
-              className="text-base font-semibold h-9"
-              autoFocus
-              disabled={isSaving}
-            />
-            <Button
-              size="sm"
-              className="h-9 px-3"
-              onClick={handleSaveTitle}
-              disabled={isSaving || !title.trim()}
-            >
-              <Check className="h-4 w-4" />
-            </Button>
-          </div>
-        ) : (
-          <div
-            className={`group flex items-start justify-between gap-2 pt-1 ${
-              canEdit
-                ? 'cursor-pointer hover:bg-muted/40 p-1.5 -ml-1.5 rounded-md transition-colors'
-                : ''
-            }`}
-            onClick={() => canEdit && setIsEditingTitle(true)}
-          >
-            <SheetTitle className="text-lg font-semibold tracking-tight text-foreground text-left leading-snug">
-              {milestone.title}
-            </SheetTitle>
-            {canEdit && (
-              <Edit3 className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 flex-shrink-0 transition-opacity mt-1" />
-            )}
-          </div>
-        )}
+        <MilestoneTitleSection
+          canEdit={canEdit}
+          isEditingTitle={isEditingTitle}
+          title={title}
+          milestoneTitle={milestone.title}
+          isSaving={isSaving}
+          onTitleChange={setTitle}
+          onSave={handleSaveTitle}
+          onCancel={() => {
+            setTitle(milestone.title);
+            setIsEditingTitle(false);
+          }}
+          onStartEditing={() => setIsEditingTitle(true)}
+        />
 
         <SheetDescription className="sr-only">
           Detalhes, descrição e comentários da etapa {milestone.title}
@@ -191,84 +340,20 @@ function MilestoneDetailSheetContent({
         <MilestoneProgressBar tasks={milestone.allTasks ?? milestone.tasks ?? []} />
 
         {/* Seção Descrição Rica da Etapa */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-              <AlignLeft className="h-3.5 w-3.5" />
-              <span>Descrição da Etapa</span>
-            </div>
-            {canEdit && !isEditingDesc && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 text-xs text-muted-foreground hover:text-foreground"
-                onClick={() => setIsEditingDesc(true)}
-              >
-                <Edit3 className="mr-1 h-3 w-3" />
-                Editar
-              </Button>
-            )}
-          </div>
-
-          {canEdit && isEditingDesc ? (
-            <div className="space-y-2">
-              <RichTextInput
-                ariaLabel="Descrição da etapa"
-                placeholder="Descreva os objetivos, entregáveis e critérios de aceite desta etapa..."
-                value={description}
-                onChange={setDescription}
-                className="min-h-32 text-sm"
-                formatLabels={{
-                  bold: 'Negrito (*texto*)',
-                  italic: 'Itálico (_texto_)',
-                  strikethrough: 'Riscado (~texto~)',
-                  code: 'Código (```texto```)',
-                }}
-              />
-              <div className="flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={() => {
-                    setDescription(milestone.description ?? '');
-                    setIsEditingDesc(false);
-                  }}
-                  disabled={isSaving}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={handleSaveDescription}
-                  disabled={isSaving}
-                >
-                  Salvar Descrição
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div
-              className={`p-3 rounded-lg border bg-card text-sm leading-relaxed ${
-                canEdit && !milestone.description
-                  ? 'cursor-pointer hover:bg-muted/30 transition-colors border-dashed'
-                  : ''
-              }`}
-              onClick={() => canEdit && !milestone.description && setIsEditingDesc(true)}
-            >
-              {milestone.description ? (
-                <RichTextViewer content={milestone.description} />
-              ) : (
-                <span className="text-xs text-muted-foreground italic">
-                  {canEdit
-                    ? 'Nenhuma descrição adicionada para esta etapa. Clique para adicionar detalhes com texto rico...'
-                    : 'Nenhuma descrição informada pela equipe.'}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
+        <MilestoneDescriptionSection
+          canEdit={canEdit}
+          isEditingDesc={isEditingDesc}
+          description={description}
+          milestoneDescription={milestone.description}
+          isSaving={isSaving}
+          onDescriptionChange={setDescription}
+          onStartEditing={() => setIsEditingDesc(true)}
+          onCancel={() => {
+            setDescription(milestone.description ?? '');
+            setIsEditingDesc(false);
+          }}
+          onSave={handleSaveDescription}
+        />
 
         <Separator />
 

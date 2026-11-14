@@ -82,6 +82,11 @@ function replaceTemplateVariables(
   });
 }
 
+function hasValidBody(body: string): boolean {
+  const trimmed = (body ?? '').trim();
+  return Boolean(trimmed) && (body ?? '').length <= 1024;
+}
+
 function checkCanSaveTemplate({
   typeId,
   key,
@@ -106,8 +111,7 @@ function checkCanSaveTemplate({
     Boolean((key ?? '').trim()) &&
     Boolean(language) &&
     Boolean(category) &&
-    Boolean((body ?? '').trim()) &&
-    (body ?? '').length <= 1024 &&
+    hasValidBody(body) &&
     buttonsValid &&
     missingRequiredCount === 0 &&
     !isPending

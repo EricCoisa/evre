@@ -28,6 +28,57 @@ function getInitials(name?: string | null): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
+function CommentItem({
+  comment,
+  currentUserId,
+  isAdmin,
+  onDelete,
+}: {
+  comment: ProjectComment;
+  currentUserId?: string;
+  isAdmin: boolean;
+  onDelete: (commentId: string) => void;
+}) {
+  const isAuthor = currentUserId === comment.authorId;
+  const canDelete = isAuthor || isAdmin;
+
+  return (
+    <div className="group flex items-start gap-3 rounded-lg border bg-card p-3 shadow-sm hover:border-muted-foreground/30 transition-colors">
+      <Avatar className="h-7 w-7 text-xs flex-shrink-0 mt-0.5">
+        <AvatarImage src={comment.author?.imageUrl ?? undefined} />
+        <AvatarFallback className="text-[10px]">{getInitials(comment.author?.name)}</AvatarFallback>
+      </Avatar>
+
+      <div className="flex-1 min-w-0 space-y-1">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs font-medium text-foreground">
+            {comment.author?.name ?? 'Usuário'}
+            {isAuthor && (
+              <span className="ml-1.5 text-[10px] text-muted-foreground font-normal">(você)</span>
+            )}
+          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-muted-foreground">{formatDate(comment.createdAt)}</span>
+            {canDelete && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
+                onClick={() => onDelete(comment.id)}
+                title="Excluir comentário"
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <RichTextViewer content={comment.content} className="text-xs text-foreground/90" />
+      </div>
+    </div>
+  );
+}
+
 export function ProjectCommentsThread({
   projectId,
   entityType,
@@ -108,55 +159,15 @@ export function ProjectCommentsThread({
         </div>
       ) : (
         <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
-          {comments.map((comment) => {
-            const isAuthor = currentUser?.id === comment.authorId;
-            const canDelete = isAuthor || (currentUser?.role as unknown as string) === 'ADMIN';
-
-            return (
-              <div
-                key={comment.id}
-                className="group flex items-start gap-3 rounded-lg border bg-card p-3 shadow-sm hover:border-muted-foreground/30 transition-colors"
-              >
-                <Avatar className="h-7 w-7 text-xs flex-shrink-0 mt-0.5">
-                  <AvatarImage src={comment.author?.imageUrl ?? undefined} />
-                  <AvatarFallback className="text-[10px]">
-                    {getInitials(comment.author?.name)}
-                  </AvatarFallback>
-                </Avatar>
-
-                <div className="flex-1 min-w-0 space-y-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-medium text-foreground">
-                      {comment.author?.name ?? 'Usuário'}
-                      {isAuthor && (
-                        <span className="ml-1.5 text-[10px] text-muted-foreground font-normal">
-                          (você)
-                        </span>
-                      )}
-                    </span>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] text-muted-foreground">
-                        {formatDate(comment.createdAt)}
-                      </span>
-                      {canDelete && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
-                          onClick={() => handleDeleteComment(comment.id)}
-                          title="Excluir comentário"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-
-                  <RichTextViewer content={comment.content} className="text-xs text-foreground/90" />
-                </div>
-              </div>
-            );
-          })}
+          {comments.map((comment) => (
+            <CommentItem
+              key={comment.id}
+              comment={comment}
+              currentUserId={currentUser?.id}
+              isAdmin={(currentUser?.role as unknown as string) === 'ADMIN'}
+              onDelete={handleDeleteComment}
+            />
+          ))}
         </div>
       )}
 

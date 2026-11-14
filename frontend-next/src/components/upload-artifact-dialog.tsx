@@ -38,6 +38,34 @@ function loadImageDimensions(url: string): Promise<{ width: number; height: numb
   });
 }
 
+function exceedsMaxSize(file: File, constraints: UploadConstraints | undefined): boolean {
+  return Boolean(constraints?.maxSizeBytes && file.size > constraints.maxSizeBytes);
+}
+
+async function validateAspectRatio(
+  file: File,
+  constraints: UploadConstraints | undefined,
+  t: (key: string, params?: Record<string, string>) => string,
+): Promise<string | null> {
+  if (!constraints?.aspectRatio || !file.type.startsWith('image/')) return null;
+  const url = URL.createObjectURL(file);
+  try {
+    const { width, height } = await loadImageDimensions(url);
+    const actual = width / height;
+    const { width: ew, height: eh, tolerancePct = 0.1 } = constraints.aspectRatio;
+    const expected = ew / eh;
+    if (Math.abs(actual - expected) / expected <= tolerancePct) return null;
+    return t('uploadAspectRatioMismatch', {
+      expected: `${ew}:${eh}`,
+      actual: `${width}:${height}`,
+    });
+  } catch {
+    return null; // imagem inválida: deixa o backend rejeitar
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 export function UploadArtifactForm({ onSuccess, constraints }: UploadArtifactFormProps) {
   const { t } = useTranslation('artifact');
   const [name, setName] = useState('');
@@ -55,33 +83,16 @@ export function UploadArtifactForm({ onSuccess, constraints }: UploadArtifactFor
 
     setValidationError(null);
 
-    if (constraints?.maxSizeBytes && selected.size > constraints.maxSizeBytes) {
-      const maxMB = (constraints.maxSizeBytes / 1_000_000).toFixed(0);
+    if (exceedsMaxSize(selected, constraints)) {
+      const maxMB = (constraints!.maxSizeBytes! / 1_000_000).toFixed(0);
       setValidationError(t('uploadFileTooLarge', { maxMB }));
       return;
     }
 
-    if (constraints?.aspectRatio && selected.type.startsWith('image/')) {
-      const url = URL.createObjectURL(selected);
-      try {
-        const { width, height } = await loadImageDimensions(url);
-        const actual = width / height;
-        const { width: ew, height: eh, tolerancePct = 0.1 } = constraints.aspectRatio;
-        const expected = ew / eh;
-        if (Math.abs(actual - expected) / expected > tolerancePct) {
-          setValidationError(
-            t('uploadAspectRatioMismatch', {
-              expected: `${ew}:${eh}`,
-              actual: `${width}:${height}`,
-            }),
-          );
-          return;
-        }
-      } catch {
-        // imagem inválida: deixa o backend rejeitar
-      } finally {
-        URL.revokeObjectURL(url);
-      }
+    const aspectRatioError = await validateAspectRatio(selected, constraints, t);
+    if (aspectRatioError) {
+      setValidationError(aspectRatioError);
+      return;
     }
 
     setFile(selected);

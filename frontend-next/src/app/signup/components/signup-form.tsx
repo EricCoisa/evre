@@ -70,6 +70,55 @@ function validateSignupPasswordFields(
   }
 }
 
+function validateProviderConsentFields(
+  data: Record<string, unknown>,
+  ctx: z.RefinementCtx,
+  t: (key: string) => string,
+) {
+  if (data.acceptTerms !== true) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: t("termsRequired"),
+      path: ["acceptTerms"],
+    });
+  }
+}
+
+function validateEmailRequestFields(
+  data: Record<string, unknown>,
+  ctx: z.RefinementCtx,
+  t: (key: string) => string,
+) {
+  if (!String(data.name ?? "").trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: t("nameRequired"),
+      path: ["name"],
+    });
+  }
+  if (!data.email || !z.string().email().safeParse(data.email).success) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: t("invalidEmail"),
+      path: ["email"],
+    });
+  }
+}
+
+function validateWaInviteEmail(
+  data: Record<string, unknown>,
+  ctx: z.RefinementCtx,
+  t: (key: string) => string,
+) {
+  if (!data.email || !z.string().email().safeParse(data.email).success) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: t("invalidEmail"),
+      path: ["email"],
+    });
+  }
+}
+
 function validateSignupFormSchema(
   data: Record<string, unknown>,
   ctx: z.RefinementCtx,
@@ -86,39 +135,16 @@ function validateSignupFormSchema(
   },
 ) {
   if (isProviderConsent) {
-    if (data.acceptTerms !== true) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: t("termsRequired"),
-        path: ["acceptTerms"],
-      });
-    }
+    validateProviderConsentFields(data, ctx, t);
     return;
   }
   if (isEmailRequest) {
-    if (!String(data.name ?? "").trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: t("nameRequired"),
-        path: ["name"],
-      });
-    }
-    if (!data.email || !z.string().email().safeParse(data.email).success) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: t("invalidEmail"),
-        path: ["email"],
-      });
-    }
+    validateEmailRequestFields(data, ctx, t);
     return;
   }
   // WA invite: user provides email themselves
-  if (isWaInvite && (!data.email || !z.string().email().safeParse(data.email).success)) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: t("invalidEmail"),
-      path: ["email"],
-    });
+  if (isWaInvite) {
+    validateWaInviteEmail(data, ctx, t);
   }
   validateSignupPasswordFields(data, ctx, t);
 }
@@ -325,6 +351,75 @@ function buildSignupTermsField(t: (key: string) => string): FormBuilderField {
   };
 }
 
+function buildNameSectionFields(
+  isWaInvite: boolean,
+  inviteResponse: ValidateInviteResponse | undefined,
+  t: (key: string) => string,
+): FormBuilderField[] {
+  const fields: FormBuilderField[] = [
+    {
+      name: "name",
+      label: t("fullName"),
+      type: "text",
+      placeholder: t("namePlaceholder"),
+    },
+  ];
+  if (isWaInvite && inviteResponse?.phone) {
+    fields.push({
+      name: "phone",
+      label: t("phone"),
+      type: "display",
+      placeholder: inviteResponse.phone,
+      description: t("phoneVerifiedViaWhatsapp"),
+    });
+  }
+  fields.push(
+    inviteResponse?.email && !isWaInvite
+      ? {
+          name: "email",
+          label: t("email"),
+          type: "display",
+          placeholder: inviteResponse.email,
+        }
+      : {
+          name: "email",
+          label: t("email"),
+          type: "email",
+          placeholder: t("emailPlaceholder"),
+          description: t("weWillUseEmail"),
+        },
+  );
+  return fields;
+}
+
+function buildPasswordSectionFields(
+  isEmailRequest: boolean,
+  isProviderConsent: boolean,
+  t: (key: string) => string,
+): FormBuilderField[] {
+  if (!isEmailRequest && !isProviderConsent) {
+    return [
+      {
+        name: "password",
+        label: t("password"),
+        type: "password",
+        description: t("mustBeAtLeast6"),
+      },
+      {
+        name: "confirmPassword",
+        label: t("confirmPassword"),
+        type: "password",
+        description: t("confirmYourPassword"),
+      },
+      buildSignupTermsField(t),
+    ];
+  }
+  if (isProviderConsent) {
+    return [buildSignupTermsField(t)];
+  }
+  return [];
+}
+
 function buildSignupFields({
   isEmailConfirmation,
   isProviderConsent,
@@ -343,57 +438,9 @@ function buildSignupFields({
   const isWaInvite = inviteResponse?.channel === 'WHATSAPP';
   const fields: FormBuilderField[] = [];
   if (!isEmailConfirmation && !isProviderConsent) {
-    fields.push({
-      name: "name",
-      label: t("fullName"),
-      type: "text",
-      placeholder: t("namePlaceholder"),
-    });
-    if (isWaInvite && inviteResponse?.phone) {
-      fields.push({
-        name: "phone",
-        label: t("phone"),
-        type: "display",
-        placeholder: inviteResponse.phone,
-        description: t("phoneVerifiedViaWhatsapp"),
-      });
-    }
-    fields.push(
-      inviteResponse?.email && !isWaInvite
-        ? {
-            name: "email",
-            label: t("email"),
-            type: "display",
-            placeholder: inviteResponse.email,
-          }
-        : {
-            name: "email",
-            label: t("email"),
-            type: "email",
-            placeholder: t("emailPlaceholder"),
-            description: t("weWillUseEmail"),
-          },
-    );
+    fields.push(...buildNameSectionFields(isWaInvite, inviteResponse, t));
   }
-  if (!isEmailRequest && !isProviderConsent) {
-    fields.push(
-      {
-        name: "password",
-        label: t("password"),
-        type: "password",
-        description: t("mustBeAtLeast6"),
-      },
-      {
-        name: "confirmPassword",
-        label: t("confirmPassword"),
-        type: "password",
-        description: t("confirmYourPassword"),
-      },
-      buildSignupTermsField(t),
-    );
-  } else if (isProviderConsent) {
-    fields.push(buildSignupTermsField(t));
-  }
+  fields.push(...buildPasswordSectionFields(isEmailRequest, isProviderConsent, t));
   fields.push({
     name: "captcha",
     label: "",

@@ -41,14 +41,12 @@ export interface ProviderCardGridProps {
 interface ProviderCardBadgesProps {
   provider: ProviderCardItem;
   activeLabel: string;
-  configuredLabel: string;
   notConfiguredLabel: string;
 }
 
 function ProviderCardBadges({
   provider,
   activeLabel,
-  configuredLabel,
   notConfiguredLabel,
 }: ProviderCardBadgesProps) {
   if (provider.isActive) {
@@ -181,22 +179,22 @@ function ProviderCardActions({
 
   return (
     <div className="flex items-center gap-2 pt-3 border-t border-border/40 mt-auto">
-      {showActivate && onActivate && (
+      {showActivate && (
         <ActivateButton
           providerId={provider.id}
           isInteractive={isInteractive}
           disabled={!canActivate}
-          onActivate={onActivate}
+          onActivate={onActivate!}
           activateLabel={activateLabel}
         />
       )}
 
-      {showConfigure && onConfigure && (
+      {showConfigure && (
         <ConfigureButton
           providerId={provider.id}
           isActive={provider.isActive}
           isInteractive={isInteractive}
-          onConfigure={onConfigure}
+          onConfigure={onConfigure!}
           configureLabel={configureLabel}
           isFullWidth={!showActivate}
         />
@@ -211,7 +209,6 @@ interface ProviderCardSingleProps {
   onActivate?: (id: string) => void;
   onConfigure?: (id: string) => void;
   activeLabel: string;
-  configuredLabel: string;
   notConfiguredLabel: string;
   activateLabel: string;
   configureLabel: string;
@@ -223,7 +220,6 @@ function ProviderCardSingle({
   onActivate,
   onConfigure,
   activeLabel,
-  configuredLabel,
   notConfiguredLabel,
   activateLabel,
   configureLabel,
@@ -271,7 +267,6 @@ function ProviderCardSingle({
             <ProviderCardBadges
               provider={provider}
               activeLabel={activeLabel}
-              configuredLabel={configuredLabel}
               notConfiguredLabel={notConfiguredLabel}
             />
             {provider.rightSlot}
@@ -311,7 +306,7 @@ export function ProviderCardGrid({
   configureLabel,
   activeLabel,
   activateLabel,
-  configuredLabel,
+  configuredLabel: _configuredLabel,
   notConfiguredLabel,
   disabled = false,
   className,
@@ -322,7 +317,6 @@ export function ProviderCardGrid({
   const resolvedConfigureLabel = configureLabel ?? t('configure');
   const resolvedActiveLabel = activeLabel ?? t('active');
   const resolvedActivateLabel = activateLabel ?? t('activate');
-  const resolvedConfiguredLabel = configuredLabel ?? t('configured');
   const resolvedNotConfiguredLabel = notConfiguredLabel ?? t('not_configured');
 
   return (
@@ -335,7 +329,6 @@ export function ProviderCardGrid({
           onActivate={onActivate}
           onConfigure={onConfigure}
           activeLabel={resolvedActiveLabel}
-          configuredLabel={resolvedConfiguredLabel}
           notConfiguredLabel={resolvedNotConfiguredLabel}
           activateLabel={resolvedActivateLabel}
           configureLabel={resolvedConfigureLabel}

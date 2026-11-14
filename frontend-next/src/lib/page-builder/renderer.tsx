@@ -405,6 +405,39 @@ function BlockContent({
   );
 }
 
+function warnUnknownBlock(type: string): void {
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn(`[page-builder] bloco desconhecido ignorado: ${type}`);
+  }
+}
+
+/** Classe/estilo de grid do bloco: fluxo livre (dentro de Gráfico/Card/Tabela) ocupa a linha
+ * toda ou se ajusta ao conteúdo; fora dele, posição e extensão na grade 12-colunas. */
+function resolveBlockGridLayout(
+  block: PageBlock,
+  placed: PlacedBlock | undefined,
+  freeFlow: boolean | undefined,
+  effectiveSpan: number,
+): { gridClass: string; gridStyle: React.CSSProperties | undefined } {
+  if (freeFlow) {
+    return { gridClass: effectiveSpan >= GRID_COLS ? 'w-full' : 'w-auto', gridStyle: undefined };
+  }
+
+  const colSpan = SPAN_CLASS[effectiveSpan] ?? 'lg:col-span-12';
+  const colStart = placed ? COL_START_CLASS[placed.x] : undefined;
+  const isAutoHeight = isAutoHeightBlockType(block.type);
+  const alignSelf = isAutoHeight ? 'h-auto self-start' : 'h-full';
+  const gridClass = [colStart, colSpan, placed ? 'pb-grid-row' : undefined, alignSelf]
+    .filter(Boolean)
+    .join(' ');
+
+  if (!placed) return { gridClass, gridStyle: undefined };
+  return {
+    gridClass,
+    gridStyle: { '--row-start': placed.y + 1, '--row-span': placed.rowSpan } as React.CSSProperties,
+  };
+}
+
 function Block({
   block,
   placed,
@@ -423,9 +456,7 @@ function Block({
   const variables = React.useMemo(() => (source ? buildVariableOptions(source) : undefined), [source]);
 
   if (!isKnownBlock(block.type)) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.warn(`[page-builder] bloco desconhecido ignorado: ${block.type}`);
-    }
+    warnUnknownBlock(block.type);
     return null;
   }
 
@@ -436,29 +467,7 @@ function Block({
   const Component = BLOCK_REGISTRY[block.type];
   const isInline = isInlineBlockType(block.type);
   const effectiveSpan = placed?.span ?? normalizeSpan(block.span);
-
-  let gridClass: string;
-  let gridStyle: React.CSSProperties | undefined;
-  if (freeFlow) {
-    // Em fluxo livre (dentro de Gráfico, Card ou Tabela),
-    // elementos com span === 12 ocupam a linha toda (`w-full`) ou `w-auto` quando menores.
-    gridClass = effectiveSpan >= GRID_COLS ? 'w-full' : 'w-auto';
-  } else {
-    const colSpan = SPAN_CLASS[effectiveSpan] ?? 'lg:col-span-12';
-    const colStart = placed ? COL_START_CLASS[placed.x] : undefined;
-    const isAutoHeight = isAutoHeightBlockType(block.type);
-    const alignSelf = isAutoHeight ? 'h-auto self-start' : 'h-full';
-    gridClass = [colStart, colSpan, placed ? 'pb-grid-row' : undefined, alignSelf]
-      .filter(Boolean)
-      .join(' ');
-
-    if (placed) {
-      gridStyle = {
-        '--row-start': placed.y + 1,
-        '--row-span': placed.rowSpan,
-      } as React.CSSProperties;
-    }
-  }
+  const { gridClass, gridStyle } = resolveBlockGridLayout(block, placed, freeFlow, effectiveSpan);
 
   const content = (
     <BlockBoundary label={t('blockUnavailable')}>

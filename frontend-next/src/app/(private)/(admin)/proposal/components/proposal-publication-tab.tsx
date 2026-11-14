@@ -24,7 +24,7 @@ import {
   useSendProposal,
 } from '@/lib/actions/proposal/queries';
 import { formatDate } from '@/lib/utils';
-import type { Proposal, ProposalVersionDto } from '@/lib/actions/proposal/types';
+import type { Proposal, ProposalVersionDto, ProposalSendDto } from '@/lib/actions/proposal/types';
 import {
   publicationStateLabelKey,
   PUBLICATION_STATE_BADGE_VARIANT,
@@ -39,6 +39,128 @@ function toPublicationView(latest: ProposalVersionDto | undefined) {
   const canRevoke = state === 'ACTIVE' || state === 'EXPIRED';
   const publicUrl = canRevoke ? (latest?.publicUrl ?? undefined) : undefined;
   return { state, canRevoke, publicUrl, shortUrl: canRevoke ? latest?.shortUrl : undefined };
+}
+
+function PublicationActions({
+  proposalStatus,
+  canRevoke,
+  canReopen,
+  alreadyAccepted,
+  state,
+  revokePending,
+  publishPending,
+  reopenPending,
+  acceptPending,
+  sendPending,
+  onRevoke,
+  onPublish,
+  onReopen,
+  onAccept,
+  onSend,
+  t,
+}: {
+  proposalStatus: Proposal['status'];
+  canRevoke: boolean;
+  canReopen: boolean;
+  alreadyAccepted: boolean;
+  state: PublicationState;
+  revokePending: boolean;
+  publishPending: boolean;
+  reopenPending: boolean;
+  acceptPending: boolean;
+  sendPending: boolean;
+  onRevoke: () => void;
+  onPublish: () => void;
+  onReopen: () => void;
+  onAccept: () => void;
+  onSend: () => void;
+  t: (key: string) => string;
+}) {
+  return (
+    <div className="flex gap-2">
+      <Button variant="outline" onClick={onRevoke} disabled={!canRevoke || revokePending}>
+        <Ban className="size-4 mr-1.5" />
+        {t('revokePublication')}
+      </Button>
+      <Button onClick={onPublish} disabled={publishPending || proposalStatus !== 'DRAFT'}>
+        <Send className="size-4 mr-1.5" />
+        {t('publishProposal')}
+      </Button>
+      <Button variant="outline" onClick={onReopen} disabled={!canReopen || reopenPending}>
+        <Undo2 className="size-4 mr-1.5" />
+        {t('reopenDraft')}
+      </Button>
+      <Button
+        variant="outline"
+        onClick={onAccept}
+        disabled={alreadyAccepted || state === 'NONE' || acceptPending}
+      >
+        <ClipboardCheck className="size-4 mr-1.5" />
+        {alreadyAccepted ? t('alreadyAcceptedShort') : t('registerAcceptance')}
+      </Button>
+      <CapabilityGate name={CAPABILITIES.messaging}>
+        <Button variant="outline" onClick={onSend} disabled={!canRevoke || sendPending}>
+          <Send className="size-4 mr-1.5" />
+          {t('sendWhatsapp')}
+        </Button>
+      </CapabilityGate>
+    </div>
+  );
+}
+
+function PublicationUrlSection({
+  publicUrl,
+  shortUrl,
+  t,
+}: {
+  publicUrl?: string;
+  shortUrl?: string | null;
+  t: (key: string) => string;
+}) {
+  return (
+    <>
+      {publicUrl ? (
+        <CopyField value={publicUrl} label={t('publicUrl')} />
+      ) : (
+        <p className="text-sm text-muted-foreground">{t('noActivePublication')}</p>
+      )}
+      {shortUrl && <CopyField value={shortUrl} label={t('shortUrl')} />}
+    </>
+  );
+}
+
+function SendHistorySection({
+  sends,
+  t,
+  tVocabulary,
+}: {
+  sends: ProposalSendDto[];
+  t: (key: string) => string;
+  tVocabulary: (key: string) => string;
+}) {
+  return (
+    <div className="space-y-2">
+      <span className="text-sm font-medium">{t('sendHistory')}</span>
+      {sends.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t('sendHistoryEmpty')}</p>
+      ) : (
+        <ul className="space-y-1">
+          {sends.map((item) => (
+            <li key={item.id} className="flex items-center gap-2 text-sm">
+              {item.succeeded ? (
+                <CheckCircle2 className="size-4 text-green-600" />
+              ) : (
+                <XCircle className="size-4 text-destructive" />
+              )}
+              <span>{tVocabulary(sendChannelLabelKey(item.channel))}</span>
+              {item.toPhone && <span className="text-muted-foreground">{item.toPhone}</span>}
+              <span className="text-muted-foreground">{formatDate(item.createdAt)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 }
 
 /** Aba `publicacao`: publicar congela a versão atual numa `ProposalVersion` nova e revoga a
@@ -101,76 +223,29 @@ export function ProposalPublicationTab({ proposal }: { proposal: Proposal }) {
           <span className="text-sm font-medium">{t('publicationState')}</span>
           <Badge variant={PUBLICATION_STATE_BADGE_VARIANT[state]}>{tVocabulary(publicationStateLabelKey(state))}</Badge>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => revoke.mutate(proposal.id)}
-            disabled={!canRevoke || revoke.isPending}
-          >
-            <Ban className="size-4 mr-1.5" />
-            {t('revokePublication')}
-          </Button>
-          <Button onClick={() => setConfirmOpen(true)} disabled={publish.isPending || proposal.status !== 'DRAFT'}>
-            <Send className="size-4 mr-1.5" />
-            {t('publishProposal')}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setReopenOpen(true)}
-            disabled={!canReopen || reopen.isPending}
-          >
-            <Undo2 className="size-4 mr-1.5" />
-            {t('reopenDraft')}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setAcceptOpen(true)}
-            disabled={alreadyAccepted || state === 'NONE' || acceptOffline.isPending}
-          >
-            <ClipboardCheck className="size-4 mr-1.5" />
-            {alreadyAccepted ? t('alreadyAcceptedShort') : t('registerAcceptance')}
-          </Button>
-          <CapabilityGate name={CAPABILITIES.messaging}>
-            <Button
-              variant="outline"
-              onClick={() => setSendOpen(true)}
-              disabled={!canRevoke || send.isPending}
-            >
-              <Send className="size-4 mr-1.5" />
-              {t('sendWhatsapp')}
-            </Button>
-          </CapabilityGate>
-        </div>
+        <PublicationActions
+          proposalStatus={proposal.status}
+          canRevoke={canRevoke}
+          canReopen={canReopen}
+          alreadyAccepted={alreadyAccepted}
+          state={state}
+          revokePending={revoke.isPending}
+          publishPending={publish.isPending}
+          reopenPending={reopen.isPending}
+          acceptPending={acceptOffline.isPending}
+          sendPending={send.isPending}
+          onRevoke={() => revoke.mutate(proposal.id)}
+          onPublish={() => setConfirmOpen(true)}
+          onReopen={() => setReopenOpen(true)}
+          onAccept={() => setAcceptOpen(true)}
+          onSend={() => setSendOpen(true)}
+          t={t}
+        />
       </div>
 
-      {publicUrl ? (
-        <CopyField value={publicUrl} label={t('publicUrl')} />
-      ) : (
-        <p className="text-sm text-muted-foreground">{t('noActivePublication')}</p>
-      )}
-      {shortUrl && <CopyField value={shortUrl} label={t('shortUrl')} />}
+      <PublicationUrlSection publicUrl={publicUrl} shortUrl={shortUrl} t={t} />
 
-      <div className="space-y-2">
-        <span className="text-sm font-medium">{t('sendHistory')}</span>
-        {sends.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t('sendHistoryEmpty')}</p>
-        ) : (
-          <ul className="space-y-1">
-            {sends.map((item) => (
-              <li key={item.id} className="flex items-center gap-2 text-sm">
-                {item.succeeded ? (
-                  <CheckCircle2 className="size-4 text-green-600" />
-                ) : (
-                  <XCircle className="size-4 text-destructive" />
-                )}
-                <span>{tVocabulary(sendChannelLabelKey(item.channel))}</span>
-                {item.toPhone && <span className="text-muted-foreground">{item.toPhone}</span>}
-                <span className="text-muted-foreground">{formatDate(item.createdAt)}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      <SendHistorySection sends={sends} t={t} tVocabulary={tVocabulary} />
 
       <Modal
         open={confirmOpen}

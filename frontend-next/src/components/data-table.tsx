@@ -651,6 +651,20 @@ function DataTableMobileView<TData>({
   );
 }
 
+function resolveGroupRowLabel<TData>(
+  groupColumn: ColumnDef<TData, unknown> | undefined,
+  groupingValue: unknown,
+  groupData: unknown,
+  groupingColumnId: string,
+): string | React.ReactNode {
+  if (!groupColumn?.meta?.groupLabel) return `${groupingColumnId}: ${groupingValue}`;
+  return groupColumn.meta.groupLabel(groupingValue as never, groupData);
+}
+
+function shouldHideGroupCount<TData>(groupColumn: ColumnDef<TData, unknown> | undefined): boolean {
+  return Boolean(groupColumn?.meta?.hideGroupCount);
+}
+
 function DataTableDesktopGroupRow<TData>({
   row,
   columns,
@@ -672,9 +686,7 @@ function DataTableDesktopGroupRow<TData>({
     groupValue: groupingValue,
   };
 
-  const groupLabel = groupColumn?.meta?.groupLabel
-    ? groupColumn.meta.groupLabel(groupingValue as never, groupData)
-    : `${row.groupingColumnId}: ${groupingValue}`;
+  const groupLabel = resolveGroupRowLabel(groupColumn, groupingValue, groupData, row.groupingColumnId!);
 
   return (
     <TableRow
@@ -697,7 +709,7 @@ function DataTableDesktopGroupRow<TData>({
           ) : (
             groupLabel
           )}
-          {!groupColumn?.meta?.hideGroupCount && (
+          {!shouldHideGroupCount(groupColumn) && (
             <span className="text-warning-600 dark:text-warning-400 text-sm">
               ({row.subRows?.length} itens)
             </span>

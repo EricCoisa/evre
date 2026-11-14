@@ -22,6 +22,7 @@ import {
   resolveGridLayout,
   swapBlocksInGrid,
   syncBlockRowSpanChange,
+  type PlacedBlock,
 } from '../grid-engine';
 import type { LayoutProfileName } from '../profiles';
 import {
@@ -270,6 +271,76 @@ export function createBlock(type: BlockType, parentId?: string): PageBlock {
   };
 }
 
+/** Há espaço livre à direita de `placedSelected` (de `rightSpaceX` até a borda da grade)? */
+function isRightSlotFree(
+  placed: PlacedBlock[],
+  rightSpaceX: number,
+  placedSelected: PlacedBlock,
+): boolean {
+  return !placed.some(
+    (p) =>
+      p.x < GRID_COLS &&
+      p.x + p.span > rightSpaceX &&
+      p.y < placedSelected.y + placedSelected.rowSpan &&
+      p.y + p.rowSpan > placedSelected.y,
+  );
+}
+
+/** addBlock: encaixa ao lado direito do bloco selecionado, ou (sem espaço) logo após ele. */
+function addBlockNextToSelected(
+  layout: PageLayout,
+  block: PageBlock,
+  selectedId: string,
+  profile?: LayoutProfileName,
+): PageLayout | null {
+  const selected = layout.blocks.find((b) => b.id === selectedId);
+  if (!selected || typeof selected.x !== 'number' || typeof selected.y !== 'number') return null;
+
+  const placed = resolveGridLayout(layout.blocks);
+  const placedSelected = placed.find((p) => p.block.id === selectedId);
+  if (!placedSelected) return null;
+
+  const rightSpaceX = placedSelected.x + placedSelected.span;
+  // Verifica se há espaço livre ao lado direito do bloco selecionado
+  if (rightSpaceX < GRID_COLS) {
+    const freeSpan = GRID_COLS - rightSpaceX;
+    if (isRightSlotFree(placed, rightSpaceX, placedSelected)) {
+      return {
+        ...layout,
+        blocks: insertBlockIntoGrid(
+          layout.blocks,
+          block,
+          rightSpaceX,
+          placedSelected.y,
+          freeSpan,
+          GRID_COLS,
+        ),
+      };
+    }
+  }
+
+  // Se não há espaço livre ao lado, insere logo após o bloco selecionado
+  return insertBlockAfter(layout, selectedId, block, profile);
+}
+
+/** Insere `block` ao final da página (abaixo do último bloco da raiz). */
+function appendBlockAtGridEnd(layout: PageLayout, block: PageBlock): PageLayout {
+  const placed = resolveGridLayout(layout.blocks);
+  const maxBottom = Math.max(0, ...placed.map((p) => p.y + p.rowSpan));
+  const newRowSpan = block.rowSpan ?? defaultRowSpanForType(block.type);
+  const newBlock: PageBlock = {
+    ...block,
+    x: 0,
+    y: maxBottom,
+    span: block.span ?? GRID_COLS,
+    rowSpan: newRowSpan,
+  };
+  return {
+    ...layout,
+    blocks: [...layout.blocks, newBlock],
+  };
+}
+
 export function addBlock(
   layout: PageLayout,
   block: PageBlock,
@@ -290,56 +361,105 @@ export function addBlock(
 
   // Se houver um bloco selecionado no nível raiz:
   if (selectedId) {
-    const selected = layout.blocks.find((b) => b.id === selectedId);
-    if (selected && typeof selected.x === 'number' && typeof selected.y === 'number') {
-      const placed = resolveGridLayout(layout.blocks);
-      const placedSelected = placed.find((p) => p.block.id === selectedId);
-      if (placedSelected) {
-        const rightSpaceX = placedSelected.x + placedSelected.span;
-        // Verifica se há espaço livre ao lado direito do bloco selecionado
-        if (rightSpaceX < GRID_COLS) {
-          const freeSpan = GRID_COLS - rightSpaceX;
-          const isSlotFree = !placed.some(
-            (p) =>
-              p.x < GRID_COLS &&
-              p.x + p.span > rightSpaceX &&
-              p.y < placedSelected.y + placedSelected.rowSpan &&
-              p.y + p.rowSpan > placedSelected.y,
-          );
-          if (isSlotFree) {
-            return {
-              ...layout,
-              blocks: insertBlockIntoGrid(
-                layout.blocks,
-                block,
-                rightSpaceX,
-                placedSelected.y,
-                freeSpan,
-                GRID_COLS,
-              ),
-            };
-          }
-        }
-        // Se não há espaço livre ao lado, insere logo após o bloco selecionado
-        return insertBlockAfter(layout, selectedId, block, profile);
-      }
-    }
+    const next = addBlockNextToSelected(layout, block, selectedId, profile);
+    if (next) return next;
   }
 
   // Sem bloco selecionado: insere ao final da página (abaixo do último bloco)
+  return appendBlockAtGridEnd(layout, block);
+}
+
+/** insertBlockAfter: caso raiz — empurra para baixo os blocos na mesma seção/linha ou abaixo do alvo. */
+function insertBlockAfterAtRoot(
+  layout: PageLayout,
+  targetId: string,
+  block: PageBlock,
+  newRowSpan: number,
+  defaultSpan: number,
+): PageLayout {
   const placed = resolveGridLayout(layout.blocks);
-  const maxBottom = Math.max(0, ...placed.map((p) => p.y + p.rowSpan));
-  const newRowSpan = block.rowSpan ?? defaultRowSpanForType(block.type);
+  const placedTarget = placed.find((p) => p.block.id === targetId);
+  const targetY = placedTarget ? placedTarget.y : 0;
+  const targetBottom = placedTarget ? placedTarget.y + placedTarget.rowSpan : 0;
+
+  // Blocos na mesma seção/linha do bloco alvo que terminam em ou após o fim dele
+  const sameSectionBlocks = placed.filter((p) => p.y <= targetY && p.y + p.rowSpan >= targetBottom);
+  const insertY = sameSectionBlocks.length > 0
+    ? Math.max(...sameSectionBlocks.map((p) => p.y + p.rowSpan))
+    : targetBottom;
+
+  // Atualiza as coordenadas dos blocos existentes:
+  // - Blocos estritamente acima de insertY mantêm suas posições
+  // - Blocos em ou abaixo de insertY são empurrados para baixo pelo rowSpan do novo bloco
+  const updatedBlocks = layout.blocks.map((b) => {
+    const p = placed.find((pl) => pl.block.id === b.id);
+    const currentY = p ? p.y : (b.y ?? 0);
+    const currentX = p ? p.x : (b.x ?? 0);
+    if (currentY >= insertY) {
+      return {
+        ...b,
+        x: currentX,
+        y: currentY + newRowSpan,
+      };
+    }
+    return {
+      ...b,
+      x: currentX,
+      y: currentY,
+    };
+  });
+
+  const { x: _x, y: _y, ...rest } = block;
   const newBlock: PageBlock = {
-    ...block,
+    ...rest,
     x: 0,
-    y: maxBottom,
-    span: block.span ?? GRID_COLS,
+    y: insertY,
+    span: block.span ?? defaultSpan,
     rowSpan: newRowSpan,
   };
+
+  const targetIndex = layout.blocks.findIndex((b) => b.id === targetId);
+  const nextBlocks: PageBlock[] = [...updatedBlocks];
+  nextBlocks.splice(targetIndex + 1, 0, newBlock);
+
   return {
     ...layout,
-    blocks: [...layout.blocks, newBlock],
+    blocks: nextBlocks,
+  };
+}
+
+/** insertBlockAfter: caso dentro de um container (ex: Group) — insere entre os filhos e reempacota se preciso. */
+function insertBlockAfterInContainer(
+  layout: PageLayout,
+  parentId: string,
+  targetId: string,
+  block: PageBlock,
+  newRowSpan: number,
+  fallbackSpan: number | undefined,
+): PageLayout | null {
+  const parent = layout.blocks.find((b) => b.id === parentId);
+  if (!parent) return null;
+
+  const children = parent.children ?? [];
+  const newBlock: PageBlock = {
+    ...block,
+    span: block.type === 'button.action' ? 3 : (block.span ?? fallbackSpan),
+    rowSpan: newRowSpan,
+  };
+
+  const targetIndex = children.findIndex((c) => c.id === targetId);
+  const nextChildren = [...children];
+  nextChildren.splice(targetIndex + 1, 0, newBlock);
+
+  // Se os filhos do container usavam coordenadas 2D, reempacota sequencialmente
+  const hasGridCoords = children.some((c) => typeof c.x === 'number' || typeof c.y === 'number');
+  const finalChildren = hasGridCoords ? autoPackBlocks(nextChildren) : nextChildren;
+
+  return {
+    ...layout,
+    blocks: layout.blocks.map((b) =>
+      b.id === parentId ? { ...b, children: finalChildren } : b,
+    ),
   };
 }
 
@@ -358,82 +478,56 @@ export function insertBlockAfter(
   const newRowSpan = block.rowSpan ?? defaultRowSpanForType(block.type);
 
   if (!located.parentId) {
-    const placed = resolveGridLayout(layout.blocks);
-    const placedTarget = placed.find((p) => p.block.id === targetId);
-    const targetY = placedTarget ? placedTarget.y : 0;
-    const targetBottom = placedTarget ? placedTarget.y + placedTarget.rowSpan : 0;
-
-    // Blocos na mesma seção/linha do bloco alvo que terminam em ou após o fim dele
-    const sameSectionBlocks = placed.filter((p) => p.y <= targetY && p.y + p.rowSpan >= targetBottom);
-    const insertY = sameSectionBlocks.length > 0
-      ? Math.max(...sameSectionBlocks.map((p) => p.y + p.rowSpan))
-      : targetBottom;
-
-    // Atualiza as coordenadas dos blocos existentes:
-    // - Blocos estritamente acima de insertY mantêm suas posições
-    // - Blocos em ou abaixo de insertY são empurrados para baixo pelo rowSpan do novo bloco
-    const updatedBlocks = layout.blocks.map((b) => {
-      const p = placed.find((pl) => pl.block.id === b.id);
-      const currentY = p ? p.y : (b.y ?? 0);
-      const currentX = p ? p.x : (b.x ?? 0);
-      if (currentY >= insertY) {
-        return {
-          ...b,
-          x: currentX,
-          y: currentY + newRowSpan,
-        };
-      }
-      return {
-        ...b,
-        x: currentX,
-        y: currentY,
-      };
-    });
-
-    const { x: _x, y: _y, ...rest } = block;
-    const newBlock: PageBlock = {
-      ...rest,
-      x: 0,
-      y: insertY,
-      span: block.span ?? defaultSpan,
-      rowSpan: newRowSpan,
-    };
-
-    const targetIndex = layout.blocks.findIndex((b) => b.id === targetId);
-    const nextBlocks: PageBlock[] = [...updatedBlocks];
-    nextBlocks.splice(targetIndex + 1, 0, newBlock);
-
-    return {
-      ...layout,
-      blocks: nextBlocks,
-    };
+    return insertBlockAfterAtRoot(layout, targetId, block, newRowSpan, defaultSpan);
   }
 
   // Se estiver dentro de um container (ex: Group):
-  const parent = layout.blocks.find((b) => b.id === located.parentId);
-  if (!parent) return layout;
+  return (
+    insertBlockAfterInContainer(
+      layout,
+      located.parentId,
+      targetId,
+      block,
+      newRowSpan,
+      located.block.span,
+    ) ?? layout
+  );
+}
 
-  const children = parent.children ?? [];
+/** insertBlockAt: insere como único bloco de uma página vazia. */
+function insertBlockAtEmptyLayout(layout: PageLayout, block: PageBlock): PageLayout {
   const newBlock: PageBlock = {
     ...block,
-    span: block.type === 'button.action' ? 3 : (block.span ?? located.block.span),
+    x: 0,
+    y: 0,
+    span: block.span ?? GRID_COLS,
+    rowSpan: block.rowSpan ?? defaultRowSpanForType(block.type),
+  };
+  return { ...layout, blocks: [newBlock] };
+}
+
+/** insertBlockAt: insere no topo da raiz, empurrando todos os blocos existentes para baixo. */
+function insertBlockAtStart(layout: PageLayout, block: PageBlock): PageLayout {
+  const placed = resolveGridLayout(layout.blocks);
+  const newRowSpan = block.rowSpan ?? defaultRowSpanForType(block.type);
+  const updatedBlocks = layout.blocks.map((b) => {
+    const p = placed.find((pl) => pl.block.id === b.id);
+    const currentY = p ? p.y : (b.y ?? 0);
+    const currentX = p ? p.x : (b.x ?? 0);
+    return {
+      ...b,
+      x: currentX,
+      y: currentY + newRowSpan,
+    };
+  });
+  const newBlock: PageBlock = {
+    ...block,
+    x: 0,
+    y: 0,
+    span: block.span ?? GRID_COLS,
     rowSpan: newRowSpan,
   };
-
-  const targetIndex = children.findIndex((c) => c.id === targetId);
-  const nextChildren = [...children];
-  nextChildren.splice(targetIndex + 1, 0, newBlock);
-
-  // Se os filhos do container usavam coordenadas 2D, reempacota sequencialmente
-  const hasGridCoords = children.some((c) => typeof c.x === 'number' || typeof c.y === 'number');
-  const finalChildren = hasGridCoords ? autoPackBlocks(nextChildren) : nextChildren;
-
-  return {
-    ...layout,
-    blocks: layout.blocks.map((b) =>
-      b.id === located.parentId ? { ...b, children: finalChildren } : b,
-    ),
-  };
+  return { ...layout, blocks: [newBlock, ...updatedBlocks] };
 }
 
 /** Insere `block` em um índice específico da raiz ou dentro de um container. */
@@ -451,51 +545,15 @@ export function insertBlockAt(
   }
 
   if (layout.blocks.length === 0) {
-    const newBlock: PageBlock = {
-      ...block,
-      x: 0,
-      y: 0,
-      span: block.span ?? GRID_COLS,
-      rowSpan: block.rowSpan ?? defaultRowSpanForType(block.type),
-    };
-    return { ...layout, blocks: [newBlock] };
+    return insertBlockAtEmptyLayout(layout, block);
   }
 
   if (index === 0) {
-    const placed = resolveGridLayout(layout.blocks);
-    const newRowSpan = block.rowSpan ?? defaultRowSpanForType(block.type);
-    const updatedBlocks = layout.blocks.map((b) => {
-      const p = placed.find((pl) => pl.block.id === b.id);
-      const currentY = p ? p.y : (b.y ?? 0);
-      const currentX = p ? p.x : (b.x ?? 0);
-      return {
-        ...b,
-        x: currentX,
-        y: currentY + newRowSpan,
-      };
-    });
-    const newBlock: PageBlock = {
-      ...block,
-      x: 0,
-      y: 0,
-      span: block.span ?? GRID_COLS,
-      rowSpan: newRowSpan,
-    };
-    return { ...layout, blocks: [newBlock, ...updatedBlocks] };
+    return insertBlockAtStart(layout, block);
   }
 
   if (index >= layout.blocks.length) {
-    const placed = resolveGridLayout(layout.blocks);
-    const maxBottom = Math.max(0, ...placed.map((p) => p.y + p.rowSpan));
-    const newRowSpan = block.rowSpan ?? defaultRowSpanForType(block.type);
-    const newBlock: PageBlock = {
-      ...block,
-      x: 0,
-      y: maxBottom,
-      span: block.span ?? GRID_COLS,
-      rowSpan: newRowSpan,
-    };
-    return { ...layout, blocks: [...layout.blocks, newBlock] };
+    return appendBlockAtGridEnd(layout, block);
   }
 
   const targetBlock = layout.blocks[index - 1];
@@ -772,6 +830,47 @@ function isKnown(type: string): type is BlockType {
 
 export type DropPlacement = 'before' | 'after' | 'inside' | 'swap';
 
+/** canDrop: placement 'inside' — soltar um bloco para que ele passe a ser filho de outro. */
+function canDropInside(from: Located, to: Located): boolean {
+  // Qualquer bloco de topo (não-inline) pode receber filhos:
+  // - `group` recebe qualquer bloco não-container;
+  // - demais blocos (`chart.*`, `stat.card`, `table.basic`, etc.) recebem micro-elementos (`text.rich`, `button.action`).
+  if (!canAcceptChildrenType(to.block.type) || to.parentId) return false;
+  if (isContainerType(from.block.type)) return false;
+  if (!isContainerType(to.block.type) && !isInlineBlockType(from.block.type)) return false;
+  return from.parentId !== to.block.id;
+}
+
+/** Se um bloco estiver dentro de `parentId`, e esse pai só aceitar filhos inline, `otherBlockType` precisa ser inline. */
+function isSwapAllowedAcrossParent(
+  layout: PageLayout,
+  parentId: string | undefined,
+  otherBlockType: string,
+): boolean {
+  if (!parentId) return true;
+  const parent = findBlock(layout, parentId);
+  if (!parent) return true;
+  return isContainerType(parent.block.type) || isInlineBlockType(otherBlockType);
+}
+
+/** canDrop: placement 'swap' — troca de lugar e tamanho entre dois blocos. */
+function canDropSwap(layout: PageLayout, from: Located, to: Located): boolean {
+  // Container não pode trocar de lugar com um bloco que está dentro de outro container.
+  if (isContainerType(from.block.type) && to.parentId) return false;
+  if (isContainerType(to.block.type) && from.parentId) return false;
+  // Se um deles estiver dentro de um bloco que só aceita inline, o outro também precisa ser inline.
+  if (!isSwapAllowedAcrossParent(layout, to.parentId, from.block.type)) return false;
+  if (!isSwapAllowedAcrossParent(layout, from.parentId, to.block.type)) return false;
+  return true;
+}
+
+/** canDrop: placement 'before'/'after' — herdam o nível do alvo. */
+function canDropBeforeAfter(layout: PageLayout, from: Located, to: Located): boolean {
+  // Container não pode parar dentro de outro.
+  if (isContainerType(from.block.type) && to.parentId) return false;
+  return isSwapAllowedAcrossParent(layout, to.parentId, from.block.type);
+}
+
 /** `true` se soltar `activeId` nessa posição do alvo é permitido. */
 export function canDrop(
   layout: PageLayout,
@@ -784,45 +883,108 @@ export function canDrop(
   const to = findBlock(layout, targetId);
   if (!from || !to) return false;
 
+  if (placement === 'inside') return canDropInside(from, to);
+  if (placement === 'swap') return canDropSwap(layout, from, to);
+  return canDropBeforeAfter(layout, from, to);
+}
+
+/** moveBlockTo: placement 'swap' — troca de lugar e tamanho entre `from` e `to`. */
+function moveBlockToSwap(
+  layout: PageLayout,
+  from: Located,
+  to: Located,
+  activeId: string,
+  targetId: string,
+): PageLayout {
+  if (from.parentId === to.parentId) {
+    if (!from.parentId) {
+      return {
+        ...layout,
+        blocks: swapBlocksInGrid(layout.blocks, activeId, targetId),
+      };
+    }
+    return {
+      ...layout,
+      blocks: layout.blocks.map((b) =>
+        b.id === from.parentId
+          ? { ...b, children: swapBlocksInGrid(b.children ?? [], activeId, targetId) }
+          : b,
+      ),
+    };
+  }
+
+  // Troca entre níveis diferentes (ex: bloco dentro de group <-> bloco fora):
+  // cada um assume a posição e o tamanho (span/rowSpan/x/y) do outro!
+  const fromReplaced: PageBlock = {
+    ...to.block,
+    span: to.block.span,
+    rowSpan: to.block.rowSpan,
+    x: from.block.x,
+    y: from.block.y,
+  };
+  const toReplaced: PageBlock = {
+    ...from.block,
+    span: from.block.span,
+    rowSpan: from.block.rowSpan,
+    x: to.block.x,
+    y: to.block.y,
+  };
+  return mapBlocks(layout, (b) => {
+    if (b.id === activeId) return fromReplaced;
+    if (b.id === targetId) return toReplaced;
+    return b;
+  });
+}
+
+/** Se a lista de destino possuir coordenadas de grade (x, y), reempacota os blocos na nova ordem
+ * sequencial garantindo fluxo contínuo, sem buracos, sem sobreposições e sem saltos de blocos! */
+function repackTargetListIfNeeded(
+  reordered: PageLayout,
+  parentId: string | undefined,
+): PageLayout {
+  const targetList = parentId
+    ? (findBlock(reordered, parentId)?.block.children ?? [])
+    : reordered.blocks;
+  const hasAnyGridCoords = targetList.some(
+    (b) => typeof b.x === 'number' || typeof b.y === 'number',
+  );
+  if (!hasAnyGridCoords) return reordered;
+
+  const packedList = autoPackBlocks(targetList);
+  if (!parentId) {
+    return { ...reordered, blocks: packedList };
+  }
+  return {
+    ...reordered,
+    blocks: reordered.blocks.map((b) =>
+      b.id === parentId ? { ...b, children: packedList } : b,
+    ),
+  };
+}
+
+/** moveBlockTo: placement 'before'/'after'/'inside' — remove e reinsere na posição de destino. */
+function moveBlockToInsert(
+  layout: PageLayout,
+  from: Located,
+  targetId: string,
+  placement: DropPlacement,
+  parentId: string | undefined,
+): PageLayout {
+  const detached = removeBlock(layout, from.block.id);
+  // Mover não cria bloco: o teto de blocos do topo (depende do profile) não se aplica.
+  if (parentId && !canAdd(detached, parentId)) return layout;
+
   if (placement === 'inside') {
-    // Qualquer bloco de topo (não-inline) pode receber filhos:
-    // - `group` recebe qualquer bloco não-container;
-    // - demais blocos (`chart.*`, `stat.card`, `table.basic`, etc.) recebem micro-elementos (`text.rich`, `button.action`).
-    if (!canAcceptChildrenType(to.block.type) || to.parentId) return false;
-    if (isContainerType(from.block.type)) return false;
-    if (!isContainerType(to.block.type) && !isInlineBlockType(from.block.type)) return false;
-    return from.parentId !== to.block.id;
+    const cleanBlock: PageBlock = { ...from.block, x: undefined, y: undefined };
+    const children = findBlock(detached, parentId!)?.block.children ?? [];
+    return insertAt(detached, cleanBlock, parentId, children.length);
   }
 
-  if (placement === 'swap') {
-    // Container não pode trocar de lugar com um bloco que está dentro de outro container.
-    if (isContainerType(from.block.type) && to.parentId) return false;
-    if (isContainerType(to.block.type) && from.parentId) return false;
-    // Se um deles estiver dentro de um bloco que só aceita inline, o outro também precisa ser inline.
-    if (to.parentId) {
-      const toParent = findBlock(layout, to.parentId);
-      if (toParent && !isContainerType(toParent.block.type) && !isInlineBlockType(from.block.type)) {
-        return false;
-      }
-    }
-    if (from.parentId) {
-      const fromParent = findBlock(layout, from.parentId);
-      if (fromParent && !isContainerType(fromParent.block.type) && !isInlineBlockType(to.block.type)) {
-        return false;
-      }
-    }
-    return true;
-  }
+  const targetIndex = findBlock(detached, targetId)?.index ?? 0;
+  const insertIndex = placement === 'after' ? targetIndex + 1 : targetIndex;
+  const reordered = insertAt(detached, from.block, parentId, insertIndex);
 
-  // Antes/depois herdam o nível do alvo: container não pode parar dentro de outro.
-  if (isContainerType(from.block.type) && to.parentId) return false;
-  if (to.parentId) {
-    const toParent = findBlock(layout, to.parentId);
-    if (toParent && !isContainerType(toParent.block.type) && !isInlineBlockType(from.block.type)) {
-      return false;
-    }
-  }
-  return true;
+  return repackTargetListIfNeeded(reordered, parentId);
 }
 
 /** Move um bloco para um destino explícito (acima, dentro, abaixo ou trocar de posição/tamanho), definido pela zona do drop. */
@@ -837,82 +999,9 @@ export function moveBlockTo(
   const to = findBlock(layout, targetId)!;
 
   if (placement === 'swap') {
-    if (from.parentId === to.parentId) {
-      if (!from.parentId) {
-        return {
-          ...layout,
-          blocks: swapBlocksInGrid(layout.blocks, activeId, targetId),
-        };
-      }
-      return {
-        ...layout,
-        blocks: layout.blocks.map((b) =>
-          b.id === from.parentId
-            ? { ...b, children: swapBlocksInGrid(b.children ?? [], activeId, targetId) }
-            : b,
-        ),
-      };
-    }
-
-    // Troca entre níveis diferentes (ex: bloco dentro de group <-> bloco fora):
-    // cada um assume a posição e o tamanho (span/rowSpan/x/y) do outro!
-    const fromReplaced: PageBlock = {
-      ...to.block,
-      span: to.block.span,
-      rowSpan: to.block.rowSpan,
-      x: from.block.x,
-      y: from.block.y,
-    };
-    const toReplaced: PageBlock = {
-      ...from.block,
-      span: from.block.span,
-      rowSpan: from.block.rowSpan,
-      x: to.block.x,
-      y: to.block.y,
-    };
-    return mapBlocks(layout, (b) => {
-      if (b.id === activeId) return fromReplaced;
-      if (b.id === targetId) return toReplaced;
-      return b;
-    });
+    return moveBlockToSwap(layout, from, to, activeId, targetId);
   }
 
   const parentId = placement === 'inside' ? to.block.id : to.parentId;
-  const detached = removeBlock(layout, activeId);
-  // Mover não cria bloco: o teto de blocos do topo (depende do profile) não se aplica.
-  if (parentId && !canAdd(detached, parentId)) return layout;
-
-  if (placement === 'inside') {
-    const cleanBlock: PageBlock = { ...from.block, x: undefined, y: undefined };
-    const children = findBlock(detached, to.block.id)?.block.children ?? [];
-    return insertAt(detached, cleanBlock, parentId, children.length);
-  }
-
-  const targetIndex = findBlock(detached, targetId)?.index ?? 0;
-  const insertIndex = placement === 'after' ? targetIndex + 1 : targetIndex;
-  const reordered = insertAt(detached, from.block, parentId, insertIndex);
-
-  // Se a lista de destino possuir coordenadas de grade (x, y), reempacota os blocos na nova ordem sequencial
-  // garantindo fluxo contínuo, sem buracos, sem sobreposições e sem saltos de blocos!
-  const targetList = parentId
-    ? (findBlock(reordered, parentId)?.block.children ?? [])
-    : reordered.blocks;
-  const hasAnyGridCoords = targetList.some(
-    (b) => typeof b.x === 'number' || typeof b.y === 'number',
-  );
-
-  if (hasAnyGridCoords) {
-    const packedList = autoPackBlocks(targetList);
-    if (!parentId) {
-      return { ...reordered, blocks: packedList };
-    }
-    return {
-      ...reordered,
-      blocks: reordered.blocks.map((b) =>
-        b.id === parentId ? { ...b, children: packedList } : b,
-      ),
-    };
-  }
-
-  return reordered;
+  return moveBlockToInsert(layout, from, targetId, placement, parentId);
 }

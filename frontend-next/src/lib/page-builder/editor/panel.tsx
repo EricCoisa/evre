@@ -27,7 +27,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { useTranslation } from '@/hooks/use-translation';
+import { useTranslation, type TFunc } from '@/hooks/use-translation';
 import { usePageSources } from '@/lib/actions/pageBuilder/queries';
 import type { PageSourceDto } from '@/lib/generated/schemas';
 import type { SourceKind } from '../types';
@@ -35,6 +35,7 @@ import {
   BLOCK_META,
   canAcceptChildrenType,
   isInlineBlockType,
+  type BlockMeta,
   type BlockPropMeta,
   type BlockType,
 } from '../blocks.meta';
@@ -48,6 +49,7 @@ import {
   minRowSpanForType,
   normalizeRowSpan,
   normalizeSpan,
+  type PageBlock,
 } from '../schema';
 import { useEditorOrThrow } from './context';
 
@@ -212,6 +214,160 @@ function Palette() {
   );
 }
 
+/** Lista de blocos irmãos (do mesmo container, ou raiz) — usada pra calcular os limites de resize. */
+function resolveSiblingList(editor: ReturnType<typeof useEditorOrThrow>, parentId: string | undefined) {
+  if (!parentId) return editor.draft.blocks;
+  return editor.draft.blocks.find((b) => b.id === parentId)?.children ?? editor.draft.blocks;
+}
+
+/** Link para limpar a fonte opcional escolhida — self-oculta quando não há fonte opcional ativa. */
+function ClearSourceButton({
+  isOptionalSource,
+  hasSource,
+  onClear,
+  t,
+}: {
+  isOptionalSource: boolean;
+  hasSource: boolean;
+  onClear: () => void;
+  t: TFunc;
+}) {
+  if (!isOptionalSource || !hasSource) return null;
+  return (
+    <button
+      type="button"
+      className="text-muted-foreground hover:text-foreground text-[11px] underline"
+      onClick={onClear}
+    >
+      {t('editor.clearSource')}
+    </button>
+  );
+}
+
+/** Texto de estado da fonte escolhida: descrição, dica (opcional) ou aviso de obrigatória. */
+function SourceStatusHint({
+  source,
+  isOptionalSource,
+  t,
+}: {
+  source: PageSourceDto | undefined;
+  isOptionalSource: boolean;
+  t: TFunc;
+}) {
+  if (source) {
+    return <p className="text-muted-foreground text-xs">{source.description}</p>;
+  }
+  if (isOptionalSource) {
+    return <p className="text-muted-foreground text-xs">{t('editor.optionalSourceHint')}</p>;
+  }
+  return <p className="text-destructive text-xs">{t('editor.sourceRequired')}</p>;
+}
+
+/** Seletor de fonte de dados do bloco (inline ou por referência) — self-oculta quando o bloco
+ * não aceita nenhum `kind` de dado. */
+function DataSourceField({
+  meta,
+  block,
+  compatible,
+  source,
+  sourcesLoading,
+  isInlineOnly,
+  editor,
+  t,
+}: {
+  meta: BlockMeta;
+  block: PageBlock;
+  compatible: PageSourceDto[];
+  source: PageSourceDto | undefined;
+  sourcesLoading: boolean;
+  isInlineOnly: boolean;
+  editor: ReturnType<typeof useEditorOrThrow>;
+  t: TFunc;
+}) {
+  if (meta.accepts.length === 0) return null;
+
+  if (isInlineOnly) {
+    return (
+      <InlineDataField
+        accepts={meta.accepts}
+        value={block.data?.inline}
+        onChange={(v) => editor.setInline(block.id, v)}
+      />
+    );
+  }
+
+  const isOptionalSource = 'optionalSource' in meta && !!meta.optionalSource;
+
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">{t('editor.dataSource')}</Label>
+      <Select
+        value={block.data?.source ?? ''}
+        onValueChange={(v) => editor.setSource(block.id, v)}
+        disabled={sourcesLoading}
+      >
+        <SelectTrigger className="w-full">
+          <SelectValue placeholder={t('editor.pickSource')} />
+        </SelectTrigger>
+        <SelectContent>
+          {compatible.map((s) => (
+            <SelectItem key={s.key} value={s.key}>
+              {s.key}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <ClearSourceButton
+        isOptionalSource={isOptionalSource}
+        hasSource={!!block.data?.source}
+        onClear={() => editor.setSource(block.id, undefined)}
+        t={t}
+      />
+      <SourceStatusHint source={source} isOptionalSource={isOptionalSource} t={t} />
+    </div>
+  );
+}
+
+/** Parâmetros (`source.params`) da fonte escolhida — self-oculta sem fonte ou sem parâmetros. */
+function SourceParamsFields({
+  source,
+  block,
+  editor,
+  t,
+}: {
+  source: PageSourceDto | undefined;
+  block: PageBlock;
+  editor: ReturnType<typeof useEditorOrThrow>;
+  t: TFunc;
+}) {
+  if (!source?.params.length) return null;
+
+  return (
+    <div className="space-y-3">
+      <Label className="text-xs font-semibold uppercase">{t('editor.parameters')}</Label>
+      {source.params.map((param) => (
+        <div key={param.name} className="space-y-1.5">
+          <Label className="text-xs">{param.name}</Label>
+          <Input
+            type={param.type === 'number' ? 'number' : 'text'}
+            value={String(block.data?.params?.[param.name] ?? '')}
+            onChange={(e) =>
+              editor.setParam(
+                block.id,
+                param.name,
+                param.type === 'number' && e.target.value !== ''
+                  ? Number(e.target.value)
+                  : e.target.value,
+              )
+            }
+          />
+          <p className="text-muted-foreground text-xs">{param.description}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function BlockForm({
   sources,
   sourcesLoading,
@@ -241,12 +397,8 @@ function BlockForm({
     (meta.accepts as readonly string[]).includes(s.kind),
   );
   const source = sources.find((s) => s.key === block.data?.source);
-  const isOptionalSource = 'optionalSource' in meta && !!meta.optionalSource;
   const availableVariables = buildVariableOptions(source);
-  const parentId = editor.selected?.parentId;
-  const siblingList = parentId
-    ? (editor.draft.blocks.find((b) => b.id === parentId)?.children ?? [])
-    : editor.draft.blocks;
+  const siblingList = resolveSiblingList(editor, editor.selected?.parentId);
   const { maxSpan, maxRowSpan } = getMaxResizeBounds(siblingList, block.id);
   const isInlineOnly = LAYOUT_PROFILES[editor.profile].dataSources === 'inline-only';
 
@@ -257,51 +409,16 @@ function BlockForm({
         <p className="text-muted-foreground text-xs">{meta.description}</p>
       </div>
 
-      {meta.accepts.length > 0 && isInlineOnly ? (
-        <InlineDataField
-          accepts={meta.accepts}
-          value={block.data?.inline}
-          onChange={(v) => editor.setInline(block.id, v)}
-        />
-      ) : meta.accepts.length > 0 ? (
-        <div className="space-y-1.5">
-          <Label className="text-xs">{t('editor.dataSource')}</Label>
-          <Select
-            value={block.data?.source ?? ''}
-            onValueChange={(v) => editor.setSource(block.id, v)}
-            disabled={sourcesLoading}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder={t('editor.pickSource')} />
-            </SelectTrigger>
-            <SelectContent>
-              {compatible.map((s) => (
-                <SelectItem key={s.key} value={s.key}>
-                  {s.key}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {isOptionalSource && block.data?.source ? (
-            <button
-              type="button"
-              className="text-muted-foreground hover:text-foreground text-[11px] underline"
-              onClick={() => editor.setSource(block.id, undefined)}
-            >
-              {t('editor.clearSource')}
-            </button>
-          ) : null}
-          {source ? (
-            <p className="text-muted-foreground text-xs">{source.description}</p>
-          ) : isOptionalSource ? (
-            <p className="text-muted-foreground text-xs">
-              {t('editor.optionalSourceHint')}
-            </p>
-          ) : (
-            <p className="text-destructive text-xs">{t('editor.sourceRequired')}</p>
-          )}
-        </div>
-      ) : null}
+      <DataSourceField
+        meta={meta}
+        block={block}
+        compatible={compatible}
+        source={source}
+        sourcesLoading={sourcesLoading}
+        isInlineOnly={isInlineOnly}
+        editor={editor}
+        t={t}
+      />
 
       {meta.props.map((prop) => (
         <PropField
@@ -316,32 +433,7 @@ function BlockForm({
         />
       ))}
 
-      {source?.params.length ? (
-        <div className="space-y-3">
-          <Label className="text-xs font-semibold uppercase">
-            {t('editor.parameters')}
-          </Label>
-          {source.params.map((param) => (
-            <div key={param.name} className="space-y-1.5">
-              <Label className="text-xs">{param.name}</Label>
-              <Input
-                type={param.type === 'number' ? 'number' : 'text'}
-                value={String(block.data?.params?.[param.name] ?? '')}
-                onChange={(e) =>
-                  editor.setParam(
-                    block.id,
-                    param.name,
-                    param.type === 'number' && e.target.value !== ''
-                      ? Number(e.target.value)
-                      : e.target.value,
-                  )
-                }
-              />
-              <p className="text-muted-foreground text-xs">{param.description}</p>
-            </div>
-          ))}
-        </div>
-      ) : null}
+      <SourceParamsFields source={source} block={block} editor={editor} t={t} />
 
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
@@ -598,6 +690,91 @@ function InlineDataField({
   );
 }
 
+/** Campo `string[]`: checkboxes dos campos reais da fonte quando disponíveis, senão input livre
+ * separado por vírgulas. */
+function renderStringArrayField(
+  label: React.ReactNode,
+  value: unknown,
+  fields: string[],
+  t: TFunc,
+  onChange: (value: unknown) => void,
+): React.ReactElement {
+  const selected = Array.isArray(value) ? value.map(String) : [];
+
+  if (fields.length) {
+    return (
+      <div className="space-y-1.5">
+        {label}
+        <div className="space-y-1.5 rounded-md border p-2">
+          {fields.map((field) => (
+            <label key={field} className="flex items-center gap-2 text-sm">
+              <Checkbox
+                checked={selected.includes(field)}
+                onCheckedChange={(checked) =>
+                  onChange(checked ? [...selected, field] : selected.filter((f) => f !== field))
+                }
+              />
+              {field}
+            </label>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-1.5">
+      {label}
+      <Input
+        value={selected.join(', ')}
+        placeholder={t('editor.pickSourceFirst')}
+        onChange={(e) =>
+          onChange(
+            e.target.value
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean),
+          )
+        }
+      />
+    </div>
+  );
+}
+
+/** Campo com opções fechadas (`meta.options`): select com o primeiro valor como default. */
+function renderOptionsField(
+  options: NonNullable<BlockPropMeta['options']>,
+  label: React.ReactNode,
+  value: unknown,
+  onChange: (value: unknown) => void,
+): React.ReactElement {
+  const firstOption = options[0];
+  const firstVal = typeof firstOption === 'string' ? firstOption : firstOption.value;
+  const currentVal = typeof value === 'string' && value ? value : firstVal;
+
+  return (
+    <div className="space-y-1.5">
+      {label}
+      <Select value={currentVal} onValueChange={(val) => onChange(val)}>
+        <SelectTrigger className="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((opt) => {
+            const optVal = typeof opt === 'string' ? opt : opt.value;
+            const optLabel = typeof opt === 'string' ? opt : opt.label;
+            return (
+              <SelectItem key={optVal} value={optVal}>
+                {optLabel}
+              </SelectItem>
+            );
+          })}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
 /** Um campo por entrada de `BlockPropMeta` — o `type` da meta decide o controle. */
 function PropField({
   meta,
@@ -660,92 +837,35 @@ function PropField({
     );
   }
 
+  // Com fonte escolhida, oferece os campos REAIS: é o que impede a coluna vazia por nome
+  // de campo inventado, que hoje só o texto da description do bloco tenta evitar.
   if (meta.type === 'string[]') {
-    const selected = Array.isArray(value) ? value.map(String) : [];
-    // Com fonte escolhida, oferece os campos REAIS: é o que impede a coluna vazia por nome
-    // de campo inventado, que hoje só o texto da description do bloco tenta evitar.
-    if (fields.length) {
-      return (
-        <div className="space-y-1.5">
-          {label}
-          <div className="space-y-1.5 rounded-md border p-2">
-            {fields.map((field) => (
-              <label key={field} className="flex items-center gap-2 text-sm">
-                <Checkbox
-                  checked={selected.includes(field)}
-                  onCheckedChange={(checked) =>
-                    onChange(
-                      checked
-                        ? [...selected, field]
-                        : selected.filter((f) => f !== field),
-                    )
-                  }
-                />
-                {field}
-              </label>
-            ))}
-          </div>
-        </div>
-      );
-    }
-    return (
-      <div className="space-y-1.5">
-        {label}
-        <Input
-          value={selected.join(', ')}
-          placeholder={t('editor.pickSourceFirst')}
-          onChange={(e) =>
-            onChange(
-              e.target.value
-                .split(',')
-                .map((s) => s.trim())
-                .filter(Boolean),
-            )
-          }
-        />
-      </div>
-    );
+    return renderStringArrayField(label, value, fields, t, onChange);
   }
 
   if (meta.options && meta.options.length > 0) {
-    const firstOption = meta.options[0];
-    const firstVal = typeof firstOption === 'string' ? firstOption : firstOption.value;
-    const currentVal = typeof value === 'string' && value ? value : firstVal;
-    return (
-      <div className="space-y-1.5">
-        {label}
-        <Select value={currentVal} onValueChange={(val) => onChange(val)}>
-          <SelectTrigger className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {meta.options.map((opt) => {
-              const optVal = typeof opt === 'string' ? opt : opt.value;
-              const optLabel = typeof opt === 'string' ? opt : opt.label;
-              return (
-                <SelectItem key={optVal} value={optVal}>
-                  {optLabel}
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
-      </div>
-    );
+    return renderOptionsField(meta.options, label, value, onChange);
   }
 
+  return renderBasicInputField(meta, label, value, onChange);
+}
+
+/** Campo padrão: texto livre ou número, para qualquer `meta.type` sem controle dedicado. */
+function renderBasicInputField(
+  meta: BlockPropMeta,
+  label: React.ReactNode,
+  value: unknown,
+  onChange: (value: unknown) => void,
+): React.ReactElement {
+  const isNumber = meta.type === 'number';
   return (
     <div className="space-y-1.5">
       {label}
       <Input
-        type={meta.type === 'number' ? 'number' : 'text'}
+        type={isNumber ? 'number' : 'text'}
         value={value === undefined || value === null ? '' : String(value)}
         onChange={(e) =>
-          onChange(
-            meta.type === 'number' && e.target.value !== ''
-              ? Number(e.target.value)
-              : e.target.value,
-          )
+          onChange(isNumber && e.target.value !== '' ? Number(e.target.value) : e.target.value)
         }
       />
     </div>

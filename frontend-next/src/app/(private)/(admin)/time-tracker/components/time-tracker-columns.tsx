@@ -30,6 +30,41 @@ export function formatDuration(seconds?: number | null): string {
   return `${m}m ${s.toString().padStart(2, '0')}s`;
 }
 
+function isGroupRunning(
+  subRows: { original?: TimeEntry }[],
+  activeEntryId: string | null | undefined,
+): boolean {
+  if (subRows.some((r) => !r.original?.endTime)) return true;
+  return activeEntryId ? subRows.some((r) => r.original?.id === activeEntryId) : false;
+}
+
+interface GroupSummary {
+  count: number;
+  firstEntry: TimeEntry;
+  totalDuration: number;
+  hasRunning: boolean;
+  hasForgotten: boolean;
+  title: string;
+}
+
+function summarizeGroup(
+  groupData: unknown,
+  activeEntryId: string | null | undefined,
+  noDescriptionLabel: string,
+): GroupSummary {
+  const subRows = (groupData as { allSubRows?: { original?: TimeEntry }[] } | undefined)?.allSubRows ?? [];
+  const firstEntry = (subRows[0]?.original || {}) as TimeEntry;
+  const totalDuration = subRows.reduce((acc: number, r) => acc + (r.original?.duration ?? 0), 0);
+  return {
+    count: subRows.length,
+    firstEntry,
+    totalDuration,
+    hasRunning: isGroupRunning(subRows, activeEntryId),
+    hasForgotten: subRows.some((r) => r.original?.isForgotten),
+    title: firstEntry?.description || firstEntry?.entityTitle || noDescriptionLabel,
+  };
+}
+
 interface GetTimeTrackingColumnsProps {
   t: (key: string) => string;
   onEdit: (entry: TimeEntry) => void;
@@ -59,18 +94,11 @@ export function getTimeTrackingColumns({
         groupBy: true,
         hideGroupCount: true,
         groupLabel: (value: unknown, groupData?: unknown) => {
-          const subRows = (groupData as { allSubRows?: { original?: TimeEntry }[] } | undefined)?.allSubRows ?? [];
-          const count = subRows.length;
-          const firstEntry = (subRows[0]?.original || {}) as TimeEntry;
-          const totalDuration = subRows.reduce(
-            (acc: number, r) => acc + (r.original?.duration ?? 0),
-            0,
+          const { count, firstEntry, totalDuration, hasRunning, hasForgotten, title } = summarizeGroup(
+            groupData,
+            activeEntryId,
+            t('noDescription'),
           );
-          const hasRunning =
-            subRows.some((r) => !r.original?.endTime) ||
-            (activeEntryId ? subRows.some((r) => r.original?.id === activeEntryId) : false);
-          const hasForgotten = subRows.some((r) => r.original?.isForgotten);
-          const title = firstEntry?.description || firstEntry?.entityTitle || t('noDescription');
 
           return (
             <div className="flex items-center justify-between w-full pr-4 text-xs">

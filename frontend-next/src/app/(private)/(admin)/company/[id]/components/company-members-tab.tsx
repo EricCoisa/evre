@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { useTranslation } from '@/hooks/use-translation';
+import { useTranslation, type TFunc } from '@/hooks/use-translation';
+import type { PaginationState, OnChangeFn } from '@tanstack/react-table';
 import { useCompanyMembers, useCompanyInvites, useAddCompanyMember, useInviteCompanyMember, useRemoveCompanyMember, useUpdateCompanyMember } from '@/lib/actions/company/queries';
 import { useUsers } from '@/lib/actions/user/queries';
 import { useMe } from '@/lib/actions/auth/queries';
@@ -24,6 +25,102 @@ import Modal from '@/components/modal';
 import { CopyField } from '@/components/copy-field';
 import { useCapability } from '@/lib/actions/capability/queries';
 import { CAPABILITIES } from '@/types/capabilities';
+
+function editDialogTitle(editingMember: Member | null, t: TFunc): string {
+  if (!editingMember) return t('members.editTooltip');
+  return t('members.editTitle', { name: editingMember.user.name || editingMember.user.email });
+}
+
+function editDialogValues(editingMember: Member | null) {
+  if (!editingMember) return undefined;
+  return { canSeeCommercials: editingMember.canSeeCommercials, canComment: editingMember.canComment };
+}
+
+function resendInviteDescription(invite: CompanyInvite | null, t: TFunc): string {
+  if (!invite) return '';
+  if (invite.channel === 'WHATSAPP') return t('members.resendInviteDescriptionWa', { phone: invite.phone ?? '' });
+  return t('members.resendInviteDescription', { email: invite.email ?? '' });
+}
+
+function MessagingWarningIcon({ show }: { show: boolean }) {
+  if (!show) return null;
+  return <TriangleAlert className="size-3.5 text-amber-500" />;
+}
+
+function MessagingDisabledHint({ show, t }: { show: boolean; t: TFunc }) {
+  if (!show) return null;
+  return (
+    <p className="flex items-center gap-1.5 text-sm text-amber-600 mb-3">
+      <TriangleAlert className="size-4 shrink-0" />
+      {t('members.whatsappServiceDisabledHint')}
+    </p>
+  );
+}
+
+function InvitationLinkModal({
+  token,
+  onClose,
+  t,
+}: {
+  token: string | null;
+  onClose: () => void;
+  t: TFunc;
+}) {
+  if (!token) return null;
+  return (
+    <Modal
+      title={t('members.inviteLinkTitle')}
+      description={t('members.inviteLinkDescription')}
+      open={token !== null}
+      onOpenChange={(open) => { if (!open) onClose(); }}
+    >
+      <CopyField value={token ?? ''} />
+    </Modal>
+  );
+}
+
+function PendingInvitesSection({
+  invites,
+  inviteColumns,
+  invitesError,
+  companyId,
+  invitesPagination,
+  setInvitesPagination,
+  t,
+}: {
+  invites: CompanyInvite[];
+  inviteColumns: ReturnType<typeof getCompanyInviteColumns>;
+  invitesError: Error | null | undefined;
+  companyId: string;
+  invitesPagination: PaginationState;
+  setInvitesPagination: OnChangeFn<PaginationState>;
+  t: TFunc;
+}) {
+  if (invites.length === 0) return null;
+  return (
+    <div className="mt-8">
+      <h3 className="text-sm font-medium mb-4">{t('members.pendingInvites')}</h3>
+      <DataTable
+        columns={inviteColumns}
+        data={invites}
+        error={invitesError}
+        queryKey={['company', companyId, 'invites']}
+        pagination={invitesPagination}
+        onPaginationChange={setInvitesPagination}
+        enableGlobalFilter={true}
+        searchPlaceholder={t('members.searchInvitesPlaceholder')}
+        emptyMessage={t('members.noInvites')}
+        entityName={t('members.inviteEntity')}
+        entityNamePlural={t('members.inviteEntityPlural')}
+      >
+        <DataTable.Input
+          title={t('members.email')}
+          placeholder={t('members.searchInvitesPlaceholder')}
+        />
+      </DataTable>
+    </div>
+  );
+}
 
 export function CompanyMembersTab({ companyId }: { companyId: string }) {
   const { t } = useTranslation('company');
@@ -224,29 +321,15 @@ export function CompanyMembersTab({ companyId }: { companyId: string }) {
         </DataTable.Actions>
       </DataTable>
 
-      {invites.length > 0 && (
-        <div className="mt-8">
-          <h3 className="text-sm font-medium mb-4">{t('members.pendingInvites')}</h3>
-          <DataTable
-            columns={inviteColumns}
-            data={invites}
-            error={invitesError}
-            queryKey={['company', companyId, 'invites']}
-            pagination={invitesPagination}
-            onPaginationChange={setInvitesPagination}
-            enableGlobalFilter={true}
-            searchPlaceholder={t('members.searchInvitesPlaceholder')}
-            emptyMessage={t('members.noInvites')}
-            entityName={t('members.inviteEntity')}
-            entityNamePlural={t('members.inviteEntityPlural')}
-          >
-            <DataTable.Input
-              title={t('members.email')}
-              placeholder={t('members.searchInvitesPlaceholder')}
-            />
-          </DataTable>
-        </div>
-      )}
+      <PendingInvitesSection
+        invites={invites}
+        inviteColumns={inviteColumns}
+        invitesError={invitesError}
+        companyId={companyId}
+        invitesPagination={invitesPagination}
+        setInvitesPagination={setInvitesPagination}
+        t={t}
+      />
 
       <FormBuilderModal
         size="md"
@@ -277,7 +360,7 @@ export function CompanyMembersTab({ companyId }: { companyId: string }) {
             <TabsTrigger value="email">{t('members.inviteChannelEmail')}</TabsTrigger>
             <TabsTrigger value="whatsapp">
               {t('members.inviteChannelWhatsapp')}
-              {!messagingOperational && <TriangleAlert className="size-3.5 text-amber-500" />}
+              <MessagingWarningIcon show={!messagingOperational} />
             </TabsTrigger>
           </TabsList>
 
@@ -301,12 +384,7 @@ export function CompanyMembersTab({ companyId }: { companyId: string }) {
           </TabsContent>
 
           <TabsContent value="whatsapp">
-            {!messagingOperational && (
-              <p className="flex items-center gap-1.5 text-sm text-amber-600 mb-3">
-                <TriangleAlert className="size-4 shrink-0" />
-                {t('members.whatsappServiceDisabledHint')}
-              </p>
-            )}
+            <MessagingDisabledHint show={!messagingOperational} t={t} />
             <FormBuilder
               chrome="plain"
               schema={inviteWaSchema}
@@ -332,12 +410,12 @@ export function CompanyMembersTab({ companyId }: { companyId: string }) {
         size="md"
         open={!!editingMember}
         onOpenChange={(open) => { if (!open) setEditingMember(null); }}
-        title={editingMember ? t('members.editTitle', { name: editingMember.user.name || editingMember.user.email }) : t('members.editTooltip')}
+        title={editDialogTitle(editingMember, t)}
         description={t('members.editDescription')}
         schema={editPermissionsSchema}
         fields={editPermissionsFields}
         mode="edit"
-        values={editingMember ? { canSeeCommercials: editingMember.canSeeCommercials, canComment: editingMember.canComment } : undefined}
+        values={editDialogValues(editingMember)}
         onSubmit={async (data) => {
           if (!editingMember) return;
           await Alive(() => updateMemberMutation.mutateAsync({ membershipId: editingMember.id, data }))();
@@ -369,11 +447,7 @@ export function CompanyMembersTab({ companyId }: { companyId: string }) {
         onOpenChange={(v) => !v && setResendingInvite(null)}
         onConfirm={handleConfirmResend}
         title={t('members.resendInviteTitle')}
-        description={
-          resendingInvite?.channel === 'WHATSAPP'
-            ? t('members.resendInviteDescriptionWa', { phone: resendingInvite.phone ?? '' })
-            : t('members.resendInviteDescription', { email: resendingInvite?.email ?? '' })
-        }
+        description={resendInviteDescription(resendingInvite, t)}
       />
 
       <ConfirmDialog
@@ -384,16 +458,11 @@ export function CompanyMembersTab({ companyId }: { companyId: string }) {
         description={t('members.deleteInviteConfirm')}
       />
 
-      {invitationToken && (
-        <Modal
-          title={t('members.inviteLinkTitle')}
-          description={t('members.inviteLinkDescription')}
-          open={invitationToken !== null}
-          onOpenChange={(open) => { if (!open) setInvitationToken(null); }}
-        >
-          <CopyField value={invitationToken ?? ''} />
-        </Modal>
-      )}
+      <InvitationLinkModal
+        token={invitationToken}
+        onClose={() => setInvitationToken(null)}
+        t={t}
+      />
     </>
   );
 }

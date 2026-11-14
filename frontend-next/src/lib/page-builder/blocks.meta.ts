@@ -24,17 +24,25 @@ export type TextPreset =
   | 'caption'
   | 'quote';
 
+const TEXT_PRESET_ALIASES: Record<string, TextPreset> = {
+  h1: 'heading1',
+  heading1: 'heading1',
+  h2: 'heading2',
+  heading2: 'heading2',
+  h3: 'heading3',
+  heading3: 'heading3',
+  h4: 'heading4',
+  heading4: 'heading4',
+  lead: 'lead',
+  caption: 'caption',
+  quote: 'quote',
+  blockquote: 'quote',
+};
+
 export function normalizeTextPreset(preset: unknown): TextPreset {
   if (typeof preset !== 'string') return 'paragraph';
   const p = preset.toLowerCase().trim();
-  if (p === 'h1' || p === 'heading1') return 'heading1';
-  if (p === 'h2' || p === 'heading2') return 'heading2';
-  if (p === 'h3' || p === 'heading3') return 'heading3';
-  if (p === 'h4' || p === 'heading4') return 'heading4';
-  if (p === 'lead') return 'lead';
-  if (p === 'caption') return 'caption';
-  if (p === 'quote' || p === 'blockquote') return 'quote';
-  return 'paragraph';
+  return TEXT_PRESET_ALIASES[p] ?? 'paragraph';
 }
 
 export type TextFontSizeClass =
@@ -122,6 +130,30 @@ export const TEXT_PRESET_CONFIG: Record<TextPreset, TextPresetConfig> = {
  * - Define itálico quando aplicável (ex: _..._ para citação)
  * Mantém o seletor de tamanho da fonte ativo no editor para que o usuário possa fazer ajustes finos.
  */
+/** Configura negrito se o preset pedir, removendo marcações anteriores. */
+function applyBoldMarkup(clean: string, bold: boolean | undefined): string {
+  if (bold) {
+    const stripped = clean.replace(/\*([^*]+?)\*/g, '$1');
+    const trimmed = stripped.trim();
+    return trimmed ? `*${stripped}*` : stripped;
+  }
+  if (bold === false) {
+    return clean.replace(/\*([^*]+?)\*/g, '$1');
+  }
+  return clean;
+}
+
+/** Configura itálico se for citação, sem duplicar a marcação já presente. */
+function applyItalicMarkup(clean: string, italic: boolean | undefined): string {
+  if (!italic) return clean;
+  const trimmed = clean.trim();
+  const alreadyItalic = trimmed.startsWith('_') && trimmed.endsWith('_');
+  if (trimmed && !alreadyItalic) {
+    return `_${clean}_`;
+  }
+  return clean;
+}
+
 export function applyPresetToContent(content: string, preset: TextPreset): string {
   const cfg = TEXT_PRESET_CONFIG[preset];
   if (!cfg) return content;
@@ -131,23 +163,10 @@ export function applyPresetToContent(content: string, preset: TextPreset): strin
   let clean = content.replace(/\[fs:[^\]]+\]([\s\S]*?)\[\/fs\]/g, '$1');
 
   // 2. Configura negrito se o preset pedir
-  if (cfg.bold) {
-    clean = clean.replace(/\*([^*]+?)\*/g, '$1');
-    const trimmed = clean.trim();
-    if (trimmed) {
-      clean = `*${clean}*`;
-    }
-  } else if (cfg.bold === false) {
-    clean = clean.replace(/\*([^*]+?)\*/g, '$1');
-  }
+  clean = applyBoldMarkup(clean, cfg.bold);
 
   // 3. Configura itálico se for citação
-  if (cfg.italic) {
-    const trimmed = clean.trim();
-    if (trimmed && !(trimmed.startsWith('_') && trimmed.endsWith('_'))) {
-      clean = `_${clean}_`;
-    }
-  }
+  clean = applyItalicMarkup(clean, cfg.italic);
 
   // 4. Aplica o tamanho de fonte configurado pelo Preset
   return `[fs:${cfg.fontSize}]${clean}[/fs]`;

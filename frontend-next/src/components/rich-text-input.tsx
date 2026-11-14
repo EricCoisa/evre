@@ -101,6 +101,136 @@ function EditablePlugin({ disabled }: { disabled: boolean }) {
   return null;
 }
 
+function resolveFormatLabels(labels: Partial<RichTextInputProps['formatLabels']> | undefined) {
+  return {
+    bold: labels?.bold ?? 'Negrito (*texto*)',
+    italic: labels?.italic ?? 'Itálico (_texto_)',
+    strikethrough: labels?.strikethrough ?? 'Riscado (~texto~)',
+    code: labels?.code ?? 'Código (```texto```)',
+  };
+}
+
+function FontSizeDropdown({
+  show,
+  disabled,
+  activeSize,
+  onApply,
+  onCloseAutoFocus,
+}: {
+  show: boolean;
+  disabled: boolean;
+  activeSize: string | undefined;
+  onApply: (css: string) => void;
+  onCloseAutoFocus: () => void;
+}) {
+  if (!show) return null;
+  const activeFontSizeEntry = FONT_SIZES.find((s) => s.tw === activeSize);
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          disabled={disabled}
+          className="h-6 gap-1 px-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+          aria-label="Tamanho de fonte"
+          title="Tamanho de fonte"
+          onMouseDown={(event) => event.preventDefault()}
+        >
+          <Type className="size-3" />
+          <span>{activeFontSizeEntry?.label ?? 'Tamanho'}</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="start"
+        className="min-w-28"
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          onCloseAutoFocus();
+        }}
+      >
+        {activeSize ? (
+          <>
+            <DropdownMenuItem onSelect={() => onApply('')}>
+              Padrão
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        ) : null}
+        {FONT_SIZES.map((s) => (
+          <DropdownMenuItem
+            key={s.tw}
+            onSelect={() => onApply(s.css)}
+            className="gap-2"
+          >
+            <span className={cn('font-medium', s.tw)}>{s.label}</span>
+            {activeSize === s.tw ? <Check className="ml-auto size-3" /> : null}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function VariablesDropdown({
+  variables,
+  variableButtonLabel,
+  disabled,
+  onInsert,
+}: {
+  variables: RichTextVariableOption[] | undefined;
+  variableButtonLabel: string | undefined;
+  disabled: boolean;
+  onInsert: (token: string) => void;
+}) {
+  if (!variables || variables.length === 0) return null;
+  const label = variableButtonLabel ?? 'Inserir variável';
+  const shortLabel = variableButtonLabel ?? 'Variável';
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={disabled}
+          className="h-6 gap-1 px-1.5 text-[11px] font-medium"
+          aria-label={label}
+          title={label}
+          onMouseDown={(event) => event.preventDefault()}
+        >
+          <Braces className="size-3" />
+          <span>{shortLabel}</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56 text-xs">
+        <DropdownMenuLabel className="text-[10px] uppercase text-muted-foreground">
+          Inserir variável da fonte
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {variables.map((v) => (
+          <DropdownMenuItem
+            key={v.token}
+            onClick={() => onInsert(v.token)}
+            className="flex flex-col items-start gap-0.5 py-1.5 text-xs"
+          >
+            <div className="flex w-full items-center justify-between gap-2">
+              <span className="font-medium text-foreground">{v.label}</span>
+              <code className="rounded bg-muted px-1 py-0.5 font-mono text-[10px] text-primary">
+                {`{{${v.token}}}`}
+              </code>
+            </div>
+            {v.description ? (
+              <span className="text-[10px] text-muted-foreground">{v.description}</span>
+            ) : null}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export function RichTextFormatButtons({
   editor,
   labels,
@@ -141,12 +271,7 @@ export function RichTextFormatButtons({
     });
   }, [editor]);
 
-  const defaultLabels = {
-    bold: labels?.bold ?? 'Negrito (*texto*)',
-    italic: labels?.italic ?? 'Itálico (_texto_)',
-    strikethrough: labels?.strikethrough ?? 'Riscado (~texto~)',
-    code: labels?.code ?? 'Código (```texto```)',
-  };
+  const defaultLabels = resolveFormatLabels(labels);
 
   const buttons: { format: TextFormatType; label: string; icon: React.ReactNode }[] = [
     { format: 'bold', label: defaultLabels.bold, icon: <Bold className="size-3.5" /> },
@@ -180,8 +305,6 @@ export function RichTextFormatButtons({
     editor.focus();
   };
 
-  const activeFontSizeEntry = FONT_SIZES.find((s) => s.tw === activeSize);
-
   return (
     <div className="flex items-center gap-0.5">
       {buttons.map(({ format, label, icon }) => {
@@ -207,95 +330,20 @@ export function RichTextFormatButtons({
         );
       })}
 
-      {showFontSize ? (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              disabled={disabled}
-              className="h-6 gap-1 px-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground"
-              aria-label="Tamanho de fonte"
-              title="Tamanho de fonte"
-              onMouseDown={(event) => event.preventDefault()}
-            >
-              <Type className="size-3" />
-              <span>{activeFontSizeEntry?.label ?? 'Tamanho'}</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="start"
-            className="min-w-28"
-            onCloseAutoFocus={(event) => {
-              event.preventDefault();
-              editor.focus();
-            }}
-          >
-            {activeSize ? (
-              <>
-                <DropdownMenuItem onSelect={() => applyFontSize('')}>
-                  Padrão
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-              </>
-            ) : null}
-            {FONT_SIZES.map((s) => (
-              <DropdownMenuItem
-                key={s.tw}
-                onSelect={() => applyFontSize(s.css)}
-                className="gap-2"
-              >
-                <span className={cn('font-medium', s.tw)}>{s.label}</span>
-                {activeSize === s.tw ? <Check className="ml-auto size-3" /> : null}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ) : null}
+      <FontSizeDropdown
+        show={showFontSize}
+        disabled={disabled}
+        activeSize={activeSize}
+        onApply={applyFontSize}
+        onCloseAutoFocus={() => editor.focus()}
+      />
 
-      {variables && variables.length > 0 ? (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              disabled={disabled}
-              className="h-6 gap-1 px-1.5 text-[11px] font-medium"
-              aria-label={variableButtonLabel ?? 'Inserir variável'}
-              title={variableButtonLabel ?? 'Inserir variável'}
-              onMouseDown={(event) => event.preventDefault()}
-            >
-              <Braces className="size-3" />
-              <span>{variableButtonLabel ?? 'Variável'}</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 text-xs">
-            <DropdownMenuLabel className="text-[10px] uppercase text-muted-foreground">
-              Inserir variável da fonte
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {variables.map((v) => (
-              <DropdownMenuItem
-                key={v.token}
-                onClick={() => insertVariable(v.token)}
-                className="flex flex-col items-start gap-0.5 py-1.5 text-xs"
-              >
-                <div className="flex w-full items-center justify-between gap-2">
-                  <span className="font-medium text-foreground">{v.label}</span>
-                  <code className="rounded bg-muted px-1 py-0.5 font-mono text-[10px] text-primary">
-                    {`{{${v.token}}}`}
-                  </code>
-                </div>
-                {v.description ? (
-                  <span className="text-[10px] text-muted-foreground">{v.description}</span>
-                ) : null}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ) : null}
+      <VariablesDropdown
+        variables={variables}
+        variableButtonLabel={variableButtonLabel}
+        disabled={disabled}
+        onInsert={insertVariable}
+      />
     </div>
   );
 }

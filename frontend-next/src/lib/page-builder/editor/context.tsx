@@ -133,6 +133,15 @@ const UNDO_HISTORY_SIZE = 30;
 /** Pausa de digitação que encerra o agrupamento de undo de uma edição de texto em andamento. */
 const COALESCE_IDLE_MS = 800;
 
+function isEditableTarget(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  return el?.tagName === 'INPUT' || el?.tagName === 'TEXTAREA' || !!el?.isContentEditable;
+}
+
+function hasUndoModifier(e: KeyboardEvent): boolean {
+  return e.ctrlKey || e.metaKey;
+}
+
 export function EditorProvider({
   initial,
   profile = DEFAULT_PROFILE,
@@ -261,20 +270,15 @@ export function EditorProvider({
   // Atalhos de teclado universais: Ctrl+Z / Cmd+Z e Ctrl+Y / Cmd+Shift+Z
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable) {
+      if (isEditableTarget(e.target) || !hasUndoModifier(e)) return;
+
+      const key = e.key.toLowerCase();
+      if (key === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) redo(); else undo();
         return;
       }
-
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
-        if (e.shiftKey) {
-          e.preventDefault();
-          redo();
-        } else {
-          e.preventDefault();
-          undo();
-        }
-      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+      if (key === 'y') {
         e.preventDefault();
         redo();
       }

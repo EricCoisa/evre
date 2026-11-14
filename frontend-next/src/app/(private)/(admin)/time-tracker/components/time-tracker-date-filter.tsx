@@ -91,49 +91,21 @@ export function TimeTrackerDateFilter({
       return s1.slice(0, 10) === s2.slice(0, 10);
     };
 
-    if (
-      isSameDayRange(startDateIso, presetBounds.current_month.start) &&
-      isSameDayRange(endDateIso, presetBounds.current_month.end)
-    ) {
-      return 'current_month';
-    }
+    const boundedPresetKeys: (keyof typeof presetBounds)[] = [
+      'current_month',
+      'previous_month',
+      'today',
+      'last_7_days',
+      'last_30_days',
+      'last_90_days',
+    ];
 
-    if (
-      isSameDayRange(startDateIso, presetBounds.previous_month.start) &&
-      isSameDayRange(endDateIso, presetBounds.previous_month.end)
-    ) {
-      return 'previous_month';
-    }
+    const matched = boundedPresetKeys.find((key) => {
+      const bounds = presetBounds[key];
+      return isSameDayRange(startDateIso, bounds.start) && isSameDayRange(endDateIso, bounds.end);
+    });
 
-    if (
-      isSameDayRange(startDateIso, presetBounds.today.start) &&
-      isSameDayRange(endDateIso, presetBounds.today.end)
-    ) {
-      return 'today';
-    }
-
-    if (
-      isSameDayRange(startDateIso, presetBounds.last_7_days.start) &&
-      isSameDayRange(endDateIso, presetBounds.last_7_days.end)
-    ) {
-      return 'last_7_days';
-    }
-
-    if (
-      isSameDayRange(startDateIso, presetBounds.last_30_days.start) &&
-      isSameDayRange(endDateIso, presetBounds.last_30_days.end)
-    ) {
-      return 'last_30_days';
-    }
-
-    if (
-      isSameDayRange(startDateIso, presetBounds.last_90_days.start) &&
-      isSameDayRange(endDateIso, presetBounds.last_90_days.end)
-    ) {
-      return 'last_90_days';
-    }
-
-    return 'custom';
+    return matched ?? 'custom';
   }, [startDateIso, endDateIso, presetBounds]);
 
   const applyPreset = useCallback(

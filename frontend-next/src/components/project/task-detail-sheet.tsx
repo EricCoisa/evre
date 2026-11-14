@@ -80,6 +80,381 @@ export function TaskDetailSheet({
   );
 }
 
+const TASK_STATUS_LIST: ProjectTaskStatus[] = ['WAITING', 'IN_PROGRESS', 'BLOCKED', 'DONE', 'CANCELLED'];
+
+function TaskStatusSelector({
+  canEdit,
+  status,
+  isSaving,
+  onStatusChange,
+}: {
+  canEdit: boolean;
+  status: ProjectTaskStatus;
+  isSaving: boolean;
+  onStatusChange: (status: ProjectTaskStatus) => void;
+}) {
+  const currentStatusConfig = TASK_STATUS_CONFIG[status] ?? TASK_STATUS_CONFIG.WAITING;
+  const StatusIcon = currentStatusConfig.icon;
+
+  if (!canEdit) {
+    return (
+      <Badge
+        variant={currentStatusConfig.variant}
+        className={`h-6 text-xs px-2 gap-1 font-normal ${currentStatusConfig.className}`}
+      >
+        <StatusIcon className="h-3.5 w-3.5" />
+        <span>{currentStatusConfig.label}</span>
+      </Badge>
+    );
+  }
+
+  return (
+    <Select value={status} onValueChange={(val) => onStatusChange(val as ProjectTaskStatus)} disabled={isSaving}>
+      <SelectTrigger className="h-8 text-xs w-40">
+        <div className="flex items-center gap-1.5 truncate">
+          <StatusIcon className="h-3.5 w-3.5 flex-shrink-0" />
+          <span>{currentStatusConfig.label}</span>
+        </div>
+      </SelectTrigger>
+      <SelectContent>
+        {TASK_STATUS_LIST.map((st) => {
+          const conf = TASK_STATUS_CONFIG[st];
+          const Icon = conf.icon;
+          return (
+            <SelectItem key={st} value={st} className="text-xs">
+              <div className="flex items-center gap-2">
+                <Icon className="h-3.5 w-3.5" />
+                <span>{conf.label}</span>
+              </div>
+            </SelectItem>
+          );
+        })}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function TaskTitleSection({
+  canEdit,
+  isEditingTitle,
+  title,
+  taskTitle,
+  isSaving,
+  onTitleChange,
+  onSave,
+  onCancel,
+  onStartEditing,
+}: {
+  canEdit: boolean;
+  isEditingTitle: boolean;
+  title: string;
+  taskTitle: string;
+  isSaving: boolean;
+  onTitleChange: (value: string) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  onStartEditing: () => void;
+}) {
+  if (canEdit && isEditingTitle) {
+    return (
+      <div className="flex items-center gap-2 pt-1">
+        <Input
+          value={title}
+          onChange={(e) => onTitleChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') void onSave();
+            if (e.key === 'Escape') onCancel();
+          }}
+          className="text-base font-semibold h-9"
+          autoFocus
+          disabled={isSaving}
+        />
+        <Button size="sm" className="h-9 px-3" onClick={onSave} disabled={isSaving || !title.trim()}>
+          <Check className="h-4 w-4" />
+        </Button>
+      </div>
+    );
+  }
+  return (
+    <div
+      className={`group flex items-start justify-between gap-2 pt-1 ${
+        canEdit ? 'cursor-pointer hover:bg-muted/40 p-1.5 -ml-1.5 rounded-md transition-colors' : ''
+      }`}
+      onClick={() => canEdit && onStartEditing()}
+    >
+      <SheetTitle className="text-lg font-semibold tracking-tight text-foreground text-left leading-snug">
+        {taskTitle}
+      </SheetTitle>
+      {canEdit && (
+        <Edit3 className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 flex-shrink-0 transition-opacity mt-1" />
+      )}
+    </div>
+  );
+}
+
+function TaskAssigneeRow({
+  canEdit,
+  assigneeId,
+  isSaving,
+  users,
+  currentAssigneeUser,
+  onAssigneeChange,
+}: {
+  canEdit: boolean;
+  assigneeId: string;
+  isSaving: boolean;
+  users: UserDto[];
+  currentAssigneeUser: MilestoneTask['assignee'] | UserDto | undefined;
+  onAssigneeChange: (value: string) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/50 text-xs">
+      <span className="text-muted-foreground font-medium flex items-center gap-1.5">
+        <User className="h-3.5 w-3.5 text-primary" />
+        Responsável:
+      </span>
+
+      <TaskAssigneeValue
+        canEdit={canEdit}
+        assigneeId={assigneeId}
+        isSaving={isSaving}
+        users={users}
+        currentAssigneeUser={currentAssigneeUser}
+        onAssigneeChange={onAssigneeChange}
+      />
+    </div>
+  );
+}
+
+function TaskAssigneeValue({
+  canEdit,
+  assigneeId,
+  isSaving,
+  users,
+  currentAssigneeUser,
+  onAssigneeChange,
+}: {
+  canEdit: boolean;
+  assigneeId: string;
+  isSaving: boolean;
+  users: UserDto[];
+  currentAssigneeUser: MilestoneTask['assignee'] | UserDto | undefined;
+  onAssigneeChange: (value: string) => void;
+}) {
+  if (canEdit) {
+    return (
+      <Select value={assigneeId || '__UNASSIGNED__'} onValueChange={onAssigneeChange} disabled={isSaving}>
+        <SelectTrigger className="h-7 text-xs w-52 bg-background">
+          <SelectValue placeholder="Selecione o responsável..." />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__UNASSIGNED__" className="text-xs text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <UserX className="h-3.5 w-3.5" />
+              <span>Sem responsável</span>
+            </div>
+          </SelectItem>
+          {users.map((u) => (
+            <SelectItem key={u.id} value={u.id} className="text-xs">
+              <div className="flex items-center gap-2">
+                <UserAvatar name={u.name} email={u.email} imageUrl={u.imageUrl} className="h-4 w-4 text-[9px]" />
+                <span className="truncate">{u.name || u.email}</span>
+              </div>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
+  }
+  if (currentAssigneeUser) {
+    return (
+      <div className="flex items-center gap-1.5 bg-background px-2 py-1 rounded border shadow-xs">
+        <UserAvatar
+          name={currentAssigneeUser.name}
+          email={currentAssigneeUser.email}
+          imageUrl={currentAssigneeUser.imageUrl}
+          className="h-4 w-4 text-[9px]"
+        />
+        <span className="font-medium text-foreground">
+          {currentAssigneeUser.name || currentAssigneeUser.email}
+        </span>
+      </div>
+    );
+  }
+  return <span className="text-muted-foreground italic">Sem responsável</span>;
+}
+
+function TaskBlockedBanner({
+  status,
+  blockedReason,
+  canEdit,
+  onEditReason,
+}: {
+  status: ProjectTaskStatus;
+  blockedReason: string;
+  canEdit: boolean;
+  onEditReason: () => void;
+}) {
+  if (status !== 'BLOCKED') return null;
+  return (
+    <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3.5 space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-semibold text-rose-700 dark:text-rose-300 flex items-center gap-1.5">
+          <AlertTriangle className="h-4 w-4" />
+          Tarefa Bloqueada
+        </span>
+        {canEdit && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 text-xs text-rose-700 dark:text-rose-300 hover:bg-rose-500/20 px-2"
+            onClick={onEditReason}
+          >
+            <Edit3 className="mr-1 h-3 w-3" />
+            Alterar Motivo
+          </Button>
+        )}
+      </div>
+      <p className="text-xs text-foreground/90 whitespace-pre-wrap leading-relaxed">
+        {blockedReason || 'Nenhum motivo detalhado foi fornecido.'}
+      </p>
+    </div>
+  );
+}
+
+function TaskDescriptionSection({
+  canEdit,
+  isEditingDesc,
+  description,
+  taskDescription,
+  isSaving,
+  onDescriptionChange,
+  onStartEditing,
+  onCancel,
+  onSave,
+}: {
+  canEdit: boolean;
+  isEditingDesc: boolean;
+  description: string;
+  taskDescription?: string | null;
+  isSaving: boolean;
+  onDescriptionChange: (value: string) => void;
+  onStartEditing: () => void;
+  onCancel: () => void;
+  onSave: () => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+          <AlignLeft className="h-3.5 w-3.5" />
+          <span>Descrição</span>
+        </div>
+        {canEdit && !isEditingDesc && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 text-xs text-muted-foreground hover:text-foreground"
+            onClick={onStartEditing}
+          >
+            <Edit3 className="mr-1 h-3 w-3" />
+            Editar
+          </Button>
+        )}
+      </div>
+
+      {canEdit && isEditingDesc ? (
+        <div className="space-y-2">
+          <RichTextInput
+            ariaLabel="Descrição da tarefa"
+            value={description}
+            onChange={onDescriptionChange}
+            placeholder="Escreva detalhes adicionais, links, notas ou critérios para esta tarefa..."
+            className="min-h-28 text-xs"
+            formatLabels={RICH_TEXT_FORMAT_LABELS}
+          />
+          <div className="flex items-center justify-end gap-2 pt-1">
+            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={onCancel} disabled={isSaving}>
+              Cancelar
+            </Button>
+            <Button size="sm" className="h-7 text-xs" onClick={onSave} disabled={isSaving}>
+              Salvar
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <RichTextViewer content={taskDescription} fallbackText="Nenhuma descrição informada para esta tarefa." />
+      )}
+    </div>
+  );
+}
+
+function BlockedReasonDialog({
+  open,
+  onOpenChange,
+  taskTitle,
+  tempBlockedReason,
+  onTempBlockedReasonChange,
+  isSaving,
+  onConfirm,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  taskTitle: string;
+  tempBlockedReason: string;
+  onTempBlockedReasonChange: (value: string) => void;
+  isSaving: boolean;
+  onConfirm: () => void;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-base font-semibold flex items-center gap-2 text-rose-700 dark:text-rose-300">
+            <AlertTriangle className="h-4 w-4" />
+            Motivo do Bloqueio
+          </DialogTitle>
+          <DialogDescription className="text-xs">
+            Informe o que está bloqueando o andamento da tarefa <strong>{taskTitle}</strong>:
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="py-2 space-y-2">
+          <Textarea
+            value={tempBlockedReason}
+            onChange={(e) => onTempBlockedReasonChange(e.target.value)}
+            placeholder="Ex: Aguardando definição de escopo do cliente, erro no ambiente externo de homologação..."
+            className="text-xs min-h-24 resize-none"
+            autoFocus
+          />
+        </div>
+
+        <DialogFooter className="flex items-center justify-between sm:justify-between gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-xs"
+            onClick={() => onOpenChange(false)}
+            disabled={isSaving}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            className="text-xs bg-rose-600 hover:bg-rose-700 text-white"
+            onClick={onConfirm}
+            disabled={isSaving || !tempBlockedReason.trim()}
+          >
+            Confirmar Bloqueio
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function TaskDetailSheetContent({
   projectId,
   task,
@@ -228,17 +603,6 @@ function TaskDetailSheetContent({
     }
   };
 
-  const statusList: ProjectTaskStatus[] = [
-    'WAITING',
-    'IN_PROGRESS',
-    'BLOCKED',
-    'DONE',
-    'CANCELLED',
-  ];
-
-  const currentStatusConfig = TASK_STATUS_CONFIG[status] ?? TASK_STATUS_CONFIG.WAITING;
-  const StatusIcon = currentStatusConfig.icon;
-
   const currentAssigneeUser = users.find((u) => u.id === assigneeId) ?? task.assignee;
 
   return (
@@ -276,141 +640,40 @@ function TaskDetailSheetContent({
               </Button>
 
               {/* Seletor de Status */}
-              {canEdit ? (
-                <Select
-                  value={status}
-                  onValueChange={(val) => handleStatusChange(val as ProjectTaskStatus)}
-                  disabled={isSaving}
-                >
-                  <SelectTrigger className="h-8 text-xs w-40">
-                    <div className="flex items-center gap-1.5 truncate">
-                      <StatusIcon className="h-3.5 w-3.5 flex-shrink-0" />
-                      <span>{currentStatusConfig.label}</span>
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusList.map((st) => {
-                      const conf = TASK_STATUS_CONFIG[st];
-                      const Icon = conf.icon;
-                      return (
-                        <SelectItem key={st} value={st} className="text-xs">
-                          <div className="flex items-center gap-2">
-                            <Icon className="h-3.5 w-3.5" />
-                            <span>{conf.label}</span>
-                          </div>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Badge
-                  variant={currentStatusConfig.variant}
-                  className={`h-6 text-xs px-2 gap-1 font-normal ${currentStatusConfig.className}`}
-                >
-                  <StatusIcon className="h-3.5 w-3.5" />
-                  <span>{currentStatusConfig.label}</span>
-                </Badge>
-              )}
+              <TaskStatusSelector
+                canEdit={canEdit}
+                status={status}
+                isSaving={isSaving}
+                onStatusChange={handleStatusChange}
+              />
             </div>
           </div>
 
           {/* Título com edição inline */}
-          {canEdit && isEditingTitle ? (
-            <div className="flex items-center gap-2 pt-1">
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') void handleSaveTitle();
-                  if (e.key === 'Escape') {
-                    setTitle(task.title);
-                    setIsEditingTitle(false);
-                  }
-                }}
-                className="text-base font-semibold h-9"
-                autoFocus
-                disabled={isSaving}
-              />
-              <Button
-                size="sm"
-                className="h-9 px-3"
-                onClick={handleSaveTitle}
-                disabled={isSaving || !title.trim()}
-              >
-                <Check className="h-4 w-4" />
-              </Button>
-            </div>
-          ) : (
-            <div
-              className={`group flex items-start justify-between gap-2 pt-1 ${
-                canEdit ? 'cursor-pointer hover:bg-muted/40 p-1.5 -ml-1.5 rounded-md transition-colors' : ''
-              }`}
-              onClick={() => canEdit && setIsEditingTitle(true)}
-            >
-              <SheetTitle className="text-lg font-semibold tracking-tight text-foreground text-left leading-snug">
-                {task.title}
-              </SheetTitle>
-              {canEdit && (
-                <Edit3 className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 flex-shrink-0 transition-opacity mt-1" />
-              )}
-            </div>
-          )}
+          <TaskTitleSection
+            canEdit={canEdit}
+            isEditingTitle={isEditingTitle}
+            title={title}
+            taskTitle={task.title}
+            isSaving={isSaving}
+            onTitleChange={setTitle}
+            onSave={handleSaveTitle}
+            onCancel={() => {
+              setTitle(task.title);
+              setIsEditingTitle(false);
+            }}
+            onStartEditing={() => setIsEditingTitle(true)}
+          />
 
           {/* Linha do Responsável */}
-          <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/50 text-xs">
-            <span className="text-muted-foreground font-medium flex items-center gap-1.5">
-              <User className="h-3.5 w-3.5 text-primary" />
-              Responsável:
-            </span>
-
-            {canEdit ? (
-              <Select
-                value={assigneeId || '__UNASSIGNED__'}
-                onValueChange={handleAssigneeChange}
-                disabled={isSaving}
-              >
-                <SelectTrigger className="h-7 text-xs w-52 bg-background">
-                  <SelectValue placeholder="Selecione o responsável..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__UNASSIGNED__" className="text-xs text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <UserX className="h-3.5 w-3.5" />
-                      <span>Sem responsável</span>
-                    </div>
-                  </SelectItem>
-                  {users.map((u) => (
-                    <SelectItem key={u.id} value={u.id} className="text-xs">
-                      <div className="flex items-center gap-2">
-                        <UserAvatar
-                          name={u.name}
-                          email={u.email}
-                          imageUrl={u.imageUrl}
-                          className="h-4 w-4 text-[9px]"
-                        />
-                        <span className="truncate">{u.name || u.email}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : currentAssigneeUser ? (
-              <div className="flex items-center gap-1.5 bg-background px-2 py-1 rounded border shadow-xs">
-                <UserAvatar
-                  name={currentAssigneeUser.name}
-                  email={currentAssigneeUser.email}
-                  imageUrl={currentAssigneeUser.imageUrl}
-                  className="h-4 w-4 text-[9px]"
-                />
-                <span className="font-medium text-foreground">
-                  {currentAssigneeUser.name || currentAssigneeUser.email}
-                </span>
-              </div>
-            ) : (
-              <span className="text-muted-foreground italic">Sem responsável</span>
-            )}
-          </div>
+          <TaskAssigneeRow
+            canEdit={canEdit}
+            assigneeId={assigneeId}
+            isSaving={isSaving}
+            users={users}
+            currentAssigneeUser={currentAssigneeUser}
+            onAssigneeChange={handleAssigneeChange}
+          />
 
           <SheetDescription className="sr-only">
             Detalhes e comentários da tarefa {task.title}
@@ -420,94 +683,31 @@ function TaskDetailSheetContent({
         {/* Corpo com scroll */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Alerta de Tarefa Bloqueada */}
-          {status === 'BLOCKED' && (
-            <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3.5 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-rose-700 dark:text-rose-300 flex items-center gap-1.5">
-                  <AlertTriangle className="h-4 w-4" />
-                  Tarefa Bloqueada
-                </span>
-                {canEdit && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 text-xs text-rose-700 dark:text-rose-300 hover:bg-rose-500/20 px-2"
-                    onClick={() => {
-                      setTempBlockedReason(blockedReason);
-                      setIsBlockedReasonModalOpen(true);
-                    }}
-                  >
-                    <Edit3 className="mr-1 h-3 w-3" />
-                    Alterar Motivo
-                  </Button>
-                )}
-              </div>
-              <p className="text-xs text-foreground/90 whitespace-pre-wrap leading-relaxed">
-                {blockedReason || 'Nenhum motivo detalhado foi fornecido.'}
-              </p>
-            </div>
-          )}
+          <TaskBlockedBanner
+            status={status}
+            blockedReason={blockedReason}
+            canEdit={canEdit}
+            onEditReason={() => {
+              setTempBlockedReason(blockedReason);
+              setIsBlockedReasonModalOpen(true);
+            }}
+          />
 
           {/* Seção Descrição Rica */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-                <AlignLeft className="h-3.5 w-3.5" />
-                <span>Descrição</span>
-              </div>
-              {canEdit && !isEditingDesc && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 text-xs text-muted-foreground hover:text-foreground"
-                  onClick={() => setIsEditingDesc(true)}
-                >
-                  <Edit3 className="mr-1 h-3 w-3" />
-                  Editar
-                </Button>
-              )}
-            </div>
-
-            {canEdit && isEditingDesc ? (
-              <div className="space-y-2">
-                <RichTextInput
-                  ariaLabel="Descrição da tarefa"
-                  value={description}
-                  onChange={setDescription}
-                  placeholder="Escreva detalhes adicionais, links, notas ou critérios para esta tarefa..."
-                  className="min-h-28 text-xs"
-                  formatLabels={RICH_TEXT_FORMAT_LABELS}
-                />
-                <div className="flex items-center justify-end gap-2 pt-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs"
-                    onClick={() => {
-                      setDescription(task.description ?? '');
-                      setIsEditingDesc(false);
-                    }}
-                    disabled={isSaving}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="h-7 text-xs"
-                    onClick={handleSaveDescription}
-                    disabled={isSaving}
-                  >
-                    Salvar
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <RichTextViewer
-                content={task.description}
-                fallbackText="Nenhuma descrição informada para esta tarefa."
-              />
-            )}
-          </div>
+          <TaskDescriptionSection
+            canEdit={canEdit}
+            isEditingDesc={isEditingDesc}
+            description={description}
+            taskDescription={task.description}
+            isSaving={isSaving}
+            onDescriptionChange={setDescription}
+            onStartEditing={() => setIsEditingDesc(true)}
+            onCancel={() => {
+              setDescription(task.description ?? '');
+              setIsEditingDesc(false);
+            }}
+            onSave={handleSaveDescription}
+          />
 
           <Separator />
 
@@ -523,51 +723,15 @@ function TaskDetailSheetContent({
       </SheetContent>
 
       {/* Modal para Informar/Editar o Motivo do Bloqueio */}
-      <Dialog open={isBlockedReasonModalOpen} onOpenChange={setIsBlockedReasonModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-base font-semibold flex items-center gap-2 text-rose-700 dark:text-rose-300">
-              <AlertTriangle className="h-4 w-4" />
-              Motivo do Bloqueio
-            </DialogTitle>
-            <DialogDescription className="text-xs">
-              Informe o que está bloqueando o andamento da tarefa <strong>{task.title}</strong>:
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="py-2 space-y-2">
-            <Textarea
-              value={tempBlockedReason}
-              onChange={(e) => setTempBlockedReason(e.target.value)}
-              placeholder="Ex: Aguardando definição de escopo do cliente, erro no ambiente externo de homologação..."
-              className="text-xs min-h-24 resize-none"
-              autoFocus
-            />
-          </div>
-
-          <DialogFooter className="flex items-center justify-between sm:justify-between gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="text-xs"
-              onClick={() => setIsBlockedReasonModalOpen(false)}
-              disabled={isSaving}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              className="text-xs bg-rose-600 hover:bg-rose-700 text-white"
-              onClick={handleConfirmBlockedReason}
-              disabled={isSaving || !tempBlockedReason.trim()}
-            >
-              Confirmar Bloqueio
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <BlockedReasonDialog
+        open={isBlockedReasonModalOpen}
+        onOpenChange={setIsBlockedReasonModalOpen}
+        taskTitle={task.title}
+        tempBlockedReason={tempBlockedReason}
+        onTempBlockedReasonChange={setTempBlockedReason}
+        isSaving={isSaving}
+        onConfirm={handleConfirmBlockedReason}
+      />
     </>
   );
 }

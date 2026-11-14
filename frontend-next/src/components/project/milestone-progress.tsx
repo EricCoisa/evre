@@ -97,53 +97,71 @@ export const TASK_STATUS_CONFIG: Record<
   },
 };
 
-interface MilestoneProgressBarProps {
-  tasks: MilestoneTask[];
-  compact?: boolean;
+function getProgressIndicatorClass(stats: MilestoneProgressStats): string {
+  if (stats.percentage === 100) return 'bg-emerald-500';
+  if (stats.blockedCount > 0) return 'bg-amber-500';
+  return 'bg-primary';
 }
 
-export function MilestoneProgressBar({ tasks, compact = false }: MilestoneProgressBarProps) {
-  const stats = calculateMilestoneProgress(tasks);
-
-  if (compact) {
-    return (
-      <div className="space-y-1.5 w-full">
-        <div className="flex items-center justify-between text-[11px]">
-          <span className="text-muted-foreground font-medium">
-            Progresso da Etapa
-          </span>
-          <div className="flex items-center gap-1.5 font-semibold">
-            {stats.blockedCount > 0 && (
-              <span className="text-[10px] text-rose-600 dark:text-rose-400 font-normal">
-                ({stats.blockedCount} bloqueada{stats.blockedCount > 1 ? 's' : ''})
-              </span>
-            )}
-            <span
-              className={
-                stats.percentage === 100
-                  ? 'text-emerald-600 dark:text-emerald-400'
-                  : 'text-foreground'
-              }
-            >
-              {stats.percentage}%
+function CompactProgressBar({ stats }: { stats: MilestoneProgressStats }) {
+  return (
+    <div className="space-y-1.5 w-full">
+      <div className="flex items-center justify-between text-[11px]">
+        <span className="text-muted-foreground font-medium">Progresso da Etapa</span>
+        <div className="flex items-center gap-1.5 font-semibold">
+          {stats.blockedCount > 0 && (
+            <span className="text-[10px] text-rose-600 dark:text-rose-400 font-normal">
+              ({stats.blockedCount} bloqueada{stats.blockedCount > 1 ? 's' : ''})
             </span>
-          </div>
+          )}
+          <span
+            className={
+              stats.percentage === 100 ? 'text-emerald-600 dark:text-emerald-400' : 'text-foreground'
+            }
+          >
+            {stats.percentage}%
+          </span>
         </div>
-        <Progress
-          value={stats.percentage}
-          className="h-1.5 bg-muted/60"
-          indicatorClassName={
-            stats.percentage === 100
-              ? 'bg-emerald-500'
-              : stats.blockedCount > 0
-              ? 'bg-amber-500'
-              : 'bg-primary'
-          }
-        />
       </div>
-    );
-  }
+      <Progress
+        value={stats.percentage}
+        className="h-1.5 bg-muted/60"
+        indicatorClassName={getProgressIndicatorClass(stats)}
+      />
+    </div>
+  );
+}
 
+function ProgressBreakdown({ stats }: { stats: MilestoneProgressStats }) {
+  return (
+    <div className="flex items-center gap-2 pt-0.5 text-[10px] text-muted-foreground flex-wrap">
+      {stats.doneCount > 0 && (
+        <span className="text-emerald-700 dark:text-emerald-300 font-medium">
+          {stats.doneCount} concluída{stats.doneCount > 1 ? 's' : ''}
+        </span>
+      )}
+      {stats.inProgressCount > 0 && (
+        <span className="text-blue-700 dark:text-blue-300 font-medium">
+          {stats.inProgressCount} em progresso
+        </span>
+      )}
+      {stats.waitingCount > 0 && <span>{stats.waitingCount} aguardando</span>}
+      {stats.blockedCount > 0 && (
+        <Badge variant="destructive" className="h-4 text-[9px] px-1.5 py-0 gap-1">
+          <AlertTriangle className="h-2.5 w-2.5" />
+          {stats.blockedCount} bloqueada{stats.blockedCount > 1 ? 's' : ''}
+        </Badge>
+      )}
+      {stats.cancelledCount > 0 && (
+        <span className="line-through text-muted-foreground/60">
+          {stats.cancelledCount} cancelada{stats.cancelledCount > 1 ? 's' : ''}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function DetailedProgressBar({ stats }: { stats: MilestoneProgressStats }) {
   return (
     <div className="p-3 rounded-lg border bg-card/60 space-y-2">
       <div className="flex items-center justify-between text-xs">
@@ -164,44 +182,23 @@ export function MilestoneProgressBar({ tasks, compact = false }: MilestoneProgre
       <Progress
         value={stats.percentage}
         className="h-2"
-        indicatorClassName={
-          stats.percentage === 100
-            ? 'bg-emerald-500'
-            : stats.blockedCount > 0
-            ? 'bg-amber-500'
-            : 'bg-primary'
-        }
+        indicatorClassName={getProgressIndicatorClass(stats)}
       />
 
-      <div className="flex items-center gap-2 pt-0.5 text-[10px] text-muted-foreground flex-wrap">
-        {stats.doneCount > 0 && (
-          <span className="text-emerald-700 dark:text-emerald-300 font-medium">
-            {stats.doneCount} concluída{stats.doneCount > 1 ? 's' : ''}
-          </span>
-        )}
-        {stats.inProgressCount > 0 && (
-          <span className="text-blue-700 dark:text-blue-300 font-medium">
-            {stats.inProgressCount} em progresso
-          </span>
-        )}
-        {stats.waitingCount > 0 && (
-          <span>
-            {stats.waitingCount} aguardando
-          </span>
-        )}
-        {stats.blockedCount > 0 && (
-          <Badge variant="destructive" className="h-4 text-[9px] px-1.5 py-0 gap-1">
-            <AlertTriangle className="h-2.5 w-2.5" />
-            {stats.blockedCount} bloqueada{stats.blockedCount > 1 ? 's' : ''}
-          </Badge>
-        )}
-        {stats.cancelledCount > 0 && (
-          <span className="line-through text-muted-foreground/60">
-            {stats.cancelledCount} cancelada{stats.cancelledCount > 1 ? 's' : ''}
-          </span>
-        )}
-      </div>
+      <ProgressBreakdown stats={stats} />
     </div>
   );
+}
+
+interface MilestoneProgressBarProps {
+  tasks: MilestoneTask[];
+  compact?: boolean;
+}
+
+export function MilestoneProgressBar({ tasks, compact = false }: MilestoneProgressBarProps) {
+  const stats = calculateMilestoneProgress(tasks);
+
+  if (compact) return <CompactProgressBar stats={stats} />;
+  return <DetailedProgressBar stats={stats} />;
 }
 
