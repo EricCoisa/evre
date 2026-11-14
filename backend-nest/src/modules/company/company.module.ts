@@ -29,6 +29,12 @@ import { ListCompanyContactsTool } from './ai-tools/list-company-contacts.tool';
 import { CreateCompanyContactTool } from './ai-tools/create-company-contact.tool';
 import { UpdateCompanyContactTool } from './ai-tools/update-company-contact.tool';
 import { ArchiveCompanyContactTool } from './ai-tools/archive-company-contact.tool';
+import { ListCompanyMembersTool } from './ai-tools/list-company-members.tool';
+import { AddCompanyMemberTool } from './ai-tools/add-company-member.tool';
+import { InviteCompanyMemberTool } from './ai-tools/invite-company-member.tool';
+import { UpdateCompanyMemberTool } from './ai-tools/update-company-member.tool';
+import { RemoveCompanyMemberTool } from './ai-tools/remove-company-member.tool';
+import { ListCompanyInvitesTool } from './ai-tools/list-company-invites.tool';
 
 const USE_CASES = [
   FindAllCompanyUseCase,
@@ -58,6 +64,12 @@ const AI_TOOLS = [
   CreateCompanyContactTool,
   UpdateCompanyContactTool,
   ArchiveCompanyContactTool,
+  ListCompanyMembersTool,
+  AddCompanyMemberTool,
+  InviteCompanyMemberTool,
+  UpdateCompanyMemberTool,
+  RemoveCompanyMemberTool,
+  ListCompanyInvitesTool,
 ];
 
 @Module({

@@ -19,7 +19,7 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        'pb-2.5 sm:pb-3 border-b border-border/60',
+        'pb-2.5 sm:pb-3 mb-2 sm:mb-4 border-b border-border/60',
         className
       )}
     >

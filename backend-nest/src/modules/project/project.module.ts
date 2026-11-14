@@ -31,6 +31,31 @@ import { CancelInfoRequestUseCase } from './use-cases/cancel-info-request.use-ca
 import { ListInfoRequestsUseCase } from './use-cases/list-info-requests.use-case';
 import { GetInfoRequestValueUseCase } from './use-cases/get-info-request-value.use-case';
 import { ProjectRouteCeiling } from './project.route-ceiling';
+import { CreateProjectTool } from './ai-tools/create-project.tool';
+import { ListProjectsTool } from './ai-tools/list-projects.tool';
+import { GetProjectTool } from './ai-tools/get-project.tool';
+import { UpdateProjectTool } from './ai-tools/update-project.tool';
+import { RemoveProjectTool } from './ai-tools/remove-project.tool';
+import { GetProjectBoardTool } from './ai-tools/get-project-board.tool';
+import { CreateMilestoneTool } from './ai-tools/create-milestone.tool';
+import { UpdateMilestoneTool } from './ai-tools/update-milestone.tool';
+import { RemoveMilestoneTool } from './ai-tools/remove-milestone.tool';
+import { ReorderMilestonesTool } from './ai-tools/reorder-milestones.tool';
+import { CreateTaskTool } from './ai-tools/create-task.tool';
+import { UpdateTaskTool } from './ai-tools/update-task.tool';
+import { RemoveTaskTool } from './ai-tools/remove-task.tool';
+import { MoveTaskTool } from './ai-tools/move-task.tool';
+import { ReorderTasksTool } from './ai-tools/reorder-tasks.tool';
+import { CreateProjectCommentTool } from './ai-tools/create-project-comment.tool';
+import { ListProjectCommentsTool } from './ai-tools/list-project-comments.tool';
+import { RemoveProjectCommentTool } from './ai-tools/remove-project-comment.tool';
+import { RequestMilestoneApprovalTool } from './ai-tools/request-milestone-approval.tool';
+import { RespondMilestoneApprovalTool } from './ai-tools/respond-milestone-approval.tool';
+import { CancelMilestoneApprovalTool } from './ai-tools/cancel-milestone-approval.tool';
+import { ListMilestoneApprovalsTool } from './ai-tools/list-milestone-approvals.tool';
+import { CreateInfoRequestTool } from './ai-tools/create-info-request.tool';
+import { CancelInfoRequestTool } from './ai-tools/cancel-info-request.tool';
+import { ListInfoRequestsTool } from './ai-tools/list-info-requests.tool';
 
 const USE_CASES = [
   FindAllProjectUseCase,
@@ -62,10 +87,38 @@ const USE_CASES = [
   GetInfoRequestValueUseCase,
 ];
 
+const AI_TOOLS = [
+  CreateProjectTool,
+  ListProjectsTool,
+  GetProjectTool,
+  UpdateProjectTool,
+  RemoveProjectTool,
+  GetProjectBoardTool,
+  CreateMilestoneTool,
+  UpdateMilestoneTool,
+  RemoveMilestoneTool,
+  ReorderMilestonesTool,
+  CreateTaskTool,
+  UpdateTaskTool,
+  RemoveTaskTool,
+  MoveTaskTool,
+  ReorderTasksTool,
+  CreateProjectCommentTool,
+  ListProjectCommentsTool,
+  RemoveProjectCommentTool,
+  RequestMilestoneApprovalTool,
+  RespondMilestoneApprovalTool,
+  CancelMilestoneApprovalTool,
+  ListMilestoneApprovalsTool,
+  CreateInfoRequestTool,
+  CancelInfoRequestTool,
+  ListInfoRequestsTool,
+];
+
 @Module({
   imports: [PrismaModule, LoggingModule, CryptoModule],
   controllers: [ProjectController],
-  providers: [...USE_CASES, ProjectRouteCeiling],
+  providers: [...USE_CASES, ...AI_TOOLS, ProjectRouteCeiling],
   exports: [FindOneProjectUseCase],
 })
 export class ProjectModule {}

@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { AiToolDef } from 'src/domain/ai/ai-tool.decorator';
+import { McpScopes } from 'src/domain/api-key/mcp-scopes.const';
+import { InvalidationTags } from 'src/domain/ai/invalidation-tags.const';
 import type {
   IAiTool,
   AiToolDefinition,
@@ -47,6 +49,8 @@ export class StartTimerTool implements IAiTool {
       'Inicia ou troca o cronômetro de trabalho para o usuário logado (estilo Clockify). Se houver timer rodando, finaliza o anterior automaticamente.',
     inputSchema: StartTimerInputSchema,
     roles: ['ADMIN', 'MODERATOR'],
+    approvalScope: McpScopes.TIME_TRACKING_WRITE,
+    invalidates: [InvalidationTags.TIME_TRACKING],
   };
 
   constructor(private readonly startTimer: StartTimerUseCase) {}

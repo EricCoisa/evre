@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { AiToolDef } from 'src/domain/ai/ai-tool.decorator';
+import { McpScopes } from 'src/domain/api-key/mcp-scopes.const';
+import { InvalidationTags } from 'src/domain/ai/invalidation-tags.const';
 import type {
   IAiTool,
   AiToolDefinition,
@@ -19,6 +21,8 @@ export class StopTimerTool implements IAiTool {
       'Finaliza o cronômetro atualmente em execução para o usuário logado e registra o tempo total trabalhado.',
     inputSchema: StopTimerInputSchema,
     roles: ['ADMIN', 'MODERATOR'],
+    approvalScope: McpScopes.TIME_TRACKING_WRITE,
+    invalidates: [InvalidationTags.TIME_TRACKING],
   };
 
   constructor(private readonly stopTimer: StopTimerUseCase) {}

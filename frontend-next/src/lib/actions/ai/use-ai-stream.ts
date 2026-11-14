@@ -29,6 +29,8 @@ const INVALIDATION_TAG_QUERY_KEYS: Record<string, string[]> = {
   company: ['companies', 'company'],
   proposal: ['proposals', 'proposal'],
   artifact: ['artifacts'],
+  'time-tracking': ['time-tracking'],
+  project: ['projects', 'project'],
 };
 
 interface AiStreamEvent {

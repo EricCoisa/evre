@@ -231,7 +231,7 @@ export function SubNavLayout({
   }, [tab]);
 
   return (
-    <Tabs value={tab} onValueChange={setTab} className={cn('w-full min-w-0 max-w-full', className)}>
+    <Tabs value={tab} onValueChange={setTab} className={cn('w-full min-w-0 max-w-full pt-0 sm:pt-0', className)}>
       <div className="flex flex-col md:flex-row gap-2 md:gap-4 lg:gap-6 items-start w-full">
         <SubNavMobileDrawer sections={sections} activeTab={tab} onTabChange={setTab} />
         {!sidebarHidden && (

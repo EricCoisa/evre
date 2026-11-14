@@ -21,6 +21,8 @@ export const InvalidationTags = {
   COMPANY: 'company',
   PROPOSAL: 'proposal',
   ARTIFACT: 'artifact',
+  TIME_TRACKING: 'time-tracking',
+  PROJECT: 'project',
 } as const;
 export type InvalidationTag =
   (typeof InvalidationTags)[keyof typeof InvalidationTags];

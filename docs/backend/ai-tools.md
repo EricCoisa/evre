@@ -54,6 +54,7 @@ Nem todo endpoint REST deve ganhar uma tool. Categorias que ficam de fora por pa
   tool em `modules/ai/`" aplicado a outra peça de infraestrutura.
 - **Deleção de usuário** (`remove_user`, `delete_my_account`): exclusão explícita de escopo — a IA nunca deleta um usuário.
 - **Endpoint com bug de autorização conhecido**: se o REST não tem o guard de role correto, não replique o bug numa tool — corrija o REST primeiro.
+- **Valor criptografado em repouso** (`project/`: `answer_info_request`, `get_info_request_value`): `ProjectInfoRequest.encryptedValue` existe justamente para guardar uma resposta potencialmente sensível do cliente (`CryptoService.encryptString`/`decryptString`) — mesmo princípio de "leitura de configuração nunca devolve segredo" (ver acima), aplicado a um campo de negócio em vez de uma config de sistema. `create_info_request`, `cancel_info_request` e `list_info_requests` ficam de fora dessa exclusão: nenhum deles grava ou lê o valor, só o metadado (label/status).
 
 ### Configuração de provider: tool típada, nunca a genérica
 
@@ -304,6 +305,11 @@ export const McpScopes = {
   MESSAGING_READ:                         'messaging:read',
   MESSAGING_WRITE:                        'messaging:write',
   NOTIFICATION_WRITE:                     'notification:write',
+  COMPANY_WRITE:                          'company:write',
+  PROPOSAL_WRITE:                         'proposal:write',
+  ARTIFACT_WRITE:                         'artifact:write',
+  TIME_TRACKING_WRITE:                    'time-tracking:write',
+  PROJECT_WRITE:                          'project:write',
 } as const;
 ```
 
@@ -496,6 +502,74 @@ cms/services/cms-agent-bridge.service.ts
 | `mark_all_notifications_read` | `notification/` | qualquer autenticado***** | **sim** (bulk) | `notification:write` |
 | `dismiss_notification` | `notification/` | qualquer autenticado***** | **sim** | `notification:write` |
 | `send_broadcast_notification` | `notification/` | ADMIN***** | **sim** | `notification:write` |
+| `list_companies` | `company/` | ADMIN | não | — |
+| `get_company` | `company/` | ADMIN | não | — |
+| `create_company` | `company/` | ADMIN | **sim** | `company:write` |
+| `update_company` | `company/` | ADMIN | **sim** | `company:write` |
+| `remove_company` | `company/` | ADMIN | **sim** | `company:write` |
+| `list_company_contacts` | `company/` | ADMIN | não | — |
+| `create_company_contact` | `company/` | ADMIN | **sim** | `company:write` |
+| `update_company_contact` | `company/` | ADMIN | **sim** | `company:write` |
+| `archive_company_contact` | `company/` | ADMIN | **sim** | `company:write` |
+| `list_company_members` | `company/` | ADMIN, MODERATOR | não | — |
+| `add_company_member` | `company/` | ADMIN | **sim** | `company:write` |
+| `invite_company_member` | `company/` | ADMIN | **sim** | `company:write` |
+| `update_company_member` | `company/` | ADMIN | **sim** | `company:write` |
+| `remove_company_member` | `company/` | ADMIN | **sim** | `company:write` |
+| `list_company_invites` | `company/` | ADMIN, MODERATOR | não | — |
+| `list_proposals` | `proposal/` | ADMIN | não | — |
+| `get_proposal` | `proposal/` | ADMIN | não | — |
+| `create_proposal` | `proposal/` | ADMIN | **sim** | `proposal:write` |
+| `update_proposal` | `proposal/` | ADMIN | **sim** | `proposal:write` |
+| `remove_proposal` | `proposal/` | ADMIN | **sim** | `proposal:write` |
+| `duplicate_proposal` | `proposal/` | ADMIN | **sim** | `proposal:write` |
+| `update_proposal_layout` | `proposal/` | ADMIN | **sim** | `proposal:write` |
+| `update_proposal_terms` | `proposal/` | ADMIN | **sim** | `proposal:write` |
+| `update_proposal_status` | `proposal/` | ADMIN | **sim** | `proposal:write` |
+| `publish_proposal` | `proposal/` | ADMIN | **sim** | `proposal:write` |
+| `reopen_proposal` | `proposal/` | ADMIN | **sim** | `proposal:write` |
+| `revoke_proposal_publication` | `proposal/` | ADMIN | **sim** | `proposal:write` |
+| `list_proposal_versions` | `proposal/` | ADMIN | não | — |
+| `accept_proposal_offline` | `proposal/` | ADMIN | **sim** | `proposal:write` |
+| `send_proposal` | `proposal/` | ADMIN | **sim** | `proposal:write` |
+| `list_proposal_sends` | `proposal/` | ADMIN | não | — |
+| `list_artifacts` | `artifact/` | ADMIN, MODERATOR | não | — |
+| `archive_artifact` | `artifact/` | ADMIN, MODERATOR | **sim** | `artifact:write` |
+| `delete_artifact` | `artifact/` | ADMIN | **sim** | `artifact:write` |
+| `update_artifact` | `artifact/` | ADMIN, MODERATOR | **sim** | `artifact:write` |
+| `publish_artifact` | `artifact/` | ADMIN, MODERATOR | **sim** | `artifact:write` |
+| `start_timer` | `time-tracking/` | ADMIN, MODERATOR | **sim** | `time-tracking:write` |
+| `stop_timer` | `time-tracking/` | ADMIN, MODERATOR | **sim** | `time-tracking:write` |
+| `get_active_timer` | `time-tracking/` | ADMIN, MODERATOR | não | — |
+| `list_time_entries` | `time-tracking/` | ADMIN, MODERATOR | não | — |
+| `create_manual_time_entry` | `time-tracking/` | ADMIN, MODERATOR | **sim** | `time-tracking:write` |
+| `update_time_entry` | `time-tracking/` | ADMIN, MODERATOR | **sim** | `time-tracking:write` |
+| `delete_time_entry` | `time-tracking/` | ADMIN, MODERATOR | **sim** | `time-tracking:write` |
+| `create_project` | `project/` | ADMIN | **sim** | `project:write` |
+| `list_projects` | `project/` | qualquer autenticado | não | — |
+| `get_project` | `project/` | qualquer autenticado | não | — |
+| `update_project` | `project/` | ADMIN | **sim** | `project:write` |
+| `remove_project` | `project/` | ADMIN | **sim** | `project:write` |
+| `get_project_board` | `project/` | qualquer autenticado | não | — |
+| `create_milestone` | `project/` | ADMIN, MODERATOR | **sim** | `project:write` |
+| `update_milestone` | `project/` | ADMIN, MODERATOR | **sim** | `project:write` |
+| `remove_milestone` | `project/` | ADMIN, MODERATOR | **sim** | `project:write` |
+| `reorder_milestones` | `project/` | ADMIN, MODERATOR | **sim** (bulk) | `project:write` |
+| `create_task` | `project/` | ADMIN, MODERATOR | **sim** | `project:write` |
+| `update_task` | `project/` | ADMIN, MODERATOR | **sim** | `project:write` |
+| `remove_task` | `project/` | ADMIN, MODERATOR | **sim** | `project:write` |
+| `move_task` | `project/` | ADMIN, MODERATOR | **sim** | `project:write` |
+| `reorder_tasks` | `project/` | ADMIN, MODERATOR | **sim** (bulk) | `project:write` |
+| `create_project_comment` | `project/` | qualquer autenticado | **sim** | `project:write` |
+| `list_project_comments` | `project/` | qualquer autenticado | não | — |
+| `remove_project_comment` | `project/` | qualquer autenticado****** | **sim** | `project:write` |
+| `request_milestone_approval` | `project/` | ADMIN, MODERATOR | **sim** | `project:write` |
+| `respond_milestone_approval` | `project/` | qualquer autenticado | **sim** | `project:write` |
+| `cancel_milestone_approval` | `project/` | ADMIN, MODERATOR | **sim** | `project:write` |
+| `list_milestone_approvals` | `project/` | qualquer autenticado | não | — |
+| `create_info_request` | `project/` | ADMIN, MODERATOR | **sim** | `project:write` |
+| `cancel_info_request` | `project/` | ADMIN, MODERATOR | **sim** | `project:write` |
+| `list_info_requests` | `project/` | qualquer autenticado | não | — |
 
 `*` `update_user` omite o campo `role` do schema por decisão deliberada — reatribuir role via chat é risco de escalação de privilégio; use uma ação administrativa dedicada para isso.
 
@@ -506,5 +580,7 @@ cms/services/cms-agent-bridge.service.ts
 `**` as tools de `cms/` usam `roles: ['ADMIN', 'MODERATOR']` para espelhar o **ceiling** da rota `/cms` (`CmsRouteCeiling`, registrado em `RouteCeilingRegistry` — um role fora desse teto nunca passa, mesmo com grant explícito). Isso é só o teto: o acesso efetivo ainda depende do grant por rota (`UserRouteAccess`/`RoleRouteAccess`), checado dentro de `execute()` via `CheckAccessUseCase` — defesa em duas camadas, igual ao padrão de recheck usado no resto do registry. Ver [Exceção: tools que saem do processo](#exceção-tools-que-saem-do-processo--pontes-com-o-nextjs) acima e [[auth-rbac]].
 
 `*****` as tools de `notification/` não usam `roles` (exceto `send_broadcast_notification`, que mirra o `roles: ['ADMIN']` do endpoint REST) porque a maioria é escopo "me" — mas todas checam dentro de `execute()` se a feature flag `NOTIFICATION_ROOT_FLAG` está habilitada para o role do usuário (`FeatureFlagService.isEnabled`), mesma checagem que o `FeatureFlagGuard` faz no REST equivalente. Sem feature flag habilitada, a tool nega mesmo que o role tenha `roles` suficiente.
+
+`******` `remove_project_comment` não usa `roles` porque a regra é de autoria: `DeleteCommentUseCase` só deixa remover quem criou o comentário ou um ADMIN — checado dentro de `execute()`, não pelo filtro de role do registry.
 
 **Roles vs. REST**: `list_routes` (`ADMIN, USER`) e `list_users` (`ADMIN, MODERATOR`) concedem roles mais amplas que o endpoint REST equivalente (`ADMIN` apenas) — mismatch pré-existente, mantido para não regredir comportamento já em produção; não use como referência ao criar tools novas (siga sempre o guard REST atual).

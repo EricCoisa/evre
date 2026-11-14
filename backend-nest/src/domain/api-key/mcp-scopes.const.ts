@@ -21,5 +21,7 @@ export const McpScopes = {
   COMPANY_WRITE: 'company:write',
   PROPOSAL_WRITE: 'proposal:write',
   ARTIFACT_WRITE: 'artifact:write',
+  TIME_TRACKING_WRITE: 'time-tracking:write',
+  PROJECT_WRITE: 'project:write',
 } as const;
 export type McpScope = (typeof McpScopes)[keyof typeof McpScopes];

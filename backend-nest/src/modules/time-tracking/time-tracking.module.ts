@@ -16,6 +16,11 @@ import { CreateManualEntryUseCase } from './use-cases/create-manual-entry.use-ca
 import { ExportTimeEntriesPdfUseCase } from './use-cases/export-time-entries-pdf.use-case';
 import { StartTimerTool } from './ai-tools/start-timer.tool';
 import { StopTimerTool } from './ai-tools/stop-timer.tool';
+import { GetActiveTimerTool } from './ai-tools/get-active-timer.tool';
+import { ListTimeEntriesTool } from './ai-tools/list-time-entries.tool';
+import { CreateManualTimeEntryTool } from './ai-tools/create-manual-time-entry.tool';
+import { UpdateTimeEntryTool } from './ai-tools/update-time-entry.tool';
+import { DeleteTimeEntryTool } from './ai-tools/delete-time-entry.tool';
 import { TimeTrackingRouteCeiling } from './time-tracking.route-ceiling';
 
 @Module({
@@ -39,6 +44,11 @@ import { TimeTrackingRouteCeiling } from './time-tracking.route-ceiling';
     ExportTimeEntriesPdfUseCase,
     StartTimerTool,
     StopTimerTool,
+    GetActiveTimerTool,
+    ListTimeEntriesTool,
+    CreateManualTimeEntryTool,
+    UpdateTimeEntryTool,
+    DeleteTimeEntryTool,
     TimeTrackingRouteCeiling,
   ],
   exports: [

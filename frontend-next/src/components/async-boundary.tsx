@@ -24,6 +24,7 @@ class Catch extends Component<CatchProps, { error: Error | null }> {
     // reset() limpa o erro no cache; sem ele a query volta a falhar de imediato.
     this.props.onReset();
     this.setState({ error: null });
+    location.reload()
   };
 
   render() {

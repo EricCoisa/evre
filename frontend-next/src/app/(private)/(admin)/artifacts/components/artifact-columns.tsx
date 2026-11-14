@@ -139,17 +139,16 @@ export function getArtifactColumns({ t, onEdit, onArchive, onDelete }: GetArtifa
                   <ExternalLink className="h-4 w-4" />
                 </a>
               </Button>
-              {item.public && item.published && item.publicToken && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigator.clipboard.writeText(`${window.location.origin}/api/artifacts/public/${item.publicToken}`)}
-                  title={t("copyPublicLinkTooltip")}
-                  className="h-6 p-0 min-h-0"
-                >
-                  <Link className="h-4 w-4" />
-                </Button>
-              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={!(item.public && item.published && item.publicToken)}
+                onClick={() => navigator.clipboard.writeText(`${window.location.origin}/api/artifacts/public/${item.publicToken}`)}
+                title={t("copyPublicLinkTooltip")}
+                className="h-6 p-0 min-h-0"
+              >
+                <Link className="h-4 w-4" />
+              </Button>
               {onEdit && (
                 <Button
                   variant="ghost"
