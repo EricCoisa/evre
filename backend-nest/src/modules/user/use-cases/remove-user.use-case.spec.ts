@@ -43,7 +43,12 @@ describe('RemoveUserUseCase', () => {
     await expect(useCase.execute('u1')).resolves.toBeUndefined();
     expect(mockPrisma.user.update).toHaveBeenCalledWith({
       where: { id: 'u1' },
-      data: { status: 'INACTIVE', deletedAt: expect.any(Date) },
+      data: {
+        email: 'deleted-u1@anonymized.local',
+        phone: null,
+        status: 'INACTIVE',
+        deletedAt: expect.any(Date),
+      },
     });
     expect(mockPrisma.refreshToken.deleteMany).toHaveBeenCalledWith({
       where: { userId: 'u1' },

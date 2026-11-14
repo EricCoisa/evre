@@ -18,12 +18,16 @@ export class RemoveUserUseCase {
       throw new NotFoundException(this.i18n.t('user.not_found'));
     }
 
-    // Exclusão pelo admin inativa e soft-deleta o usuário, sem anonimizar o email.
     await this.prisma.$transaction([
       this.prisma.refreshToken.deleteMany({ where: { userId: id } }),
       this.prisma.user.update({
         where: { id },
-        data: { status: 'INACTIVE', deletedAt: new Date() },
+        data: {
+          email: `deleted-${id}@anonymized.local`,
+          phone: null,
+          status: 'INACTIVE',
+          deletedAt: new Date(),
+        },
       }),
     ]);
   }
