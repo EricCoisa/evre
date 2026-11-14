@@ -14896,7 +14896,9 @@
                 "notification:write",
                 "company:write",
                 "proposal:write",
-                "artifact:write"
+                "artifact:write",
+                "time-tracking:write",
+                "project:write"
               ]
             },
             "example": [
@@ -14940,7 +14942,9 @@
                 "notification:write",
                 "company:write",
                 "proposal:write",
-                "artifact:write"
+                "artifact:write",
+                "time-tracking:write",
+                "project:write"
               ]
             },
             "example": [

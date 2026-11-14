@@ -89,5 +89,13 @@ template/
   A exceção é fato de segurança/compliance genuinamente crítico (ex.: comportamento exigido por RFC) —
   mesmo aí o código fica só com a linha afirmativa; o "porquê" vai para a nota certa em `docs/` (ver o
   mapa no `CLAUDE.md` da raiz), nunca em comentário.
+- **Lint não acumula warning.** `frontend-next/eslint.config.mjs` trava `complexity` em 10 por função
+  (escopo `src/**/*.{ts,tsx}`, exceto `src/components/ui/**`) e `@typescript-eslint/no-unused-vars` como
+  `warn` com `argsIgnorePattern`/`varsIgnorePattern: "^_"`; `backend-nest/eslint.config.mjs` trava
+  `no-unused-vars` como `error` com o mesmo padrão `^_`, sem regra de `complexity`. Uma função passando de
+  ~8 condicionais/`&&`/`?:` já é sinal pra extrair um helper nomeado ou subcomponente — faça isso durante
+  o desenvolvimento, não como tarefa de limpeza depois. `^_` é para parâmetro exigido pela assinatura mas
+  não usado no corpo (callback de lib, destructuring parcial); nunca para calar um warning sem decidir se
+  o código é morto.
 
 Ver também: [[request-lifecycle]] · [[data-model]] · [[modules]]
