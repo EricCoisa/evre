@@ -162,6 +162,7 @@ export class GenerateInviteUseCase {
             actionUrl: null,
             tokenHash: inviteTokenHash,
             usedAt: null,
+            name: dto.name ?? null,
           },
         });
       } else {
@@ -170,6 +171,7 @@ export class GenerateInviteUseCase {
             email,
             phone,
             channel,
+            name: dto.name ?? null,
             roleId: dto.roleId,
             createdById: dto.createdById,
             expiresAt,

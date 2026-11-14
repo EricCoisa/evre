@@ -99,6 +99,7 @@
     "emailPlaceholder": "E-mail do cliente",
     "name": "Nome",
     "namePlaceholder": "Nome do cliente",
+    "nameRequired": "Nome é obrigatório",
     "permissions": "Permissões",
     "canSeeCommercials": "Ver propostas/contratos",
     "canComment": "Comentar",

@@ -99,6 +99,7 @@
     "emailPlaceholder": "Client email",
     "name": "Name",
     "namePlaceholder": "Client name",
+    "nameRequired": "Name is required",
     "permissions": "Permissions",
     "canSeeCommercials": "View proposals/contracts",
     "canComment": "Comment",

@@ -85,11 +85,13 @@ export function InviteTab() {
 
   const createWaInviteSchema = useMemo(() => z.object({
     phone: z.string().min(1, t('phoneRequired')),
+    name: z.string().min(1, t('nameRequired')).max(200),
     roleId: z.string().optional(),
   }), [t]);
 
   const createWaInviteFields = useMemo<FormBuilderField[]>(() => [
     { name: 'phone', label: t('phone'), type: 'phone', placeholder: t('phonePlaceholder') },
+    { name: 'name', label: t('name'), placeholder: t('namePlaceholder') },
     { name: 'roleId', label: t('role'), type: 'select', placeholder: t('rolePlaceholder'), description: t('roleDescription'), options: rolesData || [] },
   ], [t, rolesData]);
 
@@ -225,7 +227,7 @@ export function InviteTab() {
               fields={createWaInviteFields}
               submitLabel={t('createInviteButton')}
               onSubmit={async (data) => {
-                const result = await createInvite({ channel: 'WHATSAPP', phone: data.phone, roleId: data.roleId });
+                const result = await createInvite({ channel: 'WHATSAPP', phone: data.phone, name: data.name, roleId: data.roleId });
                 if (!result.success) throw new Error(result.message ?? t('invite_send_error'));
                 return result.data;
               }}

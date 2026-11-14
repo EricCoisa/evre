@@ -81,6 +81,7 @@ export interface Invite {
   email: string | null;
   phone?: string | null;
   channel?: 'EMAIL' | 'WHATSAPP';
+  name?: string | null;
   roleId: string;
   roleName: string;
   /** Null quando o convite nasceu do signup orgânico (sem admin por trás). */

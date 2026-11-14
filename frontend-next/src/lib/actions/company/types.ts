@@ -34,6 +34,7 @@ export interface CompanyInvite {
   email: string | null;
   phone?: string | null;
   channel?: 'EMAIL' | 'WHATSAPP';
+  name?: string | null;
   roleId: string;
   roleName: string;
   createdByName: string | null;

@@ -10,6 +10,9 @@ export class GetInvitesUseCase {
       select: {
         id: true,
         email: true,
+        phone: true,
+        channel: true,
+        name: true,
         roleId: true,
         createdById: true,
         expiresAt: true,

@@ -36,7 +36,10 @@ export function getInviteColumns({ t, onResend, onDelete, onShowLink, emailOpera
       header: () => <TableHead>{t('contact')}</TableHead>,
       cell: ({ row }) => {
         const invite = row.original;
-        return <DataCell>{invite.channel === 'WHATSAPP' ? invite.phone : invite.email}</DataCell>;
+        const display = invite.channel === 'WHATSAPP'
+          ? (invite.name ?? invite.phone)
+          : invite.email;
+        return <DataCell>{display}</DataCell>;
       },
       meta: { mobileOrder: 1, mobileWidth: 'full' },
     },

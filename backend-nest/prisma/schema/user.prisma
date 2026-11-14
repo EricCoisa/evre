@@ -102,6 +102,8 @@ model Invite {
   phone       String?
   /// Canal de envio do convite.
   channel     String               @default("EMAIL")
+  /// Nome do convidado (opcional); usado como first_name no template WA.
+  name        String?
   roleId      String
   /// Null quando o convite foi criado por uma integração sem usuário associado.
   createdById String?

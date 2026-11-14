@@ -102,7 +102,7 @@ export function CompanyMembersTab({ companyId }: { companyId: string }) {
 
   const inviteWaSchema = useMemo(() => z.object({
     phone: z.string().min(1, t('members.phoneRequired')),
-    name: z.string().max(200).optional(),
+    name: z.string().min(1, t('members.nameRequired')).max(200),
   }), [t]);
 
   const inviteWaFields = useMemo<FormBuilderField[]>(() => [
