@@ -243,7 +243,6 @@ export class SignupUseCase {
           },
           include: { role: { select: { name: true } } },
         });
-        // For EMAIL invite validate email matches; for WHATSAPP email on invite is null
         if (!invite || (invite.channel !== 'WHATSAPP' && invite.email !== intent.email)) {
           throw this.invalidConfirmation();
         }
@@ -517,6 +516,9 @@ export class SignupUseCase {
       dto.inviteToken!,
     );
     const isWa = invitePayload.channel === 'WHATSAPP';
+    if (isWa && !dto.email) {
+      throw new BadRequestException(this.i18n.t('auth.validation.email_required'));
+    }
     const termsVersion =
       (await this.systemConfigurationService.getValueOrNull(
         'SYSTEM_TERMS_VERSION',
@@ -547,7 +549,6 @@ export class SignupUseCase {
       });
       if (claimed.count !== 1) throw this.invalidConfirmation();
 
-      // For WA invite: email comes from the user's input (dto.email), phone from invite
       const registrationEmail = isWa ? dto.email! : (invite.email ?? dto.email!);
       const user = await this.registerUseCase.createInTransaction(tx, {
         email: registrationEmail,

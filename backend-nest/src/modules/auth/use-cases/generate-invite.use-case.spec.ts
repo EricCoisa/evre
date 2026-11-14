@@ -52,7 +52,7 @@ const mockJwt = {
   signAsync: vi.fn().mockResolvedValue('tok'),
   verifyAsync: vi.fn(),
 };
-const mockConfig = { get: vi.fn().mockReturnValue('secret') };
+const mockConfig = { get: vi.fn((key: string) => key === 'NEXTAUTH_URL' ? 'http://localhost:3000' : 'secret') };
 const mockEmail = {
   checkHealth: vi.fn(),
   sendNow: vi.fn(),
@@ -131,7 +131,6 @@ describe('GenerateInviteUseCase', () => {
     mockPrisma.user.findFirst.mockResolvedValue(null);
     mockMessaging.isEnabled.mockResolvedValue(true);
     mockMessaging.sendTemplateNow.mockResolvedValue(undefined);
-    process.env.NEXTAUTH_URL = 'http://localhost:3000';
   });
 
   it('gate: bloqueia com 503 quando email está inoperante', async () => {

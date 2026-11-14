@@ -48,6 +48,13 @@ export class RegisterUseCase {
       );
     }
 
+    if (dto.phone) {
+      const existingByPhone = await tx.user.findFirst({ where: { phone: dto.phone } });
+      if (existingByPhone) {
+        throw new ConflictException(this.i18n.t('auth.invite.phone_already_registered'));
+      }
+    }
+
     const credentials = dto.password
       ? await this.cryptoService.generatePasswordHash(dto.password)
       : { hash: null, salt: null };

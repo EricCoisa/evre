@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { I18nService } from 'nestjs-i18n';
@@ -40,7 +41,7 @@ export class InviteCompanyMemberUseCase {
 
     if (channel === 'WHATSAPP') {
       const phone = dto.phone?.trim();
-      if (!phone) throw new ConflictException(this.i18n.t('company.phone_required'));
+      if (!phone) throw new BadRequestException(this.i18n.t('company.phone_required'));
 
       const existingMember = await this.prisma.membership.findFirst({
         where: { companyId, user: { phone } },
@@ -61,7 +62,7 @@ export class InviteCompanyMemberUseCase {
     }
 
     const email = dto.email?.trim().toLowerCase();
-    if (!email) throw new ConflictException(this.i18n.t('company.email_required'));
+    if (!email) throw new BadRequestException(this.i18n.t('company.email_required'));
 
     const existingMember = await this.prisma.membership.findFirst({
       where: { companyId, user: { email } },

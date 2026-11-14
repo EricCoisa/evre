@@ -113,7 +113,10 @@ export class GenerateInviteUseCase {
       dto.createdById,
     );
 
-    const appUrl = process.env.NEXTAUTH_URL;
+    const appUrl = this.configService.get<string>('NEXTAUTH_URL');
+    if (!appUrl) {
+      throw new InternalServerErrorException(this.i18n.t('auth.signup.email_send_failed'));
+    }
     const appName = await this.readConfigValue('SYSTEM_APP_NAME');
     const originalActionUrl = `${appUrl}/signup?inviteToken=${encodeURIComponent(token)}`;
     const expiresAt = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
@@ -301,6 +304,9 @@ export class GenerateInviteUseCase {
     if (!currentInvite.createdById) {
       throw new UnauthorizedException(this.i18n.t('auth.invite.invalid_token'));
     }
+    if (isWa && !currentInvite.phone) {
+      throw new UnauthorizedException(this.i18n.t('auth.invite.invalid_token'));
+    }
 
     const existingUser = isWa
       ? (currentInvite.phone
@@ -340,10 +346,6 @@ export class GenerateInviteUseCase {
     const isWa = invitePayload.channel === 'WHATSAPP';
 
     if (!isWa && currentUser.email.trim().toLowerCase() !== invitePayload.email) {
-      await this.prisma.invite.updateMany({
-        where: { id: invitePayload.inviteId, usedAt: null },
-        data: { usedAt: new Date() },
-      });
       throw new ForbiddenException(this.i18n.t('auth.invite.email_mismatch'));
     }
 
@@ -369,17 +371,9 @@ export class GenerateInviteUseCase {
       });
       if (isWa) {
         if (!user || !invite.phone || user.phone !== invite.phone) {
-          await tx.invite.updateMany({
-            where: { id: invite.id, usedAt: null },
-            data: { usedAt: now },
-          });
           throw new ForbiddenException(this.i18n.t('auth.invite.phone_mismatch'));
         }
       } else if (!user || user.email.trim().toLowerCase() !== invite.email) {
-        await tx.invite.updateMany({
-          where: { id: invite.id, usedAt: null },
-          data: { usedAt: now },
-        });
         throw new ForbiddenException(this.i18n.t('auth.invite.email_mismatch'));
       }
       const claimed = await tx.invite.updateMany({

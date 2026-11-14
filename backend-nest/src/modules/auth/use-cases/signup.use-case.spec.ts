@@ -16,6 +16,7 @@ import { EmailService } from '../../email/email.service';
 import { ConfigService } from '@nestjs/config';
 import { LoggingService } from '../../logging/logging.service';
 import { ShortUrlService } from '../../short-url/short-url.service';
+import { VerificationService } from '../../verification/verification.service';
 
 const mockTransaction = {
   $queryRaw: vi.fn(),
@@ -87,6 +88,7 @@ describe('SignupUseCase', () => {
         { provide: ConfigService, useValue: mockConfig },
         { provide: LoggingService, useValue: mockLogging },
         { provide: ShortUrlService, useValue: mockShortUrl },
+        { provide: VerificationService, useValue: { markConfirmed: vi.fn() } },
       ],
     }).compile();
     useCase = mod.get(SignupUseCase);
