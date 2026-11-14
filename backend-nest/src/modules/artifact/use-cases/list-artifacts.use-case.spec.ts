@@ -48,7 +48,10 @@ describe('ListArtifactsUseCase', () => {
     expect(mockPrisma.artifact.findMany).toHaveBeenCalledWith({
       where: {
         archivedAt: null,
-        fileName: { contains: 'demo', mode: 'insensitive' },
+        OR: [
+          { fileName: { contains: 'demo', mode: 'insensitive' } },
+          { name: { contains: 'demo', mode: 'insensitive' } },
+        ],
       },
       orderBy: { createdAt: 'desc' },
     });
