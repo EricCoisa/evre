@@ -20,6 +20,7 @@ import { ArchiveArtifactTool } from './ai-tools/archive-artifact.tool';
 import { DeleteArtifactTool } from './ai-tools/delete-artifact.tool';
 import { UpdateArtifactTool } from './ai-tools/update-artifact.tool';
 import { PublishArtifactTool } from './ai-tools/publish-artifact.tool';
+import { CreateArtifactTool } from './ai-tools/create-artifact.tool';
 
 const USE_CASES = [
   UploadArtifactUseCase,
@@ -39,6 +40,7 @@ const AI_TOOLS = [
   DeleteArtifactTool,
   UpdateArtifactTool,
   PublishArtifactTool,
+  CreateArtifactTool,
 ];
 
 @Module({
