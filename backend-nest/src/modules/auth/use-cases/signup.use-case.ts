@@ -19,6 +19,9 @@ import { UserRoleConst } from '../../../domain/auth/userRole.const';
 import { LogActions } from '../../../domain/logging/log-actions';
 import { GenerateInviteUseCase } from './generate-invite.use-case';
 import { RegisterUseCase } from './register.use-case';
+import { VerificationService } from '../../verification/verification.service';
+import { VerificationChannel } from '@prisma/client';
+import { UserVerificationPurpose } from '../../../domain/user/user-verification-purpose.const';
 
 const PASSWORD_SIGNUP_PURPOSE = 'PASSWORD';
 const OAUTH_SIGNUP_PURPOSE = 'OAUTH';
@@ -42,17 +45,19 @@ export class SignupUseCase {
     private readonly i18n: I18nService,
     private readonly loggingService: LoggingService,
     private readonly shortUrlService: ShortUrlService,
+    private readonly verificationService: VerificationService,
   ) {}
 
   async execute(dto: {
-    email: string;
+    email?: string;
     password?: string;
     name?: string;
     inviteToken?: string;
     acceptTerms?: boolean;
   }) {
     if (dto.inviteToken) return this.acceptInvite(dto);
-    return this.requestEmailConfirmation(dto);
+    if (!dto.email) throw new BadRequestException(this.i18n.t('auth.validation.email_required'));
+    return this.requestEmailConfirmation({ email: dto.email, name: dto.name });
   }
 
   async completeEmailSignup(dto: {
@@ -232,14 +237,16 @@ export class SignupUseCase {
         const invite = await tx.invite.findFirst({
           where: {
             id: intent.inviteId,
-            email: intent.email,
             tokenHash: intent.inviteTokenHash,
             usedAt: null,
             expiresAt: { gt: now },
           },
           include: { role: { select: { name: true } } },
         });
-        if (!invite) throw this.invalidConfirmation();
+        // For EMAIL invite validate email matches; for WHATSAPP email on invite is null
+        if (!invite || (invite.channel !== 'WHATSAPP' && invite.email !== intent.email)) {
+          throw this.invalidConfirmation();
+        }
 
         if (intent.userId) {
           const existing = await tx.user.findUnique({
@@ -286,12 +293,15 @@ export class SignupUseCase {
             user: updated,
             created: false,
             inviteRoleName: invite.role.name,
+            invitePhone: null as string | null,
+            inviteChannel: 'EMAIL' as string,
           };
         }
 
         const user = await this.registerUseCase.createInTransaction(tx, {
           email: intent.email,
           name: intent.name ?? undefined,
+          phone: invite.phone ?? undefined,
           role: invite.role.name as 'USER' | 'ADMIN' | 'MODERATOR',
           emailVerifiedAt: now,
           termsAcceptedAt: now,
@@ -314,6 +324,8 @@ export class SignupUseCase {
           user,
           created: true,
           inviteRoleName: invite.role.name,
+          invitePhone: invite.phone ?? null,
+          inviteChannel: invite.channel ?? 'EMAIL',
         };
       }
 
@@ -325,7 +337,7 @@ export class SignupUseCase {
         termsAcceptedAt: now,
         termsVersion,
       });
-      return { user, created: true, inviteRoleName: null };
+      return { user, created: true, inviteRoleName: null, invitePhone: null as string | null, inviteChannel: 'EMAIL' as string };
     });
 
     if (completion.created) {
@@ -347,6 +359,15 @@ export class SignupUseCase {
         },
         completion.user.id,
       );
+    }
+
+    if (completion.created && completion.inviteChannel === 'WHATSAPP' && completion.invitePhone) {
+      await this.verificationService.markConfirmed({
+        userId: completion.user.id,
+        purpose: UserVerificationPurpose.PHONE_CONFIRMATION,
+        channel: VerificationChannel.WHATSAPP,
+        target: completion.invitePhone,
+      });
     }
 
     return {
@@ -484,6 +505,7 @@ export class SignupUseCase {
   }
 
   private async acceptInvite(dto: {
+    email?: string;
     password?: string;
     name?: string;
     acceptTerms?: boolean;
@@ -494,6 +516,7 @@ export class SignupUseCase {
     const invitePayload = await this.generateInviteUseCase.validateInviteToken(
       dto.inviteToken!,
     );
+    const isWa = invitePayload.channel === 'WHATSAPP';
     const termsVersion =
       (await this.systemConfigurationService.getValueOrNull(
         'SYSTEM_TERMS_VERSION',
@@ -504,7 +527,7 @@ export class SignupUseCase {
       const invite = await tx.invite.findFirst({
         where: {
           id: invitePayload.inviteId,
-          email: invitePayload.email,
+          ...(isWa ? {} : { email: invitePayload.email }),
           tokenHash: invitePayload.tokenHash,
           usedAt: null,
           expiresAt: { gt: now },
@@ -524,10 +547,13 @@ export class SignupUseCase {
       });
       if (claimed.count !== 1) throw this.invalidConfirmation();
 
+      // For WA invite: email comes from the user's input (dto.email), phone from invite
+      const registrationEmail = isWa ? dto.email! : (invite.email ?? dto.email!);
       const user = await this.registerUseCase.createInTransaction(tx, {
-        email: invite.email,
+        email: registrationEmail,
         password,
         name: dto.name,
+        phone: invite.phone ?? undefined,
         role: invite.role.name as 'USER' | 'ADMIN' | 'MODERATOR',
         emailVerifiedAt: now,
         termsAcceptedAt: now,
@@ -541,13 +567,23 @@ export class SignupUseCase {
           },
         });
       }
-      return { user, roleName: invite.role.name };
+      return { user, roleName: invite.role.name, phone: invite.phone ?? null };
     });
 
     await this.registerUseCase.logRegistration(
       completion.user,
       completion.roleName,
     );
+
+    if (isWa && completion.phone) {
+      await this.verificationService.markConfirmed({
+        userId: completion.user.id,
+        purpose: UserVerificationPurpose.PHONE_CONFIRMATION,
+        channel: VerificationChannel.WHATSAPP,
+        target: completion.phone,
+      });
+    }
+
     return { accountCreated: true, user: completion.user };
   }
 
