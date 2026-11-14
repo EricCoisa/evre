@@ -17,7 +17,12 @@ export class ListArtifactsUseCase {
     const where = {
       archivedAt: null,
       ...(search
-        ? { fileName: { contains: search, mode: 'insensitive' as const } }
+        ? {
+            OR: [
+              { fileName: { contains: search, mode: 'insensitive' as const } },
+              { name: { contains: search, mode: 'insensitive' as const } },
+            ],
+          }
         : {}),
     };
 

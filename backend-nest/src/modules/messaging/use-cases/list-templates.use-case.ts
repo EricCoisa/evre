@@ -21,13 +21,16 @@ export class ListTemplatesUseCase {
   ): Promise<PaginatedResponse<MessagingTemplateDto> | MessagingTemplateDto[]> {
     const where: {
       typeId?: string;
-      OR?: Array<{ key?: { contains: string } }>;
+      OR?: Array<{ key?: { contains: string; mode?: string }; body?: { contains: string; mode?: string } }>;
       category?: MessagingTemplateCategory;
     } = query.typeId ? { typeId: query.typeId } : {};
     const { connectionId, search, filter } = query;
 
     if (search) {
-      where.OR = [{ key: { contains: search } }];
+      where.OR = [
+        { key: { contains: search, mode: 'insensitive' } },
+        { body: { contains: search, mode: 'insensitive' } },
+      ];
     }
 
     if (filter?.category) {
