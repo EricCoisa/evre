@@ -37,10 +37,6 @@ export class CreateProjectCommentTool implements IAiTool {
 
   execute(input: CreateProjectCommentInput, ctx: AiToolContext) {
     const { projectId, ...dto } = input;
-    return this.createComment.execute(
-      projectId,
-      dto,
-      toAuthenticatedUser(ctx),
-    );
+    return this.createComment.execute(projectId, dto, toAuthenticatedUser(ctx));
   }
 }

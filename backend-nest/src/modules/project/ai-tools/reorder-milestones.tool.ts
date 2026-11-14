@@ -30,9 +30,7 @@ export class ReorderMilestonesTool implements IAiTool {
     invalidates: [InvalidationTags.PROJECT],
   };
 
-  constructor(
-    private readonly reorderMilestones: ReorderMilestonesUseCase,
-  ) {}
+  constructor(private readonly reorderMilestones: ReorderMilestonesUseCase) {}
 
   async execute(input: ReorderMilestonesInput, ctx: AiToolContext) {
     const { projectId, ...dto } = input;

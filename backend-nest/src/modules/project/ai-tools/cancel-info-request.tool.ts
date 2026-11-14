@@ -28,9 +28,7 @@ export class CancelInfoRequestTool implements IAiTool {
     invalidates: [InvalidationTags.PROJECT],
   };
 
-  constructor(
-    private readonly cancelInfoRequest: CancelInfoRequestUseCase,
-  ) {}
+  constructor(private readonly cancelInfoRequest: CancelInfoRequestUseCase) {}
 
   execute(input: CancelInfoRequestInput, ctx: AiToolContext) {
     return this.cancelInfoRequest.execute(

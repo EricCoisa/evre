@@ -4,6 +4,7 @@ import type { PaginationQuery } from 'src/common/schemas/pagination.schema';
 import type { PaginatedResponse } from 'src/common/types/pagination.types';
 import { paginate } from 'src/common/utils/paginate.util';
 import type { MessagingTemplateDto } from '../dto/messaging-template.dto';
+import type { Prisma } from '@prisma/client';
 import { MessagingTemplateCategory } from '@prisma/client';
 
 export interface ListTemplatesQuery extends PaginationQuery {
@@ -19,11 +20,9 @@ export class ListTemplatesUseCase {
   async execute(
     query: ListTemplatesQuery,
   ): Promise<PaginatedResponse<MessagingTemplateDto> | MessagingTemplateDto[]> {
-    const where: {
-      typeId?: string;
-      OR?: Array<{ key?: { contains: string; mode?: string }; body?: { contains: string; mode?: string } }>;
-      category?: MessagingTemplateCategory;
-    } = query.typeId ? { typeId: query.typeId } : {};
+    const where: Prisma.MessagingTemplateWhereInput = query.typeId
+      ? { typeId: query.typeId }
+      : {};
     const { connectionId, search, filter } = query;
 
     if (search) {

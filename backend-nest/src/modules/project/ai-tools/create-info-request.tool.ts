@@ -33,9 +33,7 @@ export class CreateInfoRequestTool implements IAiTool {
     invalidates: [InvalidationTags.PROJECT],
   };
 
-  constructor(
-    private readonly createInfoRequest: CreateInfoRequestUseCase,
-  ) {}
+  constructor(private readonly createInfoRequest: CreateInfoRequestUseCase) {}
 
   execute(input: CreateInfoRequestInput, ctx: AiToolContext) {
     const { projectId, ...dto } = input;

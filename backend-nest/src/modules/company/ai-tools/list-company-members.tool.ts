@@ -26,9 +26,7 @@ export class ListCompanyMembersTool implements IAiTool {
     invalidates: [],
   };
 
-  constructor(
-    private readonly listCompanyMembers: ListCompanyMembersUseCase,
-  ) {}
+  constructor(private readonly listCompanyMembers: ListCompanyMembersUseCase) {}
 
   execute(input: ListCompanyMembersInput, _ctx: AiToolContext) {
     const { companyId, ...query } = input;

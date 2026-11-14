@@ -8,7 +8,9 @@ import type {
 } from 'src/domain/ai/ai-tool.types';
 import { ListCompanyInvitesUseCase } from '../use-cases/list-company-invites.use-case';
 
-const ListCompanyInvitesSchema = z.object({ companyId: z.string().uuid() }).strict();
+const ListCompanyInvitesSchema = z
+  .object({ companyId: z.string().uuid() })
+  .strict();
 type ListCompanyInvitesInput = z.infer<typeof ListCompanyInvitesSchema>;
 
 @AiToolDef()

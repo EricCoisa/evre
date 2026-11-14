@@ -12,16 +12,15 @@ import { ListApprovalsUseCase } from '../use-cases/list-approvals.use-case';
 const ListMilestoneApprovalsSchema = z
   .object({ projectId: z.string().uuid(), milestoneId: z.string().uuid() })
   .strict();
-type ListMilestoneApprovalsInput = z.infer<
-  typeof ListMilestoneApprovalsSchema
->;
+type ListMilestoneApprovalsInput = z.infer<typeof ListMilestoneApprovalsSchema>;
 
 @AiToolDef()
 @Injectable()
 export class ListMilestoneApprovalsTool implements IAiTool {
   readonly definition: AiToolDefinition = {
     name: 'list_milestone_approvals',
-    description: 'Lista o histórico de solicitações de aprovação de uma milestone.',
+    description:
+      'Lista o histórico de solicitações de aprovação de uma milestone.',
     inputSchema: ListMilestoneApprovalsSchema,
     invalidates: [],
   };

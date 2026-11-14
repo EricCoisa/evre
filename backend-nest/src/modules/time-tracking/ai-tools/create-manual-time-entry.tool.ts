@@ -24,9 +24,7 @@ export class CreateManualTimeEntryTool implements IAiTool {
     invalidates: [InvalidationTags.TIME_TRACKING],
   };
 
-  constructor(
-    private readonly createManualEntry: CreateManualEntryUseCase,
-  ) {}
+  constructor(private readonly createManualEntry: CreateManualEntryUseCase) {}
 
   execute(input: CreateManualEntryDto, ctx: AiToolContext) {
     return this.createManualEntry.execute(ctx.userId, input);
