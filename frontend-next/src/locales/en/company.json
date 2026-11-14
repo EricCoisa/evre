@@ -148,6 +148,17 @@
     "resendInviteDescription": "Resend the invite to {{email}}?",
     "resendInviteSuccess": "Invite resent",
     "resendInviteError": "Failed to resend invite",
-    "inviteAlreadyRegistered": "This email is already registered"
+    "inviteAlreadyRegistered": "This email is already registered",
+    "inviteClientWhatsapp": "Invite via WhatsApp",
+    "inviteChannelEmail": "Email",
+    "inviteChannelWhatsapp": "WhatsApp",
+    "whatsappServiceDisabledHint": "Configure WhatsApp in System Settings to send invites.",
+    "inviteWhatsappTitle": "Invite Client via WhatsApp",
+    "inviteWhatsappDescription": "Send a WhatsApp invite to a new client user.",
+    "phone": "Phone",
+    "phonePlaceholder": "5511999999999",
+    "phoneRequired": "Phone is required",
+    "resendInviteDescriptionWa": "Resend the WhatsApp invite to {{phone}}?",
+    "contact": "Contact"
   }
 }

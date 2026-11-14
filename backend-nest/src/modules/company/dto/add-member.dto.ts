@@ -10,7 +10,9 @@ export const AddCompanyMemberSchema = z.object({
 export class AddCompanyMemberDto extends createZodDto(AddCompanyMemberSchema) {}
 
 export const InviteCompanyMemberSchema = z.object({
-  email: z.string().min(1).email(),
+  channel: z.enum(['EMAIL', 'WHATSAPP']).default('EMAIL'),
+  email: z.string().email().optional(),
+  phone: z.string().optional(),
   name: z.string().max(200).optional(),
 });
 

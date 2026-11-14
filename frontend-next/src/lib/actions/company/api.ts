@@ -9,10 +9,10 @@ import type {
   CreateContactDto,
   UpdateContactDto,
   AddCompanyMemberDto,
-  InviteCompanyMemberDto,
   UpdateCompanyMemberDto,
   CompanyMember,
   CompanyInvite,
+  InviteCompanyMemberPayload,
 } from './types';
 import type { PaginatedResponse, PaginationParams } from '@/lib/types/pagination.types';
 import type { CompanyControllerFindAllParams } from '@/lib/generated/schemas';
@@ -105,9 +105,9 @@ export async function addCompanyMember(
 
 export async function inviteCompanyMember(
   companyId: string,
-  data: InviteCompanyMemberDto,
+  data: InviteCompanyMemberPayload,
 ): Promise<ApiResponse<CompanyInvite>> {
-  return wrapAs<CompanyInvite>(() => api.companyControllerInviteMember(companyId, data));
+  return wrapAs<CompanyInvite>(() => api.companyControllerInviteMember(companyId, data as never));
 }
 
 export async function updateCompanyMember(

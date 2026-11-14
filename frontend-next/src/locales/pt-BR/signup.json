@@ -38,5 +38,7 @@
   "providerFallback": "este provedor",
   "providerSignupFailed": "Não foi possível concluir o cadastro com o provedor. Tente novamente.",
   "signInToAcceptInvite": "Entre para aceitar o convite",
-  "inviteAcceptedSignInAgain": "Convite aceito. Entre novamente para atualizar suas permissões."
+  "inviteAcceptedSignInAgain": "Convite aceito. Entre novamente para atualizar suas permissões.",
+  "phone": "Telefone",
+  "phoneVerifiedViaWhatsapp": "Verificado via WhatsApp"
 }

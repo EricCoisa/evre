@@ -21,6 +21,8 @@
   "contact_already_linked": "This contact is already linked to this company",
   "member_user_not_found": "User not found",
   "member_already_exists": "This user is already a member of this company",
+  "email_required": "Email is required for email invites.",
+  "phone_required": "Phone number is required for WhatsApp invites.",
   "member_not_found": "Member not found",
   "contacts": {
     "list": {

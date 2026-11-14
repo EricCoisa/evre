@@ -31,7 +31,9 @@ export interface CompanyMember {
 
 export interface CompanyInvite {
   id: string;
-  email: string;
+  email: string | null;
+  phone?: string | null;
+  channel?: 'EMAIL' | 'WHATSAPP';
   roleId: string;
   roleName: string;
   createdByName: string | null;
@@ -39,4 +41,11 @@ export interface CompanyInvite {
   usedAt: string | null;
   createdAt: string;
   actionUrl?: string | null;
+}
+
+export interface InviteCompanyMemberPayload {
+  channel?: 'EMAIL' | 'WHATSAPP';
+  email?: string;
+  phone?: string;
+  name?: string;
 }

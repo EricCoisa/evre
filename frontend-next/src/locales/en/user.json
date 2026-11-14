@@ -108,5 +108,19 @@
   "tour_step_users": "Here you can view all registered users, search by name/email, and manage roles and permissions.",
   "tour_step_new_user": "Click here to directly register a new user by defining their name, email, password, and role.",
   "tour_step_invites": "Manage invitations sent via email to new members of your organization.",
-  "tour_step_new_invite": "Send a secure invitation link via email for the invitee to create their own account."
+  "tour_step_new_invite": "Send a secure invitation link via email for the invitee to create their own account.",
+  "newInviteWhatsapp": "Invite via WhatsApp",
+  "createNewInviteWhatsapp": "Invite via WhatsApp",
+  "createInviteWhatsappDescription": "Fill in the data to send an invite via WhatsApp.",
+  "phone": "Phone",
+  "phonePlaceholder": "5511999999999",
+  "phoneDescription": "Number in international format (e.g. 5511999999999)",
+  "whatsapp_service_disabled_hint": "Configure WhatsApp in System Settings to send invites.",
+  "whatsapp_config_button": "Go to WhatsApp Config",
+  "inviteChannel": "Channel",
+  "inviteChannelEmail": "Email",
+  "inviteChannelWhatsapp": "WhatsApp",
+  "phoneRequired": "Phone is required",
+  "resendInviteDescriptionWa": "Do you want to resend the WhatsApp invite to {phone}?",
+  "contact": "Contact"
 }

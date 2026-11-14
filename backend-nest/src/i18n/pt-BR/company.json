@@ -21,6 +21,8 @@
   "contact_already_linked": "Este contato já está vinculado a esta empresa",
   "member_user_not_found": "Usuário não encontrado",
   "member_already_exists": "Este usuário já é membro desta empresa",
+  "email_required": "E-mail é obrigatório para convite por e-mail.",
+  "phone_required": "Número de telefone é obrigatório para convite por WhatsApp.",
   "member_not_found": "Membro não encontrado",
   "contacts": {
     "list": {

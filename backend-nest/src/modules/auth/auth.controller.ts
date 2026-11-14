@@ -188,8 +188,11 @@ export class AuthController {
     @CurrentUser() admin: AuthenticatedUser,
   ) {
     return await this.generateInvite$.execute({
+      channel: dto.channel,
       email: dto.email,
+      phone: dto.phone,
       roleId: dto.roleId,
+      name: dto.name,
       createdById: admin.id,
     });
   }

@@ -38,5 +38,7 @@
   "providerFallback": "this provider",
   "providerSignupFailed": "Could not complete provider signup. Please try again.",
   "signInToAcceptInvite": "Sign in to accept the invite",
-  "inviteAcceptedSignInAgain": "Invite accepted. Sign in again to refresh your permissions."
+  "inviteAcceptedSignInAgain": "Invite accepted. Sign in again to refresh your permissions.",
+  "phone": "Phone",
+  "phoneVerifiedViaWhatsapp": "Verified via WhatsApp"
 }

@@ -4,6 +4,8 @@ import {
   ServiceUnavailableException,
   InternalServerErrorException,
   NotFoundException,
+  ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
@@ -13,6 +15,7 @@ import { LoggingService } from '../../logging/logging.service';
 import { I18nService } from 'nestjs-i18n';
 import { SystemConfigurationService } from '../../system-configuration/system-configuration.service';
 import { ShortUrlService } from '../../short-url/short-url.service';
+import { MessagingService } from '../../messaging/messaging.service';
 import { createHash } from 'node:crypto';
 
 const hashToken = (token: string) =>
@@ -40,7 +43,7 @@ const mockPrisma = {
     updateMany: vi.fn(),
     deleteMany: vi.fn(),
   },
-  user: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
+  user: { findUnique: vi.fn(), findFirst: vi.fn(), create: vi.fn(), update: vi.fn() },
   $transaction: vi.fn((callback: (tx: typeof mockTx) => unknown) =>
     callback(mockTx),
   ),
@@ -58,6 +61,10 @@ const mockEmail = {
 const mockLogging = { create: vi.fn() };
 const mockI18n = { t: vi.fn((k: string) => k) };
 const mockSysConfig = { findByLabelKey: vi.fn() };
+const mockMessaging = {
+  isEnabled: vi.fn(),
+  sendTemplateNow: vi.fn(),
+};
 const mockShortUrl = {
   shorten: vi.fn().mockResolvedValue({
     id: 'short-1',
@@ -87,6 +94,7 @@ async function buildUseCase() {
       { provide: I18nService, useValue: mockI18n },
       { provide: SystemConfigurationService, useValue: mockSysConfig },
       { provide: ShortUrlService, useValue: mockShortUrl },
+      { provide: MessagingService, useValue: mockMessaging },
     ],
   }).compile();
   return mod.get(GenerateInviteUseCase);
@@ -120,6 +128,9 @@ describe('GenerateInviteUseCase', () => {
       createdAt: new Date(),
     });
     mockShortUrl.deactivate.mockResolvedValue(undefined);
+    mockPrisma.user.findFirst.mockResolvedValue(null);
+    mockMessaging.isEnabled.mockResolvedValue(true);
+    mockMessaging.sendTemplateNow.mockResolvedValue(undefined);
     process.env.NEXTAUTH_URL = 'http://localhost:3000';
   });
 
@@ -240,6 +251,44 @@ describe('GenerateInviteUseCase', () => {
     expect(result).toHaveProperty('actionUrl');
     expect(mockEmail.sendNow).toHaveBeenCalledTimes(1);
   });
+
+  describe('WHATSAPP channel', () => {
+    const WA_DTO = { phone: '+5511999990000', channel: 'WHATSAPP' as const, roleId: 'role-1', createdById: 'user-1' };
+
+    it('happy path: envia template e retorna actionUrl', async () => {
+      const result = await useCase.execute(WA_DTO);
+
+      expect(mockMessaging.isEnabled).toHaveBeenCalledTimes(1);
+      expect(mockMessaging.sendTemplateNow).toHaveBeenCalledWith(
+        expect.objectContaining({ key: 'INVITE', phone: '+5511999990000' }),
+      );
+      expect(mockEmail.sendNow).not.toHaveBeenCalled();
+      expect(result).toEqual({ actionUrl: 'http://localhost:3000/s/abc12345' });
+    });
+
+    it('lança ConflictException quando o telefone já está cadastrado', async () => {
+      mockPrisma.user.findFirst.mockResolvedValue({ id: 'u-existing', phone: '+5511999990000' });
+
+      await expect(useCase.execute(WA_DTO)).rejects.toThrow(ConflictException);
+      expect(mockI18n.t).toHaveBeenCalledWith('auth.invite.phone_already_registered');
+      expect(mockMessaging.sendTemplateNow).not.toHaveBeenCalled();
+    });
+
+    it('lança ServiceUnavailableException quando messaging está desabilitado', async () => {
+      mockMessaging.isEnabled.mockResolvedValue(false);
+
+      await expect(useCase.execute(WA_DTO)).rejects.toThrow(ServiceUnavailableException);
+      expect(mockI18n.t).toHaveBeenCalledWith('auth.invite.whatsapp_service_unavailable');
+    });
+
+    it('lança BadRequestException quando phone não é fornecido', async () => {
+      await expect(
+        useCase.execute({ channel: 'WHATSAPP', roleId: 'role-1', createdById: 'user-1' }),
+      ).rejects.toThrow(BadRequestException);
+      expect(mockI18n.t).toHaveBeenCalledWith('auth.invite.phone_required');
+      expect(mockMessaging.isEnabled).not.toHaveBeenCalled();
+    });
+  });
 });
 
 describe('GenerateInviteUseCase::validateInviteToken', () => {
@@ -276,6 +325,8 @@ describe('GenerateInviteUseCase::validateInviteToken', () => {
 
     expect(result).toEqual({
       ...VALID_PAYLOAD,
+      channel: 'EMAIL',
+      phone: null,
       inviteId: 'invite-1',
       tokenHash: hashToken('valid-token'),
       name: null,

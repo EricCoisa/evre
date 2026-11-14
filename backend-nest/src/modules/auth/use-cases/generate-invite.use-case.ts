@@ -1,5 +1,6 @@
 import {
   Injectable,
+  BadRequestException,
   ConflictException,
   UnauthorizedException,
   ForbiddenException,
@@ -15,6 +16,7 @@ import { LoggingService } from '../../logging/logging.service';
 import { I18nService } from 'nestjs-i18n';
 import { SystemConfigurationService } from '../../system-configuration/system-configuration.service';
 import { ShortUrlService } from '../../short-url/short-url.service';
+import { MessagingService } from '../../messaging/messaging.service';
 import { LogActions } from 'src/domain/logging/log-actions';
 import { InviteTokenPayload } from 'src/domain/auth/tokenInvite.type';
 import { EmailTemplateType } from 'src/domain/mail/email-template-type.const';
@@ -31,20 +33,39 @@ export class GenerateInviteUseCase {
     private i18n: I18nService,
     private systemConfigurationService: SystemConfigurationService,
     private shortUrlService: ShortUrlService,
+    private messagingService: MessagingService,
   ) {}
 
   async execute(dto: {
-    email: string;
+    email?: string | null;
+    phone?: string | null;
+    channel?: 'EMAIL' | 'WHATSAPP';
     roleId: string;
     createdById: string;
     name?: string | null;
     companyId?: string | null;
   }) {
-    const health = await this.emailService.checkHealth();
-    if (!health.operational) {
-      throw new ServiceUnavailableException(
-        this.i18n.t('auth.invite.email_service_unavailable'),
-      );
+    const channel = dto.channel ?? 'EMAIL';
+
+    if (channel === 'WHATSAPP') {
+      if (!dto.phone?.trim()) {
+        throw new BadRequestException(this.i18n.t('auth.invite.phone_required'));
+      }
+      if (!(await this.messagingService.isEnabled())) {
+        throw new ServiceUnavailableException(
+          this.i18n.t('auth.invite.whatsapp_service_unavailable'),
+        );
+      }
+    } else {
+      if (!dto.email?.trim()) {
+        throw new BadRequestException(this.i18n.t('auth.invite.email_required'));
+      }
+      const health = await this.emailService.checkHealth();
+      if (!health.operational) {
+        throw new ServiceUnavailableException(
+          this.i18n.t('auth.invite.email_service_unavailable'),
+        );
+      }
     }
 
     const role = await this.prisma.role.findUnique({
@@ -55,10 +76,21 @@ export class GenerateInviteUseCase {
       throw new NotFoundException('Role not found');
     }
 
-    const email = dto.email.trim().toLowerCase();
+    const email = channel === 'EMAIL' ? dto.email!.trim().toLowerCase() : null;
+    const phone = channel === 'WHATSAPP' ? dto.phone!.trim() : null;
     const companyId = dto.companyId ?? null;
+
+    if (channel === 'WHATSAPP') {
+      const existingByPhone = await this.prisma.user.findFirst({ where: { phone: phone! } });
+      if (existingByPhone) {
+        throw new ConflictException(this.i18n.t('auth.invite.phone_already_registered'));
+      }
+    }
+
     const payload: InviteTokenPayload = {
       email,
+      phone,
+      channel,
       role: role.name,
       roleId: dto.roleId,
       createdById: dto.createdById,
@@ -75,12 +107,8 @@ export class GenerateInviteUseCase {
       {
         module: 'AUTH',
         action: LogActions.GENERATE_INVITE_TOKEN,
-        message: `Token de convite gerado para ${email} (role: ${role.name})`,
-        metadata: {
-          email,
-          roleId: dto.roleId,
-          createdById: dto.createdById,
-        },
+        message: `Token de convite gerado para ${channel === 'WHATSAPP' ? phone : email} (role: ${role.name})`,
+        metadata: { email, phone, channel, roleId: dto.roleId, createdById: dto.createdById },
       },
       dto.createdById,
     );
@@ -99,15 +127,17 @@ export class GenerateInviteUseCase {
     });
     const actionUrl = shortLink.shortUrl;
 
+    const lockKey = channel === 'WHATSAPP' ? `invite:phone:${phone}` : `invite:${email}`;
+
     const previousInvite = await this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`
         WITH lock AS MATERIALIZED (
-          SELECT pg_advisory_xact_lock(hashtextextended(${`invite:${email}`}, 0))
+          SELECT pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))
         )
         SELECT 1::int FROM lock
       `;
       const previous = await tx.invite.findFirst({
-        where: { email, companyId },
+        where: channel === 'WHATSAPP' ? { phone, companyId } : { email, companyId },
         select: {
           id: true,
           roleId: true,
@@ -135,6 +165,8 @@ export class GenerateInviteUseCase {
         await tx.invite.create({
           data: {
             email,
+            phone,
+            channel,
             roleId: dto.roleId,
             createdById: dto.createdById,
             expiresAt,
@@ -147,51 +179,64 @@ export class GenerateInviteUseCase {
       return previous;
     });
 
-    const templateData = {
-      name: dto.name ?? email,
-      organization: appName ?? '',
-      message: `Você recebeu um convite para se juntar ao ${appName ?? 'sistema'}. Clique no botão abaixo para aceitar. O link expira em 48 horas.`,
-      action_url: actionUrl,
-    };
-
-    try {
-      const html = await this.emailService.renderTemplate(
-        EmailTemplateType.INVITATION,
-        templateData,
-      );
-      const sendResult = await this.emailService.sendNow({
-        subject: 'Você foi convidado para se juntar ao sistema',
-        to: email,
-        html,
-        performedById: dto.createdById,
-      });
-
-      if (!sendResult.status) {
-        throw new InternalServerErrorException(
-          this.i18n.t('auth.invite.email_send_failed'),
-        );
-      }
-    } catch (error) {
+    const rollbackInvite = async () => {
       await this.shortUrlService.deactivate(shortLink.code).catch(() => {});
+      const whereByIdentity = channel === 'WHATSAPP'
+        ? { phone, tokenHash: inviteTokenHash }
+        : { email, tokenHash: inviteTokenHash };
       await this.prisma.$transaction(async (tx) => {
         await tx.$queryRaw`
           WITH lock AS MATERIALIZED (
-            SELECT pg_advisory_xact_lock(hashtextextended(${`invite:${email}`}, 0))
+            SELECT pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))
           )
           SELECT 1::int FROM lock
         `;
         if (previousInvite) {
           const { id: _id, companyId: _cid, ...restoreData } = previousInvite;
           await tx.invite.updateMany({
-            where: { email, tokenHash: inviteTokenHash },
+            where: whereByIdentity,
             data: { ...restoreData, companyId: previousInvite.companyId },
           });
         } else {
-          await tx.invite.deleteMany({
-            where: { email, tokenHash: inviteTokenHash },
-          });
+          await tx.invite.deleteMany({ where: whereByIdentity });
         }
       });
+    };
+
+    try {
+      if (channel === 'WHATSAPP') {
+        const firstName = (dto.name ?? phone!).split(' ')[0];
+        await this.messagingService.sendTemplateNow({
+          key: 'INVITE',
+          phone: phone!,
+          reserved: { first_name: firstName },
+          buttons: { open: shortLink.code },
+        });
+      } else {
+        const templateData = {
+          name: dto.name ?? email!,
+          organization: appName ?? '',
+          message: `Você recebeu um convite para se juntar ao ${appName ?? 'sistema'}. Clique no botão abaixo para aceitar. O link expira em 48 horas.`,
+          action_url: actionUrl,
+        };
+        const html = await this.emailService.renderTemplate(
+          EmailTemplateType.INVITATION,
+          templateData,
+        );
+        const sendResult = await this.emailService.sendNow({
+          subject: 'Você foi convidado para se juntar ao sistema',
+          to: email!,
+          html,
+          performedById: dto.createdById,
+        });
+        if (!sendResult.status) {
+          throw new InternalServerErrorException(
+            this.i18n.t('auth.invite.email_send_failed'),
+          );
+        }
+      }
+    } catch (error) {
+      await rollbackInvite();
       throw error;
     }
 
@@ -228,14 +273,17 @@ export class GenerateInviteUseCase {
     }
 
     const invitePayload = payload as InviteTokenPayload;
-    if (!invitePayload.email || typeof invitePayload.email !== 'string') {
+    const isWa = invitePayload.channel === 'WHATSAPP';
+
+    if (!isWa && (!invitePayload.email || typeof invitePayload.email !== 'string')) {
       throw new UnauthorizedException(this.i18n.t('auth.invite.invalid_token'));
     }
 
+    const tokenHashValue = createHash('sha256').update(token).digest('hex');
     const currentInvite = await this.prisma.invite.findFirst({
       where: {
-        email: invitePayload.email.trim().toLowerCase(),
-        tokenHash: createHash('sha256').update(token).digest('hex'),
+        ...(isWa ? {} : { email: invitePayload.email!.trim().toLowerCase() }),
+        tokenHash: tokenHashValue,
         usedAt: null,
         expiresAt: { gt: new Date() },
       },
@@ -254,9 +302,11 @@ export class GenerateInviteUseCase {
       throw new UnauthorizedException(this.i18n.t('auth.invite.invalid_token'));
     }
 
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email: currentInvite.email },
-    });
+    const existingUser = isWa
+      ? (currentInvite.phone
+          ? await this.prisma.user.findFirst({ where: { phone: currentInvite.phone } })
+          : null)
+      : await this.prisma.user.findUnique({ where: { email: currentInvite.email! } });
 
     if (existingUser) {
       const alreadyHasRole = existingUser.roleId === currentInvite.roleId;
@@ -267,6 +317,8 @@ export class GenerateInviteUseCase {
 
     return {
       email: currentInvite.email,
+      phone: currentInvite.phone ?? null,
+      channel: (currentInvite.channel ?? 'EMAIL') as 'EMAIL' | 'WHATSAPP',
       role: currentInvite.role.name,
       roleId: currentInvite.roleId,
       createdById: currentInvite.createdById,
@@ -285,7 +337,9 @@ export class GenerateInviteUseCase {
     currentUser: { id: string; email: string },
   ): Promise<{ created: 'user_updated' }> {
     const invitePayload = await this.validateInviteToken(dto.token);
-    if (currentUser.email.trim().toLowerCase() !== invitePayload.email) {
+    const isWa = invitePayload.channel === 'WHATSAPP';
+
+    if (!isWa && currentUser.email.trim().toLowerCase() !== invitePayload.email) {
       await this.prisma.invite.updateMany({
         where: { id: invitePayload.inviteId, usedAt: null },
         data: { usedAt: new Date() },
@@ -298,7 +352,7 @@ export class GenerateInviteUseCase {
       const invite = await tx.invite.findFirst({
         where: {
           id: invitePayload.inviteId,
-          email: invitePayload.email,
+          ...(isWa ? {} : { email: invitePayload.email }),
           tokenHash: invitePayload.tokenHash,
           usedAt: null,
           expiresAt: { gt: now },
@@ -311,9 +365,17 @@ export class GenerateInviteUseCase {
       }
       const user = await tx.user.findUnique({
         where: { id: currentUser.id },
-        select: { id: true, email: true },
+        select: { id: true, email: true, phone: true },
       });
-      if (!user || user.email.trim().toLowerCase() !== invite.email) {
+      if (isWa) {
+        if (!user || !invite.phone || user.phone !== invite.phone) {
+          await tx.invite.updateMany({
+            where: { id: invite.id, usedAt: null },
+            data: { usedAt: now },
+          });
+          throw new ForbiddenException(this.i18n.t('auth.invite.phone_mismatch'));
+        }
+      } else if (!user || user.email.trim().toLowerCase() !== invite.email) {
         await tx.invite.updateMany({
           where: { id: invite.id, usedAt: null },
           data: { usedAt: now },

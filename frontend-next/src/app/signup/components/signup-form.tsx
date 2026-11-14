@@ -76,10 +76,12 @@ function validateSignupFormSchema(
   {
     isProviderConsent,
     isEmailRequest,
+    isWaInvite,
     t,
   }: {
     isProviderConsent: boolean;
     isEmailRequest: boolean;
+    isWaInvite: boolean;
     t: (key: string) => string;
   },
 ) {
@@ -109,6 +111,14 @@ function validateSignupFormSchema(
       });
     }
     return;
+  }
+  // WA invite: user provides email themselves
+  if (isWaInvite && (!data.email || !z.string().email().safeParse(data.email).success)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: t("invalidEmail"),
+      path: ["email"],
+    });
   }
   validateSignupPasswordFields(data, ctx, t);
 }
@@ -330,16 +340,26 @@ function buildSignupFields({
   containerRef: React.RefObject<HTMLDivElement | null>;
   t: (key: string) => string;
 }): FormBuilderField[] {
+  const isWaInvite = inviteResponse?.channel === 'WHATSAPP';
   const fields: FormBuilderField[] = [];
   if (!isEmailConfirmation && !isProviderConsent) {
+    fields.push({
+      name: "name",
+      label: t("fullName"),
+      type: "text",
+      placeholder: t("namePlaceholder"),
+    });
+    if (isWaInvite && inviteResponse?.phone) {
+      fields.push({
+        name: "phone",
+        label: t("phone"),
+        type: "display",
+        placeholder: inviteResponse.phone,
+        description: t("phoneVerifiedViaWhatsapp"),
+      });
+    }
     fields.push(
-      {
-        name: "name",
-        label: t("fullName"),
-        type: "text",
-        placeholder: t("namePlaceholder"),
-      },
-      inviteResponse?.email
+      inviteResponse?.email && !isWaInvite
         ? {
             name: "email",
             label: t("email"),
@@ -412,16 +432,13 @@ function handleSignupSuccess({
 
 function getSignupInitialValues(inviteResponse?: ValidateInviteResponse) {
   if (!inviteResponse) {
-    return {
-      acceptTerms: false,
-      email: "",
-      name: "",
-    };
+    return { acceptTerms: false, email: "", name: "" };
   }
   return {
     acceptTerms: false,
-    email: inviteResponse.email,
-    name: inviteResponse.name,
+    // WA invite: email is null, user fills it in; EMAIL invite: pre-filled, locked
+    email: inviteResponse.email ?? "",
+    name: inviteResponse.name ?? "",
   };
 }
 
@@ -443,6 +460,7 @@ function useSignupFormState({
 
   const isEmailConfirmation = Boolean(signupToken);
   const isEmailRequest = !inviteResponse && !isEmailConfirmation && !isProviderConsent;
+  const isWaInvite = inviteResponse?.channel === 'WHATSAPP';
   const showOAuth = (isEmailRequest || Boolean(inviteResponse)) && !isEmailConfirmation;
   const initialValues = useMemo(() => getSignupInitialValues(inviteResponse), [inviteResponse]);
 
@@ -460,10 +478,11 @@ function useSignupFormState({
           validateSignupFormSchema(data, ctx, {
             isProviderConsent,
             isEmailRequest,
+            isWaInvite,
             t,
           }),
         ),
-    [t, isEmailRequest, isProviderConsent],
+    [t, isEmailRequest, isProviderConsent, isWaInvite],
   );
 
   const fields = useMemo<FormBuilderField[]>(

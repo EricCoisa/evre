@@ -12,6 +12,7 @@ import { LogActions } from 'src/domain/logging/log-actions';
 type RegisterInput = Omit<RegisterDto, 'password'> & {
   password?: string;
   emailVerifiedAt?: Date;
+  phone?: string | null;
 };
 
 @Injectable()
@@ -73,6 +74,7 @@ export class RegisterUseCase {
         roleId: roleRecord.id,
         termsAcceptedAt: dto.termsAcceptedAt ?? null,
         termsVersion: dto.termsVersion ?? null,
+        ...(dto.phone ? { phone: dto.phone } : {}),
       },
     });
 

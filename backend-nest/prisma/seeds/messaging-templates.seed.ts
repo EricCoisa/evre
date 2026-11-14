@@ -208,4 +208,47 @@ export async function seedMessagingTemplates(prisma: PrismaClient) {
     },
   });
   console.log('✅ Messaging template PROPOSAL_FIRST_CONTACT created');
+
+  // INVITE: enviado por GenerateInviteUseCase quando channel=WHATSAPP.
+  // first_name: reservada (fallback ao número quando nome não informado).
+  // Botão open: URL encurtada do link de cadastro (expira em 48h); urlBase = frontendUrl/s/.
+  // O chamador passa buttons: { open: shortLink.code } — só o código, não a URL completa.
+  const inviteVariables = [
+    { name: 'first_name', type: 'STRING', required: false, reserved: true },
+  ];
+  const inviteTypeButtons = [
+    { key: 'open', kind: 'URL', urlBase: `${frontendUrl}/s/`, required: true },
+  ];
+  const inviteTemplateType = await prisma.messagingTemplateType.upsert({
+    where: { key: 'INVITE' },
+    update: { variables: inviteVariables, buttons: inviteTypeButtons, isSystem: true },
+    create: {
+      key: 'INVITE',
+      name: 'Convite para cadastro',
+      variables: inviteVariables,
+      buttons: inviteTypeButtons,
+      isSystem: true,
+    },
+  });
+  await prisma.messagingTemplate.upsert({
+    where: { key_language: { key: 'INVITE', language: 'pt-BR' } },
+    update: { isSystem: true },
+    create: {
+      key: 'INVITE',
+      language: 'pt-BR',
+      category: 'UTILITY',
+      typeId: inviteTemplateType.id,
+      body: 'Olá {{ first_name }}! Você recebeu um convite para acessar a plataforma. O link expira em 48 horas.\n\nSe não reconhecer este convite, ignore esta mensagem.',
+      buttons: [
+        {
+          kind: 'URL',
+          label: 'Criar conta',
+          url: `${frontendUrl}/s/{{ open }}`,
+          slot: 'open',
+        },
+      ],
+      isSystem: true,
+    },
+  });
+  console.log('✅ Messaging template INVITE created');
 }

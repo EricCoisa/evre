@@ -108,5 +108,19 @@
   "tour_step_users": "Aqui você visualiza todos os usuários cadastrados, pesquisa por nome/email e gerencia papéis e permissões.",
   "tour_step_new_user": "Clique aqui para cadastrar diretamente um novo usuário definindo nome, email, senha e função.",
   "tour_step_invites": "Gerencie os convites enviados por e-mail para novos membros da sua organização.",
-  "tour_step_new_invite": "Envie um convite com link seguro por e-mail para que o convidado crie sua própria conta."
+  "tour_step_new_invite": "Envie um convite com link seguro por e-mail para que o convidado crie sua própria conta.",
+  "newInviteWhatsapp": "Convidar via WhatsApp",
+  "createNewInviteWhatsapp": "Convidar via WhatsApp",
+  "createInviteWhatsappDescription": "Preencha os dados para enviar um convite pelo WhatsApp.",
+  "phone": "Telefone",
+  "phonePlaceholder": "5511999999999",
+  "phoneDescription": "Número no formato internacional (ex: 5511999999999)",
+  "whatsapp_service_disabled_hint": "Configure o WhatsApp em Configurações do Sistema para enviar convites.",
+  "whatsapp_config_button": "Ir para Configuração de WhatsApp",
+  "inviteChannel": "Canal",
+  "inviteChannelEmail": "E-mail",
+  "inviteChannelWhatsapp": "WhatsApp",
+  "phoneRequired": "Telefone é obrigatório",
+  "resendInviteDescriptionWa": "Deseja reenviar o convite de WhatsApp para {phone}?",
+  "contact": "Contato"
 }

@@ -17,7 +17,7 @@ export class InviteCompanyMemberUseCase {
 
   async execute(
     companyId: string,
-    dto: { email: string; name?: string | null },
+    dto: { channel?: 'EMAIL' | 'WHATSAPP'; email?: string | null; phone?: string | null; name?: string | null },
     createdById: string,
   ) {
     const company = await this.prisma.company.findUnique({
@@ -28,18 +28,7 @@ export class InviteCompanyMemberUseCase {
       throw new NotFoundException(this.i18n.t('company.not_found'));
     }
 
-    const email = dto.email.trim().toLowerCase();
-
-    const existingMember = await this.prisma.membership.findFirst({
-      where: {
-        companyId,
-        user: { email },
-      },
-      select: { id: true },
-    });
-    if (existingMember) {
-      throw new ConflictException(this.i18n.t('company.member_already_exists'));
-    }
+    const channel = dto.channel ?? 'EMAIL';
 
     const userRole = await this.prisma.role.findFirst({
       where: { name: 'USER' },
@@ -47,6 +36,39 @@ export class InviteCompanyMemberUseCase {
     });
     if (!userRole) {
       throw new NotFoundException('Role USER not found');
+    }
+
+    if (channel === 'WHATSAPP') {
+      const phone = dto.phone?.trim();
+      if (!phone) throw new ConflictException(this.i18n.t('company.phone_required'));
+
+      const existingMember = await this.prisma.membership.findFirst({
+        where: { companyId, user: { phone } },
+        select: { id: true },
+      });
+      if (existingMember) {
+        throw new ConflictException(this.i18n.t('company.member_already_exists'));
+      }
+
+      return this.generateInvite.execute({
+        channel: 'WHATSAPP',
+        phone,
+        roleId: userRole.id,
+        createdById,
+        name: dto.name,
+        companyId,
+      });
+    }
+
+    const email = dto.email?.trim().toLowerCase();
+    if (!email) throw new ConflictException(this.i18n.t('company.email_required'));
+
+    const existingMember = await this.prisma.membership.findFirst({
+      where: { companyId, user: { email } },
+      select: { id: true },
+    });
+    if (existingMember) {
+      throw new ConflictException(this.i18n.t('company.member_already_exists'));
     }
 
     return this.generateInvite.execute({

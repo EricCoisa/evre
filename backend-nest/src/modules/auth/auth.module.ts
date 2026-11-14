@@ -14,6 +14,8 @@ import { CryptoModule } from '../../common/infrastructure/crypto/crypto.module';
 import { FeatureFlagModule } from '../feature-flag/feature-flag.module';
 import { CaptchaModule } from '../captcha/captcha.module';
 import { ShortUrlModule } from '../short-url/short-url.module';
+import { MessagingModule } from '../messaging/messaging.module';
+import { VerificationModule } from '../verification/verification.module';
 
 import { OidcDiscoveryService } from './oidc-discovery.service';
 import { OAuthProviderService } from './oauth-provider.service';
@@ -79,6 +81,8 @@ const AI_TOOLS = [ListInvitesTool, GenerateInviteTool, DeleteInviteTool];
     // CaptchaModule: login e forgot-password são gateados por @RequireCaptcha().
     CaptchaModule,
     ShortUrlModule,
+    MessagingModule,
+    VerificationModule,
   ],
   controllers: [AuthController],
   providers: [

@@ -15,7 +15,8 @@ export interface UpdatePasswordDto {
 }
 
 export type SignUpDto = {
-  email: string;
+  /** Obrigatório no signup orgânico e convite WA (preenchido pelo usuário); opcional no convite EMAIL (pré-preenchido). */
+  email?: string;
   name?: string;
   inviteToken?: string;
   /** Exigido só quando a conta é criada de fato — passo 1 do signup orgânico não envia isto. */
@@ -27,7 +28,11 @@ export type SignUpDto = {
 export interface ValidateInviteResponse {
   valid: boolean;
   token: string;
-  email: string;
+  /** Nulo quando channel=WHATSAPP (destinatário fornece email no cadastro). */
+  email: string | null;
+  /** Número E.164; presente quando channel=WHATSAPP. */
+  phone?: string | null;
+  channel?: 'EMAIL' | 'WHATSAPP';
   /** Convidado já tem conta: a tela oferece aceitar o convite, não cadastrar. */
   userExists: boolean;
   /** Nome opcional informado ao gerar o convite. */
@@ -43,8 +48,11 @@ export interface CreateUserDto {
 }
 
 export interface CreateInviteDto {
-  email: string;
+  channel?: 'EMAIL' | 'WHATSAPP';
+  email?: string;
+  phone?: string;
   roleId?: string;
+  name?: string;
 }
 
 export const UserStatusColors = {
@@ -70,7 +78,9 @@ export interface RevokeUserRouteAccessResponse {
 
 export interface Invite {
   id: string;
-  email: string;
+  email: string | null;
+  phone?: string | null;
+  channel?: 'EMAIL' | 'WHATSAPP';
   roleId: string;
   roleName: string;
   /** Null quando o convite nasceu do signup orgânico (sem admin por trás). */

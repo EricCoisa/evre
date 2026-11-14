@@ -2938,333 +2938,6 @@
         ]
       }
     },
-    "/storage/config": {
-      "put": {
-        "operationId": "StorageController_saveConfiguration",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SaveStorageConfigDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Valida e salva a configuração de storage",
-        "tags": [
-          "storage"
-        ]
-      }
-    },
-    "/storage/health": {
-      "get": {
-        "operationId": "StorageController_health",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Saúde do serviço de storage (via cache)",
-        "tags": [
-          "storage"
-        ]
-      }
-    },
-    "/storage/file": {
-      "get": {
-        "operationId": "StorageController_getPresignedUrl",
-        "parameters": [
-          {
-            "name": "key",
-            "required": true,
-            "in": "query",
-            "description": "Key do arquivo ou a public URL salva",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "summary": "Obtém URL pré-assinada para acessar arquivo",
-        "tags": [
-          "storage"
-        ]
-      }
-    },
-    "/notification/me": {
-      "get": {
-        "operationId": "NotificationController_findMine",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "description": "Número da página",
-            "schema": {
-              "example": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "Quantidade de itens por página (máximo 100)",
-            "schema": {
-              "example": 10,
-              "type": "number"
-            }
-          },
-          {
-            "name": "pagination",
-            "required": false,
-            "in": "query",
-            "description": "Habilitar/desabilitar paginação",
-            "schema": {
-              "example": true,
-              "type": "boolean"
-            }
-          },
-          {
-            "name": "search",
-            "required": false,
-            "in": "query",
-            "description": "Termo de busca",
-            "schema": {
-              "example": "",
-              "type": "string"
-            }
-          },
-          {
-            "name": "filter",
-            "required": false,
-            "in": "query",
-            "description": "Filtros adicionais",
-            "schema": {
-              "example": {},
-              "allOf": [
-                {
-                  "$ref": "#/components/schemas/Object"
-                }
-              ]
-            }
-          },
-          {
-            "name": "unreadOnly",
-            "required": false,
-            "in": "query",
-            "description": "Só notificações não lidas",
-            "schema": {
-              "example": false,
-              "type": "boolean"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Lista paginada de notificações",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/NotificationDto"
-                      }
-                    },
-                    "meta": {
-                      "type": "object",
-                      "properties": {
-                        "total": {
-                          "type": "number"
-                        },
-                        "page": {
-                          "type": "number"
-                        },
-                        "limit": {
-                          "type": "number"
-                        },
-                        "totalPages": {
-                          "type": "number"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Lista as notificações do usuário logado",
-        "tags": [
-          "notification"
-        ]
-      }
-    },
-    "/notification/me/unread-count": {
-      "get": {
-        "operationId": "NotificationController_unreadCount",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Contador",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "number"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Quantidade de notificações não lidas do usuário logado",
-        "tags": [
-          "notification"
-        ]
-      }
-    },
-    "/notification/me/{id}/read": {
-      "patch": {
-        "operationId": "NotificationController_markOneRead",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Marca uma notificação como lida",
-        "tags": [
-          "notification"
-        ]
-      }
-    },
-    "/notification/me/read-all": {
-      "post": {
-        "operationId": "NotificationController_markAll",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Marca todas as notificações do usuário logado como lidas",
-        "tags": [
-          "notification"
-        ]
-      }
-    },
-    "/notification/me/{id}/dismiss": {
-      "patch": {
-        "operationId": "NotificationController_dismissOne",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Dispensa uma notificação (sai do inbox do usuário logado)",
-        "tags": [
-          "notification"
-        ]
-      }
-    },
-    "/notification/broadcast": {
-      "post": {
-        "operationId": "NotificationController_broadcast",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SendBroadcastNotificationDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Envia uma notificação manual para todos os usuários ou para roles específicas",
-        "tags": [
-          "notification"
-        ]
-      }
-    },
     "/messaging/messages": {
       "post": {
         "description": "JSON: texto, template ou mídia por `mediaUrl` (enfileirado). `multipart/form-data` com o campo `file`: anexo enviado direto ao provider, sem storage, na própria requisição; `type` é opcional e sai do mimetype.",
@@ -4924,6 +4597,258 @@
         ]
       }
     },
+    "/notification/me": {
+      "get": {
+        "operationId": "NotificationController_findMine",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Número da página",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Quantidade de itens por página (máximo 100)",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "pagination",
+            "required": false,
+            "in": "query",
+            "description": "Habilitar/desabilitar paginação",
+            "schema": {
+              "example": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Termo de busca",
+            "schema": {
+              "example": "",
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "required": false,
+            "in": "query",
+            "description": "Filtros adicionais",
+            "schema": {
+              "example": {},
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/Object"
+                }
+              ]
+            }
+          },
+          {
+            "name": "unreadOnly",
+            "required": false,
+            "in": "query",
+            "description": "Só notificações não lidas",
+            "schema": {
+              "example": false,
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista paginada de notificações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/NotificationDto"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "number"
+                        },
+                        "page": {
+                          "type": "number"
+                        },
+                        "limit": {
+                          "type": "number"
+                        },
+                        "totalPages": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lista as notificações do usuário logado",
+        "tags": [
+          "notification"
+        ]
+      }
+    },
+    "/notification/me/unread-count": {
+      "get": {
+        "operationId": "NotificationController_unreadCount",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Contador",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Quantidade de notificações não lidas do usuário logado",
+        "tags": [
+          "notification"
+        ]
+      }
+    },
+    "/notification/me/{id}/read": {
+      "patch": {
+        "operationId": "NotificationController_markOneRead",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Marca uma notificação como lida",
+        "tags": [
+          "notification"
+        ]
+      }
+    },
+    "/notification/me/read-all": {
+      "post": {
+        "operationId": "NotificationController_markAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Marca todas as notificações do usuário logado como lidas",
+        "tags": [
+          "notification"
+        ]
+      }
+    },
+    "/notification/me/{id}/dismiss": {
+      "patch": {
+        "operationId": "NotificationController_dismissOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Dispensa uma notificação (sai do inbox do usuário logado)",
+        "tags": [
+          "notification"
+        ]
+      }
+    },
+    "/notification/broadcast": {
+      "post": {
+        "operationId": "NotificationController_broadcast",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendBroadcastNotificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Envia uma notificação manual para todos os usuários ou para roles específicas",
+        "tags": [
+          "notification"
+        ]
+      }
+    },
     "/verification/request": {
       "post": {
         "operationId": "VerificationController_request",
@@ -5029,6 +4954,81 @@
         "summary": "Saúde de um canal de verificação (pronto para enviar)",
         "tags": [
           "verification"
+        ]
+      }
+    },
+    "/storage/config": {
+      "put": {
+        "operationId": "StorageController_saveConfiguration",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveStorageConfigDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Valida e salva a configuração de storage",
+        "tags": [
+          "storage"
+        ]
+      }
+    },
+    "/storage/health": {
+      "get": {
+        "operationId": "StorageController_health",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Saúde do serviço de storage (via cache)",
+        "tags": [
+          "storage"
+        ]
+      }
+    },
+    "/storage/file": {
+      "get": {
+        "operationId": "StorageController_getPresignedUrl",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "query",
+            "description": "Key do arquivo ou a public URL salva",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Obtém URL pré-assinada para acessar arquivo",
+        "tags": [
+          "storage"
         ]
       }
     },
@@ -11125,18 +11125,31 @@
       "GenerateInviteTokenDto": {
         "type": "object",
         "properties": {
+          "channel": {
+            "type": "string",
+            "enum": [
+              "EMAIL",
+              "WHATSAPP"
+            ],
+            "default": "EMAIL"
+          },
           "email": {
             "type": "string",
-            "minLength": 1,
             "format": "email"
+          },
+          "phone": {
+            "type": "string"
           },
           "roleId": {
             "type": "string",
             "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200
           }
         },
         "required": [
-          "email",
           "roleId"
         ]
       },
@@ -12433,162 +12446,6 @@
         "required": [
           "provider",
           "siteKey"
-        ]
-      },
-      "SaveStorageConfigDto": {
-        "type": "object",
-        "properties": {
-          "provider": {
-            "type": "string",
-            "enum": [
-              "S3",
-              "LOCAL"
-            ],
-            "example": "S3"
-          },
-          "endpoint": {
-            "type": "string",
-            "example": "http://localhost:8333"
-          },
-          "region": {
-            "type": "string",
-            "example": "us-east-1"
-          },
-          "bucket": {
-            "type": "string",
-            "example": "app-uploads"
-          },
-          "accessKey": {
-            "type": "string",
-            "description": "Vazio mantém a credencial já gravada"
-          },
-          "secretKey": {
-            "type": "string",
-            "description": "Vazio mantém a credencial já gravada"
-          },
-          "publicUrl": {
-            "type": "string",
-            "example": "http://localhost:8333/app-uploads"
-          },
-          "dir": {
-            "type": "string",
-            "example": "./uploads"
-          },
-          "baseUrl": {
-            "type": "string",
-            "example": "http://localhost:3001"
-          }
-        },
-        "required": [
-          "provider"
-        ]
-      },
-      "NotificationDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "ID do destinatário (NotificationRecipient) — é o que /me/:id/read e /me/:id/dismiss esperam"
-          },
-          "type": {
-            "type": "string",
-            "description": "Chave do tipo (ver notification-type.const.ts)"
-          },
-          "title": {
-            "type": "string",
-            "nullable": true,
-            "description": "Título já resolvido no idioma do request"
-          },
-          "message": {
-            "type": "string",
-            "nullable": true,
-            "description": "Mensagem já resolvida no idioma do request"
-          },
-          "payload": {
-            "type": "object",
-            "additionalProperties": true,
-            "nullable": true,
-            "description": "Dados brutos para o componente customizado no frontend"
-          },
-          "actionUrl": {
-            "type": "string",
-            "nullable": true,
-            "description": "Link opcional associado à notificação"
-          },
-          "readAt": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true,
-            "description": "Quando o destinatário leu, null se ainda não lida"
-          },
-          "dismissedAt": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true,
-            "description": "Quando o destinatário dispensou, null se ainda visível"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "Quando o evento foi criado"
-          }
-        },
-        "required": [
-          "id",
-          "type",
-          "title",
-          "message",
-          "payload",
-          "readAt",
-          "dismissedAt",
-          "createdAt"
-        ]
-      },
-      "SendBroadcastNotificationDto": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 200,
-            "example": "Manutenção programada",
-            "description": "Título da notificação"
-          },
-          "message": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 2000,
-            "example": "O sistema ficará indisponível das 02h às 04h de domingo.",
-            "description": "Mensagem da notificação"
-          },
-          "actionUrl": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 2000,
-            "example": "/settings",
-            "description": "Link opcional associado à notificação"
-          },
-          "all": {
-            "type": "boolean",
-            "default": false,
-            "description": "Envia para todos os usuários ativos — ignora roleNames quando true"
-          },
-          "roleNames": {
-            "items": {
-              "type": "string",
-              "minLength": 1
-            },
-            "default": [],
-            "example": [
-              "ADMIN"
-            ],
-            "description": "Roles-alvo (Role.name) quando \"all\" é falso",
-            "type": "array"
-          }
-        },
-        "required": [
-          "title",
-          "message"
         ]
       },
       "SendMessageResponseDto": {
@@ -14260,6 +14117,114 @@
           "remoteTemplateId"
         ]
       },
+      "NotificationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID do destinatário (NotificationRecipient) — é o que /me/:id/read e /me/:id/dismiss esperam"
+          },
+          "type": {
+            "type": "string",
+            "description": "Chave do tipo (ver notification-type.const.ts)"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "description": "Título já resolvido no idioma do request"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true,
+            "description": "Mensagem já resolvida no idioma do request"
+          },
+          "payload": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true,
+            "description": "Dados brutos para o componente customizado no frontend"
+          },
+          "actionUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Link opcional associado à notificação"
+          },
+          "readAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "Quando o destinatário leu, null se ainda não lida"
+          },
+          "dismissedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "Quando o destinatário dispensou, null se ainda visível"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Quando o evento foi criado"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "title",
+          "message",
+          "payload",
+          "readAt",
+          "dismissedAt",
+          "createdAt"
+        ]
+      },
+      "SendBroadcastNotificationDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "example": "Manutenção programada",
+            "description": "Título da notificação"
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000,
+            "example": "O sistema ficará indisponível das 02h às 04h de domingo.",
+            "description": "Mensagem da notificação"
+          },
+          "actionUrl": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000,
+            "example": "/settings",
+            "description": "Link opcional associado à notificação"
+          },
+          "all": {
+            "type": "boolean",
+            "default": false,
+            "description": "Envia para todos os usuários ativos — ignora roleNames quando true"
+          },
+          "roleNames": {
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "default": [],
+            "example": [
+              "ADMIN"
+            ],
+            "description": "Roles-alvo (Role.name) quando \"all\" é falso",
+            "type": "array"
+          }
+        },
+        "required": [
+          "title",
+          "message"
+        ]
+      },
       "VerificationRequestResponseDto": {
         "type": "object",
         "properties": {
@@ -14325,6 +14290,54 @@
         },
         "required": [
           "operational"
+        ]
+      },
+      "SaveStorageConfigDto": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "S3",
+              "LOCAL"
+            ],
+            "example": "S3"
+          },
+          "endpoint": {
+            "type": "string",
+            "example": "http://localhost:8333"
+          },
+          "region": {
+            "type": "string",
+            "example": "us-east-1"
+          },
+          "bucket": {
+            "type": "string",
+            "example": "app-uploads"
+          },
+          "accessKey": {
+            "type": "string",
+            "description": "Vazio mantém a credencial já gravada"
+          },
+          "secretKey": {
+            "type": "string",
+            "description": "Vazio mantém a credencial já gravada"
+          },
+          "publicUrl": {
+            "type": "string",
+            "example": "http://localhost:8333/app-uploads"
+          },
+          "dir": {
+            "type": "string",
+            "example": "./uploads"
+          },
+          "baseUrl": {
+            "type": "string",
+            "example": "http://localhost:3001"
+          }
+        },
+        "required": [
+          "provider"
         ]
       },
       "CreateRoleRouteAccessDto": {
@@ -15529,19 +15542,26 @@
       "InviteCompanyMemberDto": {
         "type": "object",
         "properties": {
+          "channel": {
+            "type": "string",
+            "enum": [
+              "EMAIL",
+              "WHATSAPP"
+            ],
+            "default": "EMAIL"
+          },
           "email": {
             "type": "string",
-            "minLength": 1,
             "format": "email"
+          },
+          "phone": {
+            "type": "string"
           },
           "name": {
             "type": "string",
             "maxLength": 200
           }
-        },
-        "required": [
-          "email"
-        ]
+        }
       },
       "UpdateCompanyMemberDto": {
         "type": "object",

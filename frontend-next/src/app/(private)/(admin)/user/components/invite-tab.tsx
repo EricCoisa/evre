@@ -2,12 +2,12 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { DataTable } from '@/components/data-table';
-import { FormBuilderModal, type FormBuilderField } from '@/components/form/form-builder';
+import { FormBuilder, type FormBuilderField } from '@/components/form/form-builder';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Plus, TriangleAlert } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
 import { useInvites, useDeleteInvite, useRoles } from '@/lib/actions/user/queries';
-import { CapabilityGate } from '@/components/capability-gate';
 import { useCapability } from '@/lib/actions/capability/queries';
 import { CAPABILITIES } from '@/types/capabilities';
 import { createInvite } from '@/lib/actions/user/api';
@@ -26,6 +26,7 @@ export function InviteTab() {
   const { data: rolesData } = useRoles();
   const deleteInvite = useDeleteInvite();
   const emailOperational = !useCapability(CAPABILITIES.email).disabled;
+  const messagingOperational = !useCapability(CAPABILITIES.messaging).disabled;
   const queryClient = useQueryClient();
 
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
@@ -82,6 +83,16 @@ export function InviteTab() {
     { name: 'roleId', label: t('role'), type: 'select', placeholder: t('rolePlaceholder'), description: t('roleDescription'), options: rolesData || [] },
   ], [t, rolesData]);
 
+  const createWaInviteSchema = useMemo(() => z.object({
+    phone: z.string().min(1, t('phoneRequired')),
+    roleId: z.string().optional(),
+  }), [t]);
+
+  const createWaInviteFields = useMemo<FormBuilderField[]>(() => [
+    { name: 'phone', label: t('phone'), type: 'phone', placeholder: t('phonePlaceholder') },
+    { name: 'roleId', label: t('role'), type: 'select', placeholder: t('rolePlaceholder'), description: t('roleDescription'), options: rolesData || [] },
+  ], [t, rolesData]);
+
   const handleResend = useCallback((invite: Invite) => {
     setResendingInvite(invite);
   }, []);
@@ -90,7 +101,10 @@ export function InviteTab() {
     if (!resendingInvite) return;
     const invite = resendingInvite;
     setResendingInvite(null);
-    const result = await createInvite({ email: invite.email, roleId: invite.roleId });
+    const payload = invite.channel === 'WHATSAPP'
+      ? { channel: 'WHATSAPP' as const, phone: invite.phone ?? undefined, roleId: invite.roleId }
+      : { email: invite.email ?? undefined, roleId: invite.roleId };
+    const result = await createInvite(payload);
     if (result.success) {
       queryClient.invalidateQueries({ queryKey: ['invites'] });
       toast.success(t('invite_resent'));
@@ -120,8 +134,8 @@ export function InviteTab() {
   }, [t]);
 
   const columns = useMemo(
-    () => getInviteColumns({ t, onResend: handleResend, onDelete: setDeletingInvite, onShowLink: handleShowLink, emailOperational }),
-    [t, handleResend, handleShowLink, emailOperational],
+    () => getInviteColumns({ t, onResend: handleResend, onDelete: setDeletingInvite, onShowLink: handleShowLink, emailOperational, messagingOperational }),
+    [t, handleResend, handleShowLink, emailOperational, messagingOperational],
   );
 
   return (
@@ -158,41 +172,84 @@ export function InviteTab() {
           options={roleOptions}
         />
         <DataTable.Actions className="sm:justify-end sm:w-full">
-          <CapabilityGate name={CAPABILITIES.email}>
-            <Button id="btn-new-invite" onClick={() => setIsCreateOpen(true)}>
-              <Plus /> {t('newInvite')}
-            </Button>
-          </CapabilityGate>
+          <Button id="btn-new-invite" onClick={() => setIsCreateOpen(true)}>
+            <Plus /> {t('newInvite')}
+          </Button>
         </DataTable.Actions>
       </DataTable>
 
-      <FormBuilderModal
+      <Modal
         open={isCreateOpen}
         onOpenChange={setIsCreateOpen}
-        title={t('createNewInvite')}
-        description={t('createInviteDescription')}
-        schema={createInviteSchema}
-        fields={createInviteFields}
-        onSubmit={async (data) => {
-          const result = await createInvite({ email: data.email, roleId: data.roleId });
-          if (!result.success) {
-            throw new Error(result.message ?? t('invite_send_error'));
-          }
-          return result.data;
-        }}
-        onSuccess={(data) => {
-          queryClient.invalidateQueries({ queryKey: ['invites'] });
-          setInvitationToken((data as { actionUrl: string }).actionUrl ?? null);
-        }}
-        submitLabel={t('createInviteButton')}
-      />
+        title={t('newInvite')}
+      >
+        <Tabs defaultValue="email">
+          <TabsList>
+            <TabsTrigger value="email">{t('inviteChannelEmail')}</TabsTrigger>
+            <TabsTrigger value="whatsapp">
+              {t('inviteChannelWhatsapp')}
+              {!messagingOperational && <TriangleAlert className="size-3.5 text-amber-500" />}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="email">
+            <FormBuilder
+              chrome="plain"
+              schema={createInviteSchema}
+              fields={createInviteFields}
+              submitLabel={t('createInviteButton')}
+              onSubmit={async (data) => {
+                const result = await createInvite({ email: data.email, roleId: data.roleId });
+                if (!result.success) throw new Error(result.message ?? t('invite_send_error'));
+                return result.data;
+              }}
+              onSuccess={(data) => {
+                setIsCreateOpen(false);
+                queryClient.invalidateQueries({ queryKey: ['invites'] });
+                setInvitationToken((data as { actionUrl: string }).actionUrl ?? null);
+              }}
+              onCancel={() => setIsCreateOpen(false)}
+            />
+          </TabsContent>
+
+          <TabsContent value="whatsapp">
+            {!messagingOperational && (
+              <p className="flex items-center gap-1.5 text-sm text-amber-600 mb-3">
+                <TriangleAlert className="size-4 shrink-0" />
+                {t('whatsapp_service_disabled_hint')}
+              </p>
+            )}
+            <FormBuilder
+              chrome="plain"
+              schema={createWaInviteSchema}
+              fields={createWaInviteFields}
+              submitLabel={t('createInviteButton')}
+              onSubmit={async (data) => {
+                const result = await createInvite({ channel: 'WHATSAPP', phone: data.phone, roleId: data.roleId });
+                if (!result.success) throw new Error(result.message ?? t('invite_send_error'));
+                return result.data;
+              }}
+              onSuccess={(data) => {
+                setIsCreateOpen(false);
+                queryClient.invalidateQueries({ queryKey: ['invites'] });
+                setInvitationToken((data as { actionUrl: string }).actionUrl ?? null);
+              }}
+              onCancel={() => setIsCreateOpen(false)}
+            />
+          </TabsContent>
+        </Tabs>
+      </Modal>
 
       <ConfirmDialog
         open={!!resendingInvite}
         onOpenChange={(v) => !v && setResendingInvite(null)}
         onConfirm={handleConfirmResend}
         title={t('resendInviteTitle')}
-        description={t('resendInviteDescription', { email: resendingInvite?.email ?? '' })}
+        description={
+          resendingInvite?.channel === 'WHATSAPP'
+            ? t('resendInviteDescriptionWa', { phone: resendingInvite.phone ?? '' })
+            : t('resendInviteDescription', { email: resendingInvite?.email ?? '' })
+        }
       />
 
       <ConfirmDialog

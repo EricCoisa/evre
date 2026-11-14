@@ -2,11 +2,11 @@ import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
 export const GenerateInviteTokenSchema = z.object({
-  email: z
-    .string()
-    .min(1, 'validation.email.required')
-    .email('validation.email.invalid'),
+  channel: z.enum(['EMAIL', 'WHATSAPP']).default('EMAIL'),
+  email: z.string().email('validation.email.invalid').optional(),
+  phone: z.string().optional(),
   roleId: z.string().uuid('validation.role.invalid'),
+  name: z.string().max(200).optional(),
 });
 
 export class GenerateInviteTokenDto extends createZodDto(

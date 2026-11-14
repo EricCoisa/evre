@@ -96,7 +96,12 @@ model RefreshToken {
 
 model Invite {
   id          String               @id @default(uuid())
-  email       String
+  /// Nulo quando o convite é enviado por WhatsApp (destinatário fornece email no cadastro).
+  email       String?
+  /// Número E.164; nulo quando channel=EMAIL.
+  phone       String?
+  /// Canal de envio do convite.
+  channel     String               @default("EMAIL")
   roleId      String
   /// Null quando o convite foi criado por uma integração sem usuário associado.
   createdById String?
@@ -115,6 +120,7 @@ model Invite {
   company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@unique([email, companyId])
+  @@unique([phone, companyId])
   @@index([expiresAt])
   @@map("invites")
   @@schema("public")

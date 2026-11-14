@@ -2,7 +2,7 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
-import { Link2, Mail, Trash2 } from 'lucide-react';
+import { Link2, Mail, MessageCircle, Trash2 } from 'lucide-react';
 import { DataCell, TableHead } from '@/components/table-utils';
 import type { TFunc } from '@/hooks/use-translation';
 export type { CompanyInvite } from '@/lib/actions/company/types';
@@ -24,14 +24,18 @@ interface GetCompanyInviteColumnsProps {
   onResend: (invite: CompanyInvite) => void;
   onDelete: (invite: CompanyInvite) => void;
   emailOperational?: boolean;
+  messagingOperational?: boolean;
 }
 
-export function getCompanyInviteColumns({ t, onShowLink, onResend, onDelete, emailOperational = true }: GetCompanyInviteColumnsProps): ColumnDef<CompanyInvite>[] {
+export function getCompanyInviteColumns({ t, onShowLink, onResend, onDelete, emailOperational = true, messagingOperational = true }: GetCompanyInviteColumnsProps): ColumnDef<CompanyInvite>[] {
   return [
     {
-      accessorKey: 'email',
-      header: () => <TableHead>{t('members.email')}</TableHead>,
-      cell: ({ row }) => <DataCell>{row.getValue('email')}</DataCell>,
+      id: 'contact',
+      header: () => <TableHead>{t('members.contact')}</TableHead>,
+      cell: ({ row }) => {
+        const invite = row.original;
+        return <DataCell>{invite.channel === 'WHATSAPP' ? invite.phone : invite.email}</DataCell>;
+      },
       meta: { mobileOrder: 1, mobileWidth: 'full' },
     },
     {
@@ -93,9 +97,9 @@ export function getCompanyInviteColumns({ t, onShowLink, onResend, onDelete, ema
                 onClick={() => onResend(invite)}
                 title={t('members.resendInviteTooltip')}
                 className="h-6 p-0 min-h-0"
-                disabled={!emailOperational}
+                disabled={invite.channel === 'WHATSAPP' ? !messagingOperational : !emailOperational}
               >
-                <Mail className="h-4 w-4" />
+                {invite.channel === 'WHATSAPP' ? <MessageCircle className="h-4 w-4" /> : <Mail className="h-4 w-4" />}
               </Button>
               <Button
                 variant="ghost"

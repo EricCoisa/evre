@@ -148,6 +148,17 @@
     "resendInviteDescription": "Reenviar o convite para {{email}}?",
     "resendInviteSuccess": "Convite reenviado",
     "resendInviteError": "Erro ao reenviar convite",
-    "inviteAlreadyRegistered": "Este e-mail já possui cadastro"
+    "inviteAlreadyRegistered": "Este e-mail já possui cadastro",
+    "inviteClientWhatsapp": "Convidar via WhatsApp",
+    "inviteChannelEmail": "E-mail",
+    "inviteChannelWhatsapp": "WhatsApp",
+    "whatsappServiceDisabledHint": "Configure o WhatsApp em Configurações do Sistema para enviar convites.",
+    "inviteWhatsappTitle": "Convidar Cliente via WhatsApp",
+    "inviteWhatsappDescription": "Envie um convite pelo WhatsApp para um novo usuário cliente.",
+    "phone": "Telefone",
+    "phonePlaceholder": "5511999999999",
+    "phoneRequired": "Telefone é obrigatório",
+    "resendInviteDescriptionWa": "Reenviar o convite de WhatsApp para {{phone}}?",
+    "contact": "Contato"
   }
 }

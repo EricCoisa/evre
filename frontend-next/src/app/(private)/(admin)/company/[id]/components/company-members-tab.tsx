@@ -8,8 +8,9 @@ import { useMe } from '@/lib/actions/auth/queries';
 import { deleteInvite, updateUser } from '@/lib/actions/user/api';
 import { DataTable } from '@/components/data-table';
 import { Button } from '@/components/ui/button';
-import { Mail, UserPlus } from 'lucide-react';
-import { FormBuilderModal, type FormBuilderField } from '@/components/form/form-builder';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { TriangleAlert, UserPlus } from 'lucide-react';
+import { FormBuilder, FormBuilderModal, type FormBuilderField } from '@/components/form/form-builder';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { Alive } from '@/lib/api/collector';
 import { useQueryClient } from '@tanstack/react-query';
@@ -17,10 +18,10 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { buildTableQueryParams } from '@/lib/table-query-params';
 import { getMemberColumns, type Member } from './member-columns';
-import { getCompanyInviteColumns, type CompanyInvite } from './company-invite-columns';
+import { getCompanyInviteColumns } from './company-invite-columns';
+import type { CompanyInvite } from '@/lib/actions/company/types';
 import Modal from '@/components/modal';
 import { CopyField } from '@/components/copy-field';
-import { CapabilityGate } from '@/components/capability-gate';
 import { useCapability } from '@/lib/actions/capability/queries';
 import { CAPABILITIES } from '@/types/capabilities';
 
@@ -29,6 +30,7 @@ export function CompanyMembersTab({ companyId }: { companyId: string }) {
   const queryClient = useQueryClient();
   const { data: currentUser } = useMe();
   const emailOperational = !useCapability(CAPABILITIES.email).disabled;
+  const messagingOperational = !useCapability(CAPABILITIES.messaging).disabled;
 
   const [membersPagination, setMembersPagination] = useState({ pageIndex: 0, pageSize: 10 });
   const [globalFilter, setGlobalFilter] = useState('');
@@ -98,6 +100,16 @@ export function CompanyMembersTab({ companyId }: { companyId: string }) {
     { name: 'name', label: t('members.name'), placeholder: t('members.namePlaceholder') },
   ], [t]);
 
+  const inviteWaSchema = useMemo(() => z.object({
+    phone: z.string().min(1, t('members.phoneRequired')),
+    name: z.string().max(200).optional(),
+  }), [t]);
+
+  const inviteWaFields = useMemo<FormBuilderField[]>(() => [
+    { name: 'phone', label: t('members.phone'), type: 'phone', placeholder: t('members.phonePlaceholder') },
+    { name: 'name', label: t('members.name'), placeholder: t('members.namePlaceholder') },
+  ], [t]);
+
   const editPermissionsSchema = useMemo(() => z.object({
     canSeeCommercials: z.boolean().optional(),
     canComment: z.boolean().optional(),
@@ -144,8 +156,11 @@ export function CompanyMembersTab({ companyId }: { companyId: string }) {
     if (!resendingInvite) return;
     const invite = resendingInvite;
     setResendingInvite(null);
+    const payload = invite.channel === 'WHATSAPP'
+      ? { channel: 'WHATSAPP' as const, phone: invite.phone ?? undefined, name: invite.createdByName ?? undefined }
+      : { email: invite.email ?? undefined, name: invite.createdByName ?? undefined };
     try {
-      const result = await Alive(() => inviteMutation.mutateAsync({ email: invite.email }))();
+      const result = await Alive(() => inviteMutation.mutateAsync(payload))();
       if (result?.actionUrl) {
         setInvitationToken(result.actionUrl);
       }
@@ -171,8 +186,8 @@ export function CompanyMembersTab({ companyId }: { companyId: string }) {
   );
 
   const inviteColumns = useMemo(
-    () => getCompanyInviteColumns({ t, onShowLink: handleShowLink, onResend: handleResend, onDelete: setDeletingInvite, emailOperational }),
-    [t, handleShowLink, handleResend, emailOperational],
+    () => getCompanyInviteColumns({ t, onShowLink: handleShowLink, onResend: handleResend, onDelete: setDeletingInvite, emailOperational, messagingOperational }),
+    [t, handleShowLink, handleResend, emailOperational, messagingOperational],
   );
 
   return (
@@ -203,12 +218,9 @@ export function CompanyMembersTab({ companyId }: { companyId: string }) {
             <UserPlus className="mr-1 h-4 w-4" />
             {t('members.addExisting')}
           </Button>
-          <CapabilityGate name={CAPABILITIES.email}>
-            <Button onClick={() => setIsInviteOpen(true)}>
-              <Mail className="mr-1 h-4 w-4" />
-              {t('members.inviteClient')}
-            </Button>
-          </CapabilityGate>
+          <Button onClick={() => setIsInviteOpen(true)}>
+            {t('members.inviteClient')}
+          </Button>
         </DataTable.Actions>
       </DataTable>
 
@@ -255,25 +267,66 @@ export function CompanyMembersTab({ companyId }: { companyId: string }) {
         submitLabel={t('members.addExisting')}
       />
 
-      <FormBuilderModal
-        size="md"
+      <Modal
         open={isInviteOpen}
         onOpenChange={setIsInviteOpen}
-        title={t('members.inviteTitle')}
-        description={t('members.inviteDescription')}
-        schema={inviteSchema}
-        fields={inviteFields}
-        mode="create"
-        onSubmit={async (data) => {
-          const result = await Alive(() => inviteMutation.mutateAsync(data))();
-          return result;
-        }}
-        onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ['company', companyId, 'members'] });
-          queryClient.invalidateQueries({ queryKey: ['company', companyId, 'invites'] });
-        }}
-        submitLabel={t('members.inviteClient')}
-      />
+        title={t('members.inviteClient')}
+      >
+        <Tabs defaultValue="email">
+          <TabsList>
+            <TabsTrigger value="email">{t('members.inviteChannelEmail')}</TabsTrigger>
+            <TabsTrigger value="whatsapp">
+              {t('members.inviteChannelWhatsapp')}
+              {!messagingOperational && <TriangleAlert className="size-3.5 text-amber-500" />}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="email">
+            <FormBuilder
+              chrome="plain"
+              schema={inviteSchema}
+              fields={inviteFields}
+              submitLabel={t('members.inviteClient')}
+              onSubmit={async (data) => {
+                const result = await Alive(() => inviteMutation.mutateAsync(data))();
+                return result;
+              }}
+              onSuccess={() => {
+                setIsInviteOpen(false);
+                queryClient.invalidateQueries({ queryKey: ['company', companyId, 'members'] });
+                queryClient.invalidateQueries({ queryKey: ['company', companyId, 'invites'] });
+              }}
+              onCancel={() => setIsInviteOpen(false)}
+            />
+          </TabsContent>
+
+          <TabsContent value="whatsapp">
+            {!messagingOperational && (
+              <p className="flex items-center gap-1.5 text-sm text-amber-600 mb-3">
+                <TriangleAlert className="size-4 shrink-0" />
+                {t('members.whatsappServiceDisabledHint')}
+              </p>
+            )}
+            <FormBuilder
+              chrome="plain"
+              schema={inviteWaSchema}
+              fields={inviteWaFields}
+              submitLabel={t('members.inviteClientWhatsapp')}
+              onSubmit={async (data) => {
+                const result = await Alive(() => inviteMutation.mutateAsync({ channel: 'WHATSAPP', phone: data.phone, name: data.name }))();
+                return result;
+              }}
+              onSuccess={(data) => {
+                setIsInviteOpen(false);
+                queryClient.invalidateQueries({ queryKey: ['company', companyId, 'members'] });
+                queryClient.invalidateQueries({ queryKey: ['company', companyId, 'invites'] });
+                if ((data as CompanyInvite)?.actionUrl) setInvitationToken((data as CompanyInvite).actionUrl!);
+              }}
+              onCancel={() => setIsInviteOpen(false)}
+            />
+          </TabsContent>
+        </Tabs>
+      </Modal>
 
       <FormBuilderModal
         size="md"
@@ -316,7 +369,11 @@ export function CompanyMembersTab({ companyId }: { companyId: string }) {
         onOpenChange={(v) => !v && setResendingInvite(null)}
         onConfirm={handleConfirmResend}
         title={t('members.resendInviteTitle')}
-        description={t('members.resendInviteDescription', { email: resendingInvite?.email ?? '' })}
+        description={
+          resendingInvite?.channel === 'WHATSAPP'
+            ? t('members.resendInviteDescriptionWa', { phone: resendingInvite.phone ?? '' })
+            : t('members.resendInviteDescription', { email: resendingInvite?.email ?? '' })
+        }
       />
 
       <ConfirmDialog

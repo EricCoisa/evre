@@ -11,7 +11,7 @@ import { getQueryConfig } from '../../utils';
 import { Collector } from "@/lib/api/collector";
 import { toast } from "sonner";
 import { useTranslation } from "@/hooks/use-translation";
-import { CreateCompanyDto, UpdateCompanyDto, CreateContactDto, UpdateContactDto, AddCompanyMemberDto, InviteCompanyMemberDto, UpdateCompanyMemberDto } from "./types";
+import { CreateCompanyDto, UpdateCompanyDto, CreateContactDto, UpdateContactDto, AddCompanyMemberDto, InviteCompanyMemberPayload, UpdateCompanyMemberDto } from "./types";
 
 export function useCompanies(params?: PaginationParams, options?: { enabled?: boolean }) {
   return useQuery({
@@ -167,7 +167,7 @@ export function useInviteCompanyMember(companyId: string) {
   const queryClient = useQueryClient();
   const { t } = useTranslation('company');
   return useMutation({
-    mutationFn: (data: InviteCompanyMemberDto) => inviteCompanyMember(companyId, data),
+    mutationFn: (data: InviteCompanyMemberPayload) => inviteCompanyMember(companyId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company', companyId, 'members'] });
       queryClient.invalidateQueries({ queryKey: ['company', companyId, 'invites'] });
