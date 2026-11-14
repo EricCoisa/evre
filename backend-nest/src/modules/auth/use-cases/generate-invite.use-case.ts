@@ -49,7 +49,9 @@ export class GenerateInviteUseCase {
 
     if (channel === 'WHATSAPP') {
       if (!dto.phone?.trim()) {
-        throw new BadRequestException(this.i18n.t('auth.invite.phone_required'));
+        throw new BadRequestException(
+          this.i18n.t('auth.invite.phone_required'),
+        );
       }
       if (!(await this.messagingService.isEnabled())) {
         throw new ServiceUnavailableException(
@@ -58,7 +60,9 @@ export class GenerateInviteUseCase {
       }
     } else {
       if (!dto.email?.trim()) {
-        throw new BadRequestException(this.i18n.t('auth.invite.email_required'));
+        throw new BadRequestException(
+          this.i18n.t('auth.invite.email_required'),
+        );
       }
       const health = await this.emailService.checkHealth();
       if (!health.operational) {
@@ -81,9 +85,13 @@ export class GenerateInviteUseCase {
     const companyId = dto.companyId ?? null;
 
     if (channel === 'WHATSAPP') {
-      const existingByPhone = await this.prisma.user.findFirst({ where: { phone: phone! } });
+      const existingByPhone = await this.prisma.user.findFirst({
+        where: { phone: phone! },
+      });
       if (existingByPhone) {
-        throw new ConflictException(this.i18n.t('auth.invite.phone_already_registered'));
+        throw new ConflictException(
+          this.i18n.t('auth.invite.phone_already_registered'),
+        );
       }
     }
 
@@ -108,14 +116,22 @@ export class GenerateInviteUseCase {
         module: 'AUTH',
         action: LogActions.GENERATE_INVITE_TOKEN,
         message: `Token de convite gerado para ${channel === 'WHATSAPP' ? phone : email} (role: ${role.name})`,
-        metadata: { email, phone, channel, roleId: dto.roleId, createdById: dto.createdById },
+        metadata: {
+          email,
+          phone,
+          channel,
+          roleId: dto.roleId,
+          createdById: dto.createdById,
+        },
       },
       dto.createdById,
     );
 
     const appUrl = this.configService.get<string>('NEXTAUTH_URL');
     if (!appUrl) {
-      throw new InternalServerErrorException(this.i18n.t('auth.signup.email_send_failed'));
+      throw new InternalServerErrorException(
+        this.i18n.t('auth.signup.email_send_failed'),
+      );
     }
     const appName = await this.readConfigValue('SYSTEM_APP_NAME');
     const originalActionUrl = `${appUrl}/signup?inviteToken=${encodeURIComponent(token)}`;
@@ -130,7 +146,8 @@ export class GenerateInviteUseCase {
     });
     const actionUrl = shortLink.shortUrl;
 
-    const lockKey = channel === 'WHATSAPP' ? `invite:phone:${phone}` : `invite:${email}`;
+    const lockKey =
+      channel === 'WHATSAPP' ? `invite:phone:${phone}` : `invite:${email}`;
 
     const previousInvite = await this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`
@@ -140,7 +157,8 @@ export class GenerateInviteUseCase {
         SELECT 1::int FROM lock
       `;
       const previous = await tx.invite.findFirst({
-        where: channel === 'WHATSAPP' ? { phone, companyId } : { email, companyId },
+        where:
+          channel === 'WHATSAPP' ? { phone, companyId } : { email, companyId },
         select: {
           id: true,
           roleId: true,
@@ -186,9 +204,10 @@ export class GenerateInviteUseCase {
 
     const rollbackInvite = async () => {
       await this.shortUrlService.deactivate(shortLink.code).catch(() => {});
-      const whereByIdentity = channel === 'WHATSAPP'
-        ? { phone, tokenHash: inviteTokenHash }
-        : { email, tokenHash: inviteTokenHash };
+      const whereByIdentity =
+        channel === 'WHATSAPP'
+          ? { phone, tokenHash: inviteTokenHash }
+          : { email, tokenHash: inviteTokenHash };
       await this.prisma.$transaction(async (tx) => {
         await tx.$queryRaw`
           WITH lock AS MATERIALIZED (
@@ -246,7 +265,10 @@ export class GenerateInviteUseCase {
     }
 
     await this.prisma.invite.updateMany({
-      where: channel === 'WHATSAPP' ? { phone, tokenHash: inviteTokenHash } : { email, tokenHash: inviteTokenHash },
+      where:
+        channel === 'WHATSAPP'
+          ? { phone, tokenHash: inviteTokenHash }
+          : { email, tokenHash: inviteTokenHash },
       data: { actionUrl },
     });
 
@@ -285,7 +307,10 @@ export class GenerateInviteUseCase {
     const invitePayload = payload as InviteTokenPayload;
     const isWa = invitePayload.channel === 'WHATSAPP';
 
-    if (!isWa && (!invitePayload.email || typeof invitePayload.email !== 'string')) {
+    if (
+      !isWa &&
+      (!invitePayload.email || typeof invitePayload.email !== 'string')
+    ) {
       throw new UnauthorizedException(this.i18n.t('auth.invite.invalid_token'));
     }
 
@@ -316,10 +341,14 @@ export class GenerateInviteUseCase {
     }
 
     const existingUser = isWa
-      ? (currentInvite.phone
-          ? await this.prisma.user.findFirst({ where: { phone: currentInvite.phone } })
-          : null)
-      : await this.prisma.user.findUnique({ where: { email: currentInvite.email! } });
+      ? currentInvite.phone
+        ? await this.prisma.user.findFirst({
+            where: { phone: currentInvite.phone },
+          })
+        : null
+      : await this.prisma.user.findUnique({
+          where: { email: currentInvite.email! },
+        });
 
     if (existingUser) {
       const alreadyHasRole = existingUser.roleId === currentInvite.roleId;
@@ -352,7 +381,10 @@ export class GenerateInviteUseCase {
     const invitePayload = await this.validateInviteToken(dto.token);
     const isWa = invitePayload.channel === 'WHATSAPP';
 
-    if (!isWa && currentUser.email.trim().toLowerCase() !== invitePayload.email) {
+    if (
+      !isWa &&
+      currentUser.email.trim().toLowerCase() !== invitePayload.email
+    ) {
       throw new ForbiddenException(this.i18n.t('auth.invite.email_mismatch'));
     }
 
@@ -378,7 +410,9 @@ export class GenerateInviteUseCase {
       });
       if (isWa) {
         if (!user || !invite.phone || user.phone !== invite.phone) {
-          throw new ForbiddenException(this.i18n.t('auth.invite.phone_mismatch'));
+          throw new ForbiddenException(
+            this.i18n.t('auth.invite.phone_mismatch'),
+          );
         }
       } else if (!user || user.email.trim().toLowerCase() !== invite.email) {
         throw new ForbiddenException(this.i18n.t('auth.invite.email_mismatch'));

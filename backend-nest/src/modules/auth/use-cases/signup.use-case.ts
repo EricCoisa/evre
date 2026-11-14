@@ -56,7 +56,10 @@ export class SignupUseCase {
     acceptTerms?: boolean;
   }) {
     if (dto.inviteToken) return this.acceptInvite(dto);
-    if (!dto.email) throw new BadRequestException(this.i18n.t('auth.validation.email_required'));
+    if (!dto.email)
+      throw new BadRequestException(
+        this.i18n.t('auth.validation.email_required'),
+      );
     return this.requestEmailConfirmation({ email: dto.email, name: dto.name });
   }
 
@@ -243,7 +246,10 @@ export class SignupUseCase {
           },
           include: { role: { select: { name: true } } },
         });
-        if (!invite || (invite.channel !== 'WHATSAPP' && invite.email !== intent.email)) {
+        if (
+          !invite ||
+          (invite.channel !== 'WHATSAPP' && invite.email !== intent.email)
+        ) {
           throw this.invalidConfirmation();
         }
 
@@ -293,7 +299,7 @@ export class SignupUseCase {
             created: false,
             inviteRoleName: invite.role.name,
             invitePhone: null as string | null,
-            inviteChannel: 'EMAIL' as string,
+            inviteChannel: 'EMAIL',
           };
         }
 
@@ -336,7 +342,13 @@ export class SignupUseCase {
         termsAcceptedAt: now,
         termsVersion,
       });
-      return { user, created: true, inviteRoleName: null, invitePhone: null as string | null, inviteChannel: 'EMAIL' as string };
+      return {
+        user,
+        created: true,
+        inviteRoleName: null,
+        invitePhone: null as string | null,
+        inviteChannel: 'EMAIL',
+      };
     });
 
     if (completion.created) {
@@ -360,7 +372,11 @@ export class SignupUseCase {
       );
     }
 
-    if (completion.created && completion.inviteChannel === 'WHATSAPP' && completion.invitePhone) {
+    if (
+      completion.created &&
+      completion.inviteChannel === 'WHATSAPP' &&
+      completion.invitePhone
+    ) {
       await this.verificationService.markConfirmed({
         userId: completion.user.id,
         purpose: UserVerificationPurpose.PHONE_CONFIRMATION,
@@ -517,7 +533,9 @@ export class SignupUseCase {
     );
     const isWa = invitePayload.channel === 'WHATSAPP';
     if (isWa && !dto.email) {
-      throw new BadRequestException(this.i18n.t('auth.validation.email_required'));
+      throw new BadRequestException(
+        this.i18n.t('auth.validation.email_required'),
+      );
     }
     const termsVersion =
       (await this.systemConfigurationService.getValueOrNull(
@@ -549,7 +567,9 @@ export class SignupUseCase {
       });
       if (claimed.count !== 1) throw this.invalidConfirmation();
 
-      const registrationEmail = isWa ? dto.email! : (invite.email ?? dto.email!);
+      const registrationEmail = isWa
+        ? dto.email!
+        : (invite.email ?? dto.email!);
       const user = await this.registerUseCase.createInTransaction(tx, {
         email: registrationEmail,
         password,

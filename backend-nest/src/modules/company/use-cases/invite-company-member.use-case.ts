@@ -18,7 +18,12 @@ export class InviteCompanyMemberUseCase {
 
   async execute(
     companyId: string,
-    dto: { channel?: 'EMAIL' | 'WHATSAPP'; email?: string | null; phone?: string | null; name?: string | null },
+    dto: {
+      channel?: 'EMAIL' | 'WHATSAPP';
+      email?: string | null;
+      phone?: string | null;
+      name?: string | null;
+    },
     createdById: string,
   ) {
     const company = await this.prisma.company.findUnique({
@@ -41,14 +46,17 @@ export class InviteCompanyMemberUseCase {
 
     if (channel === 'WHATSAPP') {
       const phone = dto.phone?.trim();
-      if (!phone) throw new BadRequestException(this.i18n.t('company.phone_required'));
+      if (!phone)
+        throw new BadRequestException(this.i18n.t('company.phone_required'));
 
       const existingMember = await this.prisma.membership.findFirst({
         where: { companyId, user: { phone } },
         select: { id: true },
       });
       if (existingMember) {
-        throw new ConflictException(this.i18n.t('company.member_already_exists'));
+        throw new ConflictException(
+          this.i18n.t('company.member_already_exists'),
+        );
       }
 
       return this.generateInvite.execute({
@@ -62,7 +70,8 @@ export class InviteCompanyMemberUseCase {
     }
 
     const email = dto.email?.trim().toLowerCase();
-    if (!email) throw new BadRequestException(this.i18n.t('company.email_required'));
+    if (!email)
+      throw new BadRequestException(this.i18n.t('company.email_required'));
 
     const existingMember = await this.prisma.membership.findFirst({
       where: { companyId, user: { email } },

@@ -430,7 +430,12 @@ export class MetaProvider implements IMessagingService<MetaConfig> {
         type: 'button',
         sub_type: 'url',
         index: String(index),
-        parameters: [{ type: 'text', text: sanitizeParameter(template.values[urlNames[0]] ?? '') }],
+        parameters: [
+          {
+            type: 'text',
+            text: sanitizeParameter(template.values[urlNames[0]] ?? ''),
+          },
+        ],
       });
     });
 
@@ -773,7 +778,9 @@ export class MetaProvider implements IMessagingService<MetaConfig> {
     if (!session?.id) throw new Error('Meta: upload session não criado');
 
     // A Meta retorna só o ID numérico; o endpoint de upload exige o prefixo "upload:".
-    const uploadPath = session.id.startsWith('upload:') ? session.id : `upload:${session.id}`;
+    const uploadPath = session.id.startsWith('upload:')
+      ? session.id
+      : `upload:${session.id}`;
     const upload = (await requestJson(
       'Meta',
       this.graph(cfg, uploadPath),

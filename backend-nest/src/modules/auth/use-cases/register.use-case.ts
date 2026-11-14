@@ -49,9 +49,13 @@ export class RegisterUseCase {
     }
 
     if (dto.phone) {
-      const existingByPhone = await tx.user.findFirst({ where: { phone: dto.phone } });
+      const existingByPhone = await tx.user.findFirst({
+        where: { phone: dto.phone },
+      });
       if (existingByPhone) {
-        throw new ConflictException(this.i18n.t('auth.invite.phone_already_registered'));
+        throw new ConflictException(
+          this.i18n.t('auth.invite.phone_already_registered'),
+        );
       }
     }
 
