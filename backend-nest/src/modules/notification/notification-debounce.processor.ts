@@ -19,14 +19,25 @@ export class NotificationDebounceProcessor extends WorkerHost {
   }
 
   async process(job: Job<NotificationDebounceJobData>): Promise<void> {
-    const { bufferKey, recipientUserId, type, actionUrl, channels, titleKey, messageKey } =
-      job.data;
+    const {
+      bufferKey,
+      recipientUserId,
+      type,
+      actionUrl,
+      channels,
+      titleKey,
+      messageKey,
+    } = job.data;
 
     const items = await this.redis.lrange(bufferKey);
     if (items.length === 0) return;
 
     const plural = items.length > 1 ? '_plural' : '';
-    const args = { item: items[0] ?? '', items: items.join(', '), count: items.length };
+    const args = {
+      item: items[0] ?? '',
+      items: items.join(', '),
+      count: items.length,
+    };
 
     await this.sendNotification.execute({
       type,

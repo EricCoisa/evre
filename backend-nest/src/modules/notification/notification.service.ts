@@ -17,7 +17,8 @@ import {
 export class NotificationService {
   constructor(
     private readonly sendNotification: SendNotificationUseCase,
-    @InjectQueue(NOTIFICATION_DEBOUNCE_QUEUE) private readonly debounceQueue: Queue,
+    @InjectQueue(NOTIFICATION_DEBOUNCE_QUEUE)
+    private readonly debounceQueue: Queue,
     private readonly redis: RedisService,
     private readonly i18n: I18nService,
   ) {}

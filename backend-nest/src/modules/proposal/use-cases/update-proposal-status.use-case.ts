@@ -73,7 +73,10 @@ export class UpdateProposalStatusUseCase {
       user.id,
     );
 
-    if (nextStatus === ProposalStatusConst.LOST && nextStatus !== found.status) {
+    if (
+      nextStatus === ProposalStatusConst.LOST &&
+      nextStatus !== found.status
+    ) {
       await this.notifications.notify({
         type: ProposalNotificationType.STATUS_CHANGED,
         recipients: { userIds: [found.ownerId] },

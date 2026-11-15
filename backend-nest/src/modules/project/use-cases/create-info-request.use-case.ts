@@ -53,7 +53,12 @@ export class CreateInfoRequestUseCase {
         message: this.i18n.t('project.info_request_created_message', {
           args: { project: project.name, label: dto.label },
         }),
-        payload: { projectId, infoRequestId: created.id, project: project.name, label: dto.label },
+        payload: {
+          projectId,
+          infoRequestId: created.id,
+          project: project.name,
+          label: dto.label,
+        },
         actionUrl: `/project/${projectId}`,
         channels: { whatsapp: true },
       });

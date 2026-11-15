@@ -81,7 +81,13 @@ export class RespondApprovalUseCase {
           : 'project.approval_rejected_message',
         { args: { milestone: approval.milestone.title } },
       ),
-      payload: { approvalId, milestoneId: approval.milestoneId, projectId, status: dto.status, milestone: approval.milestone.title },
+      payload: {
+        approvalId,
+        milestoneId: approval.milestoneId,
+        projectId,
+        status: dto.status,
+        milestone: approval.milestone.title,
+      },
       actionUrl: `/project/${projectId}`,
       channels: { whatsapp: true },
     });

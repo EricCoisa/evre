@@ -27,7 +27,6 @@ import { TASK_STATUS_CONFIG } from './milestone-progress';
 import { Plus, Loader2, CheckSquare, AlertTriangle, UserX } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ProjectTaskStatus } from '@/lib/actions/project/types';
-import type { ProjectMemberDto } from '@/lib/generated/schemas';
 
 const RICH_TEXT_FORMAT_LABELS = {
   bold: 'Negrito (*texto*)',

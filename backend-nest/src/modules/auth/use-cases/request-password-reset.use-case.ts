@@ -73,7 +73,11 @@ export class RequestPasswordResetUseCase {
           module: 'AUTH',
           action: LogActions.PASSWORD_RESET_REQUEST,
           message: `Tentativa de recuperação de senha para email não cadastrado ou inativo: ${normalizedEmail}`,
-          metadata: { email: normalizedEmail, userFound: !!user, userStatus: user?.status ?? null },
+          metadata: {
+            email: normalizedEmail,
+            userFound: !!user,
+            userStatus: user?.status ?? null,
+          },
         },
         null,
       );

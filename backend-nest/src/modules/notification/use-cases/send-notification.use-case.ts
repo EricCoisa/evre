@@ -72,7 +72,10 @@ export class SendNotificationUseCase {
       return;
     }
 
-    if ('userIds' in input.recipients && input.recipients.userIds.length === 1) {
+    if (
+      'userIds' in input.recipients &&
+      input.recipients.userIds.length === 1
+    ) {
       const existing = await this.prisma.notificationRecipient.findFirst({
         where: {
           userId: input.recipients.userIds[0],
@@ -254,7 +257,8 @@ export class SendNotificationUseCase {
   ): Promise<void> {
     if (input.actionUrl) {
       const base = (
-        this.configService.get<string>('FRONTEND_URL') ?? 'http://localhost:3000'
+        this.configService.get<string>('FRONTEND_URL') ??
+        'http://localhost:3000'
       ).replace(/\/+$/, '');
       const short = await this.shortUrl.shorten({
         targetUrl: `${base}${input.actionUrl}`,
