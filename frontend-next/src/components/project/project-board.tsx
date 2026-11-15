@@ -54,7 +54,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useMe } from '@/lib/actions/auth/queries';
-import { useUsers } from '@/lib/actions/user/queries';
+import { useProjectMembers } from '@/lib/actions/project/queries';
 import { useTranslation } from '@/hooks/use-translation';
 import {
   LayoutGrid,
@@ -68,7 +68,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Milestone, MilestoneTask } from '@/lib/actions/project/types';
-import type { UserDto } from '@/lib/generated/schemas';
+import type { ProjectMemberDto } from '@/lib/generated/schemas';
 
 interface ProjectBoardProps {
   projectId: string;
@@ -381,7 +381,7 @@ function AssigneeFilterSection({
   isClient: boolean;
   assigneeFilter: string;
   onAssigneeFilterChange: (value: string) => void;
-  users: UserDto[];
+  users: ProjectMemberDto[];
   onlyMyTasks: boolean;
   onToggleOnlyMyTasks: () => void;
   showMyTasksToggle: boolean;
@@ -528,7 +528,7 @@ interface ProjectBoardToolbarProps {
   onlyMyTasks: boolean;
   onToggleOnlyMyTasks: () => void;
   isClient: boolean;
-  users: UserDto[];
+  users: ProjectMemberDto[];
   showMyTasksToggle: boolean;
   isFilterActive: boolean;
   filteredTasksCount: number;
@@ -821,17 +821,8 @@ export function ProjectBoard({
   const { data: meData } = useMe();
   const currentUserId = meData?.id;
   const isClient = mode === 'client' || isClientUser(meData);
-  const { data: usersData } = useUsers(undefined, { enabled: meData?.role === 'ADMIN' });
-
-  const users = useMemo(() => {
-    if (!usersData) return [];
-    const raw = Array.isArray(usersData)
-      ? (usersData as UserDto[])
-      : (usersData as { data?: UserDto[] })?.data ??
-        (usersData as { items?: UserDto[] })?.items ??
-        [];
-    return raw;
-  }, [usersData]);
+  const { data: membersData } = useProjectMembers(projectId);
+  const users = useMemo(() => membersData ?? [], [membersData]);
 
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [assigneeFilter, setAssigneeFilter] = useState<string>('all');

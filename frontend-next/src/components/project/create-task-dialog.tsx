@@ -20,15 +20,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { RichTextInput } from '@/components/rich-text-input';
-import { useCreateTask } from '@/lib/actions/project/queries';
+import { useCreateTask, useProjectMembers } from '@/lib/actions/project/queries';
 import { useMe } from '@/lib/actions/auth/queries';
-import { useUsers } from '@/lib/actions/user/queries';
 import { UserAvatar } from './user-avatar';
 import { TASK_STATUS_CONFIG } from './milestone-progress';
 import { Plus, Loader2, CheckSquare, AlertTriangle, UserX } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ProjectTaskStatus } from '@/lib/actions/project/types';
-import type { UserDto } from '@/lib/generated/schemas';
+import type { ProjectMemberDto } from '@/lib/generated/schemas';
 
 const RICH_TEXT_FORMAT_LABELS = {
   bold: 'Negrito (*texto*)',
@@ -108,17 +107,8 @@ function CreateTaskDialogContent({
 }) {
   const createTaskMutation = useCreateTask(projectId);
   const { data: meData } = useMe();
-  const { data: usersData } = useUsers();
-
-  const users = useMemo(() => {
-    if (!usersData) return [];
-    const raw = Array.isArray(usersData)
-      ? (usersData as UserDto[])
-      : (usersData as { data?: UserDto[] })?.data ??
-        (usersData as { items?: UserDto[] })?.items ??
-        [];
-    return raw;
-  }, [usersData]);
+  const { data: membersData } = useProjectMembers(projectId);
+  const users = useMemo(() => membersData ?? [], [membersData]);
 
   const [selectedMilestoneId, setSelectedMilestoneId] = useState(() =>
     resolveDefaultMilestoneId(initialMilestoneId, availableMilestones)

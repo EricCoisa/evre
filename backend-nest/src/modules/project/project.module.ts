@@ -31,6 +31,7 @@ import { AnswerInfoRequestUseCase } from './use-cases/answer-info-request.use-ca
 import { CancelInfoRequestUseCase } from './use-cases/cancel-info-request.use-case';
 import { ListInfoRequestsUseCase } from './use-cases/list-info-requests.use-case';
 import { GetInfoRequestValueUseCase } from './use-cases/get-info-request-value.use-case';
+import { GetProjectMembersUseCase } from './use-cases/get-members.use-case';
 import { ProjectRouteCeiling } from './project.route-ceiling';
 import { CreateProjectTool } from './ai-tools/create-project.tool';
 import { ListProjectsTool } from './ai-tools/list-projects.tool';
@@ -86,6 +87,7 @@ const USE_CASES = [
   CancelInfoRequestUseCase,
   ListInfoRequestsUseCase,
   GetInfoRequestValueUseCase,
+  GetProjectMembersUseCase,
 ];
 
 const AI_TOOLS = [

@@ -20,11 +20,10 @@ import { useTranslation } from '@/hooks/use-translation';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { TASK_STATUS_CONFIG } from './milestone-progress';
 import { UserAvatar } from './user-avatar';
-import { useUpdateTask } from '@/lib/actions/project/queries';
-import { useUsers } from '@/lib/actions/user/queries';
+import { useUpdateTask, useProjectMembers } from '@/lib/actions/project/queries';
 import { toast } from 'sonner';
 import type { MilestoneTask, ProjectTaskStatus } from '@/lib/actions/project/types';
-import type { UserDto } from '@/lib/generated/schemas';
+import type { ProjectMemberDto } from '@/lib/generated/schemas';
 
 export interface TimerControl {
   activeEntityId?: string;
@@ -269,7 +268,7 @@ function AssigneeMenuItem({
   isCurrent,
   onSelect,
 }: {
-  user: UserDto;
+  user: ProjectMemberDto;
   isCurrent: boolean;
   onSelect: (userId: string) => void;
 }) {
@@ -300,7 +299,7 @@ function TaskAssigneeControl({
   canEdit: boolean;
   projectId?: string;
   task: MilestoneTask;
-  users: UserDto[];
+  users: ProjectMemberDto[];
   onChangeAssignee: (userId: string | null) => void;
 }) {
   const currentAssigneeId = task.assigneeId ?? task.assignee?.id ?? null;
@@ -362,7 +361,7 @@ const TASK_STATUS_LIST: ProjectTaskStatus[] = ['WAITING', 'IN_PROGRESS', 'BLOCKE
 export function TaskCard({ projectId, task, canEdit = true, onSelect, onDelete, timer }: TaskCardProps) {
   const { t: tTime } = useTranslation('time-tracking');
   const updateTaskMutation = useUpdateTask(projectId ?? '');
-  const { data: usersData } = useUsers(undefined, { enabled: canEdit });
+  const { data: membersData } = useProjectMembers(projectId ?? '');
 
   const isTimerActiveForThisTask = timer?.activeEntityId === task.id;
 
@@ -371,26 +370,16 @@ export function TaskCard({ projectId, task, canEdit = true, onSelect, onDelete, 
     timer?.onToggle('TASK', task);
   };
 
-  const users = React.useMemo(() => {
-    if (!usersData) return [];
-    const raw = Array.isArray(usersData)
-      ? (usersData as UserDto[])
-      : (usersData as { data?: UserDto[] })?.data ??
-        (usersData as { items?: UserDto[] })?.items ??
-        [];
-    if (task.assignee && !raw.some((u) => u.id === task.assignee?.id)) {
+  const users = React.useMemo<ProjectMemberDto[]>(() => {
+    const base = membersData ?? [];
+    if (task.assignee && !base.some((u) => u.id === task.assignee?.id)) {
       return [
-        {
-          id: task.assignee.id,
-          name: task.assignee.name,
-          email: task.assignee.email,
-          imageUrl: task.assignee.imageUrl,
-        } as UserDto,
-        ...raw,
+        { id: task.assignee.id, name: task.assignee.name ?? null, email: task.assignee.email ?? '', imageUrl: task.assignee.imageUrl ?? null },
+        ...base,
       ];
     }
-    return raw;
-  }, [usersData, task.assignee]);
+    return base;
+  }, [membersData, task.assignee]);
 
   const {
     attributes,

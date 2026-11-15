@@ -8,6 +8,7 @@ import {
   createComment, getComments, deleteComment,
   requestApproval, respondApproval, cancelApproval, getApprovals,
   createInfoRequest, answerInfoRequest, cancelInfoRequest, getInfoRequests, getInfoRequestValue,
+  getProjectMembers,
 } from "./api";
 import type { PaginationParams } from "../../types/pagination.types";
 import { getQueryConfig } from '../../utils';
@@ -316,5 +317,13 @@ export function useInfoRequestValue(projectId: string, requestId: string) {
     queryKey: ['project', projectId, 'info-requests', requestId, 'value'],
     queryFn: Collector(() => getInfoRequestValue(projectId, requestId)),
     enabled: !!projectId && !!requestId,
+  });
+}
+
+export function useProjectMembers(projectId: string) {
+  return useQuery({
+    queryKey: ['project', projectId, 'members'],
+    queryFn: Collector(() => getProjectMembers(projectId)),
+    enabled: !!projectId,
   });
 }

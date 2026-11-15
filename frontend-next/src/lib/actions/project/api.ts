@@ -10,6 +10,7 @@ import type {
   ProjectControllerGetCommentsParams,
   Milestone, InfoRequest,
 } from './types';
+import type { ProjectMemberDto } from '@/lib/generated/schemas';
 import type { PaginatedResponse, PaginationParams } from '@/lib/types/pagination.types';
 import type { ProjectControllerFindAllParams } from '@/lib/generated/schemas';
 import { normalizePaginationParams } from '../normalize-pagination-params';
@@ -140,4 +141,9 @@ export async function getInfoRequests(projectId: string): Promise<ApiResponse<Pa
 
 export async function getInfoRequestValue(projectId: string, requestId: string) {
   return wrap(() => api.projectControllerGetInfoRequestValue(projectId, requestId));
+}
+
+// Members
+export async function getProjectMembers(projectId: string): Promise<ApiResponse<ProjectMemberDto[]>> {
+  return wrap(() => api.projectControllerGetMembers(projectId));
 }

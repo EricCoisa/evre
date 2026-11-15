@@ -50,6 +50,8 @@ import { AnswerInfoRequestUseCase } from './use-cases/answer-info-request.use-ca
 import { CancelInfoRequestUseCase } from './use-cases/cancel-info-request.use-case';
 import { ListInfoRequestsUseCase } from './use-cases/list-info-requests.use-case';
 import { GetInfoRequestValueUseCase } from './use-cases/get-info-request-value.use-case';
+import { GetProjectMembersUseCase } from './use-cases/get-members.use-case';
+import { ProjectMemberDto } from './dto/project-member.dto';
 import { commonPaginationQueries } from '../../common/swagger/pagination-queries';
 import type { AuthenticatedUser } from '../../common/types/auth.types';
 import {
@@ -92,6 +94,7 @@ export class ProjectController {
     private readonly cancelInfoReq: CancelInfoRequestUseCase,
     private readonly listInfoReqs: ListInfoRequestsUseCase,
     private readonly getInfoReqValue: GetInfoRequestValueUseCase,
+    private readonly getProjectMembers: GetProjectMembersUseCase,
   ) {}
 
   // ─── Project CRUD ───────────────────────────────────────────
@@ -170,6 +173,28 @@ export class ProjectController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.findOneProject.execute(id, user);
+  }
+
+  @GetApi({
+    path: ':id/members',
+    summary: 'project.members.title',
+    status: 'OK',
+    authenticated: true,
+    response: {
+      success: [
+        {
+          status: 'OK',
+          description: 'Project members',
+          schema: { dto: ProjectMemberDto, isArray: true },
+        },
+      ],
+    },
+  })
+  async getMembers(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<ProjectMemberDto[]> {
+    return this.getProjectMembers.execute(id, user);
   }
 
   @PatchApi({

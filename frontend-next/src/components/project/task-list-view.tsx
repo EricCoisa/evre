@@ -17,8 +17,7 @@ import { MilestoneDetailSheet } from './milestone-detail-sheet';
 import { MilestoneProgressBar, TASK_STATUS_CONFIG } from './milestone-progress';
 import { RichTextViewer } from './rich-text-viewer';
 import { UserAvatar } from './user-avatar';
-import { useUpdateTask } from '@/lib/actions/project/queries';
-import { useUsers } from '@/lib/actions/user/queries';
+import { useUpdateTask, useProjectMembers } from '@/lib/actions/project/queries';
 import { toast } from 'sonner';
 import {
   ChevronDown,
@@ -35,7 +34,7 @@ import {
 } from 'lucide-react';
 import { copyTaskLink } from './task-link';
 import type { Milestone, MilestoneTask, ProjectTaskStatus } from '@/lib/actions/project/types';
-import type { UserDto } from '@/lib/generated/schemas';
+import type { ProjectMemberDto } from '@/lib/generated/schemas';
 
 const TASK_LIST_STATUS_OPTIONS: ProjectTaskStatus[] = ['WAITING', 'IN_PROGRESS', 'BLOCKED', 'DONE', 'CANCELLED'];
 
@@ -122,7 +121,7 @@ function TaskRowAssigneeControl({
 }: {
   canEdit: boolean;
   task: MilestoneTask;
-  users: UserDto[];
+  users: ProjectMemberDto[];
   onChangeAssignee: (userId: string | null) => void;
 }) {
   const currentAssigneeId = task.assigneeId ?? task.assignee?.id ?? null;
@@ -206,7 +205,7 @@ function AssigneeRowMenuItem({
   isCurrent,
   onSelect,
 }: {
-  user: UserDto;
+  user: ProjectMemberDto;
   isCurrent: boolean;
   onSelect: (userId: string) => void;
 }) {
@@ -239,7 +238,7 @@ function TaskListRow({
   milestoneTitle: string;
   canEdit: boolean;
   projectId: string;
-  users: UserDto[];
+  users: ProjectMemberDto[];
   onSelectTask: (task: MilestoneTask, milestoneTitle: string) => void;
   onDeleteTask?: (taskId: string) => void;
   onChangeStatus: (task: MilestoneTask, status: ProjectTaskStatus) => void;
@@ -386,7 +385,7 @@ function MilestoneListCard({
   isCollapsed: boolean;
   canEdit: boolean;
   projectId: string;
-  users: UserDto[];
+  users: ProjectMemberDto[];
   onToggleCollapse: () => void;
   onOpenDetail: () => void;
   onSelectTask: (task: MilestoneTask, milestoneTitle: string) => void;
@@ -505,17 +504,8 @@ export function TaskListView({
   onDeleteMilestone,
 }: TaskListViewProps) {
   const updateTaskMutation = useUpdateTask(projectId);
-  const { data: usersData } = useUsers(undefined, { enabled: canEdit });
-
-  const users = useMemo(() => {
-    if (!usersData) return [];
-    const raw = Array.isArray(usersData)
-      ? (usersData as UserDto[])
-      : (usersData as { data?: UserDto[] })?.data ??
-        (usersData as { items?: UserDto[] })?.items ??
-        [];
-    return raw;
-  }, [usersData]);
+  const { data: membersData } = useProjectMembers(projectId);
+  const users = useMemo(() => membersData ?? [], [membersData]);
 
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [selectedMilestoneForDetail, setSelectedMilestoneForDetail] = useState<Milestone | null>(null);

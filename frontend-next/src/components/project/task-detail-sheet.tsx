@@ -33,13 +33,12 @@ import { RichTextViewer } from './rich-text-viewer';
 import { ProjectCommentsThread } from './project-comments-thread';
 import { UserAvatar } from './user-avatar';
 import { TASK_STATUS_CONFIG } from './milestone-progress';
-import { useUpdateTask } from '@/lib/actions/project/queries';
-import { useUsers } from '@/lib/actions/user/queries';
+import { useUpdateTask, useProjectMembers } from '@/lib/actions/project/queries';
 import { Check, Edit3, AlignLeft, AlertTriangle, User, UserX, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { copyTaskLink } from './task-link';
 import type { MilestoneTask, ProjectTaskStatus } from '@/lib/actions/project/types';
-import type { UserDto } from '@/lib/generated/schemas';
+import type { ProjectMemberDto } from '@/lib/generated/schemas';
 
 const RICH_TEXT_FORMAT_LABELS = {
   bold: 'Negrito (*texto*)',
@@ -203,8 +202,8 @@ function TaskAssigneeRow({
   canEdit: boolean;
   assigneeId: string;
   isSaving: boolean;
-  users: UserDto[];
-  currentAssigneeUser: MilestoneTask['assignee'] | UserDto | undefined;
+  users: ProjectMemberDto[];
+  currentAssigneeUser: MilestoneTask['assignee'] | ProjectMemberDto | undefined;
   onAssigneeChange: (value: string) => void;
 }) {
   return (
@@ -237,8 +236,8 @@ function TaskAssigneeValue({
   canEdit: boolean;
   assigneeId: string;
   isSaving: boolean;
-  users: UserDto[];
-  currentAssigneeUser: MilestoneTask['assignee'] | UserDto | undefined;
+  users: ProjectMemberDto[];
+  currentAssigneeUser: MilestoneTask['assignee'] | ProjectMemberDto | undefined;
   onAssigneeChange: (value: string) => void;
 }) {
   if (canEdit) {
@@ -467,17 +466,8 @@ function TaskDetailSheetContent({
   canEdit?: boolean;
 }) {
   const updateTaskMutation = useUpdateTask(projectId);
-  const { data: usersData } = useUsers(undefined, { enabled: canEdit });
-
-  const users = useMemo(() => {
-    if (!usersData) return [];
-    const raw = Array.isArray(usersData)
-      ? (usersData as UserDto[])
-      : (usersData as { data?: UserDto[] })?.data ??
-        (usersData as { items?: UserDto[] })?.items ??
-        [];
-    return raw;
-  }, [usersData]);
+  const { data: membersData } = useProjectMembers(projectId);
+  const users = useMemo(() => membersData ?? [], [membersData]);
 
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description ?? '');

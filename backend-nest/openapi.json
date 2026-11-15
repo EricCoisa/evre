@@ -9283,6 +9283,45 @@
         ]
       }
     },
+    "/project/{id}/members": {
+      "get": {
+        "operationId": "ProjectController_getMembers",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Project members",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectMemberDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "project.members.title",
+        "tags": [
+          "project"
+        ]
+      }
+    },
     "/project/{id}/board": {
       "get": {
         "operationId": "ProjectController_board",
@@ -16420,6 +16459,29 @@
         "required": [
           "companyId",
           "name"
+        ]
+      },
+      "ProjectMemberDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string"
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "email"
         ]
       },
       "UpdateProjectDto": {
