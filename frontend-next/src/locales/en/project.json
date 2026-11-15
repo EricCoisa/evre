@@ -27,6 +27,7 @@
   "updatedSuccess": "Project updated",
   "archivedSuccess": "Project archived",
   "filterByStatus": "Status",
+  "filterByCompany": "Company",
   "board": "Board",
   "milestones": "Milestones",
   "tasks": "Tasks",

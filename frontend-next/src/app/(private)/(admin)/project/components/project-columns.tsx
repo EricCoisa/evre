@@ -13,6 +13,7 @@ interface Props {
   t: (key: string) => string;
   onEdit?: (item: Project) => void;
   onArchive?: (item: Project) => void;
+  companies?: { value: string; label: string }[];
 }
 
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "outline"> = {
@@ -21,7 +22,7 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "outline"> = {
   ARCHIVED: "secondary",
 };
 
-export function getProjectColumns({ t, onEdit, onArchive }: Props): ColumnDef<Project>[] {
+export function getProjectColumns({ t, onEdit, onArchive, companies = [] }: Props): ColumnDef<Project>[] {
   return [
     {
       accessorKey: "name",
@@ -49,6 +50,16 @@ export function getProjectColumns({ t, onEdit, onArchive }: Props): ColumnDef<Pr
         );
       },
       meta: { mobileOrder: 2, mobileWidth: "half" },
+    },
+    {
+      accessorKey: "companyId",
+      header: () => <TableHead>{t("company")}</TableHead>,
+      cell: ({ row }) => {
+        const companyId = row.getValue("companyId") as string;
+        const company = companies.find((c) => c.value === companyId);
+        return <DataCell>{company?.label ?? '—'}</DataCell>;
+      },
+      meta: { mobileOrder: 3, mobileWidth: "half", mobileLabel: t("company") },
     },
     {
       accessorKey: "createdAt",

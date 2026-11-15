@@ -69,8 +69,8 @@ export function ProjectTab() {
   ], [t, companyOptions]);
 
   const columns = useMemo(() =>
-    getProjectColumns({ t, onArchive: handleArchive }),
-    [t, handleArchive]
+    getProjectColumns({ t, onArchive: handleArchive, companies: companyOptions }),
+    [t, handleArchive, companyOptions]
   );
 
   if (isClient) {
@@ -109,6 +109,12 @@ export function ProjectTab() {
             { value: 'COMPLETED', label: t('completed') },
             { value: 'ARCHIVED', label: t('archived') },
           ]}
+        />
+        <DataTable.Select
+          title={t('filterByCompany')}
+          accessorKey="companyId"
+          placeholder={t('filterByCompany')}
+          options={companyOptions}
         />
         <DataTable.Actions className="sm:justify-end sm:w-full">
           <Button onClick={() => setIsCreateDialogOpen(true)}>
