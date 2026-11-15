@@ -63,7 +63,7 @@ export class RequestApprovalUseCase {
         message: this.i18n.t('project.approval_requested_message', {
           args: { milestone: milestone.title, project: milestone.project.name },
         }),
-        payload: { milestoneId, projectId },
+        payload: { milestoneId, projectId, milestone: milestone.title, project: milestone.project.name },
         actionUrl: `/project/${projectId}`,
         channels: { whatsapp: true },
       });

@@ -69,7 +69,7 @@ export class AnswerInfoRequestUseCase {
       message: this.i18n.t('project.info_request_answered_message', {
         args: { label: infoReq.label },
       }),
-      payload: { projectId, infoRequestId: requestId },
+      payload: { projectId, infoRequestId: requestId, label: infoReq.label },
       actionUrl: `/project/${projectId}`,
       channels: { email: true },
     });

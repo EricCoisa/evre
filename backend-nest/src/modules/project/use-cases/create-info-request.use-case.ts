@@ -40,17 +40,20 @@ export class CreateInfoRequestUseCase {
       where: { companyId: project.companyId },
       select: { userId: true },
     });
-    if (members.length > 0) {
+    const recipientIds = members
+      .map((m) => m.userId)
+      .filter((id) => id !== user.id);
+    if (recipientIds.length > 0) {
       await this.notifications.notify({
         type: ProjectNotificationType.INFO_REQUEST_CREATED,
-        recipients: { userIds: members.map((m) => m.userId) },
+        recipients: { userIds: recipientIds },
         titleKey: 'project.info_request_created_title',
         title: this.i18n.t('project.info_request_created_title'),
         messageKey: 'project.info_request_created_message',
         message: this.i18n.t('project.info_request_created_message', {
           args: { project: project.name, label: dto.label },
         }),
-        payload: { projectId, infoRequestId: created.id },
+        payload: { projectId, infoRequestId: created.id, project: project.name, label: dto.label },
         actionUrl: `/project/${projectId}`,
         channels: { whatsapp: true },
       });
