@@ -5,6 +5,7 @@ import { LoggingService } from '../../logging/logging.service';
 import { LogActions } from 'src/domain/logging/log-actions';
 import { NotificationService } from '../../notification/notification.service';
 import { ProjectNotificationType } from 'src/domain/project/project-notification-types.const';
+import { NOTIFICATION_DEBOUNCE_DELAY_MS } from '../../notification/notification-debounce.const';
 import type { AuthenticatedUser } from 'src/common/types/auth.types';
 import type { CreateTaskDto } from '../dto/create-task.dto';
 import { FindOneProjectUseCase } from './find-one.use-case';
@@ -68,16 +69,14 @@ export class CreateTaskUseCase {
     );
 
     if (assigneeId && assigneeId !== user.id) {
-      await this.notifications.notify({
+      await this.notifications.notifyDebounced({
+        bufferKey: `notif-debounce:task-assigned:${assigneeId}`,
+        delayMs: NOTIFICATION_DEBOUNCE_DELAY_MS,
+        item: created.title,
+        recipientUserId: assigneeId,
         type: ProjectNotificationType.TASK_ASSIGNED,
-        recipients: { userIds: [assigneeId] },
         titleKey: 'project.task_assigned_title',
-        title: this.i18n.t('project.task_assigned_title'),
         messageKey: 'project.task_assigned_message',
-        message: this.i18n.t('project.task_assigned_message', {
-          args: { title: created.title },
-        }),
-        payload: { taskId: created.id, projectId },
         actionUrl: `/project/${projectId}`,
       });
     }

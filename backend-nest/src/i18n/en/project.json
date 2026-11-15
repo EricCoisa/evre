@@ -70,7 +70,11 @@
   "info_request_answered_title": "Info request answered",
   "info_request_answered_message": "The info request \"{label}\" has been answered.",
   "task_assigned_title": "You have been assigned to a task",
-  "task_assigned_message": "Task \"{title}\" was assigned to you.",
+  "task_assigned_title_plural": "{count} tasks were assigned to you",
+  "task_assigned_message": "Task \"{item}\" was assigned to you.",
+  "task_assigned_message_plural": "{count} tasks were assigned to you: {items}.",
   "task_commented_title": "New comment on your task",
-  "task_commented_message": "A comment was added to task \"{title}\"."
+  "task_commented_title_plural": "New comments on {count} of your tasks",
+  "task_commented_message": "A comment was added to task \"{item}\".",
+  "task_commented_message_plural": "Comments were added to {count} of your tasks: {items}."
 }

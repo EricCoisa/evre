@@ -70,7 +70,11 @@
   "info_request_answered_title": "Solicitação respondida",
   "info_request_answered_message": "A solicitação \"{label}\" foi respondida.",
   "task_assigned_title": "Você foi atribuído a uma task",
-  "task_assigned_message": "Task \"{title}\" foi atribuída a você.",
+  "task_assigned_title_plural": "{count} tasks foram atribuídas a você",
+  "task_assigned_message": "Task \"{item}\" foi atribuída a você.",
+  "task_assigned_message_plural": "{count} tasks foram atribuídas a você: {items}.",
   "task_commented_title": "Novo comentário na sua task",
-  "task_commented_message": "Um comentário foi adicionado à task \"{title}\"."
+  "task_commented_title_plural": "Novos comentários em {count} das suas tasks",
+  "task_commented_message": "Um comentário foi adicionado à task \"{item}\".",
+  "task_commented_message_plural": "Foram adicionados comentários em {count} tasks suas: {items}."
 }

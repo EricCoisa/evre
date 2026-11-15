@@ -69,6 +69,22 @@ export class RedisService implements OnModuleDestroy {
     }
   }
 
+  async rpush(key: string, value: string): Promise<void> {
+    try {
+      await this.redis.rpush(key, value);
+    } catch {
+      // Non-critical buffer op
+    }
+  }
+
+  async lrange(key: string): Promise<string[]> {
+    try {
+      return await this.redis.lrange(key, 0, -1);
+    } catch {
+      return [];
+    }
+  }
+
   /** Adquire um lock (SET NX); falha aberta, retornando `true` se o Redis estiver inacessível. */
   async setnx(
     key: string,

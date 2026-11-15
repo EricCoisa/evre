@@ -67,6 +67,30 @@ export class SendNotificationUseCase {
       return;
     }
 
+    if ('userIds' in input.recipients && input.recipients.userIds.length === 1) {
+      const existing = await this.prisma.notificationRecipient.findFirst({
+        where: {
+          userId: input.recipients.userIds[0],
+          readAt: null,
+          dismissedAt: null,
+          notification: { type: input.type },
+        },
+        select: { notificationId: true },
+      });
+      if (existing) {
+        await this.prisma.notification.update({
+          where: { id: existing.notificationId },
+          data: {
+            title: input.title ?? undefined,
+            titleKey: input.titleKey ?? undefined,
+            message: input.message ?? undefined,
+            messageKey: input.messageKey ?? undefined,
+          },
+        });
+        return;
+      }
+    }
+
     const notification = await this.prisma.notification.create({
       data: {
         type: input.type,

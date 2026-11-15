@@ -1,4 +1,5 @@
 import { Module, forwardRef } from '@nestjs/common';
+import { BullModule } from '@nestjs/bullmq';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { FeatureFlagModule } from '../feature-flag/feature-flag.module';
 import { SystemConfigurationModule } from '../system-configuration/system-configuration.module';
@@ -16,6 +17,8 @@ import { MarkAllReadUseCase } from './use-cases/mark-all-read.use-case';
 import { DismissNotificationUseCase } from './use-cases/dismiss.use-case';
 import { SendBroadcastNotificationUseCase } from './use-cases/send-broadcast-notification.use-case';
 import { NotificationCapabilities } from './notification.capabilities';
+import { NotificationDebounceProcessor } from './notification-debounce.processor';
+import { NOTIFICATION_DEBOUNCE_QUEUE } from './notification-debounce.const';
 import { ListMyNotificationsTool } from './ai-tools/list-my-notifications.tool';
 import { GetUnreadNotificationsCountTool } from './ai-tools/get-unread-notifications-count.tool';
 import { MarkNotificationReadTool } from './ai-tools/mark-notification-read.tool';
@@ -49,6 +52,7 @@ const AI_TOOLS = [
 @Module({
   imports: [
     PrismaModule,
+    BullModule.registerQueue({ name: NOTIFICATION_DEBOUNCE_QUEUE }),
     FeatureFlagModule,
     SystemConfigurationModule,
     EmailModule,
@@ -63,6 +67,7 @@ const AI_TOOLS = [
     NotificationService,
     ...USE_CASES,
     NotificationCapabilities,
+    NotificationDebounceProcessor,
     ...AI_TOOLS,
   ],
   exports: [NotificationService],

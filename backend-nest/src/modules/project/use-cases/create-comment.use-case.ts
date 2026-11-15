@@ -4,6 +4,7 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { ResourceAccessService } from 'src/common/infrastructure/resource-access/resource-access.service';
 import { NotificationService } from '../../notification/notification.service';
 import { ProjectNotificationType } from 'src/domain/project/project-notification-types.const';
+import { NOTIFICATION_DEBOUNCE_DELAY_MS } from '../../notification/notification-debounce.const';
 import type { AuthenticatedUser } from 'src/common/types/auth.types';
 import type { CreateCommentDto } from '../dto/create-comment.dto';
 
@@ -51,16 +52,14 @@ export class CreateCommentUseCase {
         select: { assigneeId: true, title: true },
       });
       if (task?.assigneeId && task.assigneeId !== user.id) {
-        await this.notifications.notify({
+        await this.notifications.notifyDebounced({
+          bufferKey: `notif-debounce:task-commented:${task.assigneeId}`,
+          delayMs: NOTIFICATION_DEBOUNCE_DELAY_MS,
+          item: task.title,
+          recipientUserId: task.assigneeId,
           type: ProjectNotificationType.TASK_COMMENTED,
-          recipients: { userIds: [task.assigneeId] },
           titleKey: 'project.task_commented_title',
-          title: this.i18n.t('project.task_commented_title'),
           messageKey: 'project.task_commented_message',
-          message: this.i18n.t('project.task_commented_message', {
-            args: { title: task.title },
-          }),
-          payload: { taskId: dto.entityId, projectId },
           actionUrl: `/project/${projectId}`,
         });
       }

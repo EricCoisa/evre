@@ -828,8 +828,8 @@ export class MessagingService {
         await this.notifications.notify({
           type: MessagingNotificationType.INBOUND_MESSAGE,
           recipients: { roleNames: ['ADMIN'] },
-          title: 'Nova mensagem recebida',
-          message: 'Um contato enviou uma nova mensagem no WhatsApp.',
+          title: this.i18n.t('messaging.inbound_message_title'),
+          message: this.i18n.t('messaging.inbound_message_message'),
           actionUrl: '/comunicacao',
         });
       }

@@ -3,6 +3,7 @@ import { I18nService } from 'nestjs-i18n';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { NotificationService } from '../../notification/notification.service';
 import { ProjectNotificationType } from 'src/domain/project/project-notification-types.const';
+import { NOTIFICATION_DEBOUNCE_DELAY_MS } from '../../notification/notification-debounce.const';
 import type { AuthenticatedUser } from 'src/common/types/auth.types';
 import type { UpdateTaskDto } from '../dto/update-task.dto';
 import { FindOneProjectUseCase } from './find-one.use-case';
@@ -57,16 +58,14 @@ export class UpdateTaskUseCase {
       newAssigneeId !== task.assigneeId &&
       newAssigneeId !== user.id
     ) {
-      await this.notifications.notify({
+      await this.notifications.notifyDebounced({
+        bufferKey: `notif-debounce:task-assigned:${newAssigneeId}`,
+        delayMs: NOTIFICATION_DEBOUNCE_DELAY_MS,
+        item: task.title,
+        recipientUserId: newAssigneeId,
         type: ProjectNotificationType.TASK_ASSIGNED,
-        recipients: { userIds: [newAssigneeId] },
         titleKey: 'project.task_assigned_title',
-        title: this.i18n.t('project.task_assigned_title'),
         messageKey: 'project.task_assigned_message',
-        message: this.i18n.t('project.task_assigned_message', {
-          args: { title: task.title },
-        }),
-        payload: { taskId, projectId },
         actionUrl: `/project/${projectId}`,
       });
     }
