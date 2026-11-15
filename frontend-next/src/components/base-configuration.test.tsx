@@ -292,6 +292,7 @@ describe('BaseConfiguration — data ausente', () => {
 
 describe('BaseConfiguration — DateConfigField (time / date / datetime-local)', () => {
   afterEach(() => {
+    vi.clearAllTimers();
     vi.useRealTimers();
   });
 
@@ -406,6 +407,7 @@ describe('BaseConfiguration — BooleanConfigField variações de forceType', ()
 
 describe('BaseConfiguration — NumberConfigField', () => {
   afterEach(() => {
+    vi.clearAllTimers();
     vi.useRealTimers();
   });
 
@@ -432,6 +434,7 @@ describe('BaseConfiguration — NumberConfigField', () => {
 
 describe('BaseConfiguration — StringConfigField (default / textarea / status de salvamento)', () => {
   afterEach(() => {
+    vi.clearAllTimers();
     vi.useRealTimers();
   });
 

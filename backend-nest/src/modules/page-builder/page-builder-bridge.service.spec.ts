@@ -94,6 +94,26 @@ describe('PageBuilderBridgeService', () => {
     );
   });
 
+  it('extrai response.data.message quando disponível', async () => {
+    const err = Object.assign(new Error('Network Error'), {
+      isAxiosError: true,
+      response: { data: { message: 'Unauthorized from frontend' } },
+    });
+    vi.mocked(axios.get).mockRejectedValue(err);
+
+    await expect(service.describeSchema()).rejects.toThrow('Unauthorized from frontend');
+  });
+
+  it('extrai response.data.error quando message não está disponível', async () => {
+    const err = Object.assign(new Error('Network Error'), {
+      isAxiosError: true,
+      response: { data: { error: 'forbidden' } },
+    });
+    vi.mocked(axios.get).mockRejectedValue(err);
+
+    await expect(service.describeSchema()).rejects.toThrow('forbidden');
+  });
+
   it('devolve erro amigável quando conexão é recusada (ECONNREFUSED com mensagem vazia)', async () => {
     const connRefused = Object.assign(new Error(''), { code: 'ECONNREFUSED' });
     vi.mocked(axios.get).mockRejectedValue(connRefused);

@@ -367,10 +367,35 @@ describe('StorageService (facade)', () => {
     });
   });
 
+  describe('getShareableUrl', () => {
+    beforeEach(() => {
+      mockSysConfig.findByLabelKey.mockImplementation((key: string) => {
+        if (key === 'SYSTEM_STORAGE_PROVIDER') return { value: 'S3' };
+        return { value: '' };
+      });
+    });
+
+    it('delegates to the active provider', async () => {
+      (s3Provider as unknown as { getShareableUrl: ReturnType<typeof vi.fn> })
+        .getShareableUrl = vi.fn().mockResolvedValue('http://s3/share/file.pdf');
+
+      const url = await service.getShareableUrl('docs/file.pdf');
+
+      expect(url).toBe('http://s3/share/file.pdf');
+    });
+  });
+
   describe('buildKey', () => {
     it('monta prefixo/uuid.ext', () => {
       const key = service.buildKey('avatars', 'jpg');
       expect(key).toMatch(/^test-app\/avatars\/[0-9a-f-]{36}\.jpg$/);
+    });
+  });
+
+  describe('buildFolderKey', () => {
+    it('monta prefixo/uuid/ com barra final', () => {
+      const key = service.buildFolderKey('uploads');
+      expect(key).toMatch(/^test-app\/uploads\/[0-9a-f-]{36}\/$/);
     });
   });
 

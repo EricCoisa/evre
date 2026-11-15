@@ -85,3 +85,63 @@ describe('ShortUrlService.buildShortUrl', () => {
     );
   });
 });
+
+describe('ShortUrlService.shorten', () => {
+  let service: ShortUrlService;
+  let mockShortenUseCase: { execute: ReturnType<typeof vi.fn> };
+  let mockDeactivateUseCase: { execute: ReturnType<typeof vi.fn> };
+
+  beforeEach(async () => {
+    mockShortenUseCase = { execute: vi.fn() };
+    mockDeactivateUseCase = { execute: vi.fn() };
+    const module = await Test.createTestingModule({
+      providers: [
+        ShortUrlService,
+        { provide: ShortenUrlUseCase, useValue: mockShortenUseCase },
+        { provide: DeactivateShortUrlUseCase, useValue: mockDeactivateUseCase },
+        { provide: PrismaService, useValue: {} },
+        { provide: ConfigService, useValue: { get: vi.fn() } },
+        { provide: I18nService, useValue: { t: vi.fn() } },
+      ],
+    }).compile();
+    service = module.get(ShortUrlService);
+  });
+
+  it('delega para shortenUrlUseCase.execute e retorna resultado', async () => {
+    const output = { code: 'abc123', shortUrl: 'https://short.example.com/s/abc123' };
+    mockShortenUseCase.execute.mockResolvedValue(output);
+
+    const result = await service.shorten({ url: 'https://example.com' });
+
+    expect(result).toBe(output);
+    expect(mockShortenUseCase.execute).toHaveBeenCalledWith({ url: 'https://example.com' });
+  });
+});
+
+describe('ShortUrlService.deactivate', () => {
+  let service: ShortUrlService;
+  let mockShortenUseCase: { execute: ReturnType<typeof vi.fn> };
+  let mockDeactivateUseCase: { execute: ReturnType<typeof vi.fn> };
+
+  beforeEach(async () => {
+    mockShortenUseCase = { execute: vi.fn() };
+    mockDeactivateUseCase = { execute: vi.fn().mockResolvedValue(undefined) };
+    const module = await Test.createTestingModule({
+      providers: [
+        ShortUrlService,
+        { provide: ShortenUrlUseCase, useValue: mockShortenUseCase },
+        { provide: DeactivateShortUrlUseCase, useValue: mockDeactivateUseCase },
+        { provide: PrismaService, useValue: {} },
+        { provide: ConfigService, useValue: { get: vi.fn() } },
+        { provide: I18nService, useValue: { t: vi.fn() } },
+      ],
+    }).compile();
+    service = module.get(ShortUrlService);
+  });
+
+  it('delega para deactivateShortUrlUseCase.execute', async () => {
+    await service.deactivate('abc123');
+
+    expect(mockDeactivateUseCase.execute).toHaveBeenCalledWith('abc123');
+  });
+});

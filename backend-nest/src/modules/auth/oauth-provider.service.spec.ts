@@ -94,6 +94,23 @@ describe('OAuthProviderService', () => {
     expect(result.data).toContain('ECONNREFUSED');
   });
 
+  it('erro não-Error (string thrown): retorna status=false com String(error)', async () => {
+    vi.mocked(axios.post).mockRejectedValue('erro de string');
+
+    const result = await service.use(cfg).validateConfiguration();
+    expect(result.status).toBe(false);
+    expect(result.data).toContain('erro de string');
+  });
+
+  it('AxiosError com response mas sem campo error: credencial aceita (invalid_grant path)', async () => {
+    vi.mocked(axios.post).mockRejectedValue(
+      httpError(400, { other_field: 'value' }),
+    );
+
+    const result = await service.use(cfg).validateConfiguration();
+    expect(result.status).toBe(true);
+  });
+
   it('manda client_id/client_secret e o redirect_uri do front no corpo', async () => {
     vi.mocked(axios.post).mockRejectedValue(
       httpError(400, { error: 'invalid_grant' }),

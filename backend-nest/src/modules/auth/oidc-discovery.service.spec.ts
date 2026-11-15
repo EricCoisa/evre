@@ -130,6 +130,13 @@ describe('OidcDiscoveryService.verifyIdToken', () => {
       service.verifyIdToken(ISSUER, token, AUDIENCE),
     ).rejects.toThrow('authorized party');
   });
+
+  it('rejects single-audience token when azp is defined but does not match the client', async () => {
+    const token = await signToken({ azp: 'different-client' });
+    await expect(
+      service.verifyIdToken(ISSUER, token, AUDIENCE),
+    ).rejects.toThrow('authorized party');
+  });
 });
 
 describe('OidcDiscoveryService.discover', () => {

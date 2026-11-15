@@ -105,4 +105,30 @@ describe('RolesGuard', () => {
     ).resolves.toBe(true);
     expect(mockCheckAccess.execute).toHaveBeenCalledWith('u1', '/company', 'r1');
   });
+
+  it('returns true when non-ADMIN has role but no route_access decorator (routePath undefined)', async () => {
+    vi.spyOn(reflector, 'getAllAndOverride').mockImplementation((key) => {
+      if (key === 'roles') return ['ADMIN', 'MODERATOR'];
+      return undefined; // no route_access_path → routePath stays undefined → skips checkAccess
+    });
+
+    await expect(
+      guard.canActivate(makeContext({ id: 'u1', roleName: 'MODERATOR', roleId: 'r1' })),
+    ).resolves.toBe(true);
+    expect(mockCheckAccess.execute).not.toHaveBeenCalled();
+  });
+
+  it('throws ForbiddenException when route access denied and no i18n context (uses fallback message)', async () => {
+    vi.mocked(I18nContext.current).mockReturnValue(undefined);
+    vi.spyOn(reflector, 'getAllAndOverride').mockImplementation((key) => {
+      if (key === 'roles') return ['ADMIN', 'MODERATOR'];
+      if (key === 'route_access_path') return '/company';
+      return undefined;
+    });
+    mockCheckAccess.execute.mockResolvedValue(false);
+
+    await expect(
+      guard.canActivate(makeContext({ id: 'u1', roleName: 'MODERATOR', roleId: 'r1' })),
+    ).rejects.toThrow(ForbiddenException);
+  });
 });

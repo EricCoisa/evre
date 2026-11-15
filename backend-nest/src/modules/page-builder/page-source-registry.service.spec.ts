@@ -90,6 +90,14 @@ describe('PageSourceRegistry', () => {
     expect(registry.get('fake.ghost')).toBeUndefined();
   });
 
+  it('ignora wrappers sem instance (instance null)', async () => {
+    // O registry deve continuar sem lançar quando um wrapper não tem instância;
+    // os outros controladores ainda são descobertos normalmente.
+    expect(registry.has('fake.admin')).toBe(true);
+    expect(registry.has('fake.open')).toBe(true);
+    // Se chegou aqui, nenhuma exceção foi lançada pelo wrapper null.
+  });
+
   it('recusa duas fontes com a mesma key', async () => {
     @Controller('dup')
     class DupController {

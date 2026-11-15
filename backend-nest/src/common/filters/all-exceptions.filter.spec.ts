@@ -137,4 +137,5 @@ describe('AllExceptionsFilter', () => {
     run(new HttpException('Não encontrado', 404));
     expect(Sentry.captureException).not.toHaveBeenCalled();
   });
+
 });
