@@ -66,7 +66,7 @@ export class UpdateTaskUseCase {
         type: ProjectNotificationType.TASK_ASSIGNED,
         titleKey: 'project.task_assigned_title',
         messageKey: 'project.task_assigned_message',
-        actionUrl: `/project/${projectId}`,
+        actionUrl: `/project/${projectId}/${taskId}`,
         channels: { whatsapp: true },
       });
     }

@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { FeatureFlagService } from '../../feature-flag/feature-flag.service';
@@ -6,6 +7,7 @@ import { SystemConfigurationService } from '../../system-configuration/system-co
 import { EmailService } from '../../email/email.service';
 import { MessagingService } from '../../messaging/messaging.service';
 import { VerificationService } from '../../verification/verification.service';
+import { ShortUrlService } from '../../short-url/short-url.service';
 import { convertValueByType } from 'src/common/utils/conversor.util';
 import { EmailTemplateType } from 'src/domain/mail/email-template-type.const';
 import { UserVerificationPurpose } from 'src/domain/user/user-verification-purpose.const';
@@ -13,6 +15,7 @@ import {
   notificationConfigKeys,
   notificationUserConfigKeys,
   NOTIFICATION_WHATSAPP_TEMPLATE_KEY,
+  NOTIFICATION_WHATSAPP_CTA_TEMPLATE_KEY,
 } from 'src/domain/notification/notification-config.const';
 
 export const NOTIFICATION_ROOT_FLAG = 'NOTIFICATION';
@@ -49,6 +52,8 @@ export class SendNotificationUseCase {
     private readonly emailService: EmailService,
     private readonly messagingService: MessagingService,
     private readonly verificationService: VerificationService,
+    private readonly configService: ConfigService,
+    private readonly shortUrl: ShortUrlService,
   ) {}
 
   async execute(input: SendNotificationInput): Promise<void> {
@@ -247,6 +252,22 @@ export class SendNotificationUseCase {
     input: SendNotificationInput,
     phone: string,
   ): Promise<void> {
+    if (input.actionUrl) {
+      const base = (
+        this.configService.get<string>('FRONTEND_URL') ?? 'http://localhost:3000'
+      ).replace(/\/+$/, '');
+      const short = await this.shortUrl.shorten({
+        targetUrl: `${base}${input.actionUrl}`,
+        purpose: 'notification',
+      });
+      await this.messagingService.trySendTemplate({
+        key: NOTIFICATION_WHATSAPP_CTA_TEMPLATE_KEY,
+        phone,
+        values: { title: input.title ?? '', message: input.message ?? '' },
+        buttons: { open: short.code },
+      });
+      return;
+    }
     await this.messagingService.trySendTemplate({
       key: NOTIFICATION_WHATSAPP_TEMPLATE_KEY,
       phone,

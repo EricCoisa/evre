@@ -1,12 +1,17 @@
 import { describe, it, expect, vi } from 'vitest';
 import { SendNotificationUseCase } from './send-notification.use-case';
-import { NOTIFICATION_WHATSAPP_TEMPLATE_KEY } from 'src/domain/notification/notification-config.const';
+import {
+  NOTIFICATION_WHATSAPP_TEMPLATE_KEY,
+  NOTIFICATION_WHATSAPP_CTA_TEMPLATE_KEY,
+} from 'src/domain/notification/notification-config.const';
 import type { PrismaService } from '../../../prisma/prisma.service';
 import type { FeatureFlagService } from '../../feature-flag/feature-flag.service';
 import type { SystemConfigurationService } from '../../system-configuration/system-configuration.service';
 import type { EmailService } from '../../email/email.service';
 import type { MessagingService } from '../../messaging/messaging.service';
 import type { VerificationService } from '../../verification/verification.service';
+import type { ConfigService } from '@nestjs/config';
+import type { ShortUrlService } from '../../short-url/short-url.service';
 
 function buildUseCase(opts: {
   enabled?: boolean;
@@ -33,9 +38,11 @@ function buildUseCase(opts: {
     },
     notification: {
       create: vi.fn().mockResolvedValue({ id: 'notif-1' }),
+      update: vi.fn().mockResolvedValue({}),
     },
     notificationRecipient: {
       createMany: vi.fn().mockResolvedValue({ count: 0 }),
+      findFirst: vi.fn().mockResolvedValue(null),
     },
     userConfigurationDefinition: {
       findMany: vi.fn().mockResolvedValue(opts.definitions ?? []),
@@ -72,6 +79,14 @@ function buildUseCase(opts: {
     isConfirmed: vi.fn().mockResolvedValue(opts.phoneConfirmed ?? true),
   } as unknown as VerificationService;
 
+  const configService = {
+    get: vi.fn().mockReturnValue('http://localhost:3000'),
+  } as unknown as ConfigService;
+
+  const shortUrl = {
+    shorten: vi.fn().mockResolvedValue({ code: 'abc12345', shortUrl: 'http://localhost:3000/s/abc12345' }),
+  } as unknown as ShortUrlService;
+
   const useCase = new SendNotificationUseCase(
     prisma,
     featureFlags,
@@ -79,9 +94,11 @@ function buildUseCase(opts: {
     emailService,
     messagingService,
     verificationService,
+    configService,
+    shortUrl,
   );
 
-  return { useCase, prisma, featureFlags, systemConfig, emailService, messagingService, verificationService };
+  return { useCase, prisma, featureFlags, systemConfig, emailService, messagingService, verificationService, shortUrl };
 }
 
 describe('SendNotificationUseCase', () => {
@@ -246,7 +263,7 @@ describe('SendNotificationUseCase', () => {
     );
   });
 
-  it('dispara WhatsApp via template único (NOTIFICATION) quando o usuário tem phone confirmado e canal permitido', async () => {
+  it('dispara WhatsApp via template NOTIFICATION (sem botão) quando não há actionUrl', async () => {
     const { useCase, messagingService, verificationService } = buildUseCase({
       users: [{ id: 'u1', email: null, phone: '+5511999999999' }],
       phoneConfirmed: true,
@@ -270,6 +287,50 @@ describe('SendNotificationUseCase', () => {
       phone: '+5511999999999',
       values: { title: 'Aviso', message: 'Corpo' },
     });
+  });
+
+  it('dispara WhatsApp via template NOTIFICATION_CTA (com botão) quando há actionUrl, encurtando o link', async () => {
+    const { useCase, messagingService, shortUrl } = buildUseCase({
+      users: [{ id: 'u1', email: null, phone: '+5511999999999' }],
+      phoneConfirmed: true,
+    });
+
+    await useCase.execute({
+      type: 'SYSTEM_ANNOUNCEMENT',
+      recipients: { userIds: ['u1'] },
+      title: 'Aviso',
+      message: 'Corpo',
+      actionUrl: '/project/proj-1',
+      channels: { whatsapp: true },
+    });
+
+    expect(shortUrl.shorten).toHaveBeenCalledWith({
+      targetUrl: 'http://localhost:3000/project/proj-1',
+      purpose: 'notification',
+    });
+    expect(messagingService.trySendTemplate).toHaveBeenCalledWith({
+      key: NOTIFICATION_WHATSAPP_CTA_TEMPLATE_KEY,
+      phone: '+5511999999999',
+      values: { title: 'Aviso', message: 'Corpo' },
+      buttons: { open: 'abc12345' },
+    });
+  });
+
+  it('WhatsApp CTA não encurta nem usa NOTIFICATION_CTA quando actionUrl está ausente', async () => {
+    const { useCase, shortUrl } = buildUseCase({
+      users: [{ id: 'u1', email: null, phone: '+5511999999999' }],
+      phoneConfirmed: true,
+    });
+
+    await useCase.execute({
+      type: 'SYSTEM_ANNOUNCEMENT',
+      recipients: { userIds: ['u1'] },
+      title: 'Aviso',
+      message: 'Corpo',
+      channels: { whatsapp: true },
+    });
+
+    expect(shortUrl.shorten).not.toHaveBeenCalled();
   });
 
   it('não envia email quando SYSTEM_NOTIFICATION_EMAIL_ENABLED está desligada na plataforma, mesmo com preferência do usuário permitindo', async () => {

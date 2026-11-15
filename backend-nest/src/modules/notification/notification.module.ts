@@ -6,6 +6,7 @@ import { SystemConfigurationModule } from '../system-configuration/system-config
 import { EmailModule } from '../email/email.module';
 import { MessagingModule } from '../messaging/messaging.module';
 import { VerificationModule } from '../verification/verification.module';
+import { ShortUrlModule } from '../short-url/short-url.module';
 import { NotificationController } from './notification.controller';
 import { NotificationService } from './notification.service';
 import { SendNotificationUseCase } from './use-cases/send-notification.use-case';
@@ -61,6 +62,7 @@ const AI_TOOLS = [
     // NotificationModule de volta (forwardRef acima) — sem lazy aqui também, o 3º lado do
     // triângulo fica eager e o Nest não resolve o ciclo.
     forwardRef(() => VerificationModule),
+    ShortUrlModule,
   ],
   controllers: [NotificationController],
   providers: [

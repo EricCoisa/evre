@@ -1,6 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 
 export async function seedMessagingTemplates(prisma: PrismaClient) {
+  const frontendUrl = 'https://evre.com.br';
+
   // Catálogo de templates: só PASSWORD_CHANGED nasce com o template (texto de autoria nossa,
   // sem submissão à Meta). `isSystem` é só marcador do seed — sem guard de delete.
   // `first_name` é reservada do sistema (messaging-variables.const.ts): o tipo a libera com
@@ -71,6 +73,56 @@ export async function seedMessagingTemplates(prisma: PrismaClient) {
   });
   console.log('✅ Messaging template NOTIFICATION created');
 
+  // NOTIFICATION_CTA: igual ao NOTIFICATION, mas com botão URL que aponta para o link encurtado
+  // (urlBase fixa /s/ — a Meta aprova uma vez, o sufixo dinâmico é o código do ShortLink).
+  // Usado por SendNotificationUseCase.dispatchWhatsapp quando input.actionUrl está presente;
+  // sem actionUrl, o template NOTIFICATION (sem botão) é usado em vez deste.
+  const notificationCtaTemplateVariables = [
+    { name: 'title', type: 'STRING', required: true },
+    { name: 'message', type: 'STRING', required: true },
+    { name: 'first_name', type: 'STRING', required: false, reserved: true },
+  ];
+  const notificationCtaTypeButtons = [
+    { key: 'open', kind: 'URL', urlBase: `${frontendUrl}/s/`, required: true },
+  ];
+  const notificationCtaTemplateType = await prisma.messagingTemplateType.upsert({
+    where: { key: 'NOTIFICATION_CTA' },
+    update: {
+      variables: notificationCtaTemplateVariables,
+      buttons: notificationCtaTypeButtons,
+      isSystem: true,
+    },
+    create: {
+      key: 'NOTIFICATION_CTA',
+      name: 'Notificação com link',
+      variables: notificationCtaTemplateVariables,
+      buttons: notificationCtaTypeButtons,
+      isSystem: true,
+    },
+  });
+  await prisma.messagingTemplate.upsert({
+    where: { key_language: { key: 'NOTIFICATION_CTA', language: 'pt-BR' } },
+    update: { isSystem: true },
+    create: {
+      key: 'NOTIFICATION_CTA',
+      language: 'pt-BR',
+      category: 'UTILITY',
+      typeId: notificationCtaTemplateType.id,
+      header: { kind: 'TEXT', text: 'Notificação' },
+      body: 'Olá {{ first_name }}! Nova notificação do sistema.\n\n{{ title }}\n{{ message }}\n\nToque no botão para acessar.',
+      buttons: [
+        {
+          kind: 'URL',
+          label: 'Ver detalhes',
+          url: `${frontendUrl}/s/{{ open }}`,
+          slot: 'open',
+        },
+      ],
+      isSystem: true,
+    },
+  });
+  console.log('✅ Messaging template NOTIFICATION_CTA created');
+
   // VerificationModule (request-verification.use-case → canal WHATSAPP): um template cobre
   // qualquer propósito de verificação. `code` é custom (o chamador sempre fornece) e `sensitive`
   // — primeiro consumidor real desse flag (ver messaging-variables.const.ts). Categoria
@@ -108,7 +160,6 @@ export async function seedMessagingTemplates(prisma: PrismaClient) {
   // Variáveis custom: title (obrigatória), link (obrigatória, URL encurtada no body).
   // Reservada: first_name — cai no fallback 'cliente' sem contato cadastrado.
   // Botão open: URL do sistema com sufixo dinâmico (publicToken); opt_out: QUICK_REPLY reservado.
-  const frontendUrl = 'https://evre.com.br';
   const proposalSentVariables = [
     { name: 'title', type: 'STRING', required: true },
     { name: 'link', type: 'STRING', required: true },

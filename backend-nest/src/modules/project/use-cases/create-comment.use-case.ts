@@ -60,7 +60,7 @@ export class CreateCommentUseCase {
           type: ProjectNotificationType.TASK_COMMENTED,
           titleKey: 'project.task_commented_title',
           messageKey: 'project.task_commented_message',
-          actionUrl: `/project/${projectId}`,
+          actionUrl: `/project/${projectId}/${dto.entityId}`,
           channels: { whatsapp: true },
         });
       }
