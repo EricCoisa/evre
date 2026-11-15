@@ -7,6 +7,7 @@ import { ResourceAccessService } from 'src/common/infrastructure/resource-access
 import type { AuthenticatedUser } from 'src/common/types/auth.types';
 import { UpdateProposalStatusUseCase } from './update-proposal-status.use-case';
 import { FindOneProposalUseCase } from './find-one.use-case';
+import { NotificationService } from '../../notification/notification.service';
 
 const admin: AuthenticatedUser = {
   id: 'admin-1',
@@ -34,6 +35,7 @@ const mockPrisma = {
 const mockI18n = { t: vi.fn().mockReturnValue('mensagem') };
 const mockLogging = { create: vi.fn() };
 const mockResourceAccess = { assertCanRead: vi.fn() };
+const mockNotifications = { notify: vi.fn() };
 
 describe('UpdateProposalStatusUseCase', () => {
   let useCase: UpdateProposalStatusUseCase;
@@ -47,6 +49,7 @@ describe('UpdateProposalStatusUseCase', () => {
         { provide: I18nService, useValue: mockI18n },
         { provide: LoggingService, useValue: mockLogging },
         { provide: ResourceAccessService, useValue: mockResourceAccess },
+        { provide: NotificationService, useValue: mockNotifications },
       ],
     }).compile();
     useCase = module.get(UpdateProposalStatusUseCase);
@@ -55,6 +58,7 @@ describe('UpdateProposalStatusUseCase', () => {
     mockPrisma.proposal.findUnique.mockResolvedValue({ ...row });
     mockPrisma.proposal.update.mockResolvedValue({ ...row });
     mockResourceAccess.assertCanRead.mockResolvedValue(undefined);
+    mockNotifications.notify.mockResolvedValue(undefined);
   });
 
   it('exige lostReason quando o novo status é LOST', async () => {

@@ -58,5 +58,19 @@
     "cancel": { "title": "Cancel info request" },
     "list": { "title": "List info requests" },
     "getValue": { "title": "Get decrypted info request value" }
-  }
+  },
+  "approval_requested_title": "Milestone awaiting approval",
+  "approval_requested_message": "Milestone \"{milestone}\" in project \"{project}\" was submitted for approval.",
+  "approval_approved_title": "Milestone approved",
+  "approval_approved_message": "Your approval request for \"{milestone}\" was approved.",
+  "approval_rejected_title": "Milestone rejected",
+  "approval_rejected_message": "Your approval request for \"{milestone}\" was rejected.",
+  "info_request_created_title": "New info request",
+  "info_request_created_message": "There is a new info request in project \"{project}\": {label}",
+  "info_request_answered_title": "Info request answered",
+  "info_request_answered_message": "The info request \"{label}\" has been answered.",
+  "task_assigned_title": "You have been assigned to a task",
+  "task_assigned_message": "Task \"{title}\" was assigned to you.",
+  "task_commented_title": "New comment on your task",
+  "task_commented_message": "A comment was added to task \"{title}\"."
 }

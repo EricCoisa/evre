@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { I18nService } from 'nestjs-i18n';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { NotificationService } from '../../notification/notification.service';
+import { ProjectNotificationType } from 'src/domain/project/project-notification-types.const';
 import type { AuthenticatedUser } from 'src/common/types/auth.types';
 import type { CreateInfoRequestDto } from '../dto/create-info-request.dto';
 
@@ -9,6 +11,7 @@ export class CreateInfoRequestUseCase {
   constructor(
     private readonly prisma: PrismaService,
     private readonly i18n: I18nService,
+    private readonly notifications: NotificationService,
   ) {}
 
   async execute(
@@ -18,13 +21,13 @@ export class CreateInfoRequestUseCase {
   ) {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
-      select: { id: true },
+      select: { id: true, companyId: true, name: true },
     });
     if (!project) {
       throw new NotFoundException(this.i18n.t('project.not_found'));
     }
 
-    return this.prisma.projectInfoRequest.create({
+    const created = await this.prisma.projectInfoRequest.create({
       data: {
         projectId,
         label: dto.label,
@@ -32,5 +35,27 @@ export class CreateInfoRequestUseCase {
         requestedById: user.id,
       },
     });
+
+    const members = await this.prisma.membership.findMany({
+      where: { companyId: project.companyId },
+      select: { userId: true },
+    });
+    if (members.length > 0) {
+      await this.notifications.notify({
+        type: ProjectNotificationType.INFO_REQUEST_CREATED,
+        recipients: { userIds: members.map((m) => m.userId) },
+        titleKey: 'project.info_request_created_title',
+        title: this.i18n.t('project.info_request_created_title'),
+        messageKey: 'project.info_request_created_message',
+        message: this.i18n.t('project.info_request_created_message', {
+          args: { project: project.name, label: dto.label },
+        }),
+        payload: { projectId, infoRequestId: created.id },
+        actionUrl: `/project/${projectId}`,
+        channels: { whatsapp: true },
+      });
+    }
+
+    return created;
   }
 }

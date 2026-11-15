@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { I18nService } from 'nestjs-i18n';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { NotificationService } from '../../notification/notification.service';
+import { ProjectNotificationType } from 'src/domain/project/project-notification-types.const';
 import type { AuthenticatedUser } from 'src/common/types/auth.types';
 import type { UpdateTaskDto } from '../dto/update-task.dto';
 import { FindOneProjectUseCase } from './find-one.use-case';
@@ -11,6 +13,7 @@ export class UpdateTaskUseCase {
     private readonly prisma: PrismaService,
     private readonly i18n: I18nService,
     private readonly findOne: FindOneProjectUseCase,
+    private readonly notifications: NotificationService,
   ) {}
 
   async execute(
@@ -37,7 +40,7 @@ export class UpdateTaskUseCase {
       updateData.blockedReason = null;
     }
 
-    return this.prisma.projectTask.update({
+    const updated = await this.prisma.projectTask.update({
       where: { id: taskId },
       data: updateData,
       include: {
@@ -46,5 +49,28 @@ export class UpdateTaskUseCase {
         },
       },
     });
+
+    const newAssigneeId = dto.assigneeId;
+    if (
+      newAssigneeId !== undefined &&
+      newAssigneeId !== null &&
+      newAssigneeId !== task.assigneeId &&
+      newAssigneeId !== user.id
+    ) {
+      await this.notifications.notify({
+        type: ProjectNotificationType.TASK_ASSIGNED,
+        recipients: { userIds: [newAssigneeId] },
+        titleKey: 'project.task_assigned_title',
+        title: this.i18n.t('project.task_assigned_title'),
+        messageKey: 'project.task_assigned_message',
+        message: this.i18n.t('project.task_assigned_message', {
+          args: { title: task.title },
+        }),
+        payload: { taskId, projectId },
+        actionUrl: `/project/${projectId}`,
+      });
+    }
+
+    return updated;
   }
 }

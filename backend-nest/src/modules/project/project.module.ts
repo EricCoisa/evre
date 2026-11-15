@@ -3,6 +3,7 @@ import { ProjectController } from './project.controller';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { LoggingModule } from '../logging/logging.module';
 import { CryptoModule } from '../../common/infrastructure/crypto/crypto.module';
+import { NotificationModule } from '../notification/notification.module';
 import { FindAllProjectUseCase } from './use-cases/find-all.use-case';
 import { FindOneProjectUseCase } from './use-cases/find-one.use-case';
 import { CreateProjectUseCase } from './use-cases/create.use-case';
@@ -116,7 +117,7 @@ const AI_TOOLS = [
 ];
 
 @Module({
-  imports: [PrismaModule, LoggingModule, CryptoModule],
+  imports: [PrismaModule, LoggingModule, CryptoModule, NotificationModule],
   controllers: [ProjectController],
   providers: [...USE_CASES, ...AI_TOOLS, ProjectRouteCeiling],
   exports: [FindOneProjectUseCase],

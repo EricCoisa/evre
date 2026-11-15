@@ -33,5 +33,7 @@
   "template_not_approved": "This template is not approved on this connection (status: {status}).",
   "template_not_submitted": "not submitted",
   "conversation_busy": "A previous message to this contact is still being sent. Wait a moment and send again.",
-  "searchPlaceholder": "Search..."
+  "searchPlaceholder": "Search...",
+  "inbound_message_title": "New message received",
+  "inbound_message_message": "A contact sent a new message on WhatsApp."
 }

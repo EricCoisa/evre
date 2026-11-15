@@ -6,6 +6,8 @@ import {
 import { I18nService } from 'nestjs-i18n';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { ResourceAccessService } from 'src/common/infrastructure/resource-access/resource-access.service';
+import { NotificationService } from '../../notification/notification.service';
+import { ProjectNotificationType } from 'src/domain/project/project-notification-types.const';
 import type { AuthenticatedUser } from 'src/common/types/auth.types';
 import type { RespondApprovalDto } from '../dto/respond-approval.dto';
 
@@ -15,6 +17,7 @@ export class RespondApprovalUseCase {
     private readonly prisma: PrismaService,
     private readonly i18n: I18nService,
     private readonly resourceAccess: ResourceAccessService,
+    private readonly notifications: NotificationService,
   ) {}
 
   async execute(
@@ -25,7 +28,9 @@ export class RespondApprovalUseCase {
   ) {
     const approval = await this.prisma.milestoneApproval.findUnique({
       where: { id: approvalId },
-      include: { milestone: { select: { projectId: true } } },
+      include: {
+        milestone: { select: { projectId: true, title: true } },
+      },
     });
     if (!approval || approval.milestone.projectId !== projectId) {
       throw new NotFoundException(this.i18n.t('project.approval_not_found'));
@@ -45,7 +50,7 @@ export class RespondApprovalUseCase {
       projectId,
     });
 
-    return this.prisma.milestoneApproval.update({
+    const updated = await this.prisma.milestoneApproval.update({
       where: { id: approvalId },
       data: {
         status: dto.status,
@@ -54,5 +59,33 @@ export class RespondApprovalUseCase {
         respondedAt: new Date(),
       },
     });
+
+    const approved = dto.status === 'APPROVED';
+    await this.notifications.notify({
+      type: ProjectNotificationType.MILESTONE_APPROVAL_RESPONDED,
+      recipients: { userIds: [approval.requestedById] },
+      titleKey: approved
+        ? 'project.approval_approved_title'
+        : 'project.approval_rejected_title',
+      title: this.i18n.t(
+        approved
+          ? 'project.approval_approved_title'
+          : 'project.approval_rejected_title',
+      ),
+      messageKey: approved
+        ? 'project.approval_approved_message'
+        : 'project.approval_rejected_message',
+      message: this.i18n.t(
+        approved
+          ? 'project.approval_approved_message'
+          : 'project.approval_rejected_message',
+        { args: { milestone: approval.milestone.title } },
+      ),
+      payload: { approvalId, milestoneId: approval.milestoneId, projectId, status: dto.status },
+      actionUrl: `/project/${projectId}`,
+      channels: { whatsapp: true },
+    });
+
+    return updated;
   }
 }

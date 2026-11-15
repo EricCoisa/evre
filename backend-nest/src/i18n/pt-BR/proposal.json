@@ -76,6 +76,8 @@
   "acceptance_expired": "Esta proposta não pode mais ser aceita — o prazo de validade passou",
   "acceptance_other_version_accepted": "Esta proposta já tem outra versão aceita",
   "acceptance_note_required": "Informe de onde veio a decisão — nota obrigatória para aceite registrado pela equipe",
+  "lost_notified_title": "Proposta marcada como perdida",
+  "lost_notified_message": "A proposta \"{name}\" foi marcada como perdida.",
   "acceptance_notified_title": "Proposta aceita",
   "acceptance_notified_message": "A proposta \"{name}\" foi aceita.",
   "public": {

@@ -7,6 +7,8 @@ import { I18nService } from 'nestjs-i18n';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CryptoService } from 'src/common/infrastructure/crypto/crypto.service';
 import { ResourceAccessService } from 'src/common/infrastructure/resource-access/resource-access.service';
+import { NotificationService } from '../../notification/notification.service';
+import { ProjectNotificationType } from 'src/domain/project/project-notification-types.const';
 import type { AuthenticatedUser } from 'src/common/types/auth.types';
 import type { AnswerInfoRequestDto } from '../dto/answer-info-request.dto';
 
@@ -17,6 +19,7 @@ export class AnswerInfoRequestUseCase {
     private readonly i18n: I18nService,
     private readonly crypto: CryptoService,
     private readonly resourceAccess: ResourceAccessService,
+    private readonly notifications: NotificationService,
   ) {}
 
   async execute(
@@ -47,7 +50,7 @@ export class AnswerInfoRequestUseCase {
 
     const encryptedValue = this.crypto.encryptString(dto.value);
 
-    return this.prisma.projectInfoRequest.update({
+    const updated = await this.prisma.projectInfoRequest.update({
       where: { id: requestId },
       data: {
         status: 'ANSWERED',
@@ -56,5 +59,21 @@ export class AnswerInfoRequestUseCase {
         answeredAt: new Date(),
       },
     });
+
+    await this.notifications.notify({
+      type: ProjectNotificationType.INFO_REQUEST_ANSWERED,
+      recipients: { userIds: [infoReq.requestedById] },
+      titleKey: 'project.info_request_answered_title',
+      title: this.i18n.t('project.info_request_answered_title'),
+      messageKey: 'project.info_request_answered_message',
+      message: this.i18n.t('project.info_request_answered_message', {
+        args: { label: infoReq.label },
+      }),
+      payload: { projectId, infoRequestId: requestId },
+      actionUrl: `/project/${projectId}`,
+      channels: { email: true },
+    });
+
+    return updated;
   }
 }

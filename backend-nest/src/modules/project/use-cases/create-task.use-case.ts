@@ -3,6 +3,8 @@ import { I18nService } from 'nestjs-i18n';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { LoggingService } from '../../logging/logging.service';
 import { LogActions } from 'src/domain/logging/log-actions';
+import { NotificationService } from '../../notification/notification.service';
+import { ProjectNotificationType } from 'src/domain/project/project-notification-types.const';
 import type { AuthenticatedUser } from 'src/common/types/auth.types';
 import type { CreateTaskDto } from '../dto/create-task.dto';
 import { FindOneProjectUseCase } from './find-one.use-case';
@@ -14,6 +16,7 @@ export class CreateTaskUseCase {
     private readonly loggingService: LoggingService,
     private readonly i18n: I18nService,
     private readonly findOne: FindOneProjectUseCase,
+    private readonly notifications: NotificationService,
   ) {}
 
   async execute(
@@ -36,6 +39,7 @@ export class CreateTaskUseCase {
       _max: { position: true },
     });
 
+    const assigneeId = dto.assigneeId !== undefined ? dto.assigneeId : user.id;
     const created = await this.prisma.projectTask.create({
       data: {
         milestoneId,
@@ -43,7 +47,7 @@ export class CreateTaskUseCase {
         description: dto.description,
         status: dto.status ?? 'WAITING',
         blockedReason: dto.status === 'BLOCKED' ? dto.blockedReason : null,
-        assigneeId: dto.assigneeId !== undefined ? dto.assigneeId : user.id,
+        assigneeId,
         position: (maxPos._max.position ?? -1) + 1,
       },
       include: {
@@ -62,6 +66,21 @@ export class CreateTaskUseCase {
       },
       user.id,
     );
+
+    if (assigneeId && assigneeId !== user.id) {
+      await this.notifications.notify({
+        type: ProjectNotificationType.TASK_ASSIGNED,
+        recipients: { userIds: [assigneeId] },
+        titleKey: 'project.task_assigned_title',
+        title: this.i18n.t('project.task_assigned_title'),
+        messageKey: 'project.task_assigned_message',
+        message: this.i18n.t('project.task_assigned_message', {
+          args: { title: created.title },
+        }),
+        payload: { taskId: created.id, projectId },
+        actionUrl: `/project/${projectId}`,
+      });
+    }
 
     return created;
   }

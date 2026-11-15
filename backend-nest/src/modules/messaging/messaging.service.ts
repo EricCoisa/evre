@@ -59,6 +59,9 @@ import {
 } from './messaging-template.service';
 import { unreachableMediaReason } from './providers/media-url.util';
 import { categoryChangeData } from './providers/template.util';
+import { NotificationService } from 'src/modules/notification/notification.service';
+import { RedisService } from 'src/common/infrastructure/redis/redis.service';
+import { MessagingNotificationType } from 'src/domain/messaging/messaging-notification-types.const';
 
 export interface MessagingCandidateConfig {
   provider: MessagingProvider;
@@ -121,6 +124,10 @@ export class MessagingService {
     private readonly queues: Queue[] | null,
     @Optional()
     private readonly buttonEvents: MessagingButtonEventService | null = null,
+    @Optional()
+    private readonly notifications: NotificationService | null = null,
+    @Optional()
+    private readonly redis: RedisService | null = null,
   ) {}
 
   /** Enfileira o envio na partição da conversa; arquivo anexado envia já, fora da fila. */
@@ -809,6 +816,25 @@ export class MessagingService {
         payload: event.buttonPayload,
       });
     }
+
+    // ponytail: cooldown de 5 min por contato evita flood de notificações em conversas ativas
+    if (!event.fromMe && this.notifications && this.redis) {
+      const isFirst = await this.redis.setnx(
+        `messaging:new-msg:${contactId}`,
+        '1',
+        300,
+      );
+      if (isFirst) {
+        await this.notifications.notify({
+          type: MessagingNotificationType.INBOUND_MESSAGE,
+          recipients: { roleNames: ['ADMIN'] },
+          title: 'Nova mensagem recebida',
+          message: 'Um contato enviou uma nova mensagem no WhatsApp.',
+          actionUrl: '/comunicacao',
+        });
+      }
+    }
+
     this.afterConversationChange(contactId);
   }
 

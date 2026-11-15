@@ -3,6 +3,8 @@ import { I18nService } from 'nestjs-i18n';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { LoggingService } from '../../logging/logging.service';
 import { LogActions } from 'src/domain/logging/log-actions';
+import { NotificationService } from '../../notification/notification.service';
+import { ProposalNotificationType } from 'src/domain/proposal/proposal-notification-types.const';
 import {
   ProposalStatusConst,
   type ProposalStatusValue,
@@ -26,6 +28,7 @@ export class UpdateProposalStatusUseCase {
     private readonly i18n: I18nService,
     private readonly loggingService: LoggingService,
     private readonly findOne: FindOneProposalUseCase,
+    private readonly notifications: NotificationService,
   ) {}
 
   async execute(
@@ -69,6 +72,22 @@ export class UpdateProposalStatusUseCase {
       },
       user.id,
     );
+
+    if (nextStatus === ProposalStatusConst.LOST && nextStatus !== found.status) {
+      await this.notifications.notify({
+        type: ProposalNotificationType.STATUS_CHANGED,
+        recipients: { userIds: [found.ownerId] },
+        titleKey: 'proposal.lost_notified_title',
+        title: this.i18n.t('proposal.lost_notified_title'),
+        messageKey: 'proposal.lost_notified_message',
+        message: this.i18n.t('proposal.lost_notified_message', {
+          args: { name: updated.name },
+        }),
+        payload: { proposalId: id, status: nextStatus },
+        actionUrl: `/proposal/${id}`,
+        channels: { email: true },
+      });
+    }
 
     return updated as unknown as Proposal;
   }
