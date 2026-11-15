@@ -30,7 +30,7 @@ const resetRecord = {
   userId: 'u1',
   expiresAt: new Date(Date.now() + 60_000),
   usedAt: null,
-  user: { id: 'u1', email: 'a@b.com' },
+  user: { id: 'u1', email: 'a@b.com', status: 'ACTIVE' },
 };
 
 describe('ResetPasswordUseCase', () => {
@@ -86,5 +86,21 @@ describe('ResetPasswordUseCase', () => {
         BadRequestException,
       );
     });
+
+    it.each(['INACTIVE', 'SUSPENDED'])(
+      'lança BadRequestException quando usuário tem status %s',
+      async (status) => {
+        mockPrisma.passwordResetToken.findFirst.mockResolvedValue({
+          ...resetRecord,
+          user: { ...resetRecord.user, status },
+        });
+
+        await expect(
+          useCase.execute(validToken, 'NewPass1!'),
+        ).rejects.toThrow(BadRequestException);
+
+        expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+      },
+    );
   });
 });

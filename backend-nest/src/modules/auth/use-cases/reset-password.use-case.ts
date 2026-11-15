@@ -4,6 +4,7 @@ import { CryptoService } from '../../../common/infrastructure/crypto/crypto.serv
 import { LoggingService } from '../../logging/logging.service';
 import { I18nService } from 'nestjs-i18n';
 import { LogActions } from 'src/domain/logging/log-actions';
+import { UserStatusConst } from 'src/domain/auth/userStatus.const';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -31,7 +32,10 @@ export class ResetPasswordUseCase {
       include: { user: true },
     });
 
-    if (!passwordResetToken) {
+    if (
+      !passwordResetToken ||
+      passwordResetToken.user.status !== UserStatusConst.ACTIVE
+    ) {
       throw new BadRequestException(
         this.i18n.t('auth.password_reset.invalid_token'),
       );

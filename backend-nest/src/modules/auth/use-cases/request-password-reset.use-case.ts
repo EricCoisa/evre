@@ -8,6 +8,7 @@ import { RedisService } from '../../../common/infrastructure/redis/redis.service
 import { ShortUrlService } from '../../short-url/short-url.service';
 import { LogActions } from 'src/domain/logging/log-actions';
 import { EmailTemplateType } from 'src/domain/mail/email-template-type.const';
+import { UserStatusConst } from 'src/domain/auth/userStatus.const';
 import * as crypto from 'crypto';
 
 /** Janela mínima entre dois e-mails de recuperação para o mesmo endereço. */
@@ -66,13 +67,13 @@ export class RequestPasswordResetUseCase {
       where: { email: normalizedEmail },
     });
 
-    if (!user) {
+    if (!user || user.status !== UserStatusConst.ACTIVE) {
       await this.loggingService.create(
         {
           module: 'AUTH',
           action: LogActions.PASSWORD_RESET_REQUEST,
-          message: `Tentativa de recuperação de senha para email não cadastrado: ${normalizedEmail}`,
-          metadata: { email: normalizedEmail, userFound: false },
+          message: `Tentativa de recuperação de senha para email não cadastrado ou inativo: ${normalizedEmail}`,
+          metadata: { email: normalizedEmail, userFound: !!user, userStatus: user?.status ?? null },
         },
         null,
       );

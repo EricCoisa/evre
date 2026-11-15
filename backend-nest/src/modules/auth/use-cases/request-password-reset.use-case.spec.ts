@@ -38,7 +38,7 @@ const mockShortUrl = {
   }),
 };
 
-const user = { id: 'u1', email: 'a@b.com', name: 'Test' };
+const user = { id: 'u1', email: 'a@b.com', name: 'Test', status: 'ACTIVE' };
 
 describe('RequestPasswordResetUseCase', () => {
   let useCase: RequestPasswordResetUseCase;
@@ -160,6 +160,19 @@ describe('RequestPasswordResetUseCase', () => {
       expect.objectContaining({ where: { userId: 'u1', usedAt: null } }),
     );
   });
+  it.each(['INACTIVE', 'SUSPENDED'])(
+    'não envia email para usuário com status %s',
+    async (status) => {
+      mockPrisma.user.findUnique.mockResolvedValue({ ...user, status });
+
+      await useCase.execute('a@b.com');
+
+      expect(mockPrisma.passwordResetToken.create).not.toHaveBeenCalled();
+      expect(mockEmail.send).not.toHaveBeenCalled();
+      expect(mockLogging.create).toHaveBeenCalled();
+    },
+  );
+
   it('throws ServiceUnavailableException when email service is not operational', async () => {
     mockEmail.checkHealth.mockResolvedValue({ operational: false });
 

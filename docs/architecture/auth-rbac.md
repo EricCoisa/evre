@@ -175,7 +175,7 @@ Detalhes de fluxo, state, configuração e como adicionar um provider: [[oauth]]
 
 ## Reset de senha & convites
 
-- `PasswordResetToken` (hash + expiração) alimenta `forgot-password` / `reset-password`.
+- `PasswordResetToken` (hash + expiração) alimenta `forgot-password` / `reset-password`. Ambos os lados verificam `user.status === ACTIVE`: o pedido (`RequestPasswordResetUseCase`) retorna silenciosamente sem enviar e-mail, e a troca (`ResetPasswordUseCase`) rejeita com `invalid_token` — nos dois casos, sem revelar se a conta existe ou qual é o status.
 - Convites: `auth/invite-token` (ADMIN gera) → `auth/accept-invite`. O envio do convite é síncrono para que falhas sejam reportadas imediatamente; confirmações de cadastro e reset de senha usam a fila (ver [[queues-and-jobs]]).
 
 O convite carrega uma **role**: é o que diferencia o convidado de um cadastro comum. Na tela do convite (`/signup?inviteToken=`), conta nova pode ser criada por senha ou provider OAuth; conta existente precisa autenticar. No fluxo OAuth, o e-mail precisa estar verificado e corresponder ao convidado. Ver [[oauth]].
