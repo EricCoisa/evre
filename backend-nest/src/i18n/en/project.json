@@ -28,6 +28,9 @@
   "board": {
     "title": "Get project board"
   },
+  "members": {
+    "title": "List project members"
+  },
   "milestone": {
     "create": { "title": "Create milestone" },
     "update": { "title": "Update milestone" },

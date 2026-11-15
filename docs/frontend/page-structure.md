@@ -164,7 +164,7 @@ Em RSC o rótulo vai em `<LangLabel>`, que é o Client Component mínimo que tra
 nada — `children` já foi avaliado, viaja no payload e só some no browser. Em Server Component a
 forma é `{enabled && <X />}` com a flag lida por `serverFeatureFlag()`.
 
-**`enabled: !isClient` não é o mesmo que `enabled: isAdmin`.** MODERATOR não é cliente, então `!isClient === true` — a query dispara mesmo para ele. Se o endpoint exige `roles: ['ADMIN']`, o MODERATOR recebe 403. Sempre que um `useQuery` chama um endpoint com restrição de role, o `enabled` deve refletir exatamente essa restrição: `enabled: meData?.role === 'ADMIN'`.
+**`enabled: !isClient` não é o mesmo que `enabled: isAdmin`.** MODERATOR não é cliente, então `!isClient === true` — a query dispara mesmo para ele e retorna 403. A causa raiz geralmente é chamar o endpoint errado: um endpoint de administração (`GET /user`, lista todos os usuários do sistema) sendo usado onde o endpoint correto seria um de escopo menor (`GET /project/:id/members`, acessível a todos os membros). A solução preferida é escolher o endpoint cujo acesso coincide com quem monta o componente — assim nenhum guard de role no cliente é necessário. Guardar com `enabled: meData?.role === 'ADMIN'` suprime o erro mas não resolve o problema: o componente fica sem dados para papéis não-ADMIN que deveriam tê-los.
 
 ### O que continua no cliente
 
