@@ -14,12 +14,17 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/lib/actions/auth/queries', () => ({
   useMe: () => ({ data: { role: mocks.role } }),
 }));
+vi.mock('@tanstack/react-query', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tanstack/react-query')>();
+  return { ...actual, useQueryClient: () => ({ invalidateQueries: vi.fn() }) };
+});
 vi.mock('@/lib/actions/notification/queries', () => ({
   useUnreadCount: () => ({ data: mocks.unreadCount }),
   useMyNotifications: () => ({ data: { data: mocks.notifications } }),
   useMarkNotificationRead: () => ({ mutate: mocks.markRead }),
   useMarkAllNotificationsRead: () => ({ mutate: mocks.markAllRead }),
   useDismissNotification: () => ({ mutate: mocks.dismiss }),
+  NOTIFICATIONS_LIST_KEY: ['notifications', 'list'],
 }));
 vi.mock('@/hooks/use-translation', () => ({
   useTranslation: () => ({ t: (key: string) => key }),

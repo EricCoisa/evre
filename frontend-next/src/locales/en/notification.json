@@ -27,6 +27,8 @@
   "audience_roles": "Specific roles",
   "audience_roles_required": "Select at least one role",
   "no_roles": "No roles available",
+  "action_open": "Open",
+  "action_evaluate": "Evaluate Stage",
   "types": {
     "SYSTEM_ANNOUNCEMENT": "System announcement"
   }

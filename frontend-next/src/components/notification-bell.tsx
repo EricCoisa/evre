@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Bell, Send } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -14,6 +15,7 @@ import {
   useMarkNotificationRead,
   useMarkAllNotificationsRead,
   useDismissNotification,
+  NOTIFICATIONS_LIST_KEY,
 } from '@/lib/actions/notification/queries';
 import { NotificationItem } from '@/components/notification/renderer-registry';
 import { SendNotificationModal } from '@/components/notification/send-notification-modal';
@@ -81,13 +83,22 @@ export function NotificationBell() {
   const markAllRead = useMarkAllNotificationsRead();
   const dismiss = useDismissNotification();
   const [composerOpen, setComposerOpen] = useState(false);
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   const hasUnread = !!unreadCount;
   const isAdmin = user?.role === 'ADMIN';
 
+  function handlePopoverOpen(open: boolean) {
+    setPopoverOpen(open);
+    if (open) {
+      queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_LIST_KEY });
+    }
+  }
+
   return (
     <>
-      <Popover>
+      <Popover open={popoverOpen} onOpenChange={handlePopoverOpen}>
         <PopoverTrigger asChild>
           <Button variant="ghost" size="icon" className="relative size-8">
             <Bell className="size-4" />

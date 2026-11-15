@@ -10,7 +10,8 @@ import {
 import { Alive, Collector } from '@/lib/api/collector';
 
 const UNREAD_COUNT_KEY = ['notifications', 'unread-count'];
-const LIST_KEY = ['notifications', 'list'];
+export const NOTIFICATIONS_LIST_KEY = ['notifications', 'list'];
+const LIST_KEY = NOTIFICATIONS_LIST_KEY;
 
 /** Polling simples (30s) — ver gap documentado: upgrade para SSE se precisar de tempo real. */
 export function useUnreadCount() {

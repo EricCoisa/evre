@@ -27,6 +27,8 @@
   "audience_roles": "Roles específicas",
   "audience_roles_required": "Selecione ao menos uma role",
   "no_roles": "Nenhuma role disponível",
+  "action_open": "Abrir",
+  "action_evaluate": "Avaliar Etapa",
   "types": {
     "SYSTEM_ANNOUNCEMENT": "Aviso do sistema"
   }
