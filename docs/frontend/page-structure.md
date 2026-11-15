@@ -152,7 +152,7 @@ configuração/propostas/projetos/contratos — as duas últimas desabilitadas, 
 plumbing de `?tab=` (`SubNavLayout` já sincroniza com `useTabParam` quando `tab`/`onTabChange` não
 são passados).
 
-### Três armadilhas
+### Quatro armadilhas
 
 **`t()` não roda no servidor.** O i18n aqui é `react-i18next` puro, sem SSR ([[i18n-frontend]]).
 Em RSC o rótulo vai em `<LangLabel>`, que é o Client Component mínimo que traduz uma chave.
@@ -163,6 +163,8 @@ Em RSC o rótulo vai em `<LangLabel>`, que é o Client Component mínimo que tra
 **`<Feature flag>` não serve em RSC.** Ele é `'use client'`: compila, parece certo e não protege
 nada — `children` já foi avaliado, viaja no payload e só some no browser. Em Server Component a
 forma é `{enabled && <X />}` com a flag lida por `serverFeatureFlag()`.
+
+**`enabled: !isClient` não é o mesmo que `enabled: isAdmin`.** MODERATOR não é cliente, então `!isClient === true` — a query dispara mesmo para ele. Se o endpoint exige `roles: ['ADMIN']`, o MODERATOR recebe 403. Sempre que um `useQuery` chama um endpoint com restrição de role, o `enabled` deve refletir exatamente essa restrição: `enabled: meData?.role === 'ADMIN'`.
 
 ### O que continua no cliente
 

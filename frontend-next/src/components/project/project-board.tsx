@@ -821,7 +821,7 @@ export function ProjectBoard({
   const { data: meData } = useMe();
   const currentUserId = meData?.id;
   const isClient = mode === 'client' || isClientUser(meData);
-  const { data: usersData } = useUsers(undefined, { enabled: !isClient });
+  const { data: usersData } = useUsers(undefined, { enabled: meData?.role === 'ADMIN' });
 
   const users = useMemo(() => {
     if (!usersData) return [];
