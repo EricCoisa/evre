@@ -61,6 +61,7 @@ export class CreateCommentUseCase {
           titleKey: 'project.task_commented_title',
           messageKey: 'project.task_commented_message',
           actionUrl: `/project/${projectId}`,
+          channels: { whatsapp: true },
         });
       }
     }

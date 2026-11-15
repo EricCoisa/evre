@@ -78,6 +78,7 @@ export class CreateTaskUseCase {
         titleKey: 'project.task_assigned_title',
         messageKey: 'project.task_assigned_message',
         actionUrl: `/project/${projectId}`,
+        channels: { whatsapp: true },
       });
     }
 
