@@ -12,18 +12,12 @@ export function InvalidTokenMessage() {
     const { t } = useTranslation("forgotPassword")
 
     useEffect(() => {
-        const interval = setInterval(() => {
-            setSeconds((prev) => {
-                if (prev <= 1) {
-                    clearInterval(interval)
-                    router.push('/login')
-                    return 0
-                }
-                return prev - 1
-            })
-        }, 1000)
-
-        return () => clearInterval(interval)
+        const timer = setTimeout(() => router.push('/login'), 3000)
+        const interval = setInterval(() => setSeconds((prev) => prev - 1), 1000)
+        return () => {
+            clearTimeout(timer)
+            clearInterval(interval)
+        }
     }, [router])
 
     return (
