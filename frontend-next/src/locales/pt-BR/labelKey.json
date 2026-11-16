@@ -147,5 +147,8 @@
     "NOTIFICATION_EMAIL": "Notificações por email",
     "NOTIFICATION_WHATSAPP": "Notificações por WhatsApp",
 
-    "ARCHIVE": "Arquivado"
+    "ARCHIVE": "Arquivado",
+
+    "ROUTE_LEAD": "Leads",
+    "LEAD": "Leads"
 }

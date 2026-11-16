@@ -17,6 +17,7 @@ export const RoutePathConst = {
   PROJECT: '/project',
   MY_PROJECT: '/my-project',
   TIME_TRACKER: '/time-tracker',
+  LEAD: '/lead',
 } as const;
 
 export type RoutePath = (typeof RoutePathConst)[keyof typeof RoutePathConst];

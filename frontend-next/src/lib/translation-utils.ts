@@ -50,9 +50,12 @@ import ptBRProject from '../locales/pt-BR/project.json';
 import enProject from '../locales/en/project.json';
 import ptBRTimeTracking from '../locales/pt-BR/time-tracking.json';
 import enTimeTracking from '../locales/en/time-tracking.json';
+import ptBRLead from '../locales/pt-BR/lead.json';
+import enLead from '../locales/en/lead.json';
 export const resources = {
 	'pt-BR': {
 		'time-tracking': ptBRTimeTracking,
+		lead: ptBRLead,
 		proposal: ptBRProposal,
 		company: ptBRCompany,
 		artifact: ptBRArtifact,
@@ -80,6 +83,7 @@ export const resources = {
 	},
 	en: {
 		'time-tracking': enTimeTracking,
+		lead: enLead,
 		proposal: enProposal,
 		company: enCompany,
 		artifact: enArtifact,

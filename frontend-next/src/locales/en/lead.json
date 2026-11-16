@@ -1,0 +1,15 @@
+{
+  "title": "Leads",
+  "description": "Contact form submissions from the landing page.",
+  "entity": "Lead",
+  "entityPlural": "Leads",
+  "searchPlaceholder": "Search by name or email…",
+  "noLeads": "No leads found.",
+  "filterByStatus": "Filter by status",
+  "name": "Name",
+  "phone": "Phone",
+  "email": "Email",
+  "message": "Message",
+  "status": "Status",
+  "createdAt": "Received at"
+}

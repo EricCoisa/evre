@@ -52,6 +52,7 @@ import { ShortUrlModule } from './modules/short-url/short-url.module';
 import { SentryModule } from '@sentry/nestjs/setup';
 import { ProjectModule } from './modules/project/project.module';
 import { TimeTrackingModule } from './modules/time-tracking/time-tracking.module';
+import { LeadModule } from './modules/lead/lead.module';
 import { PdfModule } from './modules/pdf/pdf.module';
 
 @Module({
@@ -146,6 +147,7 @@ import { PdfModule } from './modules/pdf/pdf.module';
     ProposalModule,
     ProjectModule,
     TimeTrackingModule,
+    LeadModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

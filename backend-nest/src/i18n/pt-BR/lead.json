@@ -1,0 +1,15 @@
+{
+  "create": {
+    "title": "Enviar contato",
+    "description": "Recebe uma solicitação de contato da landing page"
+  },
+  "list": {
+    "title": "Listar leads"
+  },
+  "update_status": {
+    "title": "Atualizar status do lead"
+  },
+  "errors": {
+    "not_found": "Lead não encontrado"
+  }
+}

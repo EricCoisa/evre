@@ -23,6 +23,9 @@ export const QUERY_CONFIG = {
     PROJECT: 5 * 60 * 1000,
     PROJECTS: 5 * 60 * 1000,
 
+    LEAD: 2 * 60 * 1000,
+    LEADS: 2 * 60 * 1000,
+
   },
   
   // Garbage Collection Times (tempo que dados ficam no cache após stale)
@@ -44,6 +47,9 @@ export const QUERY_CONFIG = {
 
     PROJECT: 10 * 60 * 1000,
     PROJECTS: 10 * 60 * 1000,
+
+    LEAD: 5 * 60 * 1000,
+    LEADS: 5 * 60 * 1000,
 
   },
   

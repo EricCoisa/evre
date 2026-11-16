@@ -22,6 +22,7 @@ export const LogModuleConst = {
   ARTIFACT: 'ARTIFACT',
   PROJECT: 'PROJECT',
   TIME_TRACKING: 'TIME_TRACKING',
+  LEAD: 'LEAD',
 };
 
 export type LogModule = keyof typeof LogModuleConst;

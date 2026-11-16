@@ -1,0 +1,28 @@
+enum LeadStatus {
+  NEW
+  VIEWED
+  RESOLVED
+
+  @@schema("public")
+}
+
+model Lead {
+  id                 String     @id @default(uuid())
+  name               String
+  phone              String?
+  email              String?
+  message            String     @db.Text
+  status             LeadStatus @default(NEW)
+  messagingContactId String?
+  resolvedById       String?
+  resolvedAt         DateTime?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  messagingContact MessagingContact? @relation(fields: [messagingContactId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([status])
+  @@map("leads")
+  @@schema("public")
+}

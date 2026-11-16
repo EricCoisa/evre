@@ -10816,6 +10816,176 @@
           "pdf"
         ]
       }
+    },
+    "/lead": {
+      "post": {
+        "description": "lead.create.description",
+        "operationId": "LeadController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLeadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Lead recebido com sucesso"
+          }
+        },
+        "summary": "lead.create.title",
+        "tags": [
+          "lead"
+        ]
+      },
+      "get": {
+        "operationId": "LeadController_findAll",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Número da página",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Quantidade de itens por página (máximo 100)",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "pagination",
+            "required": false,
+            "in": "query",
+            "description": "Habilitar/desabilitar paginação",
+            "schema": {
+              "example": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Termo de busca",
+            "schema": {
+              "example": "",
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "required": false,
+            "in": "query",
+            "description": "Filtros adicionais",
+            "schema": {
+              "example": {},
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/Object"
+                }
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/LeadDto"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "number"
+                        },
+                        "page": {
+                          "type": "number"
+                        },
+                        "limit": {
+                          "type": "number"
+                        },
+                        "totalPages": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "lead.list.title",
+        "tags": [
+          "lead"
+        ]
+      }
+    },
+    "/lead/{id}/status": {
+      "patch": {
+        "operationId": "LeadController_updateStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLeadStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "lead.update_status.title",
+        "tags": [
+          "lead"
+        ]
+      }
     }
   },
   "info": {
@@ -10899,7 +11069,8 @@
               "PROPOSAL",
               "ARTIFACT",
               "PROJECT",
-              "TIME_TRACKING"
+              "TIME_TRACKING",
+              "LEAD"
             ],
             "example": "USER"
           },
@@ -16864,6 +17035,103 @@
             "nullable": true
           }
         }
+      },
+      "CreateLeadDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Nome do lead",
+            "type": "string",
+            "minLength": 1
+          },
+          "phone": {
+            "description": "Telefone (pelo menos phone ou email)",
+            "type": "string"
+          },
+          "email": {
+            "description": "E-mail (pelo menos phone ou email)",
+            "type": "string",
+            "format": "email"
+          },
+          "message": {
+            "description": "Mensagem / intenção",
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "name",
+          "message"
+        ]
+      },
+      "LeadDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "object"
+          },
+          "email": {
+            "type": "object"
+          },
+          "message": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "NEW",
+              "VIEWED",
+              "RESOLVED"
+            ]
+          },
+          "messagingContactId": {
+            "type": "object"
+          },
+          "resolvedById": {
+            "type": "object"
+          },
+          "resolvedAt": {
+            "type": "object"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "message",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UpdateLeadStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "NEW",
+              "VIEWED",
+              "RESOLVED"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
       }
     }
   }

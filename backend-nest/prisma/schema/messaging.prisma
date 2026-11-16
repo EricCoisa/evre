@@ -107,6 +107,7 @@ model MessagingContact {
   conversations    MessagingConversation[]
   messages         MessagingMessage[]
   companyContacts  CompanyContact[]
+  leads            Lead[]
 
   @@index([optOut])
   @@index([lastMessageAt])

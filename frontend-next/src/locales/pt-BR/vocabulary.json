@@ -23,5 +23,11 @@
     "EMAIL": "Email",
     "MANUAL": "Manual",
     "UNKNOWN": "Desconhecido"
+  },
+  "leadStatus": {
+    "NEW": "Novo",
+    "VIEWED": "Visualizado",
+    "RESOLVED": "Resolvido",
+    "UNKNOWN": "Desconhecido"
   }
 }

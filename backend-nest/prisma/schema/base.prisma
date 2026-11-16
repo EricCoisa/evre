@@ -51,6 +51,7 @@ enum LogModule {
   PROPOSAL
   PROJECT
   TIME_TRACKING
+  LEAD
 
   @@schema("public")
 }
