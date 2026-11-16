@@ -31,7 +31,7 @@ export function SistemasSection({
       gsap.set('.sistemas-label', { x: 24 });
       gsap.set('.sistemas-title', { clipPath: 'inset(100% 0 0 0)' });
       gsap.set('.sistemas-body', { clipPath: 'inset(100% 0 0 0)' });
-      gsap.set('.sistemas-frame', { y: 60, clipPath: 'inset(100% 0 0 0)' });
+      gsap.set('.sistemas-frame', { y: 60, opacity: 0 });
 
       gsap.to('.sistemas-label', {
         x: 0,
@@ -46,7 +46,7 @@ export function SistemasSection({
         scrollTrigger: { trigger: sectionRef.current, start: 'top 65%', end: 'top 20%', scrub: 1.5 },
       });
       gsap.to('.sistemas-frame', {
-        y: 0, clipPath: 'inset(0% 0 0 0)',
+        y: 0, opacity: 1,
         scrollTrigger: { trigger: '.sistemas-frame', start: 'top 85%', end: 'top 25%', scrub: 2 },
       });
     }, sectionRef);
@@ -58,7 +58,7 @@ export function SistemasSection({
     <section
       ref={sectionRef}
       id="sistemas"
-      className="relative overflow-hidden"
+      className="relative"
       style={{ background: 'var(--lp-bg)', padding: '10rem max(2rem, env(safe-area-inset-left,0px))' }}
     >
       <div className="mx-auto grid max-w-6xl items-center gap-16 md:grid-cols-2 md:gap-20">

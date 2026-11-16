@@ -30,7 +30,8 @@ export function ArtifactFrame({ demos, className = '', style }: ArtifactFramePro
       style={{
         background: 'var(--lp-elevated)',
         borderColor: 'var(--lp-border)',
-        boxShadow: '0 48px 96px rgba(0,0,0,0.65)',
+        boxShadow: '0 24px 60px rgba(0,0,0,0.35)',
+        isolation: 'isolate',
         ...style,
       }}
     >

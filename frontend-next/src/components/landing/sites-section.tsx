@@ -31,7 +31,7 @@ export function SitesSection({
       gsap.set('.sites-label', { x: -24 });
       gsap.set('.sites-title', { clipPath: 'inset(100% 0 0 0)' });
       gsap.set('.sites-body', { clipPath: 'inset(100% 0 0 0)' });
-      gsap.set('.sites-frame', { y: 60, clipPath: 'inset(100% 0 0 0)' });
+      gsap.set('.sites-frame', { y: 60, opacity: 0 });
 
       gsap.to('.sites-label', {
         x: 0,
@@ -46,7 +46,7 @@ export function SitesSection({
         scrollTrigger: { trigger: sectionRef.current, start: 'top 65%', end: 'top 20%', scrub: 1.5 },
       });
       gsap.to('.sites-frame', {
-        y: 0, clipPath: 'inset(0% 0 0 0)',
+        y: 0, opacity: 1,
         scrollTrigger: { trigger: '.sites-frame', start: 'top 85%', end: 'top 25%', scrub: 2 },
       });
     }, sectionRef);
@@ -58,7 +58,7 @@ export function SitesSection({
     <section
       ref={sectionRef}
       id="sites"
-      className="relative overflow-hidden"
+      className="relative"
       style={{ background: 'var(--lp-bg)', padding: '10rem max(2rem, env(safe-area-inset-left,0px))' }}
     >
       <div className="mx-auto grid max-w-6xl items-center gap-16 md:grid-cols-2 md:gap-20">
