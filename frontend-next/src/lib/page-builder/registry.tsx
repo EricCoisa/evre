@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Plus, X } from 'lucide-react';
 import { InlineRichText } from './editor/inline-rich-text';
 import type { RichTextVariableOption } from '@/components/rich-text-input';
-import { innerAlignClass } from './class-names';
+import { innerAlignClass, splitColorTokens } from './class-names';
 
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, XAxis } from 'recharts';
 import {
@@ -689,16 +689,25 @@ function RichTextBlock({ props, data, className, children, blockId, onPropChange
   );
 }
 
+/** O botão não tem Card/Panel próprio — `className` carrega estrutura (espaçamento, alinhamento)
+ * *e* cor (`bg-*`/`text-*`) misturados, mas só a estrutura cabe no `<div>` de layout; a cor tem
+ * que ir no elemento clicável de verdade, senão fica sem efeito nenhum (ver `splitColorTokens`). */
 function ButtonActionBlock({ props, className, children, blockId, onPropChange, editing }: BlockProps) {
   const url = safeHref(props.url);
   const label = str(props.label);
   const inner = innerAlignClass(className);
+  const { color, rest } = splitColorTokens(className);
+  const wrapperClassName = rest.join(' ');
+  const colorClassName = color.join(' ');
 
   if (editing && blockId && onPropChange) {
     return (
-      <div className={cn('flex h-full w-full flex-col justify-start gap-1 overflow-y-auto max-h-full', inner, className)}>
+      <div className={cn('flex h-full w-full flex-col justify-start gap-1 overflow-y-auto max-h-full', inner, wrapperClassName)}>
         <div
-          className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-primary text-primary-foreground shadow-xs h-full min-h-8 w-full cursor-text px-3 py-1"
+          className={cn(
+            'inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-primary text-primary-foreground shadow-xs h-full min-h-8 w-full cursor-text px-3 py-1',
+            colorClassName,
+          )}
         >
           <InlineRichText
             blockId={blockId}
@@ -719,19 +728,19 @@ function ButtonActionBlock({ props, className, children, blockId, onPropChange, 
   }
 
   const buttonNode = url ? (
-    <Button asChild size="sm" className="h-full min-h-8 w-full">
+    <Button asChild size="sm" className={cn('h-full min-h-8 w-full', colorClassName)}>
       <Link href={url}>
         <FormattedRichText text={label || 'Botão'} inline />
       </Link>
     </Button>
   ) : (
-    <Button type="button" size="sm" className="h-full min-h-8 w-full">
+    <Button type="button" size="sm" className={cn('h-full min-h-8 w-full', colorClassName)}>
       <FormattedRichText text={label || 'Botão'} inline />
     </Button>
   );
 
   return (
-    <div className={cn('flex h-full w-full flex-col justify-start gap-1 overflow-y-auto max-h-full', inner, className)}>
+    <div className={cn('flex h-full w-full flex-col justify-start gap-1 overflow-y-auto max-h-full', inner, wrapperClassName)}>
       {buttonNode}
       {children ? (
         <div className="flex flex-wrap items-center gap-2">{children}</div>

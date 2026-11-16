@@ -3,10 +3,14 @@ import { readFileSync } from 'fs';
 import path from 'path';
 import {
   ALLOWED_CLASS_NAMES,
+  COLOR_SCHEMES,
   EDITORIAL_CLASS_NAMES,
+  activeColorScheme,
+  applyColorScheme,
   classNamesFor,
   filterClassName,
   innerAlignClass,
+  splitColorTokens,
 } from './class-names';
 
 const ALL_CLASS_NAMES = [...ALLOWED_CLASS_NAMES, ...EDITORIAL_CLASS_NAMES];
@@ -103,6 +107,44 @@ describe('filterClassName', () => {
   it('não deixa passar classe arbitrária da paleta bruta', () => {
     // Cor solta quebraria tema claro/escuro — só tokens semânticos entram.
     expect(filterClassName('bg-blue-600 text-white')).toBeUndefined();
+  });
+});
+
+describe('COLOR_SCHEMES — surface × border', () => {
+  const primary = COLOR_SCHEMES.find((s) => s.key === 'primary')!;
+
+  it('variant surface aplica bg/text (para blocos com superfície própria, ex: botão)', () => {
+    const next = applyColorScheme([], primary, 'surface');
+    expect(next).toEqual(['bg-primary/5', 'text-primary']);
+    expect(activeColorScheme(next.join(' '), 'surface')).toBe('primary');
+  });
+
+  it('variant border aplica border-color (para blocos sem superfície, ex: divider)', () => {
+    const next = applyColorScheme([], primary, 'border');
+    expect(next).toEqual(['border-primary/50']);
+    expect(activeColorScheme(next.join(' '), 'border')).toBe('primary');
+  });
+
+  it('trocar de scheme substitui só os tokens de cor, preserva o resto do className', () => {
+    const next = applyColorScheme(['items-center', 'bg-muted', 'text-muted-foreground'], primary, 'surface');
+    expect(next).toEqual(['items-center', 'bg-primary/5', 'text-primary']);
+  });
+
+  it('sem classe de cor presente, activeColorScheme cai em "default"', () => {
+    expect(activeColorScheme('items-center p-4')).toBe('default');
+    expect(activeColorScheme(undefined)).toBe('default');
+  });
+});
+
+describe('splitColorTokens', () => {
+  it('separa tokens de cor do resto, preservando ordem relativa de cada grupo', () => {
+    const { color, rest } = splitColorTokens('flex items-center bg-primary/5 text-primary gap-2');
+    expect(color).toEqual(['bg-primary/5', 'text-primary']);
+    expect(rest).toEqual(['flex', 'items-center', 'gap-2']);
+  });
+
+  it('sem className, devolve dois arrays vazios', () => {
+    expect(splitColorTokens(undefined)).toEqual({ color: [], rest: [] });
   });
 });
 

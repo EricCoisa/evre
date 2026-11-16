@@ -39,7 +39,13 @@ import {
   type BlockPropMeta,
   type BlockType,
 } from '../blocks.meta';
-import { activeColorScheme, applyColorScheme, classNamesFor, COLOR_SCHEMES } from '../class-names';
+import {
+  activeColorScheme,
+  applyColorScheme,
+  classNamesFor,
+  COLOR_SCHEMES,
+  type ColorSchemeVariant,
+} from '../class-names';
 import {
   ANIMATION_PRESET_LABEL_KEY,
   ANIMATION_TRIGGER_LABEL_KEY,
@@ -532,6 +538,7 @@ function BlockForm({
       <ColorSchemePicker
         value={block.className}
         onChange={(v) => editor.patch(block.id, { className: v })}
+        variant={block.type === 'divider' ? 'border' : 'surface'}
       />
 
       <ClassNamePicker
@@ -905,16 +912,20 @@ function renderBasicInputField(
   );
 }
 
+/** `variant`: `'border'` para bloco sem superfície própria (hoje só `divider`, um `<hr>` — a cor
+ * vai no traço). Todo o resto usa `'surface'` (bg/text). */
 function ColorSchemePicker({
   value,
   onChange,
+  variant = 'surface',
 }: {
   value: string | undefined;
   onChange: (value: string | undefined) => void;
+  variant?: ColorSchemeVariant;
 }) {
   const { t } = useTranslation('page-builder');
   const current = value?.split(/\s+/).filter(Boolean) ?? [];
-  const activeKey = activeColorScheme(value);
+  const activeKey = activeColorScheme(value, variant);
 
   return (
     <div className="space-y-1.5">
@@ -928,7 +939,7 @@ function ColorSchemePicker({
             variant={activeKey === scheme.key ? 'default' : 'outline'}
             className="h-7 px-2 text-xs"
             onClick={() => {
-              const next = applyColorScheme(current, scheme.classes);
+              const next = applyColorScheme(current, scheme, variant);
               onChange(next.length ? next.join(' ') : undefined);
             }}
           >

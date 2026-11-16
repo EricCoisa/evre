@@ -19,6 +19,8 @@ export const ALLOWED_CLASS_NAMES = [
   // cores do tema
   'text-foreground', 'text-muted-foreground', 'text-primary', 'text-destructive',
   'bg-card', 'bg-muted', 'bg-accent', 'bg-primary/5', 'bg-destructive/10',
+  // cor de borda (blocos sem superfície própria, ex: divider — a cor vai no traço, não num bg)
+  'border-primary/50', 'border-accent-foreground/40', 'border-destructive/50', 'border-muted-foreground/40',
   // bordas e superfície
   'border', 'border-0', 'border-t', 'border-b', 'border-dashed',
   'rounded-md', 'rounded-lg', 'rounded-xl', 'shadow-sm', 'shadow-none',
@@ -58,42 +60,95 @@ export function filterClassName(raw: unknown): string | undefined {
   return kept.length ? kept.join(' ') : undefined;
 }
 
-/** Combinações de `bg-*`/`text-*` já presentes em `ALLOWED_CLASS_NAMES` — cor do bloco é açúcar
- * de UI sobre o mesmo `className`, nunca um campo novo de schema. Usado pelo painel
- * (`editor/panel.tsx`) e pela toolbar flutuante do canvas (`editor/block-chrome.tsx`). */
+/** Combinações de `bg-*`/`text-*`/`border-*` já presentes em `ALLOWED_CLASS_NAMES` — cor do
+ * bloco é açúcar de UI sobre o mesmo `className`, nunca um campo novo de schema. Usado pelo
+ * painel (`editor/panel.tsx`) e pela toolbar flutuante do canvas (`editor/block-chrome.tsx`). */
 export const COLOR_SCHEME_TOKENS = [
   'bg-card', 'bg-muted', 'bg-accent', 'bg-primary/5', 'bg-destructive/10',
   'text-foreground', 'text-muted-foreground', 'text-primary', 'text-destructive',
+  'border-primary/50', 'border-accent-foreground/40', 'border-destructive/50', 'border-muted-foreground/40',
 ] as const;
+
+/** Qual "slot" do bloco recebe a cor: `surface` pinta um fundo/texto (Card, Botão); `border`
+ * colore um traço sem área própria (ex: `divider`, que é só um `<hr>`). */
+export type ColorSchemeVariant = 'surface' | 'border';
 
 export interface ColorScheme {
   key: string;
   labelKey: string;
+  /** Aplicado em blocos com superfície própria (bg/text) — ex: `button.action`. */
   classes: string[];
+  /** Aplicado em blocos sem superfície, só um traço (border-color) — ex: `divider`. */
+  borderClasses: string[];
 }
 
 export const COLOR_SCHEMES: ColorScheme[] = [
-  { key: 'default', labelKey: 'colorDefault', classes: [] },
-  { key: 'primary', labelKey: 'colorPrimary', classes: ['bg-primary/5', 'text-primary'] },
-  { key: 'accent', labelKey: 'colorAccent', classes: ['bg-accent'] },
-  { key: 'destructive', labelKey: 'colorDestructive', classes: ['bg-destructive/10', 'text-destructive'] },
-  { key: 'muted', labelKey: 'colorMuted', classes: ['bg-muted', 'text-muted-foreground'] },
+  { key: 'default', labelKey: 'colorDefault', classes: [], borderClasses: [] },
+  {
+    key: 'primary',
+    labelKey: 'colorPrimary',
+    classes: ['bg-primary/5', 'text-primary'],
+    borderClasses: ['border-primary/50'],
+  },
+  {
+    key: 'accent',
+    labelKey: 'colorAccent',
+    classes: ['bg-accent'],
+    borderClasses: ['border-accent-foreground/40'],
+  },
+  {
+    key: 'destructive',
+    labelKey: 'colorDestructive',
+    classes: ['bg-destructive/10', 'text-destructive'],
+    borderClasses: ['border-destructive/50'],
+  },
+  {
+    key: 'muted',
+    labelKey: 'colorMuted',
+    classes: ['bg-muted', 'text-muted-foreground'],
+    borderClasses: ['border-muted-foreground/40'],
+  },
 ];
 
-/** Troca só os tokens de cor dentro do `className`; o resto (espaçamento, borda, tipografia)
- * fica como está. */
-export function applyColorScheme(current: string[], classes: string[]): string[] {
+function colorSchemeClasses(scheme: ColorScheme, variant: ColorSchemeVariant): string[] {
+  return variant === 'border' ? scheme.borderClasses : scheme.classes;
+}
+
+/** Troca só os tokens de cor dentro do `className`; o resto (espaçamento, borda estrutural,
+ * tipografia) fica como está. */
+export function applyColorScheme(
+  current: string[],
+  scheme: ColorScheme,
+  variant: ColorSchemeVariant = 'surface',
+): string[] {
   const withoutColor = current.filter((c) => !(COLOR_SCHEME_TOKENS as readonly string[]).includes(c));
-  return [...withoutColor, ...classes];
+  return [...withoutColor, ...colorSchemeClasses(scheme, variant)];
 }
 
 /** Qual scheme está ativo num `className` — `'default'` quando nenhum bate (ou nenhuma classe de cor está presente). */
-export function activeColorScheme(className: string | undefined): string {
+export function activeColorScheme(
+  className: string | undefined,
+  variant: ColorSchemeVariant = 'surface',
+): string {
   const current = className?.split(/\s+/).filter(Boolean) ?? [];
   return (
-    COLOR_SCHEMES.find((s) => s.classes.length > 0 && s.classes.every((c) => current.includes(c)))
-      ?.key ?? 'default'
+    COLOR_SCHEMES.find((s) => {
+      const classes = colorSchemeClasses(s, variant);
+      return classes.length > 0 && classes.every((c) => current.includes(c));
+    })?.key ?? 'default'
   );
+}
+
+/** Separa os tokens de cor do resto do `className` — para um bloco sem Card próprio
+ * (`button.action`), cuja cor precisa ir no elemento visível de verdade (o `<Button>`), não no
+ * `<div>` de layout que só existe pra posicionar os filhos. */
+export function splitColorTokens(className: string | undefined): { color: string[]; rest: string[] } {
+  const tokens = className?.split(/\s+/).filter(Boolean) ?? [];
+  const colorSet = new Set<string>(COLOR_SCHEME_TOKENS as readonly string[]);
+  return {
+    color: tokens.filter((t) => colorSet.has(t)),
+    rest: tokens.filter((t) => !colorSet.has(t)),
+  };
 }
 
 /** Traduz o alinhamento do bloco para classes `text-*` nos slots internos (largura total). */

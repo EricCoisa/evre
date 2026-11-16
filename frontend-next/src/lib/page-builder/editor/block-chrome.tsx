@@ -47,7 +47,13 @@ import {
   type HoverPreset,
 } from '../animation';
 import { isAutoHeightBlockType, isTextEditableBlockType } from '../blocks.meta';
-import { activeColorScheme, applyColorScheme, COLOR_SCHEMES } from '../class-names';
+import {
+  activeColorScheme,
+  applyColorScheme,
+  COLOR_SCHEMES,
+  type ColorScheme,
+  type ColorSchemeVariant,
+} from '../class-names';
 import { TEXT_PRESET_CONFIG, normalizeTextPreset } from '../registry';
 import {
   COL_START_CLASS,
@@ -336,7 +342,9 @@ function AnimationQuickMenu({
 }
 
 /** Seletor rápido de cor do bloco direto no canvas — mesmos `COLOR_SCHEMES` do painel lateral
- * (`class-names.ts`), açúcar de UI sobre o `className` já validado; não é campo novo. */
+ * (`class-names.ts`), açúcar de UI sobre o `className` já validado; não é campo novo.
+ * `divider` não tem superfície própria (é só um `<hr>`): a cor vai no traço (`border-*`), não
+ * em `bg-*`/`text-*`, que nele não têm nenhum efeito visível. */
 function ColorQuickMenu({
   block,
   editor,
@@ -346,11 +354,12 @@ function ColorQuickMenu({
   editor: EditorValue;
   t: TFunc;
 }) {
+  const variant: ColorSchemeVariant = block.type === 'divider' ? 'border' : 'surface';
   const current = block.className?.split(/\s+/).filter(Boolean) ?? [];
-  const activeKey = activeColorScheme(block.className);
+  const activeKey = activeColorScheme(block.className, variant);
 
-  const setScheme = (classes: string[]) => {
-    const next = applyColorScheme(current, classes);
+  const setScheme = (scheme: ColorScheme) => {
+    const next = applyColorScheme(current, scheme, variant);
     editor.patch(block.id, { className: next.length ? next.join(' ') : undefined });
   };
 
@@ -374,7 +383,7 @@ function ColorQuickMenu({
         {COLOR_SCHEMES.map((scheme) => (
           <DropdownMenuItem
             key={scheme.key}
-            onClick={() => setScheme(scheme.classes)}
+            onClick={() => setScheme(scheme)}
             className={cn('text-xs', activeKey === scheme.key && 'font-semibold text-primary')}
           >
             {t(`editor.${scheme.labelKey}`, { defaultValue: scheme.key })}

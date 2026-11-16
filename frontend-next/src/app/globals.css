@@ -74,6 +74,7 @@
 @source inline("text-{foreground,muted-foreground,primary,destructive}");
 @source inline("bg-{card,muted,accent}");
 @source inline("bg-primary/5 bg-destructive/10");
+@source inline("border-primary/50 border-accent-foreground/40 border-destructive/50 border-muted-foreground/40");
 @source inline("border border-{0,t,b,dashed}");
 @source inline("rounded-{md,lg,xl}");
 @source inline("shadow-{sm,none}");

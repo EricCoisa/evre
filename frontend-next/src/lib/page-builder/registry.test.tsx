@@ -413,6 +413,22 @@ describe('button.action', () => {
     expect(screen.queryByRole('link')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Clique' })).toBeInTheDocument();
   });
+
+  it('cor (bg-*/text-*) vai no botão de verdade, não no <div> de layout — senão fica sem efeito', () => {
+    const ButtonBlock = BLOCK_REGISTRY['button.action'];
+    const { container } = render(
+      React.createElement(ButtonBlock, {
+        props: { label: 'Ver', url: '/relatorios' },
+        className: 'bg-primary/5 text-primary items-center',
+      }),
+    );
+
+    const link = screen.getByRole('link');
+    expect(link.className).toContain('text-primary');
+    expect(container.firstElementChild).not.toHaveClass('bg-primary/5');
+    expect(container.firstElementChild).not.toHaveClass('text-primary');
+    expect(container.firstElementChild).toHaveClass('items-center');
+  });
 });
 
 describe('list.feed', () => {
@@ -600,6 +616,13 @@ describe('divider', () => {
     render(React.createElement(DividerBlock, { props: { spacing: 'lg' } }));
 
     expect(document.querySelector('[data-slot="card"]')).not.toBeInTheDocument();
+  });
+
+  it('cor vai direto no <hr> (único elemento do bloco) como border-color, não bg-*', () => {
+    const DividerBlock = BLOCK_REGISTRY.divider;
+    render(React.createElement(DividerBlock, { props: {}, className: 'border-primary/50' }));
+
+    expect(document.querySelector('hr')).toHaveClass('border-primary/50');
   });
 });
 
