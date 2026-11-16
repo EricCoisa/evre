@@ -45,6 +45,12 @@
   "isDev": "Em desenvolvimento",
   "welcomeBack": "Bem-vindo de volta!",
   "accessDashboard": "Acesse seu painel de controle e gerencie sua aplicação.",
+  "banner": {
+    "login": { "title": "Bem-vindo de volta!", "description": "Acesse seu painel de controle e gerencie sua aplicação." },
+    "signup": { "title": "Crie sua conta", "description": "Junte-se e comece a usar a plataforma agora mesmo." },
+    "forgotPassword": { "title": "Esqueceu sua senha?", "description": "Sem problema. Vamos te ajudar a recuperar o acesso." },
+    "resetPassword": { "title": "Crie uma nova senha", "description": "Escolha uma senha forte para proteger sua conta." }
+  },
   "tryAgain": "Tente novamente",
   "pageNotFound": "Página não encontrada",
   "pageNotFoundDescription": "A página que você procura não existe ou foi movida.",

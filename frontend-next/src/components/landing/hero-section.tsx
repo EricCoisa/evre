@@ -6,26 +6,7 @@ import ScrollTrigger from 'gsap/ScrollTrigger';
 import { AsciiBackground } from './ascii-background';
 import { LiquidDistortion } from './liquid-distortion';
 import { defaulHometData } from '@/lib/actions/cms/home/type';
-
-// Inline SVGs do protótipo aprovado (> / <)
-const BrandIconPlay = () => (
-  <svg viewBox="0 0 196.15 196.15" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
-    <rect width="196.15" height="196.15" rx="3" style={{ fill: 'var(--lp-fg)', fillOpacity: 0.06 }} />
-    <path d="M44.26,139.89l83.64-41.94L44.26,56.02v-26.79l107.64,54.98v27.49l-107.64,55.22v-27.02Z" style={{ fill: 'var(--lp-fg)', fillOpacity: 0.22 }} />
-  </svg>
-);
-const BrandIconSlash = () => (
-  <svg viewBox="0 0 196.15 196.15" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
-    <rect width="196.15" height="196.15" rx="3" style={{ fill: 'var(--lp-fg)', fillOpacity: 0.06 }} />
-    <path d="M108.16,27.13h23.95l-44.11,141.88h-23.95L108.16,27.13Z" style={{ fill: 'var(--lp-fg)', fillOpacity: 0.22 }} />
-  </svg>
-);
-const BrandIconPlayInverse = () => (
-  <svg viewBox="0 0 196.15 196.15" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
-    <rect width="196.15" height="196.15" rx="3" style={{ fill: 'var(--lp-fg)', fillOpacity: 0.06 }} />
-    <path d="M44.26,111.7v-27.49l107.64-54.98v26.79l-83.64,41.94,83.64,41.94v27.02l-107.64-55.22Z" style={{ fill: 'var(--lp-fg)', fillOpacity: 0.22 }} />
-  </svg>
-);
+import { BrandIconPlay, BrandIconSlash, BrandIconPlayInverse } from '@/components/brand-icons';
 
 interface HeroSectionProps {
   title?: string;
@@ -96,7 +77,7 @@ export function HeroSection({
       {/* Brand panel — hidden on mobile */}
       <div
         className="hero-brand-panel absolute right-0 top-1/2 hidden -translate-y-1/2 gap-5 lg:flex"
-        style={{ perspective: '900px' }}
+        style={{ perspective: '900px', color: 'var(--lp-fg)' }}
         aria-hidden="true"
       >
         {[BrandIconPlay, BrandIconSlash, BrandIconPlayInverse].map((Icon, i) => (

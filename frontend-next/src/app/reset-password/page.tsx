@@ -28,7 +28,7 @@ export default async function ResetPasswordPage({
 
   return (
     <div className="min-h-screen flex">
-      <Banner />
+      <Banner variant="resetPassword" />
       <div className="flex flex-1 flex-col justify-center px-6 py-12 lg:px-12 bg-background">
         <div className="w-full">
           {isTokenValid ? (

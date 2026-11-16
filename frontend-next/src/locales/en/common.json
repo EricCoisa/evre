@@ -45,6 +45,12 @@
   "isDev": "Under development",
   "welcomeBack": "Welcome back!",
   "accessDashboard": "Access your dashboard and manage your application.",
+  "banner": {
+    "login": { "title": "Welcome back!", "description": "Access your dashboard and manage your application." },
+    "signup": { "title": "Create your account", "description": "Join us and start using the platform right away." },
+    "forgotPassword": { "title": "Forgot your password?", "description": "No worries. We'll help you get back in." },
+    "resetPassword": { "title": "Create a new password", "description": "Choose a strong password to keep your account safe." }
+  },
   "tryAgain": "Try again",
   "pageNotFound": "Page not found",
   "pageNotFoundDescription": "The page you are looking for does not exist or has been moved.",
