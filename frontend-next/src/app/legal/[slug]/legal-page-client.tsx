@@ -17,7 +17,7 @@ export function LegalPageClient({ initialData }: { initialData: LegalPageData })
   });
 
   return (
-    <article className="mx-auto max-w-3xl px-6 py-16">
+    <article className="mx-auto max-w-3xl px-6 pb-16">
       <h1 className="mb-8 text-3xl font-bold">{page.title}</h1>
       <div className="prose dark:prose-invert max-w-none">
         <RichText data={page.content as SerializedEditorState} />
