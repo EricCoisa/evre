@@ -128,6 +128,23 @@ npm run payload:migrate:down     # reverte a última migration
 3. Gere e aplique a migration: `payload:migrate:create` → `payload:migrate`.
 4. Personalize componentes admin em `src/payload-components/` se necessário.
 
+**Atualizar a Landing Page (`Home`) ou alterar o schema de uma coleção existente:**
+
+Quando os campos da landing page pública (`app/page.tsx` + `app/page/page-client.tsx`) ou de qualquer coleção do Payload são alterados, siga todos os passos abaixo para manter dev e produção sincronizados:
+
+1. **Tipos e fallback (`src/lib/actions/cms/home/type.ts`):** atualize a interface `HomeData` e o objeto de dados padrão (`defaultHomeData` / `defaulHometData`). Todo texto visível na página deve vir de `HomeData` com fallback seguro.
+2. **Coleção do Payload (`src/collections/Home.ts`):** espelhe os novos campos (incluindo arrays e `select`s) com `defaultValue` alinhado ao `defaultHomeData`.
+3. **Seed inicial (`src/lib/seeds/home-seed.ts`):** garanta que `seedHomeData(payload)` envie o payload compatível com a nova estrutura (chamado automaticamente no `onInit` de `payload.config.ts` quando a tabela `payload.home` está vazia).
+4. **Componentes e página (`src/app/page.tsx`, `src/app/page/page-client.tsx`, `src/components/landing/*`):** consuma os campos a partir de `HomeData` (mantendo o `usePreviewPolling` em `page-client.tsx` para Live Preview no `/cms`).
+5. **Migration incremental para produção (`src/migrations/`):**
+   - **Nunca edite apenas a migration `baseline` se o projeto já subiu em produção**, pois o `docker-entrypoint.sh` executa `payload migrate` no boot e ignora migrations cujo nome já consta em `payload.payload_migrations`.
+   - Crie uma nova migration incremental (`npm run payload:migrate:create` ou adicione um novo arquivo em `src/migrations/<timestamp>_<nome>.ts` e registre-o no array `migrations` de `src/migrations/index.ts`).
+   - Se a alteração substituir campos/arrays/enums inteiros da `Home`, use `DROP TABLE IF EXISTS` / `DROP TYPE IF EXISTS` na migration `up` antes de recriar as tabelas e enums novos; no `onInit` seguinte, o `seedHomeData` repopulará o documento inicial automaticamente.
+6. **Atenção ao modo `dev` (Drizzle push interativo):**
+   - Em `NODE_ENV !== 'production'`, o `@payloadcms/db-postgres` executa o Drizzle `pushDevSchema` automaticamente ao conectar no banco.
+   - Quando você remove ou troca campos `select` (enums) ou tabelas filhas de arrays que já existiam no banco local, o Drizzle pausa o terminal perguntando interativamente se o enum/coluna foi criado (`create`) ou renomeado (`rename`).
+   - Para evitar o prompt interativo ao redesenhar uma coleção em `dev`, remova as tabelas/enums antigos daquela coleção no schema `payload` do Postgres local (ou rode a migration incremental) antes de subir o `next dev`.
+
 **Sincronização de usuários:** o backend mantém credenciais em `public.users`. O `CmsModule` (`/cms`) faz a ponte de autenticação com o Payload — login no Payload usa o mesmo email/senha do backend via `PayloadUserRepository` (raw SQL em `payload.users`).
 
 ## i18n
