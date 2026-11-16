@@ -28,6 +28,13 @@ export interface HomeData {
   reforcosDescription: string;
   equipesCards: Array<{ title: string; description: string }>;
 
+  // Contact form section
+  contactFormLabel: string;
+  contactFormTitle: string;
+  contactFormDescription: string;
+  contactFormButtonText: string;
+  contactFormSuccessMessage: string;
+
   // CTA section
   ctaTitle: string;
   ctaButtonText: string;
@@ -79,6 +86,12 @@ export const defaulHometData: Partial<HomeData> = {
     { title: 'Foco no que\nvocê precisa', description: 'Você define a prioridade, a EVRE executa. Sem overhead de gestão nem curva de aprendizado prolongado.' },
     { title: 'Resultado\nverificável', description: 'Comece com um projeto de escopo definido. Avalie a qualidade do trabalho antes de qualquer comprometimento maior.' },
   ],
+
+  contactFormLabel: 'Entre em contato',
+  contactFormTitle: 'Manda uma\nmensagem.',
+  contactFormDescription: 'Responderemos em breve.',
+  contactFormButtonText: 'Enviar',
+  contactFormSuccessMessage: 'Mensagem enviada! Entraremos em contato em breve.',
 
   ctaTitle: 'Vamos\nconversar.',
   ctaButtonText: 'Chamar no WhatsApp',

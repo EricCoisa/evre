@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { HomeData, defaulHometData } from '@/lib/actions/cms/home/type';
 import { usePreviewPolling } from '@/hooks/use-preview-polling';
 import { getHomeData } from '@/lib/actions/cms/home/api';
+import type { CaptchaConfigDto } from '@/lib/generated/schemas';
 
 import { LandingNav } from '@/components/landing/landing-nav';
 import { HeroSection } from '@/components/landing/hero-section';
@@ -15,9 +16,10 @@ import { LandingFooter } from '@/components/landing/landing-footer';
 
 interface HomeClientProps {
   initialData: HomeData | null;
+  captchaConfig: CaptchaConfigDto | null;
 }
 
-export function HomeClient({ initialData }: HomeClientProps) {
+export function HomeClient({ initialData, captchaConfig }: HomeClientProps) {
   const [homeData, setHomeData] = useState<HomeData | null>(initialData);
 
   usePreviewPolling(async () => {
@@ -71,6 +73,12 @@ export function HomeClient({ initialData }: HomeClientProps) {
           buttonText={content.ctaButtonText}
           whatsappNumber={content.heroWhatsappNumber}
           contactEmail={content.contactEmail}
+          contactFormLabel={content.contactFormLabel}
+          contactFormTitle={content.contactFormTitle}
+          contactFormDescription={content.contactFormDescription}
+          contactFormButtonText={content.contactFormButtonText}
+          contactFormSuccessMessage={content.contactFormSuccessMessage}
+          captcha={captchaConfig}
         />
       </main>
 

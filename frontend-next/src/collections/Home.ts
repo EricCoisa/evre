@@ -189,6 +189,38 @@ export const Home: CollectionConfig = {
               defaultValue: 'contato@evre.com.br',
             },
 
+            // Contact form section
+            {
+              name: 'contactFormLabel',
+              type: 'text',
+              label: 'Formulário — Label da âncora',
+              defaultValue: 'Entre em contato',
+            },
+            {
+              name: 'contactFormTitle',
+              type: 'textarea',
+              label: 'Formulário — Título (use Enter para quebrar linha)',
+              defaultValue: 'Vamos conversar.',
+            },
+            {
+              name: 'contactFormDescription',
+              type: 'textarea',
+              label: 'Formulário — Subtítulo',
+              defaultValue: 'Responderemos em breve.',
+            },
+            {
+              name: 'contactFormButtonText',
+              type: 'text',
+              label: 'Formulário — Texto do botão',
+              defaultValue: 'Enviar',
+            },
+            {
+              name: 'contactFormSuccessMessage',
+              type: 'text',
+              label: 'Formulário — Mensagem de sucesso',
+              defaultValue: 'Mensagem enviada! Entraremos em contato em breve.',
+            },
+
             // Footer
             {
               name: 'footerText',

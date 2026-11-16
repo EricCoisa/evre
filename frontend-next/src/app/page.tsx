@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getHomeData } from '@/lib/actions/cms/home/api';
+import { getCaptchaConfig } from '@/lib/actions/captcha/api';
 import { HomeClient } from './page/page-client';
 import { generateMetadataFromPayload } from '@/lib/seo-helpers';
 
@@ -20,10 +21,11 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  // Busca dados no servidor
-  const homeData = await getHomeData();
+  const [homeData, captchaRes] = await Promise.all([
+    getHomeData(),
+    getCaptchaConfig(),
+  ]);
 
-  // Passa dados iniciais para o componente client
-  return <HomeClient initialData={homeData} />;
+  return <HomeClient initialData={homeData} captchaConfig={captchaRes.data ?? null} />;
 }
 

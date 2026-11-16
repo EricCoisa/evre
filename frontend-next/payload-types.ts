@@ -169,6 +169,11 @@ export interface Home {
   ctaTitle: string;
   ctaButtonText: string;
   contactEmail: string;
+  contactFormLabel?: string | null;
+  contactFormTitle?: string | null;
+  contactFormDescription?: string | null;
+  contactFormButtonText?: string | null;
+  contactFormSuccessMessage?: string | null;
   footerText: string;
   meta?: {
     title?: string | null;
@@ -379,6 +384,11 @@ export interface HomeSelect<T extends boolean = true> {
   ctaTitle?: T;
   ctaButtonText?: T;
   contactEmail?: T;
+  contactFormLabel?: T;
+  contactFormTitle?: T;
+  contactFormDescription?: T;
+  contactFormButtonText?: T;
+  contactFormSuccessMessage?: T;
   footerText?: T;
   meta?:
     | T

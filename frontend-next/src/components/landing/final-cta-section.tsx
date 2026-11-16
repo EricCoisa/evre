@@ -4,12 +4,40 @@ import { useState, useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import ScrollTrigger from 'gsap/ScrollTrigger';
 import { defaulHometData } from '@/lib/actions/cms/home/type';
+import { ContactFormDialog } from '@/components/landing/contact-form-dialog';
+import type { CaptchaConfigDto } from '@/lib/generated/schemas';
 
 interface FinalCtaSectionProps {
   title?: string;
   buttonText?: string;
   whatsappNumber?: string;
   contactEmail?: string;
+  contactFormLabel?: string;
+  contactFormTitle?: string;
+  contactFormDescription?: string;
+  contactFormButtonText?: string;
+  contactFormSuccessMessage?: string;
+  captcha?: CaptchaConfigDto | null;
+}
+
+function CopyEmailButton({ email }: { email: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(email);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <button
+      onClick={copy}
+      className="inline-flex items-center gap-2 text-sm transition-colors duration-200"
+      style={{ color: copied ? 'var(--lp-fg)' : 'var(--lp-muted)' }}
+      onMouseEnter={e => (e.currentTarget.style.color = 'var(--lp-fg)')}
+      onMouseLeave={e => { if (!copied) e.currentTarget.style.color = 'var(--lp-muted)'; }}
+    >
+      {copied ? '✓ copiado' : email}
+    </button>
+  );
 }
 
 export function FinalCtaSection({
@@ -17,16 +45,16 @@ export function FinalCtaSection({
   buttonText = defaulHometData.ctaButtonText!,
   whatsappNumber = defaulHometData.heroWhatsappNumber!,
   contactEmail = defaulHometData.contactEmail!,
+  contactFormLabel = defaulHometData.contactFormLabel!,
+  contactFormTitle = defaulHometData.contactFormTitle!,
+  contactFormDescription = defaulHometData.contactFormDescription!,
+  contactFormButtonText = defaulHometData.contactFormButtonText!,
+  contactFormSuccessMessage = defaulHometData.contactFormSuccessMessage!,
+  captcha,
 }: FinalCtaSectionProps) {
-  const [copied, setCopied] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=Ol%C3%A1!%20Gostaria%20de%20conversar%20sobre%20um%20projeto%20com%20a%20EVRE.`;
-
-  const copyEmail = () => {
-    navigator.clipboard.writeText(contactEmail);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   useEffect(() => {
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -85,14 +113,24 @@ export function FinalCtaSection({
           </a>
 
           <button
-            onClick={copyEmail}
-            className="inline-flex items-center gap-2 text-sm transition-colors duration-200"
-            style={{ color: copied ? 'var(--lp-fg)' : 'var(--lp-muted)' }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'var(--lp-fg)')}
-            onMouseLeave={e => { if (!copied) e.currentTarget.style.color = 'var(--lp-muted)'; }}
+            onClick={() => setFormOpen(true)}
+            className="inline-flex items-center gap-2.5 rounded-sm px-8 py-4 text-sm font-bold tracking-wide transition-opacity hover:opacity-70"
+            style={{ border: '1px solid var(--lp-border)', color: 'var(--lp-muted)' }}
           >
-            {copied ? '✓ copiado' : contactEmail}
+            {contactFormLabel}
           </button>
+
+          <ContactFormDialog
+            open={formOpen}
+            onOpenChange={setFormOpen}
+            title={contactFormTitle}
+            description={contactFormDescription}
+            submitLabel={contactFormButtonText}
+            successMessage={contactFormSuccessMessage}
+            captcha={captcha}
+          />
+
+          <CopyEmailButton email={contactEmail} />
         </div>
       </div>
     </section>
