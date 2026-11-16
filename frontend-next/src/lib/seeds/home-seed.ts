@@ -16,7 +16,7 @@ export async function seedHomeData(payload: Payload) {
     }
 
     // Carrega todo o conteúdo padrão de forma agnóstica a partir de defaulHometData
-    const { id, createdAt, updatedAt, ...seedContent } = defaulHometData;
+    const { id: _id, createdAt: _createdAt, updatedAt: _updatedAt, ...seedContent } = defaulHometData;
 
     await payload.create({
       collection: 'home',

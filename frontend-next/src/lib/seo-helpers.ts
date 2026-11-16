@@ -11,13 +11,19 @@ export interface SEOProps {
   twitterCard?: 'summary' | 'summary_large_image' | 'app' | 'player';
 }
 
+function extractImageFromObject(image: Exclude<SEOProps['image'], string | undefined>, title?: string) {
+  return {
+    url: image?.url || '',
+    alt: image?.alt || title || '',
+    width: image?.width,
+    height: image?.height,
+  };
+}
+
 /** Extrai URL, alt e dimensões da imagem de SEO, aceitando string ou objeto `{ url, alt, width, height }`. */
 function extractImage(image: SEOProps['image'], title?: string) {
-  const url = typeof image === 'string' ? image : image?.url || '';
-  const alt = typeof image === 'object' && image?.alt ? image.alt : title || '';
-  const width = typeof image === 'object' ? image?.width : undefined;
-  const height = typeof image === 'object' ? image?.height : undefined;
-  return { url, alt, width, height };
+  if (typeof image === 'string') return { url: image, alt: title || '', width: undefined, height: undefined };
+  return extractImageFromObject(image, title);
 }
 
 /** Gera o objeto Metadata do Next.js a partir das props de SEO. */
