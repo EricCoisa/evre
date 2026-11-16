@@ -158,40 +158,13 @@ export const Home: CollectionConfig = {
               required: true,
             },
             {
-              name: 'equipesCellOneTitle',
-              type: 'textarea',
-              label: 'Equipes — Célula 1 Título',
-              required: true,
-            },
-            {
-              name: 'equipesCellOneDescription',
-              type: 'textarea',
-              label: 'Equipes — Célula 1 Descrição',
-              required: true,
-            },
-            {
-              name: 'equipesCellTwoTitle',
-              type: 'textarea',
-              label: 'Equipes — Célula 2 Título',
-              required: true,
-            },
-            {
-              name: 'equipesCellTwoDescription',
-              type: 'textarea',
-              label: 'Equipes — Célula 2 Descrição',
-              required: true,
-            },
-            {
-              name: 'equipesCellThreeTitle',
-              type: 'textarea',
-              label: 'Equipes — Célula 3 Título',
-              required: true,
-            },
-            {
-              name: 'equipesCellThreeDescription',
-              type: 'textarea',
-              label: 'Equipes — Célula 3 Descrição',
-              required: true,
+              name: 'equipesCards',
+              type: 'array',
+              label: 'Equipes — Cards',
+              fields: [
+                { name: 'title', type: 'textarea', label: 'Título' },
+                { name: 'description', type: 'textarea', label: 'Descrição' },
+              ],
             },
 
             // CTA

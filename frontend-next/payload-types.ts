@@ -159,12 +159,13 @@ export interface Home {
   reforcosLabel: string;
   reforcosTitle: string;
   reforcosDescription: string;
-  equipesCellOneTitle: string;
-  equipesCellOneDescription: string;
-  equipesCellTwoTitle: string;
-  equipesCellTwoDescription: string;
-  equipesCellThreeTitle: string;
-  equipesCellThreeDescription: string;
+  equipesCards?:
+    | {
+        title?: string | null;
+        description?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   ctaTitle: string;
   ctaButtonText: string;
   contactEmail: string;
@@ -368,12 +369,13 @@ export interface HomeSelect<T extends boolean = true> {
   reforcosLabel?: T;
   reforcosTitle?: T;
   reforcosDescription?: T;
-  equipesCellOneTitle?: T;
-  equipesCellOneDescription?: T;
-  equipesCellTwoTitle?: T;
-  equipesCellTwoDescription?: T;
-  equipesCellThreeTitle?: T;
-  equipesCellThreeDescription?: T;
+  equipesCards?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        id?: T;
+      };
   ctaTitle?: T;
   ctaButtonText?: T;
   contactEmail?: T;

@@ -9,24 +9,14 @@ interface EquipesSectionProps {
   label?: string;
   title?: string;
   description?: string;
-  cellOneTitle?: string;
-  cellOneDescription?: string;
-  cellTwoTitle?: string;
-  cellTwoDescription?: string;
-  cellThreeTitle?: string;
-  cellThreeDescription?: string;
+  cards?: Array<{ title: string; description: string }>;
 }
 
 export function EquipesSection({
   label = defaulHometData.reforcosLabel!,
   title = defaulHometData.reforcosTitle!,
   description = defaulHometData.reforcosDescription!,
-  cellOneTitle = defaulHometData.equipesCellOneTitle!,
-  cellOneDescription = defaulHometData.equipesCellOneDescription!,
-  cellTwoTitle = defaulHometData.equipesCellTwoTitle!,
-  cellTwoDescription = defaulHometData.equipesCellTwoDescription!,
-  cellThreeTitle = defaulHometData.equipesCellThreeTitle!,
-  cellThreeDescription = defaulHometData.equipesCellThreeDescription!,
+  cards = defaulHometData.equipesCards!,
 }: EquipesSectionProps) {
   const sectionRef = useRef<HTMLElement>(null);
 
@@ -64,23 +54,8 @@ export function EquipesSection({
     return () => ctx.revert();
   }, []);
 
-  const cells = [
-    {
-      symbol: '>',
-      title: cellOneTitle,
-      description: cellOneDescription,
-    },
-    {
-      symbol: '/',
-      title: cellTwoTitle,
-      description: cellTwoDescription,
-    },
-    {
-      symbol: '<',
-      title: cellThreeTitle,
-      description: cellThreeDescription,
-    },
-  ];
+  const symbols = ['>', '/', '<'];
+  const cells = cards.map((card, i) => ({ symbol: symbols[i % symbols.length], ...card }));
 
   return (
     <section

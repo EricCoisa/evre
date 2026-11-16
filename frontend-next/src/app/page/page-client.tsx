@@ -63,12 +63,7 @@ export function HomeClient({ initialData }: HomeClientProps) {
           label={content.reforcosLabel}
           title={content.reforcosTitle}
           description={content.reforcosDescription}
-          cellOneTitle={content.equipesCellOneTitle}
-          cellOneDescription={content.equipesCellOneDescription}
-          cellTwoTitle={content.equipesCellTwoTitle}
-          cellTwoDescription={content.equipesCellTwoDescription}
-          cellThreeTitle={content.equipesCellThreeTitle}
-          cellThreeDescription={content.equipesCellThreeDescription}
+          cards={content.equipesCards}
         />
 
         <FinalCtaSection

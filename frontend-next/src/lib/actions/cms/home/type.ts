@@ -26,12 +26,7 @@ export interface HomeData {
   reforcosLabel: string;
   reforcosTitle: string;
   reforcosDescription: string;
-  equipesCellOneTitle: string;
-  equipesCellOneDescription: string;
-  equipesCellTwoTitle: string;
-  equipesCellTwoDescription: string;
-  equipesCellThreeTitle: string;
-  equipesCellThreeDescription: string;
+  equipesCards: Array<{ title: string; description: string }>;
 
   // CTA section
   ctaTitle: string;
@@ -79,12 +74,11 @@ export const defaulHometData: Partial<HomeData> = {
   reforcosLabel: 'Reforço de equipes',
   reforcosTitle: 'Ferramentas que\na equipe\nrealmente usa.',
   reforcosDescription: 'Cada equipe tem um jeito de trabalhar. Construímos o software que encaixa nesse jeito, não o contrário.',
-  equipesCellOneTitle: 'Integração com\nseu processo',
-  equipesCellOneDescription: 'A EVRE entra no seu fluxo de trabalho existente. Sprints, revisões e entregas contínuas sem mudar como sua equipe funciona.',
-  equipesCellTwoTitle: 'Foco no que\nvocê precisa',
-  equipesCellTwoDescription: 'Você define a prioridade, a EVRE executa. Sem overhead de gestão nem curva de aprendizado prolongado.',
-  equipesCellThreeTitle: 'Resultado\nverificável',
-  equipesCellThreeDescription: 'Comece com um projeto de escopo definido. Avalie a qualidade do trabalho antes de qualquer comprometimento maior.',
+  equipesCards: [
+    { title: 'Integração com\nseu processo', description: 'A EVRE entra no seu fluxo de trabalho existente. Sprints, revisões e entregas contínuas sem mudar como sua equipe funciona.' },
+    { title: 'Foco no que\nvocê precisa', description: 'Você define a prioridade, a EVRE executa. Sem overhead de gestão nem curva de aprendizado prolongado.' },
+    { title: 'Resultado\nverificável', description: 'Comece com um projeto de escopo definido. Avalie a qualidade do trabalho antes de qualquer comprometimento maior.' },
+  ],
 
   ctaTitle: 'Vamos\nconversar.',
   ctaButtonText: 'Chamar no WhatsApp',

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, CSSProperties } from 'react';
+import { useState, CSSProperties } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface ArtifactFrameProps {
   demos: Array<{ url: string; label: string }>;
@@ -10,20 +11,17 @@ interface ArtifactFrameProps {
 
 export function ArtifactFrame({ demos, className = '', style }: ArtifactFrameProps) {
   const [current, setCurrent] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const loadedRef = useRef<Set<number>>(new Set());
+  const [loadedSet, setLoadedSet] = useState(() => new Set<number>());
 
   const n = demos.length;
+  const loading = demos.length > 0 && !loadedSet.has(current);
 
   const go = (to: number) => {
-    const next = ((to % n) + n) % n;
-    setLoading(!loadedRef.current.has(next));
-    setCurrent(next);
+    setCurrent(((to % n) + n) % n);
   };
 
   const handleLoad = (i: number) => {
-    loadedRef.current.add(i);
-    if (i === current) setLoading(false);
+    setLoadedSet(prev => new Set([...prev, i]));
   };
 
   return (
@@ -67,6 +65,9 @@ export function ArtifactFrame({ demos, className = '', style }: ArtifactFramePro
               src={demo.url}
               title={demo.label}
               onLoad={() => handleLoad(i)}
+              ref={(el) => {
+                try { if (el?.contentDocument?.readyState === 'complete' && !loadedSet.has(i)) handleLoad(i); } catch { /* cross-origin */ }
+              }}
               style={{
                 position: 'absolute',
                 inset: 0,
@@ -81,15 +82,12 @@ export function ArtifactFrame({ demos, className = '', style }: ArtifactFramePro
         )}
         {/* skeleton AFTER iframes — z-10 cobre sem competir com document order */}
         {loading && demos.length > 0 && (
-          <div
-            className="absolute inset-0 z-10 flex flex-col gap-3 p-5 animate-pulse"
-            style={{ background: 'var(--lp-elevated)' }}
-          >
-            <div className="h-6 w-2/5 rounded-sm" style={{ background: 'var(--lp-border)' }} />
-            <div className="h-4 w-3/5 rounded-sm" style={{ background: 'var(--lp-border)' }} />
-            <div className="mt-2 h-32 w-full rounded-sm" style={{ background: 'var(--lp-border)' }} />
-            <div className="h-4 w-4/5 rounded-sm" style={{ background: 'var(--lp-border)' }} />
-            <div className="h-4 w-2/3 rounded-sm" style={{ background: 'var(--lp-border)' }} />
+          <div className="absolute inset-0 z-10 flex flex-col gap-3 p-5" style={{ background: 'var(--lp-elevated)' }}>
+            <Skeleton className="h-6 w-2/5" />
+            <Skeleton className="h-4 w-3/5" />
+            <Skeleton className="mt-2 h-32 w-full" />
+            <Skeleton className="h-4 w-4/5" />
+            <Skeleton className="h-4 w-2/3" />
           </div>
         )}
       </div>
