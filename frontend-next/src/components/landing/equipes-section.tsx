@@ -30,7 +30,7 @@ export function EquipesSection({
       gsap.set('.equipes-label', { x: -24 });
       gsap.set('.equipes-title', { clipPath: 'inset(100% 0 0 0)' });
       gsap.set('.equipes-body', { clipPath: 'inset(100% 0 0 0)' });
-      gsap.set('.equipes-card', { y: 40, clipPath: 'inset(100% 0 0 0)', opacity: 0 });
+      gsap.set('.equipes-card', { y: 40, opacity: 0 });
 
       gsap.to('.equipes-label', {
         x: 0,
@@ -45,7 +45,7 @@ export function EquipesSection({
         scrollTrigger: { trigger: sectionRef.current, start: 'top 65%', end: 'top 20%', scrub: 1.5 },
       });
       gsap.to('.equipes-card', {
-        y: 0, clipPath: 'inset(0% 0 0 0)', opacity: 1,
+        y: 0, opacity: 1,
         stagger: 0.08,
         scrollTrigger: { trigger: '.equipes-grid', start: 'top 80%', end: 'top 20%', scrub: 2 },
       });
@@ -62,7 +62,7 @@ export function EquipesSection({
       ref={sectionRef}
       id="equipes"
       className="relative overflow-hidden"
-      style={{ background: 'var(--lp-bg)', padding: '10rem max(2rem, env(safe-area-inset-left,0px))' }}
+      style={{ background: 'var(--lp-bg)', padding: 'clamp(4rem, 10vw, 10rem) max(2rem, env(safe-area-inset-left,0px))' }}
     >
       <div className="mx-auto max-w-6xl">
         {/* Header */}

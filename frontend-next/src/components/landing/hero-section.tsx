@@ -50,22 +50,18 @@ export function HeroSection({
 
     const ctx = gsap.context(() => {
       // Initial hidden states
-      gsap.set('.hero-eyebrow', { clipPath: 'inset(100% 0 0 0)' });
       gsap.set('.hero-title', { clipPath: 'inset(100% 0 0 0)' });
       gsap.set('.hero-desc', { clipPath: 'inset(100% 0 0 0)' });
       gsap.set('.hero-actions', { clipPath: 'inset(100% 0 0 0)' });
-      gsap.set('.hero-scroll-hint', { opacity: 0 });
       gsap.set('.hero-brand-panel', { x: 80, opacity: 0 });
       gsap.set('.hero-bicon', { rotateY: -40, rotateX: 20, opacity: 0 });
 
       // Entrance timeline
       const tl = gsap.timeline({ delay: 0.15 });
       tl
-        .to('.hero-eyebrow', { clipPath: 'inset(0% 0 0 0)', duration: 0.75, ease: 'expo.out' })
-        .to('.hero-title', { clipPath: 'inset(0% 0 0 0)', duration: 0.9, ease: 'expo.out' }, '-=0.5')
+        .to('.hero-title', { clipPath: 'inset(0% 0 0 0)', duration: 0.9, ease: 'expo.out' })
         .to('.hero-desc', { clipPath: 'inset(0% 0 0 0)', duration: 0.75, ease: 'expo.out' }, '-=0.55')
         .to('.hero-actions', { clipPath: 'inset(0% 0 0 0)', duration: 0.75, ease: 'expo.out' }, '-=0.5')
-        .to('.hero-scroll-hint', { opacity: 1, duration: 0.8, ease: 'power2.out' }, '-=0.4')
         .to('.hero-brand-panel', { x: 0, opacity: 1, duration: 1.1, ease: 'expo.out' }, 0.3)
         .to('.hero-bicon', { rotateY: 0, rotateX: 0, opacity: 1, duration: 0.9, ease: 'expo.out', stagger: 0.09 }, 0.4);
 

@@ -59,7 +59,7 @@ export function SitesSection({
       ref={sectionRef}
       id="sites"
       className="relative"
-      style={{ background: 'var(--lp-bg)', padding: '10rem max(2rem, env(safe-area-inset-left,0px))' }}
+      style={{ background: 'var(--lp-bg)', padding: 'clamp(4rem, 10vw, 10rem) max(2rem, env(safe-area-inset-left,0px))' }}
     >
       <div className="mx-auto grid max-w-6xl items-center gap-16 md:grid-cols-2 md:gap-20">
         {/* Text */}

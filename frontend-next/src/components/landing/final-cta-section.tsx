@@ -56,7 +56,7 @@ export function FinalCtaSection({
       ref={sectionRef}
       id="contato"
       className="relative overflow-hidden"
-      style={{ background: 'var(--lp-bg)', padding: '10rem max(2rem, env(safe-area-inset-left,0px)) 8rem' }}
+      style={{ background: 'var(--lp-bg)', padding: 'clamp(4rem, 10vw, 10rem) max(2rem, env(safe-area-inset-left,0px)) clamp(3rem, 7vw, 8rem)' }}
     >
       {/* Divider line */}
       <div className="mx-auto mb-20 max-w-6xl" style={{ height: '1px', background: 'var(--lp-border)' }} />
