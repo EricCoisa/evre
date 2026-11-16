@@ -75,6 +75,10 @@ export function generateSEOMetadata(props: SEOProps): Metadata {
   };
 }
 
+function toAbsoluteUrl(url: string, siteUrl: string): string {
+  return url.startsWith('http') ? url : `${siteUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+}
+
 /** Resolve título/descrição/imagem/canonical do plugin-seo do Payload, com fallbacks. */
 function resolvePayloadMeta(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -93,7 +97,7 @@ function resolvePayloadMeta(
     title: meta.title || fallbacks.title,
     description: meta.description || fallbacks.description,
     image: meta.image,
-    canonicalUrl: meta.canonicalUrl || fallbacks.canonicalUrl || siteUrl,
+    canonicalUrl: toAbsoluteUrl(meta.canonicalUrl || fallbacks.canonicalUrl || siteUrl, siteUrl),
   };
 }
 
