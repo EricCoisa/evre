@@ -1,5 +1,5 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 export function useTabParam(defaultTab: string) {
   const router = useRouter();
@@ -17,12 +17,12 @@ export function useTabParam(defaultTab: string) {
     setTabState(currentTabInUrl ?? defaultTab);
   }
 
-  function setTab(value: string) {
+  const setTab = useCallback((value: string) => {
     setTabState(value);
     const params = new URLSearchParams(searchParams.toString());
     params.set('tab', value);
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  }
+  }, [pathname, router, searchParams]);
 
   return [tab, setTab] as const;
 }
