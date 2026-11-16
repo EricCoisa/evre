@@ -7,7 +7,10 @@ import type { ProviderResult } from 'src/domain/interface/provider-result';
 export class SendEmailUseCase {
   constructor(private readonly emailService: EmailService) {}
 
-  async execute(dto: SendEmailDto, performedById: string): Promise<ProviderResult> {
+  async execute(
+    dto: SendEmailDto,
+    performedById: string,
+  ): Promise<ProviderResult> {
     return this.emailService.send({
       to: dto.to,
       subject: dto.subject,

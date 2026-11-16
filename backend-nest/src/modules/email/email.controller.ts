@@ -1,6 +1,10 @@
 import { Body, Controller } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { GetApi, PostApi, PutApi } from '../../common/decorators/api-method.decorator';
+import {
+  GetApi,
+  PostApi,
+  PutApi,
+} from '../../common/decorators/api-method.decorator';
 import { SaveEmailConfigurationUseCase } from './use-cases/save-configuration.use-case';
 import { CheckEmailHealthUseCase } from './use-cases/check-health.use-case';
 import { ListEmailTemplatesUseCase } from './use-cases/list-templates.use-case';

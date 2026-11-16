@@ -26,7 +26,10 @@ export class ListLeadsUseCase {
     }
 
     const rawStatus = filter?.status;
-    if (rawStatus && Object.values(LeadStatus).includes(rawStatus as LeadStatus)) {
+    if (
+      rawStatus &&
+      Object.values(LeadStatus).includes(rawStatus as LeadStatus)
+    ) {
       where.status = rawStatus as LeadStatus;
     }
 

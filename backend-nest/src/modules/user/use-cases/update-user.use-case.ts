@@ -47,8 +47,7 @@ export class UpdateUserUseCase {
     }
 
     const phoneChanged =
-      updateUserDto.phone &&
-      normalizePhone(updateUserDto.phone) !== user.phone;
+      updateUserDto.phone && normalizePhone(updateUserDto.phone) !== user.phone;
 
     if (
       updateUserDto.status &&

@@ -15,7 +15,7 @@ const USE_CASES = [
   CreateLeadUseCase,
   ListLeadsUseCase,
   UpdateLeadStatusUseCase,
-  DeleteLeadUseCase
+  DeleteLeadUseCase,
 ];
 
 @Module({

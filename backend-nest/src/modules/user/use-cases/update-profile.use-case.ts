@@ -40,7 +40,12 @@ export class UpdateProfileUseCase {
     if (data.phone && normalizePhone(data.phone) !== user.phone) {
       // Mesma checagem do PhoneAvailabilityGuard (que já rejeitou antes do ciclo de verificação
       // começar) — repetida aqui como defesa contra corrida entre as duas chamadas.
-      await assertPhoneAvailable(this.prisma, this.i18n, normalizePhone(data.phone), id);
+      await assertPhoneAvailable(
+        this.prisma,
+        this.i18n,
+        normalizePhone(data.phone),
+        id,
+      );
     }
 
     let imageUrl: string | null | undefined = undefined;

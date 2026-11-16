@@ -8,7 +8,13 @@ export const UpdateUserSchema = z
     // email: z.string().email('validation.email.invalid').optional(),
     // password: z.string().min(6, 'validation.password.min_length').optional(),
     name: z.string().optional(),
-    phone: z.string().trim().min(8).max(20).transform(normalizePhone).optional(),
+    phone: z
+      .string()
+      .trim()
+      .min(8)
+      .max(20)
+      .transform(normalizePhone)
+      .optional(),
     role: z.string().optional(),
     status: z.nativeEnum(UserStatusConst).optional(),
   })
