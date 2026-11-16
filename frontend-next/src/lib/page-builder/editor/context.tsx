@@ -152,13 +152,19 @@ export function useEditorOrThrow(): EditorContextValue {
 }
 
 /** Assinatura separada do resto do contexto do editor, de propósito: os `params` do efeito em
- * edição mudam a cada frame de arrasto do gizmo, e só quem chama este hook (o gizmo, o preview ao
- * vivo do bloco em edição) re-renderiza a cada mudança — o resto do canvas (outros blocos) nunca
- * reage, porque não lê este store. `useEditor()`/`editingEffect` continuam dando só o blockId/type,
- * que muda raramente (armar/salvar/cancelar). */
-export function useEditingEffectParams(): Record<string, unknown> {
+ * edição mudam a cada frame de arrasto do gizmo. Escopado por `blockId`: todo bloco com efeito
+ * (salvo ou em edição) chama este hook o tempo todo (nunca condicionalmente — ver `EffectRuntime`
+ * em `renderer.tsx`, que por isso nunca desmonta/remonta ao entrar ou sair da edição), mas só
+ * devolve um valor NOVO pro bloco que está sendo editado agora; pros outros, devolve sempre a
+ * mesma referência `null` entre notificações, e o `useSyncExternalStore` corta o re-render deles
+ * (React só repinta quando o snapshot muda de verdade). */
+export function useEditingEffectParams(blockId: string): Record<string, unknown> | null {
   const editor = useEditorOrThrow();
-  return React.useSyncExternalStore(editor.subscribeEditingEffectParams, editor.getEditingEffectParams);
+  const getSnapshot = useCallback(
+    () => (editor.editingEffect?.blockId === blockId ? editor.getEditingEffectParams() : null),
+    [editor, blockId],
+  );
+  return React.useSyncExternalStore(editor.subscribeEditingEffectParams, getSnapshot);
 }
 
 const UNDO_HISTORY_SIZE = 30;

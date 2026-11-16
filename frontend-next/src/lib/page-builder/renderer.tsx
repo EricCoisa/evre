@@ -7,7 +7,7 @@ import { motion, useReducedMotion } from 'motion/react';
 import { Pencil } from 'lucide-react';
 import { buildMotionProps, resolveAnimation } from './animation';
 import { LayoutAnimationProvider, useLayoutAnimation } from './animation-context';
-import { wrapWithEffect } from './effects';
+import { wrapWithEffect, wrapWithEffectActive } from './effects';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
@@ -35,7 +35,12 @@ import {
   EmptySlotDropZone,
   SortableList,
 } from './editor/block-chrome';
-import { useEditingEffectParams, useEditor, type EditorContextValue } from './editor/context';
+import {
+  useEditingEffectParams,
+  useEditor,
+  useEditorOrThrow,
+  type EditorContextValue,
+} from './editor/context';
 import { EMPTY_LAYOUT } from './editor/mutations';
 import { buildVariableOptions } from './editor/panel';
 import type { RichTextVariableOption } from '@/components/rich-text-input';
@@ -446,23 +451,48 @@ function resolveBlockGridLayout(
   };
 }
 
-/** Só este componente assina o rascunho ao vivo do efeito em edição (`useEditingEffectParams`) —
- * só é montado para o bloco que está sob edição (ver `Block`), então só ele re-renderiza a cada
- * frame de arrasto do gizmo; o resto do canvas nunca assina esse store, nunca re-renderiza. */
-function LiveEffectPreview({ type, children }: { type: string; children: React.ReactNode }) {
-  const params = useEditingEffectParams();
-  return <>{wrapWithEffect(children, { type, params })}</>;
+/** Dentro do canvas de edição, o wrapper de efeito de um bloco fica montado o tempo todo que o
+ * bloco TEM (salvo) ou ESTÁ GANHANDO (em edição) um efeito — nunca é desmontado só por entrar ou
+ * sair do modo de edição. Só o `active` (ligado enquanto em edição, usando o rascunho ao vivo;
+ * desligado o resto do tempo, inerte) muda — por isso Salvar/Cancelar nunca remonta o conteúdo
+ * do bloco: o `type` resolvido é o mesmo antes e depois (o que estava em edição é exatamente o
+ * que acabou de ser salvo). `useEditingEffectParams` é escopado por `blockId` e devolve `null`
+ * estável quando este bloco não é o que está em edição, então chamar aqui sempre (nunca
+ * condicionalmente) não custa re-render extra pros outros blocos. */
+function EffectRuntime({
+  blockId,
+  savedEffect,
+  children,
+}: {
+  blockId: string;
+  savedEffect: PageBlock['effect'];
+  children: React.ReactNode;
+}) {
+  const editor = useEditorOrThrow();
+  const liveParams = useEditingEffectParams(blockId);
+  const isEditingThis = liveParams !== null;
+  const type = isEditingThis ? editor.editingEffect!.type : savedEffect?.type;
+
+  if (!type) return <>{children}</>;
+
+  const params = isEditingThis ? liveParams : savedEffect?.params ?? {};
+  return <>{wrapWithEffectActive(children, type, params, isEditingThis)}</>;
 }
 
-/** Conteúdo dentro do `BlockChrome`: plano, exceto para o ÚNICO bloco sob edição de efeito, que
- * roda o efeito ao vivo — isolado do `Block` principal só pra manter a complexidade dele baixa. */
+/** Conteúdo dentro do `BlockChrome`: plano para um bloco sem efeito nenhum (nem salvo, nem em
+ * edição); `EffectRuntime` só entra em cena quando há algum — ver o comentário ali para por que
+ * essa é a única transição (rara) que ainda remonta. */
 function editorChromeContent(
   content: React.ReactNode,
+  block: PageBlock,
   editingEffect: EditorContextValue['editingEffect'],
-  blockId: string,
 ): React.ReactNode {
-  if (editingEffect?.blockId !== blockId) return content;
-  return <LiveEffectPreview type={editingEffect.type}>{content}</LiveEffectPreview>;
+  if (!block.effect && editingEffect?.blockId !== block.id) return content;
+  return (
+    <EffectRuntime blockId={block.id} savedEffect={block.effect}>
+      {content}
+    </EffectRuntime>
+  );
 }
 
 function Block({
@@ -520,7 +550,7 @@ function Block({
   if (editor) {
     return (
       <BlockChrome block={block} spanClass={gridClass} style={gridStyle} nested={bare}>
-        {editorChromeContent(content, editor.editingEffect, block.id)}
+        {editorChromeContent(content, block, editor.editingEffect)}
       </BlockChrome>
     );
   }

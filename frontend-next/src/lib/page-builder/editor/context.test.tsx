@@ -66,15 +66,15 @@ const layoutWithBlock: PageLayout = {
   blocks: [{ id: 'b1', type: 'stat.card', props: { label: 'Total' } }],
 };
 
-function EffectParamsProbe() {
-  const params = useEditingEffectParams();
+function EffectParamsProbe({ blockId }: { blockId: string }) {
+  const params = useEditingEffectParams(blockId);
   return <span data-testid="params">{JSON.stringify(params)}</span>;
 }
 
 function EffectHarness({ onReady }: { onReady: (editor: ReturnType<typeof useEditorOrThrow>) => void }) {
   const editor = useEditorOrThrow();
   onReady(editor);
-  return <EffectParamsProbe />;
+  return <EffectParamsProbe blockId="b1" />;
 }
 
 describe('edição ao vivo de efeito', () => {
@@ -155,5 +155,36 @@ describe('edição ao vivo de efeito', () => {
     });
 
     expect(editor.editingEffect).toBeNull();
+  });
+
+  it('bloco que não está em edição recebe null estável — nunca re-renderiza por causa do outro', () => {
+    let editor!: ReturnType<typeof useEditorOrThrow>;
+    let otherBlockRenders = 0;
+    function OtherBlockProbe() {
+      otherBlockRenders += 1;
+      useEditingEffectParams('other-block');
+      return null;
+    }
+
+    render(
+      <EditorProvider initial={layoutWithBlock}>
+        <EffectHarness onReady={(e) => (editor = e)} />
+        <OtherBlockProbe />
+      </EditorProvider>,
+    );
+    const rendersBeforeEditing = otherBlockRenders;
+
+    act(() => editor.startEditingEffect('b1', 'tilt3d', { rotateX: 6 }));
+    act(() => editor.updateEditingEffectParams({ rotateX: 20 }));
+    act(() => editor.updateEditingEffectParams({ rotateX: 40 }));
+
+    // `editor.editingEffect` (blockId/type) muda com startEditingEffect — isso é um update normal
+    // de contexto, então o probe de outro bloco PODE re-renderizar uma vez por isso. O que importa
+    // é que as mudanças de PARÂMETRO (updateEditingEffectParams, a parte de alta frequência) não
+    // disparem re-render adicional nenhum nele.
+    const rendersAfterStart = otherBlockRenders;
+    expect(screen.getByTestId('params')).toHaveTextContent('{"rotateX":40}'); // b1 (o editado) reagiu
+    expect(otherBlockRenders).toBe(rendersAfterStart); // other-block não reagiu aos updates de params
+    expect(rendersAfterStart).toBeLessThanOrEqual(rendersBeforeEditing + 1);
   });
 });

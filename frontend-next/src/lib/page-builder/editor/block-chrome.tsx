@@ -1181,9 +1181,9 @@ function EffectEditBar({
 /** Gizmo custom do efeito (`EFFECT_GIZMOS`), quando existe, + os mesmos campos numéricos do
  * painel (`PropField`) sempre visíveis — a esfera é um atalho, o campo numérico é o valor exato
  * e o caminho acessível por teclado. Flutua abaixo do bloco pra não cobrir o preview ao vivo. */
-function EffectEditGizmo({ type }: { type: string }) {
+function EffectEditGizmo({ blockId, type }: { blockId: string; type: string }) {
   const editor = useEditorOrThrow();
-  const params = useEditingEffectParams();
+  const params = useEditingEffectParams(blockId) ?? {};
   if (!isKnownEffect(type)) return null;
 
   const meta = EFFECT_META[type as EffectType];
@@ -1291,7 +1291,7 @@ export function BlockChrome({
             onCancel={editor.cancelEditingEffect}
             t={t}
           />
-          <EffectEditGizmo type={editingEffectType} />
+          <EffectEditGizmo blockId={block.id} type={editingEffectType} />
         </>
       ) : null}
 

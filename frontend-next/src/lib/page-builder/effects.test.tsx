@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { wrapWithEffect } from './effects';
+import { wrapWithEffect, wrapWithEffectActive } from './effects';
 
 describe('wrapWithEffect', () => {
   it('sem effect, devolve children sem embrulho', () => {
@@ -31,5 +31,36 @@ describe('wrapWithEffect', () => {
     );
     expect(screen.getByRole('heading', { name: 'Texto' })).toBeInTheDocument();
     expect(container.querySelector('filter')).toBeInTheDocument();
+  });
+});
+
+describe('wrapWithEffectActive — active:false fica montado e inerte (nunca desmonta children)', () => {
+  it('tilt3d inativo não aplica transform nenhum', () => {
+    const { container } = render(
+      <div>{wrapWithEffectActive(<span>conteúdo</span>, 'tilt3d', { rotateX: 10 }, false)}</div>,
+    );
+    const el = container.querySelector('span')!.parentElement!;
+    expect(el.style.transform).toBe('');
+    expect(screen.getByText('conteúdo')).toBeInTheDocument();
+  });
+
+  it('liquid-distortion inativo passa disabled para o componente original (sem listener de mouse)', () => {
+    render(
+      <div>{wrapWithEffectActive(<h1>Texto</h1>, 'liquid-distortion', {}, false)}</div>,
+    );
+    // Com disabled, o componente original nem registra o listener — children continuam ali.
+    expect(screen.getByRole('heading', { name: 'Texto' })).toBeInTheDocument();
+  });
+
+  it('o mesmo wrapper (mesmo type) só troca active, sem remontar — children preserva identidade', () => {
+    const child = <span data-testid="child">conteúdo</span>;
+    const { container, rerender } = render(<div>{wrapWithEffectActive(child, 'tilt3d', { rotateX: 20 }, false)}</div>);
+    const before = screen.getByTestId('child');
+
+    rerender(<div>{wrapWithEffectActive(child, 'tilt3d', { rotateX: 20 }, true)}</div>);
+    const after = screen.getByTestId('child');
+
+    expect(after).toBe(before); // mesmo nó DOM — não houve desmontagem/remontagem
+    expect(container.querySelector('span')!.parentElement!.style.transform).toContain('rotateX(20deg)');
   });
 });

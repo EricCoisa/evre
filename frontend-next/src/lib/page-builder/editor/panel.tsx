@@ -1166,10 +1166,10 @@ function BlockAnimationSection({
 
 /** Campos do efeito em edição — rascunho ao vivo (`useEditingEffectParams`), nunca o `value`
  * salvo do bloco. Mesmos `PropField` que o fallback do gizmo no canvas usa (`block-chrome.tsx`). */
-function EffectEditingFields({ type }: { type: string }) {
+function EffectEditingFields({ blockId, type }: { blockId: string; type: string }) {
   const { t } = useTranslation('page-builder');
   const editor = useEditorOrThrow();
-  const params = useEditingEffectParams();
+  const params = useEditingEffectParams(blockId) ?? {};
   const meta = isKnownEffect(type) ? EFFECT_META[type] : undefined;
   if (!meta) return null;
 
@@ -1278,7 +1278,7 @@ function BlockEffectSection({
       ) : (
         <EffectTypeSelect value={effectType ?? 'none'} onChange={setType} />
       )}
-      {isEditingThis ? <EffectEditingFields type={editor.editingEffect!.type} /> : null}
+      {isEditingThis ? <EffectEditingFields blockId={blockId} type={editor.editingEffect!.type} /> : null}
     </div>
   );
 }
