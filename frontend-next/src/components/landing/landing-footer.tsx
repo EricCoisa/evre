@@ -9,7 +9,7 @@ interface LandingFooterProps {
 }
 
 export function LandingFooter({
-  footerText = defaulHometData.footerText || 'EVRE Software House',
+  footerText = defaulHometData.footerText!,
 }: LandingFooterProps) {
   return (
     <footer

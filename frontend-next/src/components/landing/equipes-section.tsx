@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import ScrollTrigger from 'gsap/ScrollTrigger';
-import { defaulHometData } from '@/lib/actions/cms/home/type';
+import { defaulHometData, CardsGridSectionBlock } from '@/lib/actions/cms/home/type';
 import { LiquidDistortion } from './liquid-distortion';
 
 export interface EquipesSectionProps {
@@ -14,18 +14,14 @@ export interface EquipesSectionProps {
   cards?: Array<{ title: string; description: string }>;
 }
 
-const defaultCards = [
-  { title: 'Integração com\nseu processo', description: 'A EVRE entra no seu fluxo de trabalho existente. Sprints, revisões e entregas contínuas sem mudar como sua equipe funciona.' },
-  { title: 'Foco no que\nvocê precisa', description: 'Você define a prioridade, a EVRE executa. Sem overhead de gestão nem curva de aprendizado prolongado.' },
-  { title: 'Resultado\nverificável', description: 'Comece com um projeto de escopo definido. Avalie a qualidade do trabalho antes de qualquer comprometimento maior.' },
-];
+const defaultSection = defaulHometData.sections![2] as CardsGridSectionBlock;
 
 export function EquipesSection({
-  anchorId = 'equipes',
-  label = 'Parceria em desenvolvimento',
-  title = 'Ferramentas que\na equipe\nrealmente usa.',
-  description = 'Cada equipe tem um jeito de trabalhar. Construímos o software que encaixa nesse jeito, não o contrário.',
-  cards = defaultCards,
+  anchorId = defaultSection.anchorId,
+  label = defaultSection.label,
+  title = defaultSection.title,
+  description = defaultSection.description,
+  cards = defaultSection.cards,
 }: EquipesSectionProps) {
   const sectionRef = useRef<HTMLElement>(null);
 
@@ -64,7 +60,7 @@ export function EquipesSection({
   }, []);
 
   const symbols = ['>', '/', '<'];
-  const cells = cards.map((card, i) => ({ symbol: symbols[i % symbols.length], ...card }));
+  const cells = (cards ?? []).map((card, i) => ({ symbol: symbols[i % symbols.length], ...card }));
 
   return (
     <section

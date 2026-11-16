@@ -17,14 +17,14 @@ export interface LandingNavProps {
   navItems?: NavItem[];
 }
 
-const defaultNavItems: NavItem[] = [
-  { href: '#sites', label: 'Sites', mobileLabel: 'Sites & Landing Pages' },
-  { href: '#sistemas', label: 'Sistemas', mobileLabel: 'Sistemas & Plataformas' },
-  { href: '#equipes', label: 'Equipes', mobileLabel: 'Equipes' },
-];
+const defaultNavItems: NavItem[] = defaulHometData.sections!.map(section => ({
+  href: `#${section.anchorId}`,
+  label: section.navLabel || section.label.split('&')[0].trim(),
+  mobileLabel: section.label,
+}));
 
 export function LandingNav({
-  whatsappNumber = defaulHometData.heroWhatsappNumber || '5534953301409',
+  whatsappNumber = defaulHometData.heroWhatsappNumber!,
   navItems,
 }: LandingNavProps) {
   const [mobileOpen, setMobileOpen] = useState(false);

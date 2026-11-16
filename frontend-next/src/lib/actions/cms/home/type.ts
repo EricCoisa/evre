@@ -96,7 +96,7 @@ export const defaulHometData: Partial<HomeData> = {
       anchorId: 'sites',
       navLabel: 'Sites',
       label: 'Sites & Landing Pages',
-      title: 'Para quem quer vender\ne aparecer online.',
+      title: 'Faça da internet uma vitrine para sua empresa',
       description: 'Sites institucionais, landing pages com design sob medida, integrados ao seu processo de vendas.',
       mediaPosition: 'right',
       demos: [],
