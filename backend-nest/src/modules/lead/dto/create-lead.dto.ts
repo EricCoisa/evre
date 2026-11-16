@@ -1,6 +1,7 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 import { MESSAGING_LIMITS } from 'src/domain/messaging/messaging.const';
+import { normalizePhone } from '../../messaging/providers/phone.util';
 
 export const CreateLeadSchema = z
   .object({
@@ -9,6 +10,7 @@ export const CreateLeadSchema = z
       .string()
       .min(1)
       .max(MESSAGING_LIMITS.phone)
+      .transform(normalizePhone)
       .optional()
       .describe('Telefone (pelo menos phone ou email)'),
     email: z

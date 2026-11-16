@@ -5,6 +5,7 @@ import gsap from 'gsap';
 import ScrollTrigger from 'gsap/ScrollTrigger';
 import { defaulHometData } from '@/lib/actions/cms/home/type';
 import { ContactFormDialog } from '@/components/landing/contact-form-dialog';
+import { LiquidDistortion } from '@/components/landing/liquid-distortion';
 import type { CaptchaConfigDto } from '@/lib/generated/schemas';
 
 interface FinalCtaSectionProps {
@@ -63,11 +64,11 @@ export function FinalCtaSection({
     gsap.registerPlugin(ScrollTrigger);
 
     const ctx = gsap.context(() => {
-      gsap.set('.cta-title', { clipPath: 'inset(100% 0 0 0)' });
+      gsap.set('.cta-title', { clipPath: 'inset(100% -15% 0% -5%)' });
       gsap.set('.cta-actions', { opacity: 0, y: 20 });
 
       gsap.to('.cta-title', {
-        clipPath: 'inset(0% 0 0 0)',
+        clipPath: 'inset(-15% -15% -15% -5%)',
         scrollTrigger: { trigger: sectionRef.current, start: 'top 75%', end: 'top 20%', scrub: 1.5 },
       });
       gsap.to('.cta-actions', {
@@ -90,16 +91,18 @@ export function FinalCtaSection({
       <div className="mx-auto mb-20 max-w-6xl" style={{ height: '1px', background: 'var(--lp-border)' }} />
 
       <div className="mx-auto max-w-6xl">
-        <h2
-          className="cta-title mb-16 font-black leading-none tracking-tight whitespace-pre-wrap"
-          style={{
-            fontSize: 'clamp(3rem, 10vw, 11rem)',
-            letterSpacing: '-0.03em',
-            color: 'var(--lp-fg)',
-          }}
-        >
-          {title}
-        </h2>
+        <LiquidDistortion className="mb-16 block w-fit" strength={32} radius={110}>
+          <h2
+            className="cta-title font-black leading-none tracking-tight whitespace-pre-wrap"
+            style={{
+              fontSize: 'clamp(3rem, 10vw, 11rem)',
+              letterSpacing: '-0.03em',
+              color: 'var(--lp-fg)',
+            }}
+          >
+            {title}
+          </h2>
+        </LiquidDistortion>
 
         <div className="cta-actions flex flex-wrap items-center gap-5">
           <a

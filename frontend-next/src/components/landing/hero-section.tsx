@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import ScrollTrigger from 'gsap/ScrollTrigger';
 import { AsciiBackground } from './ascii-background';
+import { LiquidDistortion } from './liquid-distortion';
 import { defaulHometData } from '@/lib/actions/cms/home/type';
 
 // Inline SVGs do protótipo aprovado (> / <)
@@ -50,7 +51,7 @@ export function HeroSection({
 
     const ctx = gsap.context(() => {
       // Initial hidden states
-      gsap.set('.hero-title', { clipPath: 'inset(100% 0 0 0)' });
+      gsap.set('.hero-title', { clipPath: 'inset(100% -15% 0% -5%)' });
       gsap.set('.hero-desc', { clipPath: 'inset(100% 0 0 0)' });
       gsap.set('.hero-actions', { clipPath: 'inset(100% 0 0 0)' });
       gsap.set('.hero-brand-panel', { x: 80, opacity: 0 });
@@ -59,7 +60,7 @@ export function HeroSection({
       // Entrance timeline
       const tl = gsap.timeline({ delay: 0.15 });
       tl
-        .to('.hero-title', { clipPath: 'inset(0% 0 0 0)', duration: 0.9, ease: 'expo.out' })
+        .to('.hero-title', { clipPath: 'inset(-15% -15% -15% -5%)', duration: 0.9, ease: 'expo.out' })
         .to('.hero-desc', { clipPath: 'inset(0% 0 0 0)', duration: 0.75, ease: 'expo.out' }, '-=0.55')
         .to('.hero-actions', { clipPath: 'inset(0% 0 0 0)', duration: 0.75, ease: 'expo.out' }, '-=0.5')
         .to('.hero-brand-panel', { x: 0, opacity: 1, duration: 1.1, ease: 'expo.out' }, 0.3)
@@ -116,16 +117,18 @@ export function HeroSection({
 
       {/* Content */}
       <div className="relative z-10 mx-auto w-full max-w-6xl">
-        <h1
-          className="hero-title mb-9 font-black leading-none tracking-tight whitespace-pre-wrap"
-          style={{
-            fontSize: 'clamp(3.5rem, 9vw, 9.5rem)',
-            letterSpacing: '-0.03em',
-            color: 'var(--lp-fg)',
-          }}
-        >
-          {title}
-        </h1>
+        <LiquidDistortion className="mb-9 block w-fit" strength={32} radius={110}>
+          <h1
+            className="hero-title font-black leading-none tracking-tight whitespace-pre-wrap"
+            style={{
+              fontSize: 'clamp(3.5rem, 9vw, 9.5rem)',
+              letterSpacing: '-0.03em',
+              color: 'var(--lp-fg)',
+            }}
+          >
+            {title}
+          </h1>
+        </LiquidDistortion>
 
         <p
           className="hero-desc mb-10 max-w-sm text-base leading-relaxed md:text-lg"

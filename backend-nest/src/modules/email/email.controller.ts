@@ -1,10 +1,12 @@
 import { Body, Controller } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { GetApi, PutApi } from '../../common/decorators/api-method.decorator';
+import { GetApi, PostApi, PutApi } from '../../common/decorators/api-method.decorator';
 import { SaveEmailConfigurationUseCase } from './use-cases/save-configuration.use-case';
 import { CheckEmailHealthUseCase } from './use-cases/check-health.use-case';
 import { ListEmailTemplatesUseCase } from './use-cases/list-templates.use-case';
+import { SendEmailUseCase } from './use-cases/send-email.use-case';
 import { SaveEmailConfigDto } from './dto/save-email-config.dto';
+import { SendEmailDto } from './dto/send-email.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../../common/types/auth.types';
 import type { ProviderResult } from 'src/domain/interface/provider-result';
@@ -17,6 +19,7 @@ export class EmailController {
     private readonly saveEmailConfiguration: SaveEmailConfigurationUseCase,
     private readonly checkEmailHealth: CheckEmailHealthUseCase,
     private readonly listEmailTemplates: ListEmailTemplatesUseCase,
+    private readonly sendEmailUseCase: SendEmailUseCase,
   ) {}
 
   /** Valida a configuração contra o provider e só persiste se passar. */
@@ -54,5 +57,19 @@ export class EmailController {
   })
   async templates(): Promise<EmailTemplateInfo[]> {
     return this.listEmailTemplates.execute();
+  }
+
+  @PostApi({
+    path: 'send',
+    summary: 'Envia um e-mail com assunto e HTML customizados',
+    status: 'OK',
+    roles: ['ADMIN'],
+    body: SendEmailDto,
+  })
+  async send(
+    @Body() dto: SendEmailDto,
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ): Promise<ProviderResult> {
+    return this.sendEmailUseCase.execute(dto, currentUser.id);
   }
 }

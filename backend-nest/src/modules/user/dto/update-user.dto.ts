@@ -1,13 +1,14 @@
 import { createZodDto } from 'nestjs-zod';
 import { UserStatusConst } from 'src/domain/auth/userStatus.const';
 import { z } from 'zod';
+import { normalizePhone } from '../../messaging/providers/phone.util';
 
 export const UpdateUserSchema = z
   .object({
     // email: z.string().email('validation.email.invalid').optional(),
     // password: z.string().min(6, 'validation.password.min_length').optional(),
     name: z.string().optional(),
-    phone: z.string().trim().min(8).max(20).optional(),
+    phone: z.string().trim().min(8).max(20).transform(normalizePhone).optional(),
     role: z.string().optional(),
     status: z.nativeEnum(UserStatusConst).optional(),
   })

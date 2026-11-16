@@ -85,6 +85,21 @@
   "validation_min_chars": "Use at least {count} characters",
   "validation_max_chars": "Use at most {count} characters",
   "captchaRequired": "Confirm you are not a robot to continue.",
+  "sendEmailDialog": {
+    "title": "Send email",
+    "description": "Select a template, edit the content and send.",
+    "to": "Recipient",
+    "toPlaceholder": "email@example.com",
+    "toRequired": "Please enter the recipient's email.",
+    "subject": "Subject",
+    "subjectPlaceholder": "Email subject",
+    "subjectRequired": "Please enter the subject.",
+    "send": "Send",
+    "sending": "Sending…",
+    "sent": "Email sent successfully!",
+    "error": "Failed to send email.",
+    "noTemplates": "No templates available."
+  },
   "capability": {
     "unavailable": "This feature is currently unavailable.",
     "configure_button": "Configure",

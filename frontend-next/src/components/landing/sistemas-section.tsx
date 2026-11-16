@@ -5,6 +5,7 @@ import gsap from 'gsap';
 import ScrollTrigger from 'gsap/ScrollTrigger';
 import { defaulHometData } from '@/lib/actions/cms/home/type';
 import { ArtifactFrame } from './artifact-frame';
+import { LiquidDistortion } from './liquid-distortion';
 
 interface SistemasSectionProps {
   label?: string;
@@ -29,7 +30,7 @@ export function SistemasSection({
 
     const ctx = gsap.context(() => {
       gsap.set('.sistemas-label', { x: 24 });
-      gsap.set('.sistemas-title', { clipPath: 'inset(100% 0 0 0)' });
+      gsap.set('.sistemas-title', { clipPath: 'inset(100% -10% 0% -5%)' });
       gsap.set('.sistemas-body', { clipPath: 'inset(100% 0 0 0)' });
       gsap.set('.sistemas-frame', { y: 60, opacity: 0 });
 
@@ -38,7 +39,7 @@ export function SistemasSection({
         scrollTrigger: { trigger: sectionRef.current, start: 'top 80%', end: 'top 40%', scrub: 1 },
       });
       gsap.to('.sistemas-title', {
-        clipPath: 'inset(0% 0 0 0)',
+        clipPath: 'inset(-15% -10% -15% -5%)',
         scrollTrigger: { trigger: sectionRef.current, start: 'top 75%', end: 'top 25%', scrub: 1.5 },
       });
       gsap.to('.sistemas-body', {
@@ -81,12 +82,14 @@ export function SistemasSection({
             {label}
           </div>
 
-          <h2
-            className="sistemas-title mb-6 font-black leading-none tracking-tight whitespace-pre-wrap"
-            style={{ fontSize: 'clamp(2rem, 5vw, 4.25rem)', letterSpacing: '-0.025em', color: 'var(--lp-fg)' }}
-          >
-            {title}
-          </h2>
+          <LiquidDistortion className="mb-6 block w-fit">
+            <h2
+              className="sistemas-title font-black leading-none tracking-tight whitespace-pre-wrap"
+              style={{ fontSize: 'clamp(2rem, 5vw, 4.25rem)', letterSpacing: '-0.025em', color: 'var(--lp-fg)' }}
+            >
+              {title}
+            </h2>
+          </LiquidDistortion>
 
           <p className="sistemas-body text-base leading-relaxed" style={{ color: 'var(--lp-muted)', maxWidth: '400px' }}>
             {description}

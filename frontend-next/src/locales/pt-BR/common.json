@@ -85,6 +85,21 @@
   "validation_min_chars": "Use pelo menos {count} caracteres",
   "validation_max_chars": "Use no máximo {count} caracteres",
   "captchaRequired": "Confirme que você não é um robô para continuar.",
+  "sendEmailDialog": {
+    "title": "Enviar e-mail",
+    "description": "Selecione um template, edite o conteúdo e envie.",
+    "to": "Destinatário",
+    "toPlaceholder": "email@exemplo.com",
+    "toRequired": "Informe o e-mail do destinatário.",
+    "subject": "Assunto",
+    "subjectPlaceholder": "Assunto do e-mail",
+    "subjectRequired": "Informe o assunto.",
+    "send": "Enviar",
+    "sending": "Enviando…",
+    "sent": "E-mail enviado com sucesso!",
+    "error": "Erro ao enviar e-mail.",
+    "noTemplates": "Nenhum template disponível."
+  },
   "capability": {
     "unavailable": "Este recurso está indisponível no momento.",
     "configure_button": "Configurar",

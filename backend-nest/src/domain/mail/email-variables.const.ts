@@ -73,6 +73,19 @@ const VERIFICATION_CODE: EmailTemplateVariable[] = [
   },
 ];
 
+const LEAD_FOLLOWUP: EmailTemplateVariable[] = [
+  {
+    name: 'name',
+    labelKey: 'emailVariable_name',
+    dummy: 'João Souza',
+  },
+  {
+    name: 'message',
+    labelKey: 'emailVariable_message',
+    dummy: 'Gostaria de saber mais sobre os planos.',
+  },
+];
+
 /** Registro único das variáveis de cada tipo de email, lido pelo editor, preview e validação. */
 export const EMAIL_TEMPLATE_VARIABLES: Record<
   EmailTemplateType,
@@ -83,6 +96,7 @@ export const EMAIL_TEMPLATE_VARIABLES: Record<
   NOTIFICATION,
   VERIFICATION_CODE,
   SIGNUP_WELCOME: COMMON,
+  LEAD_FOLLOWUP,
 };
 
 export function variablesFor(type: EmailTemplateType): EmailTemplateVariable[] {

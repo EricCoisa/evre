@@ -13,8 +13,8 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { RichTextInput } from '@/components/rich-text-input';
 import { PhoneInput, isValidPhone } from '@/components/ui/phone-input';
 import { useCaptcha } from '@/hooks/use-captcha';
 import { useTranslation } from '@/hooks/use-translation';
@@ -118,7 +118,19 @@ function ContactFormContent({
 
         <div className="grid gap-1.5">
           <Label>{t('form.labelMessage')} *</Label>
-          <Textarea rows={4} placeholder={t('form.placeholderMessage')} value={form.message} onChange={set('message')} disabled={submitting} />
+          <RichTextInput
+            value={form.message}
+            onChange={(v) => setForm((p) => ({ ...p, message: v }))}
+            placeholder={t('form.placeholderMessage')}
+            ariaLabel={t('form.labelMessage')}
+            disabled={submitting}
+            formatLabels={{
+              bold: 'Negrito (*texto*)',
+              italic: 'Itálico (_texto_)',
+              strikethrough: 'Riscado (~texto~)',
+              code: 'Código (```texto```)',
+            }}
+          />
         </div>
 
         <div ref={containerRef} />

@@ -4,12 +4,12 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
-import { normalizePhone } from '../../messaging/providers/phone.util';
 import { I18nService } from 'nestjs-i18n';
 import { UpdateProfileDto } from '../dto/update-user.dto';
 import type { UserDto } from '../dto/user.dto';
 import { StorageService } from '../../storage/storage.service';
 import { assertPhoneAvailable } from '../phone-availability.guard';
+import { normalizePhone } from '../../messaging/providers/phone.util';
 
 // Magic-number MIME check — covers jpeg/png/webp, add more if needed
 const MIME_TO_EXT: Record<string, string> = {
@@ -37,10 +37,10 @@ export class UpdateProfileUseCase {
       throw new NotFoundException(this.i18n.t('user.not_found'));
     }
 
-    if (data.phone && data.phone !== user.phone) {
+    if (data.phone && normalizePhone(data.phone) !== user.phone) {
       // Mesma checagem do PhoneAvailabilityGuard (que já rejeitou antes do ciclo de verificação
       // começar) — repetida aqui como defesa contra corrida entre as duas chamadas.
-      await assertPhoneAvailable(this.prisma, this.i18n, data.phone, id);
+      await assertPhoneAvailable(this.prisma, this.i18n, normalizePhone(data.phone), id);
     }
 
     let imageUrl: string | null | undefined = undefined;

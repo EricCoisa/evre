@@ -18,6 +18,10 @@ export async function updateLeadStatus(id: string, dto: UpdateLeadStatusDto): Pr
   return wrapAs(() => api.leadControllerUpdateStatus(id, dto));
 }
 
+export async function deleteLead(id: string): Promise<ApiResponse<void>> {
+  return wrap(() => api.leadControllerRemove(id));
+}
+
 export async function createLead(dto: CreateLeadDto, captchaToken?: string | null): Promise<ApiResponse<void>> {
   return wrap(() =>
     api.leadControllerCreate(

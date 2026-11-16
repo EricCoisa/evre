@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
-import { normalizePhone } from '../../messaging/providers/phone.util';
 import { LoggingService } from '../../logging/logging.service';
 import { NotificationService } from '../../notification/notification.service';
 import { LogActions } from 'src/domain/logging/log-actions';
@@ -8,6 +7,7 @@ import { LeadNotificationType } from 'src/domain/lead/lead-notification-type.con
 import { UserRoleConst } from 'src/domain/auth/userRole.const';
 import type { Lead } from 'src/domain/lead/lead.entity';
 import type { CreateLeadDto } from '../dto/create-lead.dto';
+import { normalizePhone } from '../../messaging/providers/phone.util';
 
 @Injectable()
 export class CreateLeadUseCase {

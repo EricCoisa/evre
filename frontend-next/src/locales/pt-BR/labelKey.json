@@ -150,5 +150,8 @@
     "ARCHIVE": "Arquivado",
 
     "ROUTE_LEAD": "Leads",
-    "LEAD": "Leads"
+    "LEAD": "Leads",
+    "NEW": "Novo",
+    "RESOLVED": "Resolvido",
+    "VIEWED": "Visualizado"
 }

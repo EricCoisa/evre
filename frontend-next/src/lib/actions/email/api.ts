@@ -1,6 +1,7 @@
 "use server";
 import type { ApiResponse } from '../../api/api';
 import { getEmail } from '@/lib/generated/email/email';
+import { customInstance } from '@/lib/api/orval-instance';
 import type { EmailProviderResponse, EmailHealthStatus, EmailTemplateInfo, SaveEmailConfigPayload } from './types';
 import { wrapAs } from '../wrap';
 
@@ -19,4 +20,14 @@ export async function getEmailHealth(): Promise<ApiResponse<EmailHealthStatus>> 
 
 export async function getEmailTemplates(): Promise<ApiResponse<EmailTemplateInfo[]>> {
   return wrapAs(() => api.emailControllerTemplates());
+}
+
+export async function sendEmail(payload: {
+  to: string;
+  subject: string;
+  html: string;
+}): Promise<ApiResponse<EmailProviderResponse>> {
+  return wrapAs(() =>
+    customInstance<EmailProviderResponse>({ url: '/email/send', method: 'POST', data: payload }),
+  );
 }

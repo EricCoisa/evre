@@ -5,6 +5,7 @@ import { ZodValidationPipe } from 'nestjs-zod';
 import { plainToInstance } from 'class-transformer';
 import { UseGuards } from '@nestjs/common';
 import {
+  DeleteApi,
   GetApi,
   PatchApi,
   PostApi,
@@ -17,6 +18,7 @@ import { LeadDto } from './dto/lead.dto';
 import { CreateLeadUseCase } from './use-cases/create-lead.use-case';
 import { ListLeadsUseCase } from './use-cases/list-leads.use-case';
 import { UpdateLeadStatusUseCase } from './use-cases/update-lead-status.use-case';
+import { DeleteLeadUseCase } from './use-cases/delete-lead.use-case';
 import { commonPaginationQueries } from '../../common/swagger/pagination-queries';
 import type { AuthenticatedUser } from '../../common/types/auth.types';
 import {
@@ -32,6 +34,7 @@ export class LeadController {
     private readonly createLead: CreateLeadUseCase,
     private readonly listLeads: ListLeadsUseCase,
     private readonly updateLeadStatus: UpdateLeadStatusUseCase,
+    private readonly deleteLead: DeleteLeadUseCase,
   ) {}
 
   @Throttle({ default: { limit: 3, ttl: 60000 } })
@@ -84,6 +87,20 @@ export class LeadController {
       meta: result.meta,
       ...(result.filter ? { filter: result.filter } : {}),
     };
+  }
+
+  @DeleteApi({
+    path: ':id',
+    summary: 'lead.delete.title',
+    status: 'NO_CONTENT',
+    authenticated: true,
+    roles: ['ADMIN'],
+  })
+  async remove(
+    @Param('id') id: string,
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ): Promise<void> {
+    await this.deleteLead.execute(id, currentUser);
   }
 
   @PatchApi({

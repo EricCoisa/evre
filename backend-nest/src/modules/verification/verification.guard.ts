@@ -13,6 +13,7 @@ import type { AuthenticatedUser } from '../../common/types/auth.types';
 import { VerificationService } from './verification.service';
 import { VerificationMethod } from './verification-method.enum';
 import { CheckChannelHealthUseCase } from './use-cases/check-channel-health.use-case';
+import { normalizePhone } from '../messaging/providers/phone.util';
 
 export { VerificationMethod };
 
@@ -91,9 +92,13 @@ export class VerificationGuard implements CanActivate {
     if (!opts) return true;
 
     const request = context.switchToHttp().getRequest<RequestWithUser>();
-    const target = request.body?.[opts.targetField];
+    const rawTarget = request.body?.[opts.targetField];
     // Campo não está sendo alterado nesta chamada — nada para o guard checar.
-    if (typeof target !== 'string' || target.length === 0) return true;
+    if (typeof rawTarget !== 'string' || rawTarget.length === 0) return true;
+    const target =
+      opts.channel === VerificationChannel.WHATSAPP
+        ? normalizePhone(rawTarget)
+        : rawTarget;
 
     const confirmed = await this.verification.isConfirmed({
       userId: request.user.id,

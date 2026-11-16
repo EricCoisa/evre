@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Seguimento</title>
+    <style>
+      body { font-family: Arial, Helvetica, sans-serif; background:#f6f7fb; margin:0; padding:20px }
+      .card { background:#fff; border-radius:8px; padding:24px; max-width:600px; margin:0 auto; box-shadow:0 6px 18px rgba(0,0,0,0.06)}
+      .muted { color:#6b7280; font-size:0.85em }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2>Olá {{name}},</h2>
+      <p>Vimos que você entrou em contato conosco:</p>
+      <blockquote style="border-left:3px solid #e5e7eb;margin:0;padding:8px 16px;color:#374151">
+        {{message}}
+      </blockquote>
+      <p>Atenciosamente,<br/>Equipe</p>
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0"/>
+      <p class="muted">Você recebeu este e-mail porque entrou em contato conosco.</p>
+    </div>
+  </body>
+</html>
+  

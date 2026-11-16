@@ -71,7 +71,7 @@ describe('Lead use-cases', () => {
     await create.execute({ name: 'João', phone: '+5511999990000', message: 'Olá' });
 
     expect(mockPrisma.messagingContact.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { phone: '+5511999990000' } }),
+      expect.objectContaining({ where: { phone: '5511999990000' } }),
     );
     expect(mockPrisma.lead.create).toHaveBeenCalled();
   });

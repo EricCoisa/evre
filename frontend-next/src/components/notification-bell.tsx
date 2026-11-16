@@ -117,7 +117,7 @@ export function NotificationBell() {
               t={t}
             />
           </div>
-          <ScrollArea className="max-h-96">
+          <ScrollArea className="h-96">
             <div className="flex flex-col gap-1 p-2">
               {(page?.data.length ?? 0) === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-6">{t('empty')}</p>

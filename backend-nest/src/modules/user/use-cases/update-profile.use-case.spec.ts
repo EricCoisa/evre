@@ -142,10 +142,10 @@ describe('UpdateProfileUseCase', () => {
 
   it('atualiza phone quando informado', async () => {
     mockPrisma.user.findFirst.mockResolvedValue(fakeUser);
-    mockPrisma.user.update.mockResolvedValue({ ...fakeUser, phone: '+5511999998888' });
+    mockPrisma.user.update.mockResolvedValue({ ...fakeUser, phone: '5511999998888' });
     await useCase.execute('u1', { name: 'New Name', phone: '+5511999998888' });
     expect(mockPrisma.user.update).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ phone: '+5511999998888' }) }),
+      expect.objectContaining({ data: expect.objectContaining({ phone: '5511999998888' }) }),
     );
   });
 
@@ -159,8 +159,8 @@ describe('UpdateProfileUseCase', () => {
   });
 
   it('permite manter o próprio phone atual', async () => {
-    mockPrisma.user.findFirst.mockResolvedValue({ ...fakeUser, phone: '+5511999998888' });
-    mockPrisma.user.update.mockResolvedValue({ ...fakeUser, phone: '+5511999998888' });
+    mockPrisma.user.findFirst.mockResolvedValue({ ...fakeUser, phone: '5511999998888' });
+    mockPrisma.user.update.mockResolvedValue({ ...fakeUser, phone: '5511999998888' });
     await useCase.execute('u1', { phone: '+5511999998888' });
     expect(mockPrisma.user.findUnique).not.toHaveBeenCalled();
     expect(mockPrisma.user.update).toHaveBeenCalled();

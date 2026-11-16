@@ -2625,6 +2625,36 @@
         ]
       }
     },
+    "/email/send": {
+      "post": {
+        "operationId": "EmailController_send",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendEmailDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Envia um e-mail com assunto e HTML customizados",
+        "tags": [
+          "email"
+        ]
+      }
+    },
     "/feature-flags/me": {
       "get": {
         "operationId": "FeatureFlagController_getForMe",
@@ -10948,6 +10978,35 @@
         ]
       }
     },
+    "/lead/{id}": {
+      "delete": {
+        "operationId": "LeadController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "lead.delete.title",
+        "tags": [
+          "lead"
+        ]
+      }
+    },
     "/lead/{id}/status": {
       "patch": {
         "operationId": "LeadController_updateStatus",
@@ -12377,6 +12436,31 @@
         "required": [
           "provider",
           "defaultFrom"
+        ]
+      },
+      "SendEmailDto": {
+        "type": "object",
+        "properties": {
+          "to": {
+            "type": "string",
+            "format": "email",
+            "example": "contato@exemplo.com"
+          },
+          "subject": {
+            "type": "string",
+            "minLength": 1,
+            "example": "Obrigado pelo contato"
+          },
+          "html": {
+            "type": "string",
+            "minLength": 1,
+            "description": "HTML do corpo do e-mail"
+          }
+        },
+        "required": [
+          "to",
+          "subject",
+          "html"
         ]
       },
       "FeatureFlagRoleNestedDto": {
@@ -17046,7 +17130,9 @@
           },
           "phone": {
             "description": "Telefone (pelo menos phone ou email)",
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32
           },
           "email": {
             "description": "E-mail (pelo menos phone ou email)",

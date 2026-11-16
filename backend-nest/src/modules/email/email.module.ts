@@ -8,6 +8,7 @@ import { EmailProcessor } from './email.processor';
 import { SaveEmailConfigurationUseCase } from './use-cases/save-configuration.use-case';
 import { CheckEmailHealthUseCase } from './use-cases/check-health.use-case';
 import { ListEmailTemplatesUseCase } from './use-cases/list-templates.use-case';
+import { SendEmailUseCase } from './use-cases/send-email.use-case';
 import { ResendEmailService } from './provider/resend.provider';
 import { NodemailerEmailService } from './provider/nodemailer.provider';
 import { GetEmailConfigTool } from './ai-tools/get-email-config.tool';
@@ -28,6 +29,7 @@ import { EmailCapabilities } from './email.capabilities';
     SaveEmailConfigurationUseCase,
     CheckEmailHealthUseCase,
     ListEmailTemplatesUseCase,
+    SendEmailUseCase,
     GetEmailConfigTool,
     SaveEmailConfigTool,
     EmailCapabilities,

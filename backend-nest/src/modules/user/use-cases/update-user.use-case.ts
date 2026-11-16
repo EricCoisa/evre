@@ -6,6 +6,9 @@ import { UpdateUserDto } from '../dto/update-user.dto';
 import { UserStatus, UserStatusConst } from 'src/domain/auth/userStatus.const';
 import type { User } from 'src/domain/user/user.entity';
 import { PayloadUserRepository } from '../../../modules/auth/adapters/payload-user.repository';
+import { VerificationService } from '../../verification/verification.service';
+import { UserVerificationPurpose } from 'src/domain/user/user-verification-purpose.const';
+import { VerificationChannel } from '@prisma/client';
 
 @Injectable()
 export class UpdateUserUseCase {
@@ -15,6 +18,7 @@ export class UpdateUserUseCase {
     private readonly prisma: PrismaService,
     private readonly i18n: I18nService,
     private readonly payloadUserRepo: PayloadUserRepository,
+    private readonly verificationService: VerificationService,
   ) {}
 
   async execute(id: string, updateUserDto: UpdateUserDto): Promise<User> {
@@ -42,6 +46,10 @@ export class UpdateUserUseCase {
       updateData.phone = normalizePhone(updateUserDto.phone);
     }
 
+    const phoneChanged =
+      updateUserDto.phone &&
+      normalizePhone(updateUserDto.phone) !== user.phone;
+
     if (
       updateUserDto.status &&
       updateUserDto.status !== user.status &&
@@ -50,6 +58,15 @@ export class UpdateUserUseCase {
     ) {
       await this.prisma.refreshToken.deleteMany({ where: { userId: id } });
       await this.revokePayloadCmsAccess(user.email);
+    }
+
+    if (phoneChanged) {
+      await this.verificationService.markConfirmed({
+        userId: id,
+        purpose: UserVerificationPurpose.PHONE_CONFIRMATION,
+        channel: VerificationChannel.WHATSAPP,
+        target: normalizePhone(updateUserDto.phone!),
+      });
     }
 
     const updatedUser = await this.prisma.user.update({

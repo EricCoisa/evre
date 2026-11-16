@@ -9,6 +9,9 @@
   "update_status": {
     "title": "Update lead status"
   },
+  "delete": {
+    "title": "Delete lead"
+  },
   "errors": {
     "not_found": "Lead not found"
   }

@@ -10,9 +10,11 @@ import { getLeadColumns } from './components/lead-columns';
 import { buildTableQueryParams } from '@/lib/table-query-params';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { updateLeadStatus } from '@/lib/actions/lead/api';
+import { deleteLead, updateLeadStatus } from '@/lib/actions/lead/api';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import type { LeadDto, LeadDtoStatus } from '@/lib/generated/schemas';
 import { useChatWindows } from '@/components/messaging/chat-windows-provider';
+import { SendEmailDialog } from '@/components/send-email-dialog';
 import { useCapability } from '@/lib/actions/capability/queries';
 import { CAPABILITIES } from '@/types/capabilities';
 
@@ -26,9 +28,15 @@ export default function LeadPage() {
   const { data, error } = useLeads(queryParams);
   const queryClient = useQueryClient();
 
+  const [emailTarget, setEmailTarget] = useState<{ email: string; name?: string; message?: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<LeadDto | null>(null);
+
   const { chatEnabled, openChatForPhone } = useChatWindows();
   const { disabled: messagingDisabled, reason: messagingDisabledReason } = useCapability(
     CAPABILITIES.messaging,
+  );
+  const { operational: emailOperational, reason: emailDisabledReason } = useCapability(
+    CAPABILITIES.email,
   );
 
   const handleStatusChange = async (lead: LeadDto, status: LeadDtoStatus) => {
@@ -47,16 +55,56 @@ export default function LeadPage() {
     [openChatForPhone],
   );
 
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    const res = await deleteLead(deleteTarget.id);
+    setDeleteTarget(null);
+    if (res.success) {
+      await queryClient.invalidateQueries({ queryKey: ['leads'] });
+    } else {
+      toast.error(res.message ?? t('deleteError'));
+    }
+  };
+
+  const handleSendEmail = useCallback((lead: LeadDto) => {
+    if (lead.email) setEmailTarget({
+      email: lead.email as unknown as string,
+      name: lead.name ?? undefined,
+      message: lead.message ?? undefined,
+    });
+  }, []);
+
   const columns = getLeadColumns({
     t,
     onStatusChange: handleStatusChange,
+    onDelete: setDeleteTarget,
     onOpenChat: handleOpenChat,
     chatEnabled,
     chatOperational: !messagingDisabled,
     chatDisabledReason: messagingDisabledReason,
+    onSendEmail: handleSendEmail,
+    emailEnabled: true,
+    emailOperational,
+    emailDisabledReason,
   });
 
   return (
+    <>
+    <ConfirmDialog
+      open={!!deleteTarget}
+      onOpenChange={(open) => !open && setDeleteTarget(null)}
+      onConfirm={handleDelete}
+      title={t('deleteConfirmTitle')}
+      description={t('deleteConfirmDescription', { name: deleteTarget?.name ?? deleteTarget?.email ?? '' })}
+      confirmVariant="destructive"
+    />
+    <SendEmailDialog
+      open={!!emailTarget}
+      onOpenChange={(open) => !open && setEmailTarget(null)}
+      defaultTo={emailTarget?.email}
+      defaultTemplateType="LEAD_FOLLOWUP"
+      defaultVars={{ name: emailTarget?.name ?? '', message: emailTarget?.message ?? '' }}
+    />
     <Container variant="dataTable" border={false}>
       <PageHeader title={t('title')} description={t('description')} />
       <DataTable
@@ -80,5 +128,6 @@ export default function LeadPage() {
         <DataTable.Select title={t('filterByStatus')} accessorKey="status" placeholder={t('filterByStatus')} />
       </DataTable>
     </Container>
+    </>
   );
 }

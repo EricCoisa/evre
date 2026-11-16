@@ -77,7 +77,7 @@ describe('VerificationGuard', () => {
     expect(isConfirmed).toHaveBeenCalledWith({
       userId: 'u1',
       purpose: 'USER_PHONE_CONFIRMATION',
-      target: '+5511999998888',
+      target: '5511999998888',
     });
   });
 
@@ -97,7 +97,7 @@ describe('VerificationGuard', () => {
         errors: {
           purpose: 'USER_PHONE_CONFIRMATION',
           channel: 'WHATSAPP',
-          target: '+5511999998888',
+          target: '5511999998888',
         },
       });
     });
@@ -115,7 +115,7 @@ describe('VerificationGuard', () => {
       guard.canActivate(contextWith({ phone: '+5511888887777' })),
     ).rejects.toThrow(VerificationRequiredException);
     expect(isConfirmed).toHaveBeenCalledWith(
-      expect.objectContaining({ target: '+5511888887777' }),
+      expect.objectContaining({ target: '5511888887777' }),
     );
   });
 

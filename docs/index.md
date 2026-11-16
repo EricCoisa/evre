@@ -58,6 +58,7 @@ Porta de entrada do vault. Monorepo com **backend NestJS** (`backend-nest/`) e *
 - [[page-builder]] — página customizável: blocos + fontes marcadas no endpoint, montadas no editor visual ou pelo agente, com padrão do sistema por trás
 - [[service-health-gate]] — desabilitar UI quando serviço externo está inoperante (storage, email, etc.)
 - [[tour]] — tutoriais guiados passo a passo com spotlight, HelpButton, `onEnter`, auto-scroll e adaptação fluida para mobile
+- [[send-email-dialog]] — modal agnóstico: operador seleciona template, preenche variáveis e envia e-mail; usa `POST /email/send` + capability gating
 - [[testing-frontend]] — Vitest + jsdom + Testing Library: escopo da cobertura, polyfills de ambiente, padrões de mock por camada (api.ts, queries.ts, componente)
 
 ## Guias

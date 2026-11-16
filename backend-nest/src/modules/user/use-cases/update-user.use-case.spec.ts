@@ -6,6 +6,7 @@ import { GetSystemRolesUseCase } from './get-system-roles.use-case';
 import type { PrismaService } from '../../../prisma/prisma.service';
 import type { I18nService } from 'nestjs-i18n';
 import type { PayloadUserRepository } from '../../auth/adapters/payload-user.repository';
+import type { VerificationService } from '../../verification/verification.service';
 
 
 const mockPrisma = {
@@ -19,10 +20,14 @@ const mockPayloadRepo = {
   findByEmail: vi.fn(),
   delete: vi.fn().mockResolvedValue(undefined),
 };
+const mockVerification = {
+  markConfirmed: vi.fn().mockResolvedValue(undefined),
+};
 
 const prisma = mockPrisma as unknown as PrismaService;
 const i18n = { t: vi.fn((k: string) => k) } as unknown as I18nService;
 const payloadRepo = mockPayloadRepo as unknown as PayloadUserRepository;
+const verification = mockVerification as unknown as VerificationService;
 
 const fakeUser = {
   id: 'u1',
@@ -38,7 +43,7 @@ const fakeUser = {
   updatedAt: new Date(),
 };
 
-const useCase = () => new UpdateUserUseCase(prisma, i18n, payloadRepo);
+const useCase = () => new UpdateUserUseCase(prisma, i18n, payloadRepo, verification);
 
 /** Estado inicial comum dos casos que reativam um usuário. */
 function arrangeReactivation() {
@@ -73,10 +78,10 @@ describe('UpdateUserUseCase', () => {
 
   it('atualiza phone quando informado', async () => {
     mockPrisma.user.findFirst.mockResolvedValue(fakeUser);
-    mockPrisma.user.update.mockResolvedValue({ ...fakeUser, phone: '+5511999998888' });
+    mockPrisma.user.update.mockResolvedValue({ ...fakeUser, phone: '5511999998888' });
     await useCase().execute('u1', { phone: '+5511999998888' } as never);
     expect(mockPrisma.user.update).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ phone: '+5511999998888' }) }),
+      expect.objectContaining({ data: expect.objectContaining({ phone: '5511999998888' }) }),
     );
   });
 

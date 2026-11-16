@@ -266,6 +266,7 @@
   "emailVariable_title": "Título da notificação",
   "emailVariable_code": "Código de verificação",
   "system_email_template_signup_welcome": "Bem-vindo(a) ao sistema!",
+  "system_email_template_lead_followup": "Seguimento de lead",
   "system_messaging_ignore_title": "Lista de ignorados",
   "system_messaging_ignore_desc": "Números nesta lista são descartados pelo webhook: nada é gravado nem respondido.",
   "system_messaging_ignore_add": "Adicionar número",
