@@ -55,6 +55,31 @@ const WIDEST_CHILDREN = Math.max(
   ...Object.values(LAYOUT_PROFILES).map((p) => p.maxChildren),
 );
 
+// Espelha `frontend-next/src/lib/page-builder/animation.ts` — vocabulário pequeno e estável,
+// por isso mirrored direto (como `LayoutProfile`), sem passar pela ponte ao vivo que `className`
+// usa (aquele cresce por profile e por edição editorial; este não).
+const ENTRANCE_PRESETS = [
+  'none',
+  'fade',
+  'slide-up',
+  'slide-down',
+  'slide-left',
+  'slide-right',
+  'zoom-in',
+] as const;
+const HOVER_PRESETS = ['none', 'lift', 'scale', 'glow'] as const;
+const ANIMATION_TRIGGERS = ['load', 'scroll'] as const;
+
+const BlockAnimationSchema = z
+  .object({
+    entrance: z.enum(ENTRANCE_PRESETS).optional(),
+    trigger: z.enum(ANIMATION_TRIGGERS).optional(),
+    hover: z.enum(HOVER_PRESETS).optional(),
+    duration: z.number().min(0.1).max(1.5).optional(),
+    delay: z.number().min(0).max(1).optional(),
+  })
+  .optional();
+
 const LeafBlockSchema = z.object({
   id: z.string().min(1),
   /** Nome no registry de blocos do frontend. Validado lá, não aqui — ver comentário abaixo. */
@@ -66,6 +91,8 @@ const LeafBlockSchema = z.object({
   y: z.number().int().min(0).max(99).optional(),
   /** Classes Tailwind separadas por espaço, limitadas à allowlist publicada pelo frontend. */
   className: z.string().max(200).optional(),
+  /** Sobrescreve o padrão de animação da página só para este bloco. */
+  animation: BlockAnimationSchema,
   props: z.record(z.unknown()).optional(),
   // `source` (fonte real) e `inline` (payload colado, congelado no layout) são mutuamente
   // exclusivos. `inline` fica `z.unknown()` de propósito: a shape (list × series) depende do
@@ -90,6 +117,8 @@ export const PageBlockSchema = LeafBlockSchema.extend({
 export const PageLayoutSchema = z.object({
   v: z.literal(1),
   blocks: z.array(PageBlockSchema).max(WIDEST_BLOCKS),
+  /** Padrão de animação da página — todo bloco sem `animation` próprio herda daqui. */
+  animation: BlockAnimationSchema,
 });
 
 /** Aceita o layout como objeto ou como string JSON; o valor parseado passa pelo PageLayoutSchema estrito. */

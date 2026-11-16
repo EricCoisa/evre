@@ -128,6 +128,50 @@ describe('SetPageLayoutSchema — layout como string JSON', () => {
   });
 });
 
+// `animation` é um z.enum real (diferente de `className`, string livre validada pela allowlist
+// via ponte): o próprio Zod já recusa preset fora do vocabulário, nos dois lados espelhados
+// (frontend/schema.ts e este DTO) — ver animation.ts.
+describe('SetPageLayoutSchema — animation', () => {
+  it('aceita animation no bloco e no topo do layout', () => {
+    const parsed = SetPageLayoutSchema.safeParse({
+      pageKey: '/dashboard',
+      layout: {
+        v: 1,
+        animation: { entrance: 'fade', trigger: 'scroll' },
+        blocks: [
+          { id: 'b1', type: 'stat.card', animation: { hover: 'lift', duration: 0.6 } },
+        ],
+      },
+    });
+
+    expect(parsed.success).toBe(true);
+  });
+
+  it('recusa preset de entrada fora do vocabulário fechado', () => {
+    const parsed = SetPageLayoutSchema.safeParse({
+      pageKey: '/dashboard',
+      layout: {
+        v: 1,
+        blocks: [{ id: 'b1', type: 'stat.card', animation: { entrance: 'spin-forever' } }],
+      },
+    });
+
+    expect(parsed.success).toBe(false);
+  });
+
+  it('recusa duration fora da faixa 0.1–1.5', () => {
+    const parsed = SetPageLayoutSchema.safeParse({
+      pageKey: '/dashboard',
+      layout: {
+        v: 1,
+        blocks: [{ id: 'b1', type: 'stat.card', animation: { duration: 99 } }],
+      },
+    });
+
+    expect(parsed.success).toBe(false);
+  });
+});
+
 describe('SetPageLayoutUseCase', () => {
   let useCase: SetPageLayoutUseCase;
 

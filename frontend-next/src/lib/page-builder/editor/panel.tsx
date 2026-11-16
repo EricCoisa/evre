@@ -40,6 +40,21 @@ import {
   type BlockType,
 } from '../blocks.meta';
 import { classNamesFor } from '../class-names';
+import {
+  ANIMATION_TRIGGERS,
+  DEFAULT_DELAY,
+  DEFAULT_DURATION,
+  ENTRANCE_PRESETS,
+  HOVER_PRESETS,
+  MAX_DELAY,
+  MAX_DURATION,
+  MIN_DELAY,
+  MIN_DURATION,
+  type AnimationTrigger,
+  type BlockAnimation,
+  type EntrancePreset,
+  type HoverPreset,
+} from '../animation';
 import { getMaxResizeBounds } from '../grid-engine';
 import { LAYOUT_PROFILES } from '../profiles';
 import {
@@ -52,6 +67,7 @@ import {
   type PageBlock,
 } from '../schema';
 import { useEditorOrThrow } from './context';
+import { setLayoutAnimation } from './mutations';
 
 export type ArtifactPickerSlot = React.ComponentType<{
   open: boolean;
@@ -114,9 +130,13 @@ export function EditorPanel({
             storageHealthy={storageHealthy}
           />
           ) : (
-            <p className="text-muted-foreground py-8 text-center text-sm">
-              {t('editor.nothingSelected')}
-            </p>
+            <>
+              <p className="text-muted-foreground pt-4 pb-2 text-center text-sm">
+                {t('editor.nothingSelected')}
+              </p>
+              <Separator />
+              <PageAnimationDefaults />
+            </>
           )}
         </TabsContent>
         <TabsContent value="json" className="flex-1 overflow-y-auto px-4 pt-2 pb-4">
@@ -506,9 +526,19 @@ function BlockForm({
         </div>
       </div>
 
+      <ColorSchemePicker
+        value={block.className}
+        onChange={(v) => editor.patch(block.id, { className: v })}
+      />
+
       <ClassNamePicker
         value={block.className}
         onChange={(v) => editor.patch(block.id, { className: v })}
+      />
+
+      <BlockAnimationSection
+        value={block.animation}
+        onChange={(v) => editor.patch(block.id, { animation: v })}
       />
     </section>
   );
@@ -867,6 +897,315 @@ function renderBasicInputField(
         onChange={(e) =>
           onChange(isNumber && e.target.value !== '' ? Number(e.target.value) : e.target.value)
         }
+      />
+    </div>
+  );
+}
+
+/** Combinações de `bg-*`/`text-*` já presentes na allowlist (`class-names.ts`) — cor do bloco
+ * é açúcar de UI sobre o mesmo `className`, não um campo novo. */
+const COLOR_SCHEME_TOKENS = [
+  'bg-card', 'bg-muted', 'bg-accent', 'bg-primary/5', 'bg-destructive/10',
+  'text-foreground', 'text-muted-foreground', 'text-primary', 'text-destructive',
+] as const;
+
+const COLOR_SCHEMES: { key: string; labelKey: string; classes: string[] }[] = [
+  { key: 'default', labelKey: 'colorDefault', classes: [] },
+  { key: 'primary', labelKey: 'colorPrimary', classes: ['bg-primary/5', 'text-primary'] },
+  { key: 'accent', labelKey: 'colorAccent', classes: ['bg-accent'] },
+  { key: 'destructive', labelKey: 'colorDestructive', classes: ['bg-destructive/10', 'text-destructive'] },
+  { key: 'muted', labelKey: 'colorMuted', classes: ['bg-muted', 'text-muted-foreground'] },
+];
+
+/** Troca só os tokens de cor da allowlist dentro do `className`; o resto (espaçamento, borda,
+ * tipografia) fica como está. */
+function applyColorScheme(current: string[], classes: string[]): string[] {
+  const withoutColor = current.filter((c) => !(COLOR_SCHEME_TOKENS as readonly string[]).includes(c));
+  return [...withoutColor, ...classes];
+}
+
+function ColorSchemePicker({
+  value,
+  onChange,
+}: {
+  value: string | undefined;
+  onChange: (value: string | undefined) => void;
+}) {
+  const { t } = useTranslation('page-builder');
+  const current = value?.split(/\s+/).filter(Boolean) ?? [];
+  const activeKey =
+    COLOR_SCHEMES.find((s) => s.classes.length > 0 && s.classes.every((c) => current.includes(c)))
+      ?.key ?? 'default';
+
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">{t('editor.blockColor', { defaultValue: 'Cor do bloco' })}</Label>
+      <div className="flex flex-wrap gap-1">
+        {COLOR_SCHEMES.map((scheme) => (
+          <Button
+            key={scheme.key}
+            type="button"
+            size="sm"
+            variant={activeKey === scheme.key ? 'default' : 'outline'}
+            className="h-7 px-2 text-xs"
+            onClick={() => {
+              const next = applyColorScheme(current, scheme.classes);
+              onChange(next.length ? next.join(' ') : undefined);
+            }}
+          >
+            {t(`editor.${scheme.labelKey}`, { defaultValue: scheme.key })}
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const ANIMATION_PRESET_LABEL_KEY: Record<EntrancePreset, string> = {
+  none: 'animationPresetNone',
+  fade: 'animationPresetFade',
+  'slide-up': 'animationPresetSlideUp',
+  'slide-down': 'animationPresetSlideDown',
+  'slide-left': 'animationPresetSlideLeft',
+  'slide-right': 'animationPresetSlideRight',
+  'zoom-in': 'animationPresetZoomIn',
+};
+
+const HOVER_PRESET_LABEL_KEY: Record<HoverPreset, string> = {
+  none: 'animationHoverNone',
+  lift: 'animationHoverLift',
+  scale: 'animationHoverScale',
+  glow: 'animationHoverGlow',
+};
+
+const ANIMATION_TRIGGER_LABEL_KEY: Record<AnimationTrigger, string> = {
+  load: 'animationTriggerLoad',
+  scroll: 'animationTriggerScroll',
+};
+
+/** Disparo (`load`/`scroll`) — só aparece quando há entrada escolhida. Extraído à parte para
+ * `AnimationFields` não acumular a complexidade de mais um `Select` inteiro. */
+function AnimationTriggerField({
+  value,
+  onChange,
+}: {
+  value: AnimationTrigger;
+  onChange: (value: AnimationTrigger) => void;
+}) {
+  const { t } = useTranslation('page-builder');
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">{t('editor.animationTrigger', { defaultValue: 'Disparo' })}</Label>
+      <Select value={value} onValueChange={(v) => onChange(v as AnimationTrigger)}>
+        <SelectTrigger className="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {ANIMATION_TRIGGERS.map((trigger) => (
+            <SelectItem key={trigger} value={trigger}>
+              {t(`editor.${ANIMATION_TRIGGER_LABEL_KEY[trigger]}`, { defaultValue: trigger })}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+/** Duração/atraso — só aparecem quando alguma animação (entrada ou hover) está ativa. */
+function AnimationTimingFields({
+  duration,
+  delay,
+  onChange,
+}: {
+  duration: number;
+  delay: number;
+  onChange: (patch: { duration?: number; delay?: number }) => void;
+}) {
+  const { t } = useTranslation('page-builder');
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      <div className="space-y-1.5">
+        <Label className="text-xs">{t('editor.animationDuration', { defaultValue: 'Duração (s)' })}</Label>
+        <Input
+          type="number"
+          min={MIN_DURATION}
+          max={MAX_DURATION}
+          step={0.1}
+          value={duration}
+          onChange={(e) => onChange({ duration: Number(e.target.value) })}
+        />
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-xs">{t('editor.animationDelay', { defaultValue: 'Atraso (s)' })}</Label>
+        <Input
+          type="number"
+          min={MIN_DELAY}
+          max={MAX_DELAY}
+          step={0.1}
+          value={delay}
+          onChange={(e) => onChange({ delay: Number(e.target.value) })}
+        />
+      </div>
+    </div>
+  );
+}
+
+function AnimationEntranceField({
+  value,
+  onChange,
+}: {
+  value: EntrancePreset;
+  onChange: (value: EntrancePreset) => void;
+}) {
+  const { t } = useTranslation('page-builder');
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">{t('editor.animationEntrance', { defaultValue: 'Entrada' })}</Label>
+      <Select value={value} onValueChange={(v) => onChange(v as EntrancePreset)}>
+        <SelectTrigger className="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {ENTRANCE_PRESETS.map((preset) => (
+            <SelectItem key={preset} value={preset}>
+              {t(`editor.${ANIMATION_PRESET_LABEL_KEY[preset]}`, { defaultValue: preset })}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+function AnimationHoverField({
+  value,
+  onChange,
+}: {
+  value: HoverPreset;
+  onChange: (value: HoverPreset) => void;
+}) {
+  const { t } = useTranslation('page-builder');
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">{t('editor.animationHover', { defaultValue: 'Ao passar o mouse' })}</Label>
+      <Select value={value} onValueChange={(v) => onChange(v as HoverPreset)}>
+        <SelectTrigger className="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {HOVER_PRESETS.map((preset) => (
+            <SelectItem key={preset} value={preset}>
+              {t(`editor.${HOVER_PRESET_LABEL_KEY[preset]}`, { defaultValue: preset })}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+function hasPreset(preset: string | undefined): boolean {
+  return !!preset && preset !== 'none';
+}
+
+/** Controles de entrada/disparo/hover/duração — usado tanto no padrão da página quanto no
+ * override de um bloco; quem decide se o valor é herdado ou próprio é o chamador. Cada campo é
+ * seu próprio componente — mantém esta função só como composição, sem herdar a complexidade deles. */
+function AnimationFields({
+  value,
+  onChange,
+}: {
+  value: BlockAnimation;
+  onChange: (value: BlockAnimation) => void;
+}) {
+  const hasEntrance = hasPreset(value.entrance);
+  const showTiming = hasEntrance || hasPreset(value.hover);
+
+  return (
+    <div className="space-y-3">
+      <AnimationEntranceField
+        value={value.entrance ?? 'none'}
+        onChange={(entrance) => onChange({ ...value, entrance })}
+      />
+
+      {hasEntrance ? (
+        <AnimationTriggerField
+          value={value.trigger ?? 'load'}
+          onChange={(trigger) => onChange({ ...value, trigger })}
+        />
+      ) : null}
+
+      <AnimationHoverField
+        value={value.hover ?? 'none'}
+        onChange={(hover) => onChange({ ...value, hover })}
+      />
+
+      {showTiming ? (
+        <AnimationTimingFields
+          duration={value.duration ?? DEFAULT_DURATION}
+          delay={value.delay ?? DEFAULT_DELAY}
+          onChange={(patch) => onChange({ ...value, ...patch })}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+/** Override por bloco: um switch liga/desliga `block.animation` inteiro — enquanto desligado o
+ * bloco herda campo a campo do padrão da página (`resolveAnimation`). */
+function BlockAnimationSection({
+  value,
+  onChange,
+}: {
+  value: BlockAnimation | undefined;
+  onChange: (value: BlockAnimation | undefined) => void;
+}) {
+  const { t } = useTranslation('page-builder');
+  const hasOwn = value !== undefined;
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <Label className="text-xs">{t('editor.animation', { defaultValue: 'Animação' })}</Label>
+        <div className="flex items-center gap-1.5">
+          <span className="text-muted-foreground text-[11px]">
+            {t('editor.animationCustom', { defaultValue: 'Personalizar' })}
+          </span>
+          <Switch checked={hasOwn} onCheckedChange={(checked) => onChange(checked ? {} : undefined)} />
+        </div>
+      </div>
+      {hasOwn ? (
+        <AnimationFields value={value} onChange={onChange} />
+      ) : (
+        <p className="text-muted-foreground text-[11px]">
+          {t('editor.animationInherited', { defaultValue: 'Usando a animação padrão da página.' })}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Padrão de animação da página — editável sem bloco selecionado; todo bloco sem override herda daqui. */
+function PageAnimationDefaults() {
+  const { t } = useTranslation('page-builder');
+  const editor = useEditorOrThrow();
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <p className="text-sm font-semibold">
+          {t('editor.pageAnimationTitle', { defaultValue: 'Animação padrão da página' })}
+        </p>
+        <p className="text-muted-foreground text-xs">
+          {t('editor.pageAnimationHint', {
+            defaultValue: 'Vale para todo bloco que não tiver uma animação própria.',
+          })}
+        </p>
+      </div>
+      <AnimationFields
+        value={editor.draft.animation ?? {}}
+        onChange={(next) => editor.setLayout(setLayoutAnimation(editor.draft, next))}
       />
     </div>
   );

@@ -24,6 +24,12 @@ export interface PageBuilderSchemaResponse {
   spans: number[];
   /** Classes Tailwind aceitas em `className` — o CSS só existe para estas. */
   classNames: string[];
+  /** Vocabulário de animação aceito em `block.animation`/`layout.animation` — só para o agente se autodescrever; a validação real é o Zod do DTO. */
+  animationPresets: {
+    entrance: string[];
+    hover: string[];
+    triggers: string[];
+  };
 }
 
 /** Bridge para `/api/agent/page-builder/schema` no frontend, autenticada por `AGENT_CMS_SECRET`. */

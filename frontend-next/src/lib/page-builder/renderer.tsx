@@ -3,7 +3,10 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import dynamic from 'next/dynamic';
+import { motion, useReducedMotion } from 'motion/react';
 import { Pencil } from 'lucide-react';
+import { buildMotionProps, resolveAnimation } from './animation';
+import { LayoutAnimationProvider, useLayoutAnimation } from './animation-context';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
@@ -103,7 +106,11 @@ export function LayoutBody({
   const allowed = new Set<string>(LAYOUT_PROFILES[profile].blocks);
   // Bloco fora do profile é descartado como `type` desconhecido: a escrita já o recusa,
   // inclusive nos `children`, então aqui basta a folha de topo.
-  const grid = <BlockGrid blocks={layout.blocks.filter((b) => allowed.has(b.type))} />;
+  const grid = (
+    <LayoutAnimationProvider animation={layout.animation}>
+      <BlockGrid blocks={layout.blocks.filter((b) => allowed.has(b.type))} />
+    </LayoutAnimationProvider>
+  );
   return proposalTerms ? (
     <PageRenderContextProvider terms={proposalTerms}>{grid}</PageRenderContextProvider>
   ) : (
@@ -452,6 +459,8 @@ function Block({
 }) {
   const { t } = useTranslation('page-builder');
   const editor = useEditor();
+  const layoutAnimation = useLayoutAnimation();
+  const prefersReducedMotion = useReducedMotion();
   const { source, query, paginatesTable, paginationKey, setPagination } = useBlockQuery(block);
   const variables = React.useMemo(() => (source ? buildVariableOptions(source) : undefined), [source]);
 
@@ -488,12 +497,24 @@ function Block({
     </BlockBoundary>
   );
 
-  return editor ? (
-    <BlockChrome block={block} spanClass={gridClass} style={gridStyle} nested={bare}>
+  if (editor) {
+    return (
+      <BlockChrome block={block} spanClass={gridClass} style={gridStyle} nested={bare}>
+        {content}
+      </BlockChrome>
+    );
+  }
+
+  // Fora do canvas de edição (página pública e modal de Preview): o próprio item de grid vira o
+  // `motion.div`, sem camada extra — mesmo elemento, mesmo tamanho de célula, só a tag muda.
+  const motionProps = buildMotionProps(
+    resolveAnimation(block.animation, layoutAnimation),
+    prefersReducedMotion ?? undefined,
+  );
+  return (
+    <motion.div className={gridClass} style={gridStyle} {...motionProps}>
       {content}
-    </BlockChrome>
-  ) : (
-    <div className={gridClass} style={gridStyle}>{content}</div>
+    </motion.div>
   );
 }
 

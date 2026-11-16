@@ -22,6 +22,7 @@ import {
   insertBlockAtGrid,
   moveBlockTo,
   setBlockSpan,
+  setLayoutAnimation,
 } from './mutations';
 
 /** Testa o aninhamento de um nível, os limites do Zod e o descarte da fonte antiga ao trocar de fonte. */
@@ -782,5 +783,18 @@ describe('moveBlockTo com layout acima do teto do profile padrão', () => {
     const last = blocks[blocks.length - 1].id;
     expect(moveBlockTo(layout, last, 'b0', 'before').blocks[0].id).toBe(last);
     expect(moveBlockTo(layout, 'b0', last, 'after').blocks.at(-1)!.id).toBe('b0');
+  });
+});
+
+describe('setLayoutAnimation', () => {
+  it('grava o padrão de animação da página sem tocar nos blocos', () => {
+    const next = setLayoutAnimation(layout(), { entrance: 'fade', hover: 'lift' });
+    expect(next.animation).toEqual({ entrance: 'fade', hover: 'lift' });
+    expect(next.blocks).toEqual(layout().blocks);
+  });
+
+  it('undefined limpa o padrão — todo bloco sem animation própria volta a "none"', () => {
+    const withDefault = setLayoutAnimation(layout(), { entrance: 'fade' });
+    expect(setLayoutAnimation(withDefault, undefined).animation).toBeUndefined();
   });
 });

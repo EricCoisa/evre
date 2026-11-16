@@ -6,6 +6,26 @@ import {
   LAYOUT_PROFILES,
   type LayoutProfileName,
 } from './profiles';
+import {
+  ANIMATION_TRIGGERS,
+  ENTRANCE_PRESETS,
+  HOVER_PRESETS,
+  MAX_DELAY,
+  MAX_DURATION,
+  MIN_DELAY,
+  MIN_DURATION,
+} from './animation';
+
+/** Config de animação de um bloco ou o padrão da página — campos opcionais, mescla campo a campo (`resolveAnimation`). */
+const BlockAnimationSchema = z
+  .object({
+    entrance: z.enum(ENTRANCE_PRESETS).optional(),
+    trigger: z.enum(ANIMATION_TRIGGERS).optional(),
+    hover: z.enum(HOVER_PRESETS).optional(),
+    duration: z.number().min(MIN_DURATION).max(MAX_DURATION).optional(),
+    delay: z.number().min(MIN_DELAY).max(MAX_DELAY).optional(),
+  })
+  .optional();
 
 /** labelKey da UserConfigurationDefinition (valueType JSON) que guarda o mapa de layouts. */
 export const PAGE_LAYOUTS_KEY = 'PAGE_LAYOUTS';
@@ -38,6 +58,8 @@ const LeafBlockSchema = z.object({
   y: z.number().int().min(0).max(99).optional(),
   /** Classes Tailwind da allowlist (`class-names.ts`), separadas por espaço. */
   className: z.string().optional(),
+  /** Sobrescreve o padrão de animação da página (`PageLayoutSchema.animation`) só para este bloco. */
+  animation: BlockAnimationSchema,
   props: z.record(z.string(), z.unknown()).optional(),
   // `source` (fonte real, resolvida em runtime) e `inline` (payload colado, congelado no
   // layout) são mutuamente exclusivos — um bloco com os dois é recusado aqui mesmo, antes de
@@ -72,6 +94,8 @@ export const PageLayoutSchema = z.object({
   // documento comercial em branco, não um grid vazio de rascunho.
   v: z.literal(1),
   blocks: z.array(PageBlockSchema).max(WIDEST_BLOCKS),
+  /** Padrão de animação da página — todo bloco sem `animation` próprio herda daqui. */
+  animation: BlockAnimationSchema,
 });
 
 export type PageBlock = z.infer<typeof PageBlockSchema>;

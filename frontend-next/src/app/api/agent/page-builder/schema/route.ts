@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAgentSecret } from '@/lib/api/agent-cms-auth';
+import { ANIMATION_TRIGGERS, ENTRANCE_PRESETS, HOVER_PRESETS } from '@/lib/page-builder/animation';
 import { describeBlocks } from '@/lib/page-builder/blocks.meta';
 import { classNamesFor } from '@/lib/page-builder/class-names';
 import { describePages } from '@/lib/page-builder/pages';
@@ -34,6 +35,12 @@ export async function GET(req: NextRequest) {
     spans: [...SPANS],
     // Lista fechada de classNames Tailwind permitidos no profile
     classNames: classNamesFor(profile),
+    // Vocabulário fechado de animação — mesmo papel do classNames, validado pelo Zod no escrever
+    animationPresets: {
+      entrance: [...ENTRANCE_PRESETS],
+      hover: [...HOVER_PRESETS],
+      triggers: [...ANIMATION_TRIGGERS],
+    },
     // Mecanismo de dado desta superfície: "role-filtered" (fonte real), "inline-only" (payload
     // colado em data.inline) ou "none" (nenhum dado). Resposta autodescritiva — o backend já tem
     // o mesmo valor no próprio LAYOUT_PROFILES e não depende deste campo para decidir nada.

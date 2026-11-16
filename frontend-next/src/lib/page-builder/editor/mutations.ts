@@ -86,6 +86,14 @@ export function updateBlock(
   return mapBlocks(layout, (b) => (b.id === id ? { ...b, ...patch } : b));
 }
 
+/** Padrão de animação da página — todo bloco sem `animation` próprio herda daqui (`resolveAnimation`). */
+export function setLayoutAnimation(
+  layout: PageLayout,
+  animation: PageLayout['animation'],
+): PageLayout {
+  return { ...layout, animation };
+}
+
 function syncRowSpanIfNeeded(
   layout: PageLayout,
   located: Located,

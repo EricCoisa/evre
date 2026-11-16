@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { BLOCK_META } from './blocks.meta';
 import { LAYOUT_PROFILES } from './profiles';
 import {
+  PageLayoutSchema,
   SPANS,
   SPAN_CLASS,
   maxBlocksFor,
@@ -240,5 +241,53 @@ describe('tetos por profile', () => {
     }));
 
     expect(parsePageLayout({ '/p': { v: 1, blocks } }, '/p').status).toBe('ok');
+  });
+});
+
+describe('animation no schema', () => {
+  it('aceita animation no bloco e no topo do layout, os dois opcionais', () => {
+    const parsed = PageLayoutSchema.safeParse({
+      v: 1,
+      animation: { entrance: 'fade', hover: 'lift' },
+      blocks: [
+        { id: 'b1', type: 'stat.card', animation: { entrance: 'slide-up', duration: 0.6 } },
+      ],
+    });
+
+    expect(parsed.success).toBe(true);
+    expect(parsed.success && parsed.data.animation).toEqual({ entrance: 'fade', hover: 'lift' });
+    expect(parsed.success && parsed.data.blocks[0].animation).toEqual({
+      entrance: 'slide-up',
+      duration: 0.6,
+    });
+  });
+
+  it('layout sem animation continua válido — campo aditivo ao schema v1 já publicado', () => {
+    expect(PageLayoutSchema.safeParse(validLayout).success).toBe(true);
+  });
+
+  it('recusa preset de entrada que não existe no vocabulário fechado', () => {
+    const parsed = PageLayoutSchema.safeParse({
+      v: 1,
+      blocks: [{ id: 'b1', type: 'stat.card', animation: { entrance: 'spin-forever' } }],
+    });
+
+    expect(parsed.success).toBe(false);
+  });
+
+  it('recusa duration/delay fora da faixa permitida', () => {
+    expect(
+      PageLayoutSchema.safeParse({
+        v: 1,
+        blocks: [{ id: 'b1', type: 'stat.card', animation: { duration: 99 } }],
+      }).success,
+    ).toBe(false);
+    expect(
+      PageLayoutSchema.safeParse({
+        v: 1,
+        animation: { delay: -1 },
+        blocks: [],
+      }).success,
+    ).toBe(false);
   });
 });
