@@ -1,5 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { normalizePhone } from '../../messaging/providers/phone.util';
 import { I18nService } from 'nestjs-i18n';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { UserStatus, UserStatusConst } from 'src/domain/auth/userStatus.const';
@@ -38,7 +39,7 @@ export class UpdateUserUseCase {
     if (updateUserDto.status)
       updateData.status = updateUserDto.status as UserStatus;
     if (updateUserDto.phone) {
-      updateData.phone = updateUserDto.phone;
+      updateData.phone = normalizePhone(updateUserDto.phone);
     }
 
     if (

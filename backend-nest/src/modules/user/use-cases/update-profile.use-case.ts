@@ -4,6 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { normalizePhone } from '../../messaging/providers/phone.util';
 import { I18nService } from 'nestjs-i18n';
 import { UpdateProfileDto } from '../dto/update-user.dto';
 import type { UserDto } from '../dto/user.dto';
@@ -89,7 +90,7 @@ export class UpdateProfileUseCase {
       where: { id },
       data: {
         name: data.name ?? user.name,
-        phone: data.phone ?? user.phone,
+        phone: data.phone ? normalizePhone(data.phone) : user.phone,
         ...(imageUrl !== undefined ? { imageUrl } : {}),
       },
       select: {

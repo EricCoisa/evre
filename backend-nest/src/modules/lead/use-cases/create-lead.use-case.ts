@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { normalizePhone } from '../../messaging/providers/phone.util';
 import { LoggingService } from '../../logging/logging.service';
 import { NotificationService } from '../../notification/notification.service';
 import { LogActions } from 'src/domain/logging/log-actions';
@@ -20,9 +21,10 @@ export class CreateLeadUseCase {
     let messagingContactId: string | null = null;
 
     if (dto.phone) {
+      const phone = normalizePhone(dto.phone);
       const contact = await this.prisma.messagingContact.upsert({
-        where: { phone: dto.phone },
-        create: { phone: dto.phone, name: dto.name },
+        where: { phone },
+        create: { phone, name: dto.name },
         update: {},
         select: { id: true },
       });
@@ -32,7 +34,7 @@ export class CreateLeadUseCase {
     const lead = await this.prisma.lead.create({
       data: {
         name: dto.name,
-        phone: dto.phone ?? null,
+        phone: dto.phone ? normalizePhone(dto.phone) : null,
         email: dto.email ?? null,
         message: dto.message,
         messagingContactId,
