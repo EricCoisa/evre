@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 export interface SEOProps {
   title?: string;
   description?: string;
-  image?: string | { url?: string; alt?: string };
+  image?: string | { url?: string; alt?: string; width?: number; height?: number };
   canonicalUrl?: string;
   noindex?: boolean;
   nofollow?: boolean;
@@ -11,11 +11,13 @@ export interface SEOProps {
   twitterCard?: 'summary' | 'summary_large_image' | 'app' | 'player';
 }
 
-/** Extrai URL e alt da imagem de SEO, aceitando string ou objeto `{ url, alt }`. */
-function extractImage(image: SEOProps['image'], title?: string): { url: string; alt: string } {
+/** Extrai URL, alt e dimensões da imagem de SEO, aceitando string ou objeto `{ url, alt, width, height }`. */
+function extractImage(image: SEOProps['image'], title?: string) {
   const url = typeof image === 'string' ? image : image?.url || '';
   const alt = typeof image === 'object' && image?.alt ? image.alt : title || '';
-  return { url, alt };
+  const width = typeof image === 'object' ? image?.width : undefined;
+  const height = typeof image === 'object' ? image?.height : undefined;
+  return { url, alt, width, height };
 }
 
 /** Gera o objeto Metadata do Next.js a partir das props de SEO. */
@@ -30,7 +32,7 @@ export function generateSEOMetadata(props: SEOProps): Metadata {
     ogType = 'website',
   } = props;
 
-  const { url: imageUrl, alt: imageAlt } = extractImage(image, title);
+  const { url: imageUrl, alt: imageAlt, width: imageWidth, height: imageHeight } = extractImage(image, title);
   const siteName = process.env.NEXT_PUBLIC_SITE_NAME;
 
   return {
@@ -56,6 +58,8 @@ export function generateSEOMetadata(props: SEOProps): Metadata {
           {
             url: imageUrl,
             alt: imageAlt,
+            ...(imageWidth && { width: imageWidth }),
+            ...(imageHeight && { height: imageHeight }),
           },
         ],
       }),
@@ -81,7 +85,7 @@ function resolvePayloadMeta(
   const meta: {
     title?: string;
     description?: string;
-    image?: string | { url?: string; alt?: string };
+    image?: string | { url?: string; alt?: string; width?: number; height?: number };
     canonicalUrl?: string;
   } = data?.meta || {};
 
