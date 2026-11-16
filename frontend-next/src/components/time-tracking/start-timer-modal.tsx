@@ -1,27 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { useMemo } from 'react';
+import { z } from 'zod';
+import { FormBuilderModal, type FormBuilderField } from '@/components/form/form-builder';
 import { useStartTimer } from '@/lib/actions/time-tracking/queries';
 import { useProjects } from '@/lib/actions/project/queries';
-import { Play } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
 
 interface StartTimerModalProps {
@@ -34,6 +17,11 @@ interface StartTimerModalProps {
   defaultEntityTitle?: string;
 }
 
+const schema = z.object({
+  description: z.string().optional(),
+  projectId: z.string().optional(),
+});
+
 export function StartTimerModal({
   open,
   onOpenChange,
@@ -44,18 +32,6 @@ export function StartTimerModal({
   defaultEntityTitle,
 }: StartTimerModalProps) {
   const { t } = useTranslation('time-tracking');
-  const [description, setDescription] = useState(defaultDescription);
-  const [projectId, setProjectId] = useState<string | undefined>(defaultProjectId);
-
-  useEffect(() => {
-    if (!open) return;
-    const t = setTimeout(() => {
-      setDescription(defaultDescription || defaultEntityTitle || '');
-      setProjectId(defaultProjectId);
-    });
-    return () => clearTimeout(t);
-  }, [open, defaultDescription, defaultEntityTitle, defaultProjectId]);
-
   const startTimerMutation = useStartTimer();
   const { data: projectsData } = useProjects({ limit: 50 });
 
@@ -63,90 +39,48 @@ export function StartTimerModal({
     ? projectsData
     : (projectsData as { data?: { id: string; name: string }[] })?.data ?? [];
 
-  const handleStart = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await startTimerMutation.mutateAsync({
-        description: description.trim() || defaultEntityTitle || undefined,
-        projectId: projectId && projectId !== 'none' ? projectId : undefined,
-        isBillable: true,
-        entityType: defaultEntityType,
-        entityId: defaultEntityId,
-        entityTitle: defaultEntityTitle,
-      });
-      onOpenChange(false);
-      setDescription('');
-    } catch {
-      // Erro tratado via Alive
-    }
-  };
+  const fields = useMemo<FormBuilderField[]>(() => [
+    {
+      name: 'description',
+      label: t('startTimerWhat'),
+      placeholder: t('startTimerPlaceholder'),
+    },
+    {
+      name: 'projectId',
+      label: t('projectLabel'),
+      type: 'select',
+      placeholder: t('selectProjectPlaceholder'),
+      options: [
+        { value: 'none', label: t('noProjectAvulso') },
+        ...projects.map((p) => ({ value: p.id, label: p.name })),
+      ],
+    },
+  ], [t, projects]);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px]">
-        <form onSubmit={handleStart} className="space-y-4">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Play className="h-5 w-5 text-emerald-500 fill-emerald-500" />
-              {t('startTimerTitle')}
-            </DialogTitle>
-            <DialogDescription>
-              {t('startTimerDescription')}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-3 py-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="timer-description">{t('startTimerWhat')}</Label>
-              <Input
-                id="timer-description"
-                placeholder={t('startTimerPlaceholder')}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                autoFocus
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="timer-project">{t('projectLabel')}</Label>
-              <Select
-                value={projectId ?? 'none'}
-                onValueChange={(val) => setProjectId(val === 'none' ? undefined : val)}
-              >
-                <SelectTrigger id="timer-project" className="w-full">
-                  <SelectValue placeholder={t('selectProjectPlaceholder')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{t('noProjectAvulso')}</SelectItem>
-                  {projects.map((proj) => (
-                    <SelectItem key={proj.id} value={proj.id}>
-                      {proj.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              {t('cancel')}
-            </Button>
-            <Button
-              type="submit"
-              className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"
-              disabled={startTimerMutation.isPending}
-            >
-              <Play className="h-4 w-4 fill-white" />
-              {startTimerMutation.isPending ? t('starting') : t('start')}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <FormBuilderModal
+      open={open}
+      onOpenChange={onOpenChange}
+      title={t('startTimerTitle')}
+      description={t('startTimerDescription')}
+      schema={schema}
+      fields={fields}
+      values={{
+        description: defaultDescription || defaultEntityTitle || '',
+        projectId: defaultProjectId ?? 'none',
+      }}
+      submitLabel={t('start')}
+      onSubmit={async (data) => {
+        await startTimerMutation.mutateAsync({
+          description: data.description?.trim() || defaultEntityTitle || undefined,
+          projectId: data.projectId && data.projectId !== 'none' ? data.projectId : undefined,
+          isBillable: true,
+          entityType: defaultEntityType,
+          entityId: defaultEntityId,
+          entityTitle: defaultEntityTitle,
+        });
+      }}
+      onSuccess={() => onOpenChange(false)}
+    />
   );
 }

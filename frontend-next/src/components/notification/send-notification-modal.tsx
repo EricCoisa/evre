@@ -1,83 +1,38 @@
 'use client';
 
-import { useState } from 'react';
-import { toast } from 'sonner';
+import { useMemo } from 'react';
+import { z } from 'zod';
 import { useTranslation } from '@/hooks/use-translation';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { FormBuilderModal, type FormBuilderField } from '@/components/form/form-builder';
 import { useRoles } from '@/lib/actions/user/queries';
 import { useSendBroadcastNotification } from '@/lib/actions/notification/queries';
 
 type Audience = 'all' | 'roles';
+type AudienceValue = { type: Audience; roleNames: string[] };
 
-function AudienceRolesList({
+function AudienceField({
+  value,
+  onChange,
   roles,
-  selectedRoleNames,
-  toggleRole,
-  hasSubmitted,
   t,
 }: {
+  value: AudienceValue;
+  onChange: (v: AudienceValue) => void;
   roles?: { value: string; label: string }[];
-  selectedRoleNames: string[];
-  toggleRole: (name: string) => void;
-  hasSubmitted: boolean;
   t: (key: string) => string;
 }) {
-  if (!roles?.length) {
-    return <p className="text-sm text-muted-foreground">{t('no_roles')}</p>;
-  }
-  return (
-    <div className="grid gap-2 pl-6">
-      {roles.map((role) => (
-        <div key={role.value} className="flex items-center gap-2">
-          <Checkbox
-            id={`role-${role.value}`}
-            checked={selectedRoleNames.includes(role.label)}
-            onCheckedChange={() => toggleRole(role.label)}
-          />
-          <Label htmlFor={`role-${role.value}`} className="font-normal">{role.label}</Label>
-        </div>
-      ))}
-      {hasSubmitted && selectedRoleNames.length === 0 && (
-        <p className="text-[0.8rem] text-destructive">{t('audience_roles_required')}</p>
-      )}
-    </div>
-  );
-}
+  const toggleRole = (name: string) => {
+    const names = value.roleNames;
+    onChange({ ...value, roleNames: names.includes(name) ? names.filter(n => n !== name) : [...names, name] });
+  };
 
-function AudienceSelector({
-  audience,
-  setAudience,
-  roles,
-  selectedRoleNames,
-  toggleRole,
-  hasSubmitted,
-  t,
-}: {
-  audience: Audience;
-  setAudience: (v: Audience) => void;
-  roles?: { value: string; label: string }[];
-  selectedRoleNames: string[];
-  toggleRole: (name: string) => void;
-  hasSubmitted: boolean;
-  t: (key: string) => string;
-}) {
   return (
     <div className="grid gap-2">
       <Label>{t('audience_label')}</Label>
-      <RadioGroup value={audience} onValueChange={(v) => setAudience(v as Audience)}>
+      <RadioGroup value={value.type} onValueChange={(v) => onChange({ ...value, type: v as Audience, roleNames: [] })}>
         <div className="flex items-center gap-2">
           <RadioGroupItem value="all" id="audience-all" />
           <Label htmlFor="audience-all" className="font-normal">{t('audience_all')}</Label>
@@ -88,14 +43,22 @@ function AudienceSelector({
         </div>
       </RadioGroup>
 
-      {audience === 'roles' && (
-        <AudienceRolesList
-          roles={roles}
-          selectedRoleNames={selectedRoleNames}
-          toggleRole={toggleRole}
-          hasSubmitted={hasSubmitted}
-          t={t}
-        />
+      {value.type === 'roles' && (
+        <div className="grid gap-2 pl-6">
+          {!roles?.length
+            ? <p className="text-sm text-muted-foreground">{t('no_roles')}</p>
+            : roles.map((role) => (
+                <div key={role.value} className="flex items-center gap-2">
+                  <Checkbox
+                    id={`role-${role.value}`}
+                    checked={value.roleNames.includes(role.label)}
+                    onCheckedChange={() => toggleRole(role.label)}
+                  />
+                  <Label htmlFor={`role-${role.value}`} className="font-normal">{role.label}</Label>
+                </div>
+              ))
+          }
+        </div>
       )}
     </div>
   );
@@ -113,123 +76,59 @@ export function SendNotificationModal({
   const { data: roles } = useRoles();
   const sendBroadcast = useSendBroadcastNotification();
 
-  const [audience, setAudience] = useState<Audience>('all');
-  const [selectedRoleNames, setSelectedRoleNames] = useState<string[]>([]);
-  const [title, setTitle] = useState('');
-  const [message, setMessage] = useState('');
-  const [actionUrl, setActionUrl] = useState('');
-  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const schema = useMemo(() =>
+    z.object({
+      title: z.string().min(1, tCommon('validation_required')),
+      message: z.string().min(1, tCommon('validation_required')),
+      actionUrl: z.string().optional(),
+      audience: z.object({
+        type: z.enum(['all', 'roles']),
+        roleNames: z.array(z.string()),
+      }).refine(d => d.type === 'all' || d.roleNames.length > 0, {
+        message: t('audience_roles_required'),
+      }),
+    }),
+  [t, tCommon]);
 
-  const toggleRole = (name: string) =>
-    setSelectedRoleNames((prev) =>
-      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name],
-    );
-
-  const canSave =
-    !!title.trim() &&
-    !!message.trim() &&
-    (audience === 'all' || selectedRoleNames.length > 0) &&
-    !sendBroadcast.isPending;
-
-  const reset = () => {
-    setAudience('all');
-    setSelectedRoleNames([]);
-    setTitle('');
-    setMessage('');
-    setActionUrl('');
-    setHasSubmitted(false);
-  };
-
-  const handleOpenChange = (next: boolean) => {
-    if (!next) reset();
-    onOpenChange(next);
-  };
-
-  const handleSubmit = async () => {
-    setHasSubmitted(true);
-    if (!canSave) return;
-
-    try {
-      await sendBroadcast.mutateAsync({
-        title: title.trim(),
-        message: message.trim(),
-        actionUrl: actionUrl.trim() || undefined,
-        all: audience === 'all',
-        roleNames: audience === 'all' ? [] : selectedRoleNames,
-      });
-      toast.success(tCommon('successMessage'));
-      handleOpenChange(false);
-    } catch {
-      // Alive já mostrou o toast de erro
-    }
-  };
+  const fields = useMemo<FormBuilderField[]>(() => [
+    { name: 'title', label: t('field_title') },
+    { name: 'message', label: t('field_message'), type: 'textarea' },
+    { name: 'actionUrl', label: t('field_action_url'), placeholder: t('field_action_url_placeholder') },
+    {
+      name: 'audience',
+      label: '',
+      type: 'custom',
+      render: (field) => (
+        <AudienceField
+          value={field.value as AudienceValue ?? { type: 'all', roleNames: [] }}
+          onChange={field.onChange}
+          roles={roles}
+          t={t}
+        />
+      ),
+    },
+  ], [t, roles]);
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{t('send_broadcast_title')}</DialogTitle>
-          <DialogDescription>{t('send_broadcast_description')}</DialogDescription>
-        </DialogHeader>
-
-        <div className="grid gap-4">
-          <div className="grid gap-1.5">
-            <Label htmlFor="broadcast-title">{t('field_title')}</Label>
-            <Input
-              id="broadcast-title"
-              value={title}
-              maxLength={200}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-            {hasSubmitted && !title.trim() && (
-              <p className="text-[0.8rem] text-destructive">{tCommon('validation_required')}</p>
-            )}
-          </div>
-
-          <div className="grid gap-1.5">
-            <Label htmlFor="broadcast-message">{t('field_message')}</Label>
-            <Textarea
-              id="broadcast-message"
-              value={message}
-              maxLength={2000}
-              rows={4}
-              onChange={(e) => setMessage(e.target.value)}
-            />
-            {hasSubmitted && !message.trim() && (
-              <p className="text-[0.8rem] text-destructive">{tCommon('validation_required')}</p>
-            )}
-          </div>
-
-          <div className="grid gap-1.5">
-            <Label htmlFor="broadcast-action-url">{t('field_action_url')}</Label>
-            <Input
-              id="broadcast-action-url"
-              value={actionUrl}
-              placeholder={t('field_action_url_placeholder')}
-              onChange={(e) => setActionUrl(e.target.value)}
-            />
-          </div>
-
-          <AudienceSelector
-            audience={audience}
-            setAudience={setAudience}
-            roles={roles}
-            selectedRoleNames={selectedRoleNames}
-            toggleRole={toggleRole}
-            hasSubmitted={hasSubmitted}
-            t={t}
-          />
-        </div>
-
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-            {tCommon('cancel')}
-          </Button>
-          <Button type="button" disabled={sendBroadcast.isPending} onClick={handleSubmit}>
-            {tCommon('submit')}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <FormBuilderModal
+      open={open}
+      onOpenChange={onOpenChange}
+      title={t('send_broadcast_title')}
+      description={t('send_broadcast_description')}
+      schema={schema}
+      fields={fields}
+      values={{ audience: { type: 'all', roleNames: [] } }}
+      submitLabel={tCommon('submit')}
+      onSubmit={async (data) => {
+        await sendBroadcast.mutateAsync({
+          title: data.title.trim(),
+          message: data.message.trim(),
+          actionUrl: data.actionUrl?.trim() || undefined,
+          all: data.audience.type === 'all',
+          roleNames: data.audience.type === 'all' ? [] : data.audience.roleNames,
+        });
+      }}
+      onSuccess={() => onOpenChange(false)}
+    />
   );
 }
