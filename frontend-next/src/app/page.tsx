@@ -14,7 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
     homeData,
     {
       title: homeData?.heroTitle,
-      description: homeData?.heroDescription,
+      description: homeData?.sitesDescription,
     }
   );
 }

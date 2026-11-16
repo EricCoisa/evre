@@ -11,7 +11,7 @@ export const Home: CollectionConfig = {
     },
   },
   access: {
-    read: () => true, // leitura pública
+    read: () => true,
     create: ({ req }) => Boolean(req.user),
     update: ({ req }) => Boolean(req.user),
     delete: ({ req }) => Boolean(req.user),
@@ -30,162 +30,188 @@ export const Home: CollectionConfig = {
               required: true,
               defaultValue: 'Home',
             },
-            // Hero Section
+
+            // Hero
             {
               name: 'heroTitle',
-              type: 'text',
-              label: 'Hero Title',
+              type: 'textarea',
+              label: 'Hero — Título (use Enter para quebrar linha)',
               required: true,
             },
             {
               name: 'heroDescription',
               type: 'textarea',
-              label: 'Hero Description',
+              label: 'Hero — Subtítulo',
               required: true,
             },
             {
-              name: 'heroPrimaryButtonText',
+              name: 'heroCta',
               type: 'text',
-              label: 'Hero Primary Button Text',
+              label: 'Hero — Botão CTA',
               required: true,
-            },
-            {
-              name: 'heroSecondaryButtonText',
-              type: 'text',
-              label: 'Hero Secondary Button Text',
-              required: true,
+              defaultValue: 'Falar no WhatsApp',
             },
             {
               name: 'heroWhatsappNumber',
               type: 'text',
-              label: 'Hero WhatsApp Number (ex: 5534999999999)',
+              label: 'WhatsApp (ex: 5534953301409)',
               required: true,
-              defaultValue: '5534999999999',
+              defaultValue: '5534953301409',
             },
 
-            // Services Section
+            // Sites section
             {
-              name: 'servicesTitle',
+              name: 'sitesLabel',
               type: 'text',
-              label: 'Services Section Title',
+              label: 'Sites — Label da âncora',
               required: true,
+              defaultValue: 'Sites & Landing Pages',
             },
             {
-              name: 'servicesDescription',
+              name: 'sitesTitle',
               type: 'textarea',
-              label: 'Services Section Description',
+              label: 'Sites — Título',
               required: true,
             },
             {
-              name: 'services',
-              type: 'array',
-              label: 'Services Items',
+              name: 'sitesDescription',
+              type: 'textarea',
+              label: 'Sites — Descrição',
               required: true,
-              minRows: 1,
+            },
+
+            {
+              name: 'siteDemos',
+              type: 'array',
+              label: 'Sites — Demos (artefatos)',
               fields: [
                 {
-                  name: 'iconName',
-                  type: 'select',
-                  label: 'Icon',
-                  required: true,
-                  defaultValue: 'layout-grid',
-                  options: [
-                    { label: 'Layout / Painel (layout-grid)', value: 'layout-grid' },
-                    { label: 'Camadas / SaaS (layers)', value: 'layers' },
-                    { label: 'Banco de Dados / Integrações (database)', value: 'database' },
-                    { label: 'Mobile / Celular (smartphone)', value: 'smartphone' },
-                  ],
-                },
-                {
-                  name: 'title',
+                  name: 'url',
                   type: 'text',
-                  label: 'Service Title',
-                  required: true,
+                  label: 'URL do artefato (ex: http://localhost:3000/api/artifacts/public/xxx)',
                 },
                 {
-                  name: 'description',
-                  type: 'textarea',
-                  label: 'Service Description',
-                  required: true,
+                  name: 'label',
+                  type: 'text',
+                  label: 'Endereço exibido na barra (ex: casamelo.com.br)',
                 },
               ],
             },
 
-            // Process Section
+            // Sistemas section
             {
-              name: 'processTitle',
+              name: 'sistemasLabel',
               type: 'text',
-              label: 'Process Section Title',
+              label: 'Sistemas — Label da âncora',
               required: true,
+              defaultValue: 'Sistemas para empresas',
             },
             {
-              name: 'processDescription',
+              name: 'sistemasTitle',
               type: 'textarea',
-              label: 'Process Section Description',
+              label: 'Sistemas — Título',
               required: true,
             },
             {
-              name: 'processSteps',
-              type: 'array',
-              label: 'Process Steps',
+              name: 'sistemasDescription',
+              type: 'textarea',
+              label: 'Sistemas — Descrição',
               required: true,
-              minRows: 1,
+            },
+
+            {
+              name: 'sistemaDemos',
+              type: 'array',
+              label: 'Sistemas — Demos (artefatos)',
               fields: [
                 {
-                  name: 'stepNumber',
+                  name: 'url',
                   type: 'text',
-                  label: 'Step Number (ex: 01)',
-                  required: true,
+                  label: 'URL do artefato (ex: http://localhost:3000/api/artifacts/public/xxx)',
                 },
                 {
-                  name: 'symbol',
-                  type: 'select',
-                  label: 'Brand Symbol',
-                  required: true,
-                  options: [
-                    { label: '< (Abertura / Planejamento)', value: '<' },
-                    { label: '/ (Barra / Desenvolvimento)', value: '/' },
-                    { label: '> (Fechamento / Entrega)', value: '>' },
-                  ],
-                },
-                {
-                  name: 'title',
+                  name: 'label',
                   type: 'text',
-                  label: 'Step Title',
-                  required: true,
-                },
-                {
-                  name: 'description',
-                  type: 'textarea',
-                  label: 'Step Description',
-                  required: true,
+                  label: 'Label exibido na barra do frame (ex: CORE Gestão)',
                 },
               ],
             },
 
-            // CTA Section
+            // Reforço de equipes section
+            {
+              name: 'reforcosLabel',
+              type: 'text',
+              label: 'Equipes — Label da âncora',
+              required: true,
+              defaultValue: 'Reforço de equipes',
+            },
+            {
+              name: 'reforcosTitle',
+              type: 'textarea',
+              label: 'Equipes — Título da seção',
+              required: true,
+            },
+            {
+              name: 'reforcosDescription',
+              type: 'textarea',
+              label: 'Equipes — Descrição da seção',
+              required: true,
+            },
+            {
+              name: 'equipesCellOneTitle',
+              type: 'textarea',
+              label: 'Equipes — Célula 1 Título',
+              required: true,
+            },
+            {
+              name: 'equipesCellOneDescription',
+              type: 'textarea',
+              label: 'Equipes — Célula 1 Descrição',
+              required: true,
+            },
+            {
+              name: 'equipesCellTwoTitle',
+              type: 'textarea',
+              label: 'Equipes — Célula 2 Título',
+              required: true,
+            },
+            {
+              name: 'equipesCellTwoDescription',
+              type: 'textarea',
+              label: 'Equipes — Célula 2 Descrição',
+              required: true,
+            },
+            {
+              name: 'equipesCellThreeTitle',
+              type: 'textarea',
+              label: 'Equipes — Célula 3 Título',
+              required: true,
+            },
+            {
+              name: 'equipesCellThreeDescription',
+              type: 'textarea',
+              label: 'Equipes — Célula 3 Descrição',
+              required: true,
+            },
+
+            // CTA
             {
               name: 'ctaTitle',
-              type: 'text',
-              label: 'CTA Title',
-              required: true,
-            },
-            {
-              name: 'ctaDescription',
               type: 'textarea',
-              label: 'CTA Description',
+              label: 'CTA — Título (use Enter para quebrar linha)',
               required: true,
             },
             {
-              name: 'ctaWhatsappButtonText',
+              name: 'ctaButtonText',
               type: 'text',
-              label: 'CTA WhatsApp Button Text',
+              label: 'CTA — Texto do botão WhatsApp',
               required: true,
+              defaultValue: 'Chamar no WhatsApp',
             },
             {
               name: 'contactEmail',
               type: 'text',
-              label: 'Contact Email',
+              label: 'E-mail de contato',
               required: true,
               defaultValue: 'contato@evre.com.br',
             },
@@ -194,7 +220,7 @@ export const Home: CollectionConfig = {
             {
               name: 'footerText',
               type: 'text',
-              label: 'Footer Text',
+              label: 'Rodapé — Identificação',
               required: true,
               defaultValue: 'EVRE Software House',
             },
@@ -204,12 +230,8 @@ export const Home: CollectionConfig = {
           label: 'SEO',
           name: 'meta',
           fields: [
-            MetaTitleField({
-              hasGenerateFn: true,
-            }),
-            MetaDescriptionField({
-              hasGenerateFn: true,
-            }),
+            MetaTitleField({ hasGenerateFn: true }),
+            MetaDescriptionField({ hasGenerateFn: true }),
             {
               name: 'cannonicalUrl',
               type: 'text',
@@ -220,12 +242,8 @@ export const Home: CollectionConfig = {
                 ],
               },
             },
-            MetaImageField({
-              relationTo: 'media',
-            }),
-            PreviewField({
-              hasGenerateFn: true,
-            }),
+            MetaImageField({ relationTo: 'media' }),
+            PreviewField({ hasGenerateFn: true }),
             OverviewField({
               titlePath: 'meta.title',
               descriptionPath: 'meta.description',

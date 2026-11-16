@@ -134,29 +134,39 @@ export interface Home {
   title: string;
   heroTitle: string;
   heroDescription: string;
-  heroPrimaryButtonText: string;
-  heroSecondaryButtonText: string;
+  heroCta: string;
   heroWhatsappNumber: string;
-  servicesTitle: string;
-  servicesDescription: string;
-  services: {
-    iconName: 'layout-grid' | 'layers' | 'database' | 'smartphone';
-    title: string;
-    description: string;
-    id?: string | null;
-  }[];
-  processTitle: string;
-  processDescription: string;
-  processSteps: {
-    stepNumber: string;
-    symbol: '<' | '/' | '>';
-    title: string;
-    description: string;
-    id?: string | null;
-  }[];
+  sitesLabel: string;
+  sitesTitle: string;
+  sitesDescription: string;
+  siteDemos?:
+    | {
+        url?: string | null;
+        label?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  sistemasLabel: string;
+  sistemasTitle: string;
+  sistemasDescription: string;
+  sistemaDemos?:
+    | {
+        url?: string | null;
+        label?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  reforcosLabel: string;
+  reforcosTitle: string;
+  reforcosDescription: string;
+  equipesCellOneTitle: string;
+  equipesCellOneDescription: string;
+  equipesCellTwoTitle: string;
+  equipesCellTwoDescription: string;
+  equipesCellThreeTitle: string;
+  equipesCellThreeDescription: string;
   ctaTitle: string;
-  ctaDescription: string;
-  ctaWhatsappButtonText: string;
+  ctaButtonText: string;
   contactEmail: string;
   footerText: string;
   meta?: {
@@ -333,33 +343,39 @@ export interface HomeSelect<T extends boolean = true> {
   title?: T;
   heroTitle?: T;
   heroDescription?: T;
-  heroPrimaryButtonText?: T;
-  heroSecondaryButtonText?: T;
+  heroCta?: T;
   heroWhatsappNumber?: T;
-  servicesTitle?: T;
-  servicesDescription?: T;
-  services?:
+  sitesLabel?: T;
+  sitesTitle?: T;
+  sitesDescription?: T;
+  siteDemos?:
     | T
     | {
-        iconName?: T;
-        title?: T;
-        description?: T;
+        url?: T;
+        label?: T;
         id?: T;
       };
-  processTitle?: T;
-  processDescription?: T;
-  processSteps?:
+  sistemasLabel?: T;
+  sistemasTitle?: T;
+  sistemasDescription?: T;
+  sistemaDemos?:
     | T
     | {
-        stepNumber?: T;
-        symbol?: T;
-        title?: T;
-        description?: T;
+        url?: T;
+        label?: T;
         id?: T;
       };
+  reforcosLabel?: T;
+  reforcosTitle?: T;
+  reforcosDescription?: T;
+  equipesCellOneTitle?: T;
+  equipesCellOneDescription?: T;
+  equipesCellTwoTitle?: T;
+  equipesCellTwoDescription?: T;
+  equipesCellThreeTitle?: T;
+  equipesCellThreeDescription?: T;
   ctaTitle?: T;
-  ctaDescription?: T;
-  ctaWhatsappButtonText?: T;
+  ctaButtonText?: T;
   contactEmail?: T;
   footerText?: T;
   meta?:

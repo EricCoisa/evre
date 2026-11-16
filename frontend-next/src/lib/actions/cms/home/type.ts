@@ -1,45 +1,41 @@
 import { SEOMetadata } from "../types";
 
-export interface HomeService {
-  id?: string;
-  iconName: "layout-grid" | "layers" | "database" | "smartphone";
-  title: string;
-  description: string;
-}
-
-export interface HomeProcessStep {
-  id?: string;
-  stepNumber: string;
-  symbol: '<' | '/' | '>';
-  title: string;
-  description: string;
-}
-
 export interface HomeData {
   id: string;
   title: string;
 
-  // Hero Section
+  // Hero
   heroTitle: string;
   heroDescription: string;
-  heroPrimaryButtonText: string;
-  heroSecondaryButtonText: string;
+  heroCta: string;
   heroWhatsappNumber: string;
 
-  // Services Section ("O que desenvolvemos")
-  servicesTitle: string;
-  servicesDescription: string;
-  services: HomeService[];
+  // Sites section
+  sitesLabel: string;
+  sitesTitle: string;
+  sitesDescription: string;
+  siteDemos: Array<{ url: string; label: string }>;
 
-  // Process Section ("Como trabalhamos")
-  processTitle: string;
-  processDescription: string;
-  processSteps: HomeProcessStep[];
+  // Sistemas section
+  sistemasLabel: string;
+  sistemasTitle: string;
+  sistemasDescription: string;
+  sistemaDemos: Array<{ url: string; label: string }>;
 
-  // CTA Section ("Vamos conversar?")
+  // Reforço de equipes section
+  reforcosLabel: string;
+  reforcosTitle: string;
+  reforcosDescription: string;
+  equipesCellOneTitle: string;
+  equipesCellOneDescription: string;
+  equipesCellTwoTitle: string;
+  equipesCellTwoDescription: string;
+  equipesCellThreeTitle: string;
+  equipesCellThreeDescription: string;
+
+  // CTA section
   ctaTitle: string;
-  ctaDescription: string;
-  ctaWhatsappButtonText: string;
+  ctaButtonText: string;
   contactEmail: string;
 
   // Footer
@@ -63,67 +59,42 @@ export interface HomeResponse {
   nextPage: number | null;
 }
 
-// Dados padrão caso o CMS não tenha dados
 export const defaulHometData: Partial<HomeData> = {
   title: 'Home',
-  heroTitle: 'Desenvolvimento de software sob medida para empresas e produtos digitais.',
-  heroDescription: 'Desenvolvemos sistemas, plataformas e aplicativos sob medida para o seu modelo de negócio.',
-  heroPrimaryButtonText: 'Falar no WhatsApp',
-  heroSecondaryButtonText: 'Conhecer nossos serviços',
+  heroTitle: 'Desenvolvimento\nde software\nsob medida.',
+  heroDescription: 'Sistemas, plataformas e sites desenvolvidos para o seu modelo de negócio, do planejamento ao suporte.',
+  heroCta: 'Falar no WhatsApp',
   heroWhatsappNumber: '5534953301409',
 
-  servicesTitle: 'O que desenvolvemos',
-  servicesDescription: 'Soluções digitais sob medida para resolver necessidades reais da sua operação.',
-  services: [
-    {
-      iconName: 'layout-grid',
-      title: 'Sistemas Web & Plataformas',
-      description: 'Painéis de gestão, ferramentas operacionais e sistemas customizados para as necessidades e regras da sua empresa.'
-    },
-    {
-      iconName: 'smartphone',
-      title: 'Aplicativos Mobile (iOS & Android)',
-      description: 'Aplicativos rápidos e responsivos para equipes externas, clientes ou produtos digitais específicos.'
-    },
-    {
-      iconName: 'database',
-      title: 'Integrações & Automação',
-      description: 'Conexão entre sistemas, gateways de pagamento, ERPs e APIs para unificar seus dados e processos.'
-    }
-  ],
+  sitesLabel: 'Sites & Landing Pages',
+  sitesTitle: 'Para quem quer vender\ne aparecer online.',
+  sitesDescription: 'Sites institucionais, lojas e portais digitais com design sob medida, integrados ao seu processo de vendas.',
+  siteDemos: [],
 
-  processTitle: 'Como trabalhamos',
-  processDescription: 'Processo direto e transparente para garantir previsibilidade em cada etapa.',
-  processSteps: [
-    {
-      stepNumber: '01',
-      symbol: '<',
-      title: 'Planejamento & Arquitetura',
-      description: 'Alinhamos as regras de negócio, definimos os requisitos técnicos e estruturamos o cronograma e escopo de cada entrega.'
-    },
-    {
-      stepNumber: '02',
-      symbol: '/',
-      title: 'Desenvolvimento & Validação',
-      description: 'Construção do sistema em ciclos com testes contínuos e validações em ambiente seguro antes da publicação.'
-    },
-    {
-      stepNumber: '03',
-      symbol: '>',
-      title: 'Implantação & Suporte',
-      description: 'Lançamento em produção, entrega de toda a infraestrutura e acompanhamento técnico para assegurar a estabilidade.'
-    }
-  ],
+  sistemasLabel: 'Sistemas para empresas',
+  sistemasTitle: 'Para quem precisa de mais\ndo que um site.',
+  sistemasDescription: 'Sistemas de gestão, plataformas operacionais e aplicativos mobile desenvolvidos para as regras específicas do seu negócio.',
+  sistemaDemos: [],
 
-  ctaTitle: 'Vamos conversar sobre o seu projeto?',
-  ctaDescription: 'Entre em contato diretamente para avaliarmos sua demanda e entender como podemos ajudar.',
-  ctaWhatsappButtonText: 'Chamar no WhatsApp',
+  reforcosLabel: 'Reforço de equipes',
+  reforcosTitle: 'Ferramentas que\na equipe\nrealmente usa.',
+  reforcosDescription: 'Cada equipe tem um jeito de trabalhar. Construímos o software que encaixa nesse jeito, não o contrário.',
+  equipesCellOneTitle: 'Integração com\nseu processo',
+  equipesCellOneDescription: 'A EVRE entra no seu fluxo de trabalho existente. Sprints, revisões e entregas contínuas sem mudar como sua equipe funciona.',
+  equipesCellTwoTitle: 'Foco no que\nvocê precisa',
+  equipesCellTwoDescription: 'Você define a prioridade, a EVRE executa. Sem overhead de gestão nem curva de aprendizado prolongado.',
+  equipesCellThreeTitle: 'Resultado\nverificável',
+  equipesCellThreeDescription: 'Comece com um projeto de escopo definido. Avalie a qualidade do trabalho antes de qualquer comprometimento maior.',
+
+  ctaTitle: 'Vamos\nconversar.',
+  ctaButtonText: 'Chamar no WhatsApp',
   contactEmail: 'contato@evre.com.br',
 
   footerText: 'EVRE Software House',
+
   meta: {
     title: 'EVRE Software House | Desenvolvimento de Software Sob Medida',
-    description: 'Desenvolvimento de sistemas web, plataformas e soluções sob medida para empresas.',
+    description: 'Sites, sistemas e plataformas desenvolvidos sob medida para o seu modelo de negócio.',
     cannonicalUrl: '/',
-  }
+  },
 };

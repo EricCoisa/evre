@@ -1,138 +1,165 @@
 'use client';
 
-import Image from 'next/image';
+import { useEffect, useRef } from 'react';
+import gsap from 'gsap';
+import ScrollTrigger from 'gsap/ScrollTrigger';
 import { AsciiBackground } from './ascii-background';
-import { MessageCircle, ArrowRight } from 'lucide-react';
 import { defaulHometData } from '@/lib/actions/cms/home/type';
+
+// Inline SVGs do protótipo aprovado (> / <)
+const BrandIconPlay = () => (
+  <svg viewBox="0 0 196.15 196.15" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+    <rect width="196.15" height="196.15" rx="3" style={{ fill: 'var(--lp-fg)', fillOpacity: 0.06 }} />
+    <path d="M44.26,139.89l83.64-41.94L44.26,56.02v-26.79l107.64,54.98v27.49l-107.64,55.22v-27.02Z" style={{ fill: 'var(--lp-fg)', fillOpacity: 0.22 }} />
+  </svg>
+);
+const BrandIconSlash = () => (
+  <svg viewBox="0 0 196.15 196.15" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+    <rect width="196.15" height="196.15" rx="3" style={{ fill: 'var(--lp-fg)', fillOpacity: 0.06 }} />
+    <path d="M108.16,27.13h23.95l-44.11,141.88h-23.95L108.16,27.13Z" style={{ fill: 'var(--lp-fg)', fillOpacity: 0.22 }} />
+  </svg>
+);
+const BrandIconPlayInverse = () => (
+  <svg viewBox="0 0 196.15 196.15" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+    <rect width="196.15" height="196.15" rx="3" style={{ fill: 'var(--lp-fg)', fillOpacity: 0.06 }} />
+    <path d="M44.26,111.7v-27.49l107.64-54.98v26.79l-83.64,41.94,83.64,41.94v27.02l-107.64-55.22Z" style={{ fill: 'var(--lp-fg)', fillOpacity: 0.22 }} />
+  </svg>
+);
 
 interface HeroSectionProps {
   title?: string;
   description?: string;
-  primaryButtonText?: string;
-  secondaryButtonText?: string;
+  cta?: string;
   whatsappNumber?: string;
 }
 
 export function HeroSection({
   title = defaulHometData.heroTitle!,
   description = defaulHometData.heroDescription!,
-  primaryButtonText = defaulHometData.heroPrimaryButtonText!,
-  secondaryButtonText = defaulHometData.heroSecondaryButtonText!,
+  cta = defaulHometData.heroCta!,
   whatsappNumber = defaulHometData.heroWhatsappNumber!,
 }: HeroSectionProps) {
+  const sectionRef = useRef<HTMLElement>(null);
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=Ol%C3%A1!%20Gostaria%20de%20conversar%20sobre%20um%20projeto%20com%20a%20EVRE.`;
 
-  return (
-    <section className="relative flex min-h-[85vh] flex-col items-center justify-center overflow-hidden bg-background px-4 pt-32 pb-16 sm:px-6 sm:pt-36 sm:pb-24">
-      {/* ASCII Canvas Background */}
-      <AsciiBackground charDensity={32} />
+  useEffect(() => {
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) return;
 
-      {/* Glow suave */}
+    gsap.registerPlugin(ScrollTrigger);
+
+    const ctx = gsap.context(() => {
+      // Initial hidden states
+      gsap.set('.hero-eyebrow', { clipPath: 'inset(100% 0 0 0)' });
+      gsap.set('.hero-title', { clipPath: 'inset(100% 0 0 0)' });
+      gsap.set('.hero-desc', { clipPath: 'inset(100% 0 0 0)' });
+      gsap.set('.hero-actions', { clipPath: 'inset(100% 0 0 0)' });
+      gsap.set('.hero-scroll-hint', { opacity: 0 });
+      gsap.set('.hero-brand-panel', { x: 80, opacity: 0 });
+      gsap.set('.hero-bicon', { rotateY: -40, rotateX: 20, opacity: 0 });
+
+      // Entrance timeline
+      const tl = gsap.timeline({ delay: 0.15 });
+      tl
+        .to('.hero-eyebrow', { clipPath: 'inset(0% 0 0 0)', duration: 0.75, ease: 'expo.out' })
+        .to('.hero-title', { clipPath: 'inset(0% 0 0 0)', duration: 0.9, ease: 'expo.out' }, '-=0.5')
+        .to('.hero-desc', { clipPath: 'inset(0% 0 0 0)', duration: 0.75, ease: 'expo.out' }, '-=0.55')
+        .to('.hero-actions', { clipPath: 'inset(0% 0 0 0)', duration: 0.75, ease: 'expo.out' }, '-=0.5')
+        .to('.hero-scroll-hint', { opacity: 1, duration: 0.8, ease: 'power2.out' }, '-=0.4')
+        .to('.hero-brand-panel', { x: 0, opacity: 1, duration: 1.1, ease: 'expo.out' }, 0.3)
+        .to('.hero-bicon', { rotateY: 0, rotateX: 0, opacity: 1, duration: 0.9, ease: 'expo.out', stagger: 0.09 }, 0.4);
+
+      // Scroll parallax
+      gsap.to('.hero-title', {
+        y: -70,
+        scrollTrigger: { trigger: sectionRef.current, start: 'top top', end: 'bottom top', scrub: 1.5 },
+      });
+      gsap.to('.hero-desc', {
+        y: -30, opacity: 0,
+        scrollTrigger: { trigger: sectionRef.current, start: 'center top', end: 'bottom top', scrub: 1 },
+      });
+      gsap.to('.hero-brand-panel', {
+        y: -130, rotateX: -6,
+        scrollTrigger: { trigger: sectionRef.current, start: 'top top', end: 'bottom top', scrub: 2 },
+      });
+    }, sectionRef);
+
+    return () => ctx.revert();
+  }, []);
+
+  return (
+    <section
+      ref={sectionRef}
+      id="hero"
+      className="relative flex min-h-screen flex-col justify-center overflow-hidden px-6 pb-20 pt-32 md:px-8 md:pt-36"
+      style={{ background: 'var(--lp-bg)' }}
+    >
+      <AsciiBackground charDensity={55} />
+
+      {/* Brand panel — hidden on mobile */}
       <div
+        className="hero-brand-panel absolute right-0 top-1/2 hidden -translate-y-1/2 gap-5 lg:flex"
+        style={{ perspective: '900px' }}
         aria-hidden="true"
-        className="pointer-events-none absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2"
       >
-        <div className="h-[320px] w-[600px] rounded-full bg-foreground/[0.03] blur-[120px]" />
+        {[BrandIconPlay, BrandIconSlash, BrandIconPlayInverse].map((Icon, i) => (
+          <div
+            key={i}
+            className="hero-bicon"
+            style={{
+              width: 'clamp(90px, 10vw, 150px)',
+              height: 'clamp(90px, 10vw, 150px)',
+              transformStyle: 'preserve-3d',
+              willChange: 'transform',
+            }}
+          >
+            <Icon />
+          </div>
+        ))}
       </div>
 
-      <div className="relative z-10 mx-auto flex max-w-4xl flex-col items-center text-center">
-        {/* Headline */}
-        <h1 className="mb-6 text-3xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl leading-[1.15]">
+      {/* Content */}
+      <div className="relative z-10 mx-auto w-full max-w-6xl">
+        <h1
+          className="hero-title mb-9 font-black leading-none tracking-tight whitespace-pre-wrap"
+          style={{
+            fontSize: 'clamp(3.5rem, 9vw, 9.5rem)',
+            letterSpacing: '-0.03em',
+            color: 'var(--lp-fg)',
+          }}
+        >
           {title}
         </h1>
 
-        {/* Subtítulo */}
-        <p className="mb-10 max-w-2xl text-base text-muted-foreground sm:text-lg leading-relaxed">
+        <p
+          className="hero-desc mb-10 max-w-sm text-base leading-relaxed md:text-lg"
+          style={{ color: 'var(--lp-muted)' }}
+        >
           {description}
         </p>
 
-        {/* Ações */}
-        <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+        <div className="hero-actions flex flex-wrap items-center gap-4">
           <a
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-foreground px-6 py-3.5 text-sm font-semibold text-background transition-opacity hover:opacity-90"
+            className="inline-flex items-center gap-2 rounded-sm px-6 py-3.5 text-sm font-bold tracking-wide transition-opacity hover:opacity-85"
+            style={{ background: 'var(--lp-fg)', color: 'var(--lp-bg)' }}
           >
-            <MessageCircle className="h-4 w-4 text-emerald-500" />
-            <span>{primaryButtonText}</span>
-            <ArrowRight className="h-4 w-4 opacity-60" />
+            {cta}
           </a>
-
           <a
-            href="#servicos"
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-border px-6 py-3.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            href="#sites"
+            className="inline-flex items-center gap-2 text-sm transition-colors duration-200"
+            style={{ color: 'var(--lp-muted)' }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--lp-fg)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--lp-muted)')}
           >
-            <span>{secondaryButtonText}</span>
-            <span className="text-muted-foreground">↓</span>
+            Ver o que fazemos <span>→</span>
           </a>
-        </div>
-
-        {/* Card Visual com a Assinatura da Marca EVRE */}
-        <div className="mt-16 w-full max-w-2xl rounded-2xl border border-border bg-card/70 p-6 shadow-xl backdrop-blur-md dark:border-white/10 dark:bg-[#0C0C10]">
-          <div className="grid grid-cols-3 gap-4">
-            {/* Planejamento */}
-            <div className="flex flex-col items-center justify-center rounded-xl border border-border/50 bg-background/50 p-4 text-center dark:border-white/5 dark:bg-white/[0.02]">
-              <div className="relative mb-2 h-9 w-9">
-                <Image
-                  src="/brand/evre/icon-chevron-left-black.svg"
-                  alt="Planejamento"
-                  fill
-                  className="object-contain dark:hidden"
-                />
-                <Image
-                  src="/brand/evre/icon-chevron-left.svg"
-                  alt="Planejamento"
-                  fill
-                  className="hidden object-contain dark:block"
-                />
-              </div>
-              <span className="text-xs font-semibold text-foreground">Planejamento</span>
-              <span className="mt-0.5 text-[11px] text-muted-foreground">Arquitetura &amp; Escopo</span>
-            </div>
-
-            {/* Desenvolvimento */}
-            <div className="flex flex-col items-center justify-center rounded-xl border border-border/50 bg-background/50 p-4 text-center dark:border-white/5 dark:bg-white/[0.02]">
-              <div className="relative mb-2 h-9 w-9">
-                <Image
-                  src="/brand/evre/icon-slash-black.svg"
-                  alt="Desenvolvimento"
-                  fill
-                  className="object-contain dark:hidden"
-                />
-                <Image
-                  src="/brand/evre/icon-slash.svg"
-                  alt="Desenvolvimento"
-                  fill
-                  className="hidden object-contain dark:block"
-                />
-              </div>
-              <span className="text-xs font-semibold text-foreground">Desenvolvimento</span>
-              <span className="mt-0.5 text-[11px] text-muted-foreground">Engenharia &amp; Testes</span>
-            </div>
-
-            {/* Entrega */}
-            <div className="flex flex-col items-center justify-center rounded-xl border border-border/50 bg-background/50 p-4 text-center dark:border-white/5 dark:bg-white/[0.02]">
-              <div className="relative mb-2 h-9 w-9">
-                <Image
-                  src="/brand/evre/icon-chevron-right-black.svg"
-                  alt="Entrega"
-                  fill
-                  className="object-contain dark:hidden"
-                />
-                <Image
-                  src="/brand/evre/icon-chevron-right.svg"
-                  alt="Entrega"
-                  fill
-                  className="hidden object-contain dark:block"
-                />
-              </div>
-              <span className="text-xs font-semibold text-foreground">Entrega</span>
-              <span className="mt-0.5 text-[11px] text-muted-foreground">Produção &amp; Suporte</span>
-            </div>
-          </div>
         </div>
       </div>
+
     </section>
   );
 }

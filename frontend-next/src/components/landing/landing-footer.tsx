@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowUp } from 'lucide-react';
 import { defaulHometData } from '@/lib/actions/cms/home/type';
 
 interface LandingFooterProps {
@@ -12,73 +11,60 @@ interface LandingFooterProps {
 export function LandingFooter({
   footerText = defaulHometData.footerText || 'EVRE Software House',
 }: LandingFooterProps) {
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   return (
-    <footer className="border-t border-border bg-muted/30 py-12 text-muted-foreground dark:bg-[#060608]">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6">
-        <div className="flex flex-col items-center justify-between gap-8 md:flex-row">
-          {/* Logo & Slogan */}
-          <div className="flex flex-col items-center md:items-start">
-            <div className="relative h-8 w-32">
-              <Image
-                src="/brand/evre/logo-black.svg"
-                alt={footerText}
-                fill
-                className="object-contain object-left dark:hidden"
-              />
-              <Image
-                src="/brand/evre/logo-white.svg"
-                alt={footerText}
-                fill
-                className="hidden object-contain object-left dark:block"
-              />
-            </div>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Desenvolvimento de software e plataformas sob medida.
-            </p>
-          </div>
+    <footer
+      className="border-t"
+      style={{ background: 'var(--lp-bg)', borderColor: 'var(--lp-border)', padding: '4rem max(2rem, env(safe-area-inset-left,0px))' }}
+    >
+      <div className="mx-auto max-w-6xl">
+        <div className="flex flex-col items-start justify-between gap-10 md:flex-row md:items-center">
+          {/* Logo */}
+          <Link href="/" className="relative h-6 w-24 flex-shrink-0 opacity-60 hover:opacity-90 transition-opacity" aria-label="EVRE Software House">
+            <Image src="/brand/evre/logo-white.svg" alt="EVRE" fill className="object-contain object-left dark:invert-0 invert" />
+          </Link>
 
           {/* Links */}
-          <div className="flex flex-wrap items-center justify-center gap-6 text-xs sm:gap-8">
-            <a href="#servicos" className="transition-colors hover:text-foreground">
-              Serviços
-            </a>
-            <a href="#processo" className="transition-colors hover:text-foreground">
-              Processo
-            </a>
-            <a href="#contato" className="transition-colors hover:text-foreground">
-              Contato
-            </a>
+          <nav className="flex flex-wrap gap-6 text-xs" style={{ color: 'var(--lp-muted)' }} aria-label="Rodapé">
+            {[
+              { href: '#sites', label: 'Sites' },
+              { href: '#sistemas', label: 'Sistemas' },
+              { href: '#equipes', label: 'Equipes' },
+              { href: '#contato', label: 'Contato' },
+            ].map(({ href, label }) => (
+              <a
+                key={href}
+                href={href}
+                className="transition-colors duration-200"
+                style={{ color: 'var(--lp-muted)' }}
+                onMouseEnter={e => (e.currentTarget.style.color = 'var(--lp-fg)')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'var(--lp-muted)')}
+              >
+                {label}
+              </a>
+            ))}
             <Link
               href="/legal/termo-uso"
-              className="transition-colors hover:text-foreground"
+              className="transition-colors duration-200"
+              style={{ color: 'var(--lp-muted)' }}
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--lp-fg)'}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--lp-muted)'}
             >
-              Termos de Uso
+              Termos
             </Link>
             <Link
               href="/legal/privacy-policy"
-              className="transition-colors hover:text-foreground"
+              className="transition-colors duration-200"
+              style={{ color: 'var(--lp-muted)' }}
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--lp-fg)'}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--lp-muted)'}
             >
               Privacidade
             </Link>
-          </div>
+          </nav>
 
-          {/* Voltar ao Topo */}
-          <button
-            onClick={scrollToTop}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card/60 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            aria-label="Voltar ao topo"
-          >
-            <ArrowUp className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="mt-8 flex flex-col items-center justify-center border-t border-border/60 pt-6 text-xs text-muted-foreground/80 sm:flex-row sm:justify-between">
-          <span>
-            © {new Date().getFullYear()} {footerText}. Todos os direitos reservados.
+          {/* Copyright */}
+          <span className="text-xs" style={{ color: 'var(--lp-muted)' }}>
+            © {new Date().getFullYear()} {footerText}
           </span>
         </div>
       </div>

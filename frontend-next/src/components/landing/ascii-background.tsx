@@ -5,11 +5,13 @@ import { useEffect, useRef } from 'react';
 interface AsciiBackgroundProps {
   className?: string;
   charDensity?: number;
+  forceDark?: boolean;
 }
 
 export function AsciiBackground({
   className = '',
-  charDensity = 30,
+  charDensity = 55,
+  forceDark = false,
 }: AsciiBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -21,77 +23,63 @@ export function AsciiBackground({
     if (!ctx) return;
 
     let animationFrameId: number;
-    let width = 0;
-    let height = 0;
+    let W = 0;
+    let H = 0;
 
-    const chars = ['<', '/', '>', '{', '}', ';', '0', '1', '+', '~', ':', '_', '.'];
+    // Brand symbols only — matches the EVRE identity
+    const chars = ['>', '/', '<'];
+    type Cell = { x: number; y: number; s: string; ph: number; sp: number; sz: number };
+    let cells: Cell[] = [];
 
-    const resize = () => {
+    const rebuild = () => {
       const parent = canvas.parentElement;
       if (!parent) return;
-      width = canvas.width = parent.clientWidth;
-      height = canvas.height = parent.clientHeight;
-    };
-
-    resize();
-    window.addEventListener('resize', resize);
-
-    let step = 0;
-
-    const render = () => {
-      step += 0.015;
-      ctx.clearRect(0, 0, width, height);
-
-      const cellWidth = charDensity;
-      const cellHeight = charDensity;
-      const cols = Math.ceil(width / cellWidth);
-      const rows = Math.ceil(height / cellHeight);
-
-      // Detecta se está no modo escuro dinamicamente
-      const isDark = document.documentElement.classList.contains('dark');
-
-      ctx.font = '12px "JetBrains Mono", "Fira Code", monospace';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-
+      W = canvas.width = parent.clientWidth;
+      H = canvas.height = parent.clientHeight;
+      cells = [];
+      const cols = Math.ceil(W / charDensity) + 1;
+      const rows = Math.ceil(H / charDensity) + 1;
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
-          const x = c * cellWidth + cellWidth / 2;
-          const y = r * cellHeight + cellHeight / 2;
-
-          const wave =
-            Math.sin(c * 0.15 + step) * Math.cos(r * 0.15 + step * 0.8);
-
-          const dx = (x - width / 2) / (width / 2);
-          const dy = (y - height * 0.35) / (height * 0.5);
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          const radialFade = Math.max(0, 1 - dist * 0.85);
-
-          const baseOpacity = isDark ? 0.28 : 0.22;
-          const opacity = Math.max(0, (wave * 0.5 + 0.5) * baseOpacity * radialFade);
-
-          if (opacity > 0.02) {
-            const charIndex = Math.floor(
-              Math.abs(Math.sin(c * 17 + r * 31 + Math.floor(step * 2))) *
-                chars.length
-            ) % chars.length;
-
-            const char = chars[charIndex];
-
-            if (char === '<' || char === '>' || char === '/') {
-              ctx.fillStyle = isDark
-                ? `rgba(250, 249, 249, ${opacity * 1.6})`
-                : `rgba(20, 20, 20, ${opacity * 1.6})`;
-            } else {
-              ctx.fillStyle = isDark
-                ? `rgba(185, 185, 185, ${opacity})`
-                : `rgba(100, 100, 100, ${opacity})`;
-            }
-
-            ctx.fillText(char, x, y);
-          }
+          cells.push({
+            x: c * charDensity + (Math.random() - 0.5) * 10,
+            y: r * charDensity + (Math.random() - 0.5) * 10,
+            s: chars[Math.floor(Math.random() * 3)],
+            ph: Math.random() * Math.PI * 2,
+            sp: 0.25 + Math.random() * 0.35,
+            sz: 9 + Math.random() * 4,
+          });
         }
       }
+    };
+
+    rebuild();
+    window.addEventListener('resize', rebuild);
+
+    let t = 0;
+    const render = () => {
+      t += 0.003;
+      ctx.clearRect(0, 0, W, H);
+
+      const cx = W / 2;
+      const cy = H * 0.4;
+      const maxD = Math.sqrt(cx * cx + cy * cy);
+
+      cells.forEach(cell => {
+        const dx = cell.x - cx;
+        const dy = cell.y - cy;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        const radial = Math.max(0, 1 - d / maxD);
+        const a = 0.025 + radial * 0.07 + Math.sin(t * cell.sp + cell.ph) * 0.015;
+        if (a <= 0) return;
+
+        const isDark = forceDark || document.documentElement.classList.contains('dark');
+        ctx.font = `${cell.sz}px 'Inter', monospace`;
+        ctx.fillStyle = isDark
+          ? `rgba(240,239,238,${Math.max(0, a)})`
+          : `rgba(20,20,20,${Math.max(0, a * 0.9)})`;
+        ctx.fillText(cell.s, cell.x, cell.y);
+      });
 
       animationFrameId = requestAnimationFrame(render);
     };
@@ -99,16 +87,16 @@ export function AsciiBackground({
     render();
 
     return () => {
-      window.removeEventListener('resize', resize);
+      window.removeEventListener('resize', rebuild);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [charDensity]);
+  }, [charDensity, forceDark]);
 
   return (
     <canvas
       ref={canvasRef}
       aria-hidden="true"
-      className={`pointer-events-none absolute inset-0 z-0 h-full w-full opacity-60 dark:opacity-70 ${className}`}
+      className={`pointer-events-none absolute inset-0 z-0 h-full w-full ${className}`}
     />
   );
 }

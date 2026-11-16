@@ -86,6 +86,35 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Landing page palette — flips with SYSTEMCONFIG_THEME */
+:root,
+.light {
+  --lp-bg: #ffffff;
+  --lp-elevated: #f5f5f5;
+  --lp-elevated-hover: #e8e8e8;
+  --lp-chrome: #e8e8e8;
+  --lp-fg: #111111;
+  --lp-muted: #777;
+  --lp-border: rgba(0,0,0,0.08);
+  --lp-border-strong: rgba(0,0,0,0.14);
+  --lp-symbol: rgba(17,17,17,0.08);
+  --lp-nav-scrolled: rgba(255,255,255,0.9);
+  --lp-nav-mobile: rgba(255,255,255,0.98);
+}
+.dark {
+  --lp-bg: #090909;
+  --lp-elevated: #161616;
+  --lp-elevated-hover: #1c1c1c;
+  --lp-chrome: #202020;
+  --lp-fg: #f0efee;
+  --lp-muted: #555;
+  --lp-border: rgba(255,255,255,0.07);
+  --lp-border-strong: rgba(255,255,255,0.14);
+  --lp-symbol: rgba(240,239,238,0.08);
+  --lp-nav-scrolled: rgba(9,9,9,0.9);
+  --lp-nav-mobile: rgba(9,9,9,0.97);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

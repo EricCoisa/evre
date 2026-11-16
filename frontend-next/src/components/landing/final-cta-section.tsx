@@ -1,77 +1,98 @@
 'use client';
 
-import { useState } from 'react';
-import { MessageCircle, Mail, Copy, Check, ArrowRight } from 'lucide-react';
-import { toast } from 'sonner';
+import { useState, useEffect, useRef } from 'react';
+import gsap from 'gsap';
+import ScrollTrigger from 'gsap/ScrollTrigger';
 import { defaulHometData } from '@/lib/actions/cms/home/type';
 
 interface FinalCtaSectionProps {
   title?: string;
-  description?: string;
-  whatsappButtonText?: string;
+  buttonText?: string;
   whatsappNumber?: string;
   contactEmail?: string;
 }
 
 export function FinalCtaSection({
   title = defaulHometData.ctaTitle!,
-  description = defaulHometData.ctaDescription!,
-  whatsappButtonText = defaulHometData.ctaWhatsappButtonText!,
+  buttonText = defaulHometData.ctaButtonText!,
   whatsappNumber = defaulHometData.heroWhatsappNumber!,
   contactEmail = defaulHometData.contactEmail!,
 }: FinalCtaSectionProps) {
   const [copied, setCopied] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=Ol%C3%A1!%20Gostaria%20de%20conversar%20sobre%20um%20projeto%20com%20a%20EVRE.`;
 
   const copyEmail = () => {
     navigator.clipboard.writeText(contactEmail);
     setCopied(true);
-    toast.success('E-mail copiado para a área de transferência');
     setTimeout(() => setCopied(false), 2000);
   };
 
+  useEffect(() => {
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) return;
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    const ctx = gsap.context(() => {
+      gsap.set('.cta-title', { clipPath: 'inset(100% 0 0 0)' });
+      gsap.set('.cta-actions', { opacity: 0, y: 20 });
+
+      gsap.to('.cta-title', {
+        clipPath: 'inset(0% 0 0 0)',
+        scrollTrigger: { trigger: sectionRef.current, start: 'top 75%', end: 'top 20%', scrub: 1.5 },
+      });
+      gsap.to('.cta-actions', {
+        opacity: 1, y: 0,
+        scrollTrigger: { trigger: '.cta-actions', start: 'top 85%', end: 'top 55%', scrub: 1 },
+      });
+    }, sectionRef);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <section id="contato" className="relative bg-background py-20 sm:py-28">
-      <div className="mx-auto max-w-4xl px-4 text-center sm:px-6">
-        <div className="rounded-3xl border border-border bg-card/70 p-8 shadow-xl backdrop-blur-md sm:p-14 dark:border-white/10 dark:bg-[#0C0C10]">
-          <h2 className="mb-4 text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-4xl">
-            {title}
-          </h2>
+    <section
+      ref={sectionRef}
+      id="contato"
+      className="relative overflow-hidden"
+      style={{ background: 'var(--lp-bg)', padding: '10rem max(2rem, env(safe-area-inset-left,0px)) 8rem' }}
+    >
+      {/* Divider line */}
+      <div className="mx-auto mb-20 max-w-6xl" style={{ height: '1px', background: 'var(--lp-border)' }} />
 
-          <p className="mx-auto mb-8 max-w-xl text-sm text-muted-foreground sm:text-base leading-relaxed">
-            {description}
-          </p>
+      <div className="mx-auto max-w-6xl">
+        <h2
+          className="cta-title mb-16 font-black leading-none tracking-tight whitespace-pre-wrap"
+          style={{
+            fontSize: 'clamp(3rem, 10vw, 11rem)',
+            letterSpacing: '-0.03em',
+            color: 'var(--lp-fg)',
+          }}
+        >
+          {title}
+        </h2>
 
-          <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-foreground px-6 py-3.5 text-sm font-semibold text-background transition-opacity hover:opacity-90 sm:w-auto"
-            >
-              <MessageCircle className="h-4 w-4 text-emerald-500" />
-              <span>{whatsappButtonText}</span>
-              <ArrowRight className="h-4 w-4 opacity-60" />
-            </a>
+        <div className="cta-actions flex flex-wrap items-center gap-5">
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2.5 rounded-sm px-8 py-4 text-sm font-bold tracking-wide transition-opacity hover:opacity-85"
+            style={{ background: 'var(--lp-fg)', color: 'var(--lp-bg)' }}
+          >
+            {buttonText}
+          </a>
 
-            <button
-              onClick={copyEmail}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border px-5 py-3.5 text-sm font-medium text-foreground transition-colors hover:bg-accent sm:w-auto"
-            >
-              {copied ? (
-                <>
-                  <Check className="h-4 w-4 text-emerald-500" />
-                  <span>{contactEmail}</span>
-                </>
-              ) : (
-                <>
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span>{contactEmail}</span>
-                  <Copy className="h-3.5 w-3.5 text-muted-foreground ml-1" />
-                </>
-              )}
-            </button>
-          </div>
+          <button
+            onClick={copyEmail}
+            className="inline-flex items-center gap-2 text-sm transition-colors duration-200"
+            style={{ color: copied ? 'var(--lp-fg)' : 'var(--lp-muted)' }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--lp-fg)')}
+            onMouseLeave={e => { if (!copied) e.currentTarget.style.color = 'var(--lp-muted)'; }}
+          >
+            {copied ? '✓ copiado' : contactEmail}
+          </button>
         </div>
       </div>
     </section>
