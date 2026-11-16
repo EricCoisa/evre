@@ -42,12 +42,7 @@ function VariableField({ variable, value, onChange, label }: VariableFieldProps)
     return (
       <div className="grid gap-1">
         <Label>{label}</Label>
-        <Textarea
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          rows={4}
-          placeholder={variable.dummy}
-        />
+        <Textarea value={value} onChange={(e) => onChange(e.target.value)} rows={4} placeholder={variable.dummy} />
       </div>
     );
   }
@@ -82,26 +77,15 @@ export function SendEmailDialog({
   const [activeTab, setActiveTab] = useState('');
   const [varValues, setVarValues] = useState<Record<string, Record<string, string>>>({});
   const [to, setTo] = useState(defaultTo);
-  const [prevDefaultTo, setPrevDefaultTo] = useState(defaultTo);
   const [subject, setSubject] = useState('');
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [prevOpen, setPrevOpen] = useState(open);
 
-  if (defaultTo !== prevDefaultTo) {
-    setPrevDefaultTo(defaultTo);
-    setTo(defaultTo);
-  }
-
-  if (open !== prevOpen) {
-    setPrevOpen(open);
-    if (open) {
-      setLoading(true);
-    }
-  }
+  useEffect(() => { setTo(defaultTo); }, [defaultTo]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) { setLoading(false); return; }
+    setLoading(true);
     let cancelled = false;
     void getEmailTemplates().then((res) => {
       if (cancelled) return;
@@ -121,9 +105,7 @@ export function SendEmailDialog({
       setActiveTab(first);
       setLoading(false);
     });
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
     // defaultVars is only captured upon opening to populate initial values.
     // Intentionally omitted from deps so typing or parent re-renders don't overwrite user edits.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -137,24 +119,15 @@ export function SendEmailDialog({
   };
 
   const handleSend = async () => {
-    if (!to.trim()) {
-      toast.error(t('sendEmailDialog.toRequired'));
-      return;
-    }
-    if (!subject.trim()) {
-      toast.error(t('sendEmailDialog.subjectRequired'));
-      return;
-    }
+    if (!to.trim()) { toast.error(t('sendEmailDialog.toRequired')); return; }
+    if (!subject.trim()) { toast.error(t('sendEmailDialog.subjectRequired')); return; }
     const template = templates.find((item) => item.type === activeTab);
     if (!template) return;
     const html = renderWithValues(template.html, varValues[activeTab] ?? {}, true);
     setSending(true);
     const res = await sendEmail({ to: to.trim(), subject: subject.trim(), html });
     setSending(false);
-    if (!res.success) {
-      toast.error(res.message ?? t('sendEmailDialog.error'));
-      return;
-    }
+    if (!res.success) { toast.error(res.message ?? t('sendEmailDialog.error')); return; }
     toast.success(t('sendEmailDialog.sent'));
     onOpenChange(false);
   };
@@ -235,12 +208,13 @@ export function SendEmailDialog({
             );
           })}
 
-          <div className="mt-4 flex justify-end gap-2">
+          <div className="flex gap-3 mt-4 pt-4 border-t border-border/50">
+            <Button type="button" disabled={sending} onClick={handleSend}>
+              {sending && <Loader2 className="animate-spin mr-2 size-4" />}
+              {sending ? t('sendEmailDialog.sending') : t('sendEmailDialog.send')}
+            </Button>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {t('cancel')}
-            </Button>
-            <Button type="button" disabled={sending} onClick={handleSend}>
-              {sending ? t('sendEmailDialog.sending') : t('sendEmailDialog.send')}
             </Button>
           </div>
         </Tabs>

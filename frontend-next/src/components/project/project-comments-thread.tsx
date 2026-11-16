@@ -179,12 +179,6 @@ export function ProjectCommentsThread({
           value={commentText}
           onChange={setCommentText}
           className="text-xs shadow-none border-muted"
-          formatLabels={{
-            bold: 'Negrito (*texto*)',
-            italic: 'Itálico (_texto_)',
-            strikethrough: 'Riscado (~texto~)',
-            code: 'Código (```texto```)',
-          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
               e.preventDefault();

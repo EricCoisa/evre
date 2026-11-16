@@ -40,12 +40,6 @@ import { copyTaskLink } from './task-link';
 import type { MilestoneTask, ProjectTaskStatus } from '@/lib/actions/project/types';
 import type { ProjectMemberDto } from '@/lib/generated/schemas';
 
-const RICH_TEXT_FORMAT_LABELS = {
-  bold: 'Negrito (*texto*)',
-  italic: 'Itálico (_texto_)',
-  strikethrough: 'Riscado (~texto~)',
-  code: 'Código (```texto```)',
-};
 
 interface TaskDetailSheetProps {
   projectId: string;
@@ -370,7 +364,6 @@ function TaskDescriptionSection({
             onChange={onDescriptionChange}
             placeholder="Escreva detalhes adicionais, links, notas ou critérios para esta tarefa..."
             className="min-h-28 text-xs"
-            formatLabels={RICH_TEXT_FORMAT_LABELS}
           />
           <div className="flex items-center justify-end gap-2 pt-1">
             <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={onCancel} disabled={isSaving}>

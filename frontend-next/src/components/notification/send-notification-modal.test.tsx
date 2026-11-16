@@ -43,46 +43,46 @@ describe('SendNotificationModal', () => {
 
     fireEvent.click(screen.getByText('submit'));
 
-    expect(mocks.mutateAsync).toHaveBeenCalledWith({
+    await waitFor(() => expect(mocks.mutateAsync).toHaveBeenCalledWith({
       title: 'Aviso',
       message: 'Mensagem',
       actionUrl: undefined,
       all: true,
       roleNames: [],
-    });
+    }));
   });
 
-  it('não envia sem título/mensagem — mostra validação em vez de chamar a mutation', () => {
+  it('não envia sem título/mensagem — mostra validação em vez de chamar a mutation', async () => {
     setup();
     fireEvent.click(screen.getByText('submit'));
 
+    await waitFor(() => expect(screen.getAllByText('validation_required').length).toBeGreaterThan(0));
     expect(mocks.mutateAsync).not.toHaveBeenCalled();
-    expect(screen.getAllByText('validation_required').length).toBeGreaterThan(0);
   });
 
-  it('audiência "roles": exige ao menos uma role marcada antes de enviar', () => {
+  it('audiência "roles": exige ao menos uma role marcada antes de enviar', async () => {
     setup();
     fireEvent.change(screen.getByLabelText('field_title'), { target: { value: 'Aviso' } });
     fireEvent.change(screen.getByLabelText('field_message'), { target: { value: 'Mensagem' } });
     fireEvent.click(screen.getByLabelText('audience_roles'));
 
     fireEvent.click(screen.getByText('submit'));
+    await waitFor(() => expect(screen.getByText('audience_roles_required')).toBeInTheDocument());
     expect(mocks.mutateAsync).not.toHaveBeenCalled();
-    expect(screen.getByText('audience_roles_required')).toBeInTheDocument();
 
     fireEvent.click(screen.getByLabelText('ADMIN'));
     fireEvent.click(screen.getByText('submit'));
 
-    expect(mocks.mutateAsync).toHaveBeenCalledWith({
+    await waitFor(() => expect(mocks.mutateAsync).toHaveBeenCalledWith({
       title: 'Aviso',
       message: 'Mensagem',
       actionUrl: undefined,
       all: false,
       roleNames: ['ADMIN'],
-    });
+    }));
   });
 
-  it('desmarcar uma role já selecionada a remove da lista', () => {
+  it('desmarcar uma role já selecionada a remove da lista', async () => {
     setup();
     fireEvent.click(screen.getByLabelText('audience_roles'));
     fireEvent.click(screen.getByLabelText('ADMIN'));
@@ -93,7 +93,7 @@ describe('SendNotificationModal', () => {
     fireEvent.change(screen.getByLabelText('field_message'), { target: { value: 'Mensagem' } });
     fireEvent.click(screen.getByText('submit'));
 
-    expect(mocks.mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ roleNames: ['USER'] }));
+    await waitFor(() => expect(mocks.mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ roleNames: ['USER'] })));
   });
 
   it('sem roles cadastradas, mostra o aviso de "nenhuma role"', () => {
@@ -104,14 +104,14 @@ describe('SendNotificationModal', () => {
     expect(screen.getByText('no_roles')).toBeInTheDocument();
   });
 
-  it('envia a actionUrl aparada quando preenchida', () => {
+  it('envia a actionUrl aparada quando preenchida', async () => {
     setup();
     fireEvent.change(screen.getByLabelText('field_title'), { target: { value: 'Aviso' } });
     fireEvent.change(screen.getByLabelText('field_message'), { target: { value: 'Mensagem' } });
     fireEvent.change(screen.getByLabelText('field_action_url'), { target: { value: '  /destino  ' } });
     fireEvent.click(screen.getByText('submit'));
 
-    expect(mocks.mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ actionUrl: '/destino' }));
+    await waitFor(() => expect(mocks.mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ actionUrl: '/destino' })));
   });
 
   it('sucesso: mostra toast, reseta o formulário e fecha o modal', async () => {

@@ -165,12 +165,6 @@ function MilestoneDescriptionSection({
             value={description}
             onChange={onDescriptionChange}
             className="min-h-32 text-sm"
-            formatLabels={{
-              bold: 'Negrito (*texto*)',
-              italic: 'Itálico (_texto_)',
-              strikethrough: 'Riscado (~texto~)',
-              code: 'Código (```texto```)',
-            }}
           />
           <div className="flex justify-end gap-2">
             <Button

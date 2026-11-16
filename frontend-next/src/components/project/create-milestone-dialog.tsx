@@ -35,12 +35,6 @@ const fields: FormBuilderField[] = [
         value={field.value as string ?? ''}
         onChange={field.onChange}
         className="min-h-28 text-xs"
-        formatLabels={{
-          bold: 'Negrito (*texto*)',
-          italic: 'Itálico (_texto_)',
-          strikethrough: 'Riscado (~texto~)',
-          code: 'Código (```texto```)',
-        }}
       />
     ),
   },

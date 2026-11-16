@@ -64,12 +64,6 @@ export function ContactFormDialog({
           onChange={field.onChange}
           placeholder={t('form.placeholderMessage')}
           ariaLabel={t('form.labelMessage')}
-          formatLabels={{
-            bold: 'Negrito (*texto*)',
-            italic: 'Itálico (_texto_)',
-            strikethrough: 'Riscado (~texto~)',
-            code: 'Código (```texto```)',
-          }}
         />
       ),
     },

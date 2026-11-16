@@ -61,7 +61,7 @@ interface RichTextInputProps {
   placeholder: string;
   disabled?: boolean;
   ariaLabel: string;
-  formatLabels: {
+  formatLabels?: {
     bold: string;
     italic: string;
     strikethrough: string;
@@ -355,7 +355,7 @@ function FormatToolbar({
   variableButtonLabel,
   showFontSize,
 }: {
-  labels: RichTextInputProps['formatLabels'];
+  labels?: RichTextInputProps['formatLabels'];
   disabled: boolean;
   variables?: RichTextVariableOption[];
   variableButtonLabel?: string;

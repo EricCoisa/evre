@@ -313,12 +313,12 @@ export function ProposalSendModal({
           {/* Telefone */}
           <PhoneSection contacts={contacts} phone={phone} setPhone={setPhone} pending={pending} t={t} />
 
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
-              {t('cancel')}
-            </Button>
+          <div className="flex gap-3 pt-4 border-t border-border/50">
             <Button type="submit" disabled={!valid || pending}>
               {t('sendConfirm')}
+            </Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
+              {t('cancel')}
             </Button>
           </div>
         </form>
@@ -339,10 +339,7 @@ export function ProposalSendModal({
         title={t('confirmPublicImageTitle')}
         description={t('confirmPublicImageDescription')}
       >
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => headerImage.setConfirmOpen(false)} disabled={headerImage.isPending}>
-            {t('cancel')}
-          </Button>
+        <div className="flex gap-3 pt-4 border-t border-border/50">
           <Button
             onClick={async () => {
               headerImage.setConfirmOpen(false);
@@ -351,6 +348,9 @@ export function ProposalSendModal({
             disabled={headerImage.isPending}
           >
             {t('confirmPublicImageConfirm')}
+          </Button>
+          <Button variant="outline" onClick={() => headerImage.setConfirmOpen(false)} disabled={headerImage.isPending}>
+            {t('cancel')}
           </Button>
         </div>
       </Modal>

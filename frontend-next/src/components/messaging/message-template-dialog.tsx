@@ -2,14 +2,6 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -33,6 +25,7 @@ import type {
   ReservedVariable,
 } from '@/lib/actions/messaging/types';
 import { usedVariableNames } from '@/lib/messaging/template-variables';
+import Modal from '@/components/modal';
 
 type TranslateFn = ReturnType<typeof useTranslation>['t'];
 
@@ -229,45 +222,30 @@ export function MessageTemplateDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t('template')}</DialogTitle>
-          <DialogDescription>
-            {template.approval ? t('templateNative') : t('templateFallback')}
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={submit} className="grid gap-4">
-          <TemplateSelectPicker
-            available={available}
-            templateId={templateId}
-            onPick={pick}
-            t={t}
-          />
-
-          <TemplateBlockedAlerts
-            blockedNames={blockedNames}
-            systemLinks={systemLinks}
-            t={t}
-          />
-
-          <TemplateVariableFields
-            variables={variables}
-            values={values}
-            onChange={(name, val) => setValues((curr) => ({ ...curr, [name]: val }))}
-            t={t}
-          />
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              {t('cancel')}
-            </Button>
-            <Button type="submit" disabled={!valid || pending}>
-              {t('send')}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <Modal
+      open={open}
+      onOpenChange={onOpenChange}
+      title={t('template')}
+      description={template.approval ? t('templateNative') : t('templateFallback')}
+    >
+      <form onSubmit={submit} className="grid gap-4">
+        <TemplateSelectPicker available={available} templateId={templateId} onPick={pick} t={t} />
+        <TemplateBlockedAlerts blockedNames={blockedNames} systemLinks={systemLinks} t={t} />
+        <TemplateVariableFields
+          variables={variables}
+          values={values}
+          onChange={(name, val) => setValues((curr) => ({ ...curr, [name]: val }))}
+          t={t}
+        />
+        <div className="flex gap-3 pt-4 border-t border-border/50">
+          <Button type="submit" disabled={!valid || pending}>
+            {t('send')}
+          </Button>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            {t('cancel')}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 }
