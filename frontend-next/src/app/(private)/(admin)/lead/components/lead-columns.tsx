@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal } from 'lucide-react';
+import { MessageCircle, MoreHorizontal } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import type { TFunc } from '@/hooks/use-translation';
 import { useTranslation } from '@/hooks/use-translation';
@@ -35,9 +35,20 @@ const STATUS_LABEL_KEY: Record<string, string> = {
 interface GetLeadColumnsProps {
   t: TFunc;
   onStatusChange: (lead: LeadDto, status: LeadDtoStatus) => void;
+  onOpenChat?: (lead: LeadDto) => void;
+  chatEnabled?: boolean;
+  chatOperational?: boolean;
+  chatDisabledReason?: string;
 }
 
-export function getLeadColumns({ t, onStatusChange }: GetLeadColumnsProps): ColumnDef<LeadDto>[] {
+export function getLeadColumns({
+  t,
+  onStatusChange,
+  onOpenChat,
+  chatEnabled,
+  chatOperational,
+  chatDisabledReason,
+}: GetLeadColumnsProps): ColumnDef<LeadDto>[] {
   return [
     {
       accessorKey: 'name',
@@ -92,7 +103,20 @@ export function getLeadColumns({ t, onStatusChange }: GetLeadColumnsProps): Colu
         const lead = row.original;
         const otherStatuses = LEAD_STATUSES.filter((s) => s !== lead.status);
         return (
-          <DataCell>
+          <DataCell className="flex gap-2 items-center">
+            {chatEnabled && onOpenChat && (
+              <Button
+                type="button"
+                size="icon-sm"
+                variant="ghost"
+                title={chatOperational ? t('openChat') : (chatDisabledReason ?? t('providerUnavailable'))}
+                aria-label={t('openChatWith', { name: lead.name ?? lead.phone ?? '' })}
+                disabled={!chatOperational || !lead.phone}
+                onClick={() => onOpenChat(lead)}
+              >
+                <MessageCircle className="size-4" />
+              </Button>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-6 p-0 min-h-0">

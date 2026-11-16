@@ -4,7 +4,7 @@ import { Container } from '@/components/container';
 import { PageHeader } from '@/components/page-header';
 import { useTranslation } from '@/hooks/use-translation';
 import { useLeads } from '@/lib/actions/lead/queries';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { DataTable } from '@/components/data-table';
 import { getLeadColumns } from './components/lead-columns';
 import { buildTableQueryParams } from '@/lib/table-query-params';
@@ -12,6 +12,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { updateLeadStatus } from '@/lib/actions/lead/api';
 import type { LeadDto, LeadDtoStatus } from '@/lib/generated/schemas';
+import { useChatWindows } from '@/components/messaging/chat-windows-provider';
+import { useCapability } from '@/lib/actions/capability/queries';
+import { CAPABILITIES } from '@/types/capabilities';
 
 export default function LeadPage() {
   const { t } = useTranslation('lead');
@@ -23,6 +26,11 @@ export default function LeadPage() {
   const { data, error } = useLeads(queryParams);
   const queryClient = useQueryClient();
 
+  const { chatEnabled, openChatForPhone } = useChatWindows();
+  const { disabled: messagingDisabled, reason: messagingDisabledReason } = useCapability(
+    CAPABILITIES.messaging,
+  );
+
   const handleStatusChange = async (lead: LeadDto, status: LeadDtoStatus) => {
     const res = await updateLeadStatus(lead.id, { status });
     if (res.success) {
@@ -32,7 +40,21 @@ export default function LeadPage() {
     }
   };
 
-  const columns = getLeadColumns({ t, onStatusChange: handleStatusChange });
+  const handleOpenChat = useCallback(
+    (lead: LeadDto) => {
+      if (lead.phone) openChatForPhone(lead.phone, { name: lead.name ?? undefined });
+    },
+    [openChatForPhone],
+  );
+
+  const columns = getLeadColumns({
+    t,
+    onStatusChange: handleStatusChange,
+    onOpenChat: handleOpenChat,
+    chatEnabled,
+    chatOperational: !messagingDisabled,
+    chatDisabledReason: messagingDisabledReason,
+  });
 
   return (
     <Container variant="dataTable" border={false}>
