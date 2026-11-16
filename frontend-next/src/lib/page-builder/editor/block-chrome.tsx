@@ -14,6 +14,7 @@ import {
   Copy,
   GripVertical,
   MoveVertical,
+  Palette,
   Sparkles,
   Trash2,
   Type,
@@ -46,6 +47,7 @@ import {
   type HoverPreset,
 } from '../animation';
 import { isAutoHeightBlockType, isTextEditableBlockType } from '../blocks.meta';
+import { activeColorScheme, applyColorScheme, COLOR_SCHEMES } from '../class-names';
 import { TEXT_PRESET_CONFIG, normalizeTextPreset } from '../registry';
 import {
   COL_START_CLASS,
@@ -333,6 +335,56 @@ function AnimationQuickMenu({
   );
 }
 
+/** Seletor rápido de cor do bloco direto no canvas — mesmos `COLOR_SCHEMES` do painel lateral
+ * (`class-names.ts`), açúcar de UI sobre o `className` já validado; não é campo novo. */
+function ColorQuickMenu({
+  block,
+  editor,
+  t,
+}: {
+  block: PageBlock;
+  editor: EditorValue;
+  t: TFunc;
+}) {
+  const current = block.className?.split(/\s+/).filter(Boolean) ?? [];
+  const activeKey = activeColorScheme(block.className);
+
+  const setScheme = (classes: string[]) => {
+    const next = applyColorScheme(current, classes);
+    editor.patch(block.id, { className: next.length ? next.join(' ') : undefined });
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-6 text-muted-foreground hover:text-foreground"
+          title={t('editor.blockColor', { defaultValue: 'Cor do bloco' })}
+        >
+          <Palette className="size-3.5" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-36 text-xs">
+        <DropdownMenuLabel className="text-[10px] uppercase text-muted-foreground">
+          {t('editor.blockColor', { defaultValue: 'Cor do bloco' })}
+        </DropdownMenuLabel>
+        {COLOR_SCHEMES.map((scheme) => (
+          <DropdownMenuItem
+            key={scheme.key}
+            onClick={() => setScheme(scheme.classes)}
+            className={cn('text-xs', activeKey === scheme.key && 'font-semibold text-primary')}
+          >
+            {t(`editor.${scheme.labelKey}`, { defaultValue: scheme.key })}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 /** Seletor rápido de altura (RowSpan) — renderizado sempre, se auto-oculta para blocos
  * auto-height (sem resize manual de altura). */
 function HeightQuickMenu({
@@ -523,6 +575,8 @@ function FloatingBlockToolbar({
       />
 
       <AnimationQuickMenu block={block} editor={editor} t={t} />
+
+      <ColorQuickMenu block={block} editor={editor} t={t} />
 
       {/* Duplicar Bloco */}
       <Button

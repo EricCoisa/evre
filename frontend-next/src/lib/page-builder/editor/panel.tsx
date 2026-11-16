@@ -39,7 +39,7 @@ import {
   type BlockPropMeta,
   type BlockType,
 } from '../blocks.meta';
-import { classNamesFor } from '../class-names';
+import { activeColorScheme, applyColorScheme, classNamesFor, COLOR_SCHEMES } from '../class-names';
 import {
   ANIMATION_PRESET_LABEL_KEY,
   ANIMATION_TRIGGER_LABEL_KEY,
@@ -905,28 +905,6 @@ function renderBasicInputField(
   );
 }
 
-/** Combinações de `bg-*`/`text-*` já presentes na allowlist (`class-names.ts`) — cor do bloco
- * é açúcar de UI sobre o mesmo `className`, não um campo novo. */
-const COLOR_SCHEME_TOKENS = [
-  'bg-card', 'bg-muted', 'bg-accent', 'bg-primary/5', 'bg-destructive/10',
-  'text-foreground', 'text-muted-foreground', 'text-primary', 'text-destructive',
-] as const;
-
-const COLOR_SCHEMES: { key: string; labelKey: string; classes: string[] }[] = [
-  { key: 'default', labelKey: 'colorDefault', classes: [] },
-  { key: 'primary', labelKey: 'colorPrimary', classes: ['bg-primary/5', 'text-primary'] },
-  { key: 'accent', labelKey: 'colorAccent', classes: ['bg-accent'] },
-  { key: 'destructive', labelKey: 'colorDestructive', classes: ['bg-destructive/10', 'text-destructive'] },
-  { key: 'muted', labelKey: 'colorMuted', classes: ['bg-muted', 'text-muted-foreground'] },
-];
-
-/** Troca só os tokens de cor da allowlist dentro do `className`; o resto (espaçamento, borda,
- * tipografia) fica como está. */
-function applyColorScheme(current: string[], classes: string[]): string[] {
-  const withoutColor = current.filter((c) => !(COLOR_SCHEME_TOKENS as readonly string[]).includes(c));
-  return [...withoutColor, ...classes];
-}
-
 function ColorSchemePicker({
   value,
   onChange,
@@ -936,9 +914,7 @@ function ColorSchemePicker({
 }) {
   const { t } = useTranslation('page-builder');
   const current = value?.split(/\s+/).filter(Boolean) ?? [];
-  const activeKey =
-    COLOR_SCHEMES.find((s) => s.classes.length > 0 && s.classes.every((c) => current.includes(c)))
-      ?.key ?? 'default';
+  const activeKey = activeColorScheme(value);
 
   return (
     <div className="space-y-1.5">

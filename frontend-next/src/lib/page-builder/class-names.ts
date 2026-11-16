@@ -58,6 +58,44 @@ export function filterClassName(raw: unknown): string | undefined {
   return kept.length ? kept.join(' ') : undefined;
 }
 
+/** Combinações de `bg-*`/`text-*` já presentes em `ALLOWED_CLASS_NAMES` — cor do bloco é açúcar
+ * de UI sobre o mesmo `className`, nunca um campo novo de schema. Usado pelo painel
+ * (`editor/panel.tsx`) e pela toolbar flutuante do canvas (`editor/block-chrome.tsx`). */
+export const COLOR_SCHEME_TOKENS = [
+  'bg-card', 'bg-muted', 'bg-accent', 'bg-primary/5', 'bg-destructive/10',
+  'text-foreground', 'text-muted-foreground', 'text-primary', 'text-destructive',
+] as const;
+
+export interface ColorScheme {
+  key: string;
+  labelKey: string;
+  classes: string[];
+}
+
+export const COLOR_SCHEMES: ColorScheme[] = [
+  { key: 'default', labelKey: 'colorDefault', classes: [] },
+  { key: 'primary', labelKey: 'colorPrimary', classes: ['bg-primary/5', 'text-primary'] },
+  { key: 'accent', labelKey: 'colorAccent', classes: ['bg-accent'] },
+  { key: 'destructive', labelKey: 'colorDestructive', classes: ['bg-destructive/10', 'text-destructive'] },
+  { key: 'muted', labelKey: 'colorMuted', classes: ['bg-muted', 'text-muted-foreground'] },
+];
+
+/** Troca só os tokens de cor dentro do `className`; o resto (espaçamento, borda, tipografia)
+ * fica como está. */
+export function applyColorScheme(current: string[], classes: string[]): string[] {
+  const withoutColor = current.filter((c) => !(COLOR_SCHEME_TOKENS as readonly string[]).includes(c));
+  return [...withoutColor, ...classes];
+}
+
+/** Qual scheme está ativo num `className` — `'default'` quando nenhum bate (ou nenhuma classe de cor está presente). */
+export function activeColorScheme(className: string | undefined): string {
+  const current = className?.split(/\s+/).filter(Boolean) ?? [];
+  return (
+    COLOR_SCHEMES.find((s) => s.classes.length > 0 && s.classes.every((c) => current.includes(c)))
+      ?.key ?? 'default'
+  );
+}
+
 /** Traduz o alinhamento do bloco para classes `text-*` nos slots internos (largura total). */
 const INNER_ALIGN: Record<string, string> = {
   'items-start': 'text-left',
