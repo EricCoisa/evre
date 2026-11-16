@@ -93,6 +93,14 @@ const LeafBlockSchema = z.object({
   className: z.string().max(200).optional(),
   /** Sobrescreve o padrão de animação da página só para este bloco. */
   animation: BlockAnimationSchema,
+  /** Nome no catálogo de efeitos do frontend (`effects.meta.ts`). Validado lá via ponte, não
+   * aqui — igual ao `type` do bloco, cresce sem exigir mudança neste DTO. */
+  effect: z
+    .object({
+      type: z.string().min(1),
+      params: z.record(z.unknown()).optional(),
+    })
+    .optional(),
   props: z.record(z.unknown()).optional(),
   // `source` (fonte real) e `inline` (payload colado, congelado no layout) são mutuamente
   // exclusivos. `inline` fica `z.unknown()` de propósito: a shape (list × series) depende do

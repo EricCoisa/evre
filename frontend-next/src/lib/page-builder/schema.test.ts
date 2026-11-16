@@ -291,3 +291,33 @@ describe('animation no schema', () => {
     ).toBe(false);
   });
 });
+
+describe('effect no schema', () => {
+  it('aceita effect no bloco, type livre (validado só pelo catálogo da ponte, não aqui)', () => {
+    const parsed = PageLayoutSchema.safeParse({
+      v: 1,
+      blocks: [
+        { id: 'b1', type: 'stat.card', effect: { type: 'tilt3d', params: { rotateX: 8 } } },
+      ],
+    });
+
+    expect(parsed.success).toBe(true);
+    expect(parsed.success && parsed.data.blocks[0].effect).toEqual({
+      type: 'tilt3d',
+      params: { rotateX: 8 },
+    });
+  });
+
+  it('layout sem effect continua válido — campo aditivo', () => {
+    expect(PageLayoutSchema.safeParse(validLayout).success).toBe(true);
+  });
+
+  it('effect sem params é válido (params é opcional)', () => {
+    const parsed = PageLayoutSchema.safeParse({
+      v: 1,
+      blocks: [{ id: 'b1', type: 'stat.card', effect: { type: 'liquid-distortion' } }],
+    });
+
+    expect(parsed.success).toBe(true);
+  });
+});

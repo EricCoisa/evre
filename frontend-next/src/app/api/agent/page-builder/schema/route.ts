@@ -3,6 +3,7 @@ import { requireAgentSecret } from '@/lib/api/agent-cms-auth';
 import { ANIMATION_TRIGGERS, ENTRANCE_PRESETS, HOVER_PRESETS } from '@/lib/page-builder/animation';
 import { describeBlocks } from '@/lib/page-builder/blocks.meta';
 import { classNamesFor } from '@/lib/page-builder/class-names';
+import { describeEffects } from '@/lib/page-builder/effects.meta';
 import { describePages } from '@/lib/page-builder/pages';
 import {
   DEFAULT_PROFILE,
@@ -41,6 +42,9 @@ export async function GET(req: NextRequest) {
       hover: [...HOVER_PRESETS],
       triggers: [...ANIMATION_TRIGGERS],
     },
+    // Catálogo de efeitos — cresce como o de blocos, validado contra este catálogo vivo, nunca
+    // mirrorado como enum no backend (ver effects.meta.ts).
+    effects: describeEffects(),
     // Mecanismo de dado desta superfície: "role-filtered" (fonte real), "inline-only" (payload
     // colado em data.inline) ou "none" (nenhum dado). Resposta autodescritiva — o backend já tem
     // o mesmo valor no próprio LAYOUT_PROFILES e não depende deste campo para decidir nada.

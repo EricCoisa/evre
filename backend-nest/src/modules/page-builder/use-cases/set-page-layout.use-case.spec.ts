@@ -215,6 +215,7 @@ describe('SetPageLayoutUseCase', () => {
           profile === 'proposal'
             ? ['text-center', 'font-bold', 'max-w-prose']
             : ['text-center', 'font-bold'],
+        effects: [{ type: 'tilt3d', label: 'Inclinação 3D', description: '', params: [] }],
       });
     });
     mockGetByKey.execute.mockResolvedValue({
@@ -437,6 +438,47 @@ describe('SetPageLayoutUseCase', () => {
         } as PageLayout,
       }),
     ).rejects.toThrow(/não aceita "children"/);
+  });
+
+  // effect.type é string solta no Zod (diferente de className/animation): quem recusa tipo
+  // inexistente é o catálogo vivo pela ponte, igual já acontece pro `type` do bloco.
+  it('aceita effect.type do catálogo publicado pelo frontend', async () => {
+    await useCase.execute('u1', 'ADMIN', {
+      pageKey: '/dashboard',
+      layout: {
+        v: 1,
+        blocks: [
+          {
+            id: 'b1',
+            type: 'stat.card',
+            effect: { type: 'tilt3d', params: { rotateX: 8 } },
+            data: { source: 'users.list' },
+          },
+        ],
+      } as PageLayout,
+    });
+
+    expect(mockSet.execute).toHaveBeenCalled();
+  });
+
+  it('recusa effect.type fora do catálogo', async () => {
+    await expect(
+      useCase.execute('u1', 'ADMIN', {
+        pageKey: '/dashboard',
+        layout: {
+          v: 1,
+          blocks: [
+            {
+              id: 'b1',
+              type: 'stat.card',
+              effect: { type: 'nuclear-explosion' },
+              data: { source: 'users.list' },
+            },
+          ],
+        } as PageLayout,
+      }),
+    ).rejects.toThrow(/nuclear-explosion/);
+    expect(mockSet.execute).not.toHaveBeenCalled();
   });
 
   // className só tem efeito se a classe existir no CSS gerado pelo Tailwind, o que só vale

@@ -7,6 +7,7 @@ import { motion, useReducedMotion } from 'motion/react';
 import { Pencil } from 'lucide-react';
 import { buildMotionProps, resolveAnimation } from './animation';
 import { LayoutAnimationProvider, useLayoutAnimation } from './animation-context';
+import { wrapWithEffect } from './effects';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
@@ -507,13 +508,15 @@ function Block({
 
   // Fora do canvas de edição (página pública e modal de Preview): o próprio item de grid vira o
   // `motion.div`, sem camada extra — mesmo elemento, mesmo tamanho de célula, só a tag muda.
+  // Efeito embrulha por dentro (transforma/filtra o conteúdo real); grid e animação de entrada
+  // ficam por fora, controlando posição e aparecimento da célula inteira.
   const motionProps = buildMotionProps(
     resolveAnimation(block.animation, layoutAnimation),
     prefersReducedMotion ?? undefined,
   );
   return (
     <motion.div className={gridClass} style={gridStyle} {...motionProps}>
-      {content}
+      {wrapWithEffect(content, block.effect)}
     </motion.div>
   );
 }

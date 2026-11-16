@@ -75,6 +75,8 @@
     "animationHoverGlow": "Brilho",
     "animationTriggerLoad": "Ao carregar",
     "animationTriggerScroll": "Ao rolar a tela",
+    "effect": "Efeito",
+    "effectNone": "Nenhum",
     "drag": "Arrastar para reordenar",
     "narrower": "Estreitar",
     "wider": "Alargar",

@@ -65,11 +65,13 @@ export class PageLayoutValidator {
 
     const byType = new Map(catalog.blocks.map((b) => [b.type, b]));
     const classNames = new Set(catalog.classNames);
+    const effectTypes = new Set(catalog.effects.map((e) => e.type));
     const problems: string[] = [];
 
     for (const block of input.layout.blocks) {
       problems.push(...this.blockProblems(block, byType, profile));
       problems.push(...classNameProblems(block, classNames));
+      problems.push(...effectProblems(block, effectTypes));
 
       for (const child of block.children ?? []) {
         const childMeta = byType.get(child.type);
@@ -95,6 +97,7 @@ export class PageLayoutValidator {
         }
         problems.push(...this.blockProblems(child, byType, profile));
         problems.push(...classNameProblems(child, classNames));
+        problems.push(...effectProblems(child, effectTypes));
       }
     }
 
@@ -275,6 +278,17 @@ function classNameProblems(block: PageBlock, allowed: Set<string>): string[] {
         `bloco "${block.id}": className "${invalid.join(', ')}" não está na lista suportada — só valem as classes retornadas em classNames por describe_page_builder`,
       ]
     : [];
+}
+
+/** Recusa `effect.type` fora do catálogo que o frontend publica — mesmo papel de
+ * `classNameProblems`, mas sem checar `params` (bloco não tem essa checagem hoje também). */
+function effectProblems(block: PageBlock, allowed: Set<string>): string[] {
+  if (!block.effect) return [];
+  return allowed.has(block.effect.type)
+    ? []
+    : [
+        `bloco "${block.id}": effect.type "${block.effect.type}" não está no catálogo suportado — só valem os tipos retornados em effects por describe_page_builder`,
+      ];
 }
 
 /** Valida a shape de `data.inline` contra o `kind` que o bloco aceita (`series` × `list`/`count`,

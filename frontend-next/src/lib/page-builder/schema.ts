@@ -60,6 +60,15 @@ const LeafBlockSchema = z.object({
   className: z.string().optional(),
   /** Sobrescreve o padrão de animação da página (`PageLayoutSchema.animation`) só para este bloco. */
   animation: BlockAnimationSchema,
+  // `type` livre (não `z.enum`), igual ao `type` do bloco: o catálogo de efeitos
+  // (`effects.meta.ts`) cresce como o de blocos, sem exigir deploy do backend — quem recusa
+  // `type` desconhecido é o validador semântico, contra o catálogo publicado pela ponte.
+  effect: z
+    .object({
+      type: z.string().min(1),
+      params: z.record(z.string(), z.unknown()).optional(),
+    })
+    .optional(),
   props: z.record(z.string(), z.unknown()).optional(),
   // `source` (fonte real, resolvida em runtime) e `inline` (payload colado, congelado no
   // layout) são mutuamente exclusivos — um bloco com os dois é recusado aqui mesmo, antes de

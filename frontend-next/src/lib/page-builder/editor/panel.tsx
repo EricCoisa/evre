@@ -64,6 +64,7 @@ import {
   type EntrancePreset,
   type HoverPreset,
 } from '../animation';
+import { EFFECT_META, isKnownEffect } from '../effects.meta';
 import { getMaxResizeBounds } from '../grid-engine';
 import { LAYOUT_PROFILES } from '../profiles';
 import {
@@ -549,6 +550,11 @@ function BlockForm({
       <BlockAnimationSection
         value={block.animation}
         onChange={(v) => editor.patch(block.id, { animation: v })}
+      />
+
+      <BlockEffectSection
+        value={block.effect}
+        onChange={(v) => editor.patch(block.id, { effect: v })}
       />
     </section>
   );
@@ -1150,6 +1156,57 @@ function BlockAnimationSection({
           {t('editor.animationInherited', { defaultValue: 'Usando a animação padrão da página.' })}
         </p>
       )}
+    </div>
+  );
+}
+
+/** Seletor de efeito (`EFFECT_META`) + campos de parâmetro gerados pelo mesmo `PropField` que já
+ * desenha `meta.props` de bloco — efeito novo ganha UI sem nenhum componente próprio. */
+function BlockEffectSection({
+  value,
+  onChange,
+}: {
+  value: PageBlock['effect'];
+  onChange: (value: PageBlock['effect']) => void;
+}) {
+  const { t } = useTranslation('page-builder');
+  const effectType = value?.type;
+  const meta = effectType && isKnownEffect(effectType) ? EFFECT_META[effectType] : undefined;
+
+  const setType = (type: string) => onChange(type === 'none' ? undefined : { type, params: {} });
+  const setParam = (name: string, paramValue: unknown) =>
+    onChange(value && { ...value, params: { ...value.params, [name]: paramValue } });
+
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">{t('editor.effect', { defaultValue: 'Efeito' })}</Label>
+      <Select value={effectType ?? 'none'} onValueChange={setType}>
+        <SelectTrigger className="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="none">{t('editor.effectNone', { defaultValue: 'Nenhum' })}</SelectItem>
+          {Object.entries(EFFECT_META).map(([type, effectMeta]) => (
+            <SelectItem key={type} value={type}>
+              {effectMeta.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {meta ? (
+        <div className="space-y-2 pt-1">
+          <p className="text-muted-foreground text-[11px]">{meta.description}</p>
+          {meta.params.map((param) => (
+            <PropField
+              key={param.name}
+              meta={param}
+              value={value?.params?.[param.name]}
+              fields={[]}
+              onChange={(v) => setParam(param.name, v)}
+            />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

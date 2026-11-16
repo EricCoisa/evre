@@ -18,6 +18,7 @@ import {
   Sparkles,
   Trash2,
   Type,
+  Wand2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -54,6 +55,7 @@ import {
   type ColorScheme,
   type ColorSchemeVariant,
 } from '../class-names';
+import { EFFECT_META } from '../effects.meta';
 import { TEXT_PRESET_CONFIG, normalizeTextPreset } from '../registry';
 import {
   COL_START_CLASS,
@@ -394,6 +396,63 @@ function ColorQuickMenu({
   );
 }
 
+/** Seletor rápido de efeito direto no canvas — só escolhe o tipo (`EFFECT_META`); ajuste fino de
+ * parâmetro fica no painel lateral (`BlockEffectSection`), igual o resto dos quick menus faz com
+ * o painel completo. */
+function EffectQuickMenu({
+  block,
+  editor,
+  t,
+}: {
+  block: PageBlock;
+  editor: EditorValue;
+  t: TFunc;
+}) {
+  const current = block.effect?.type;
+
+  const setEffect = (type: string) => {
+    editor.patch(block.id, {
+      effect: type === 'none' ? undefined : { type, params: block.effect?.type === type ? block.effect.params : {} },
+    });
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-6 text-muted-foreground hover:text-foreground"
+          title={t('editor.effect', { defaultValue: 'Efeito' })}
+        >
+          <Wand2 className="size-3.5" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-44 text-xs">
+        <DropdownMenuLabel className="text-[10px] uppercase text-muted-foreground">
+          {t('editor.effect', { defaultValue: 'Efeito' })}
+        </DropdownMenuLabel>
+        <DropdownMenuItem
+          onClick={() => setEffect('none')}
+          className={cn('text-xs', !current && 'font-semibold text-primary')}
+        >
+          {t('editor.effectNone', { defaultValue: 'Nenhum' })}
+        </DropdownMenuItem>
+        {Object.entries(EFFECT_META).map(([type, meta]) => (
+          <DropdownMenuItem
+            key={type}
+            onClick={() => setEffect(type)}
+            className={cn('text-xs', current === type && 'font-semibold text-primary')}
+          >
+            {meta.label}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 /** Seletor rápido de altura (RowSpan) — renderizado sempre, se auto-oculta para blocos
  * auto-height (sem resize manual de altura). */
 function HeightQuickMenu({
@@ -586,6 +645,8 @@ function FloatingBlockToolbar({
       <AnimationQuickMenu block={block} editor={editor} t={t} />
 
       <ColorQuickMenu block={block} editor={editor} t={t} />
+
+      <EffectQuickMenu block={block} editor={editor} t={t} />
 
       {/* Duplicar Bloco */}
       <Button

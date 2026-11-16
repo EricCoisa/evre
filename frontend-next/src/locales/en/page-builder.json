@@ -75,6 +75,8 @@
     "animationHoverGlow": "Glow",
     "animationTriggerLoad": "On load",
     "animationTriggerScroll": "On scroll",
+    "effect": "Effect",
+    "effectNone": "None",
     "drag": "Drag to reorder",
     "narrower": "Narrower",
     "wider": "Wider",

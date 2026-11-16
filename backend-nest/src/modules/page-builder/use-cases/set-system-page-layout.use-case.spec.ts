@@ -56,6 +56,7 @@ describe('SetSystemPageLayoutUseCase', () => {
       pages: [{ pageKey: '/dashboard', description: '' }],
       spans: [1, 2, 3, 4],
       classNames: ['text-center'],
+      effects: [],
     });
     mockFindByLabelKey.execute.mockResolvedValue({
       id: 'cfg-1',

@@ -30,6 +30,14 @@ export interface PageBuilderSchemaResponse {
     hover: string[];
     triggers: string[];
   };
+  /** Catálogo de efeitos aceitos em `block.effect.type` — diferente de `classNames`/`animationPresets`,
+   * é a ÚNICA validação de `effect.type` (o DTO deixa `string` solta, de propósito: cresce sem deploy do backend). */
+  effects: Array<{
+    type: string;
+    label: string;
+    description: string;
+    params: Array<{ name: string; type: string; required: boolean }>;
+  }>;
 }
 
 /** Bridge para `/api/agent/page-builder/schema` no frontend, autenticada por `AGENT_CMS_SECRET`. */

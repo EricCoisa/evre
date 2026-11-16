@@ -43,6 +43,10 @@ describe('DescribePageBuilderTool', () => {
         pages: [{ pageKey: '/dashboard', description: 'Dashboard principal' }],
         spans: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
         classNames: ['p-4', 'text-center'],
+        animationPresets: { entrance: ['fade'], hover: ['lift'], triggers: ['load', 'scroll'] },
+        effects: [
+          { type: 'tilt3d', label: 'Inclinação 3D', description: '', params: [] },
+        ],
       }),
     };
 
@@ -85,6 +89,14 @@ describe('DescribePageBuilderTool', () => {
         fields: ['module', 'action', 'message'],
         params: [{ name: 'limit', type: 'number', description: 'Itens por página' }],
       },
+    ]);
+    expect(result.animationPresets).toEqual({
+      entrance: ['fade'],
+      hover: ['lift'],
+      triggers: ['load', 'scroll'],
+    });
+    expect(result.effects).toEqual([
+      { type: 'tilt3d', label: 'Inclinação 3D', description: '', params: [] },
     ]);
   });
 
