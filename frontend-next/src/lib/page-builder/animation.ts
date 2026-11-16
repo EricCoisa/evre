@@ -51,6 +51,30 @@ export interface ResolvedAnimation {
   delay: number;
 }
 
+/** Chave de i18n por preset — única fonte, usada pelo painel e pela toolbar flutuante do canvas
+ * (`editor/panel.tsx`, `editor/block-chrome.tsx`) para não duplicar o rótulo em dois lugares. */
+export const ANIMATION_PRESET_LABEL_KEY: Record<EntrancePreset, string> = {
+  none: 'animationPresetNone',
+  fade: 'animationPresetFade',
+  'slide-up': 'animationPresetSlideUp',
+  'slide-down': 'animationPresetSlideDown',
+  'slide-left': 'animationPresetSlideLeft',
+  'slide-right': 'animationPresetSlideRight',
+  'zoom-in': 'animationPresetZoomIn',
+};
+
+export const HOVER_PRESET_LABEL_KEY: Record<HoverPreset, string> = {
+  none: 'animationHoverNone',
+  lift: 'animationHoverLift',
+  scale: 'animationHoverScale',
+  glow: 'animationHoverGlow',
+};
+
+export const ANIMATION_TRIGGER_LABEL_KEY: Record<AnimationTrigger, string> = {
+  load: 'animationTriggerLoad',
+  scroll: 'animationTriggerScroll',
+};
+
 const SLIDE_DISTANCE = 24;
 
 /** `hidden`/`visible` por preset de entrada — consumido via `initial`/`animate`/`whileInView`. */

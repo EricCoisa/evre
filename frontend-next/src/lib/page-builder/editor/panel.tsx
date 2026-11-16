@@ -41,10 +41,13 @@ import {
 } from '../blocks.meta';
 import { classNamesFor } from '../class-names';
 import {
+  ANIMATION_PRESET_LABEL_KEY,
+  ANIMATION_TRIGGER_LABEL_KEY,
   ANIMATION_TRIGGERS,
   DEFAULT_DELAY,
   DEFAULT_DURATION,
   ENTRANCE_PRESETS,
+  HOVER_PRESET_LABEL_KEY,
   HOVER_PRESETS,
   MAX_DELAY,
   MAX_DURATION,
@@ -960,28 +963,6 @@ function ColorSchemePicker({
     </div>
   );
 }
-
-const ANIMATION_PRESET_LABEL_KEY: Record<EntrancePreset, string> = {
-  none: 'animationPresetNone',
-  fade: 'animationPresetFade',
-  'slide-up': 'animationPresetSlideUp',
-  'slide-down': 'animationPresetSlideDown',
-  'slide-left': 'animationPresetSlideLeft',
-  'slide-right': 'animationPresetSlideRight',
-  'zoom-in': 'animationPresetZoomIn',
-};
-
-const HOVER_PRESET_LABEL_KEY: Record<HoverPreset, string> = {
-  none: 'animationHoverNone',
-  lift: 'animationHoverLift',
-  scale: 'animationHoverScale',
-  glow: 'animationHoverGlow',
-};
-
-const ANIMATION_TRIGGER_LABEL_KEY: Record<AnimationTrigger, string> = {
-  load: 'animationTriggerLoad',
-  scroll: 'animationTriggerScroll',
-};
 
 /** Disparo (`load`/`scroll`) — só aparece quando há entrada escolhida. Extraído à parte para
  * `AnimationFields` não acumular a complexidade de mais um `Select` inteiro. */

@@ -14,6 +14,7 @@ import {
   Copy,
   GripVertical,
   MoveVertical,
+  Sparkles,
   Trash2,
   Type,
 } from 'lucide-react';
@@ -35,6 +36,15 @@ import {
   resolveGridLayout,
   type EmptyGridSlot,
 } from '../grid-engine';
+import {
+  ANIMATION_PRESET_LABEL_KEY,
+  ENTRANCE_PRESETS,
+  HOVER_PRESET_LABEL_KEY,
+  HOVER_PRESETS,
+  type BlockAnimation,
+  type EntrancePreset,
+  type HoverPreset,
+} from '../animation';
 import { isAutoHeightBlockType, isTextEditableBlockType } from '../blocks.meta';
 import { TEXT_PRESET_CONFIG, normalizeTextPreset } from '../registry';
 import {
@@ -257,6 +267,72 @@ function WidthQuickMenu({
   );
 }
 
+/** Seletor rápido de animação (entrada + hover) direto no canvas — escreve em `block.animation`,
+ * igual a Largura/Altura escrevem em `block.span`/`block.rowSpan`. Sem opção "herdar da página"
+ * aqui: isso é o controle rápido; revogar o override e voltar a herdar é no painel lateral
+ * (`BlockAnimationSection`), que tem o switch para isso. */
+function AnimationQuickMenu({
+  block,
+  editor,
+  t,
+}: {
+  block: PageBlock;
+  editor: EditorValue;
+  t: TFunc;
+}) {
+  const current: BlockAnimation = block.animation ?? {};
+  const entrance = current.entrance ?? 'none';
+  const hover = current.hover ?? 'none';
+
+  const setEntrance = (next: EntrancePreset) =>
+    editor.patch(block.id, { animation: { ...current, entrance: next } });
+  const setHover = (next: HoverPreset) =>
+    editor.patch(block.id, { animation: { ...current, hover: next } });
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-6 text-muted-foreground hover:text-foreground"
+          title={t('editor.animation', { defaultValue: 'Animação' })}
+        >
+          <Sparkles className="size-3.5" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-44 text-xs">
+        <DropdownMenuLabel className="text-[10px] uppercase text-muted-foreground">
+          {t('editor.animationEntrance', { defaultValue: 'Entrada' })}
+        </DropdownMenuLabel>
+        {ENTRANCE_PRESETS.map((preset) => (
+          <DropdownMenuItem
+            key={preset}
+            onClick={() => setEntrance(preset)}
+            className={cn('text-xs', entrance === preset && 'font-semibold text-primary')}
+          >
+            {t(`editor.${ANIMATION_PRESET_LABEL_KEY[preset]}`, { defaultValue: preset })}
+          </DropdownMenuItem>
+        ))}
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel className="text-[10px] uppercase text-muted-foreground">
+          {t('editor.animationHover', { defaultValue: 'Ao passar o mouse' })}
+        </DropdownMenuLabel>
+        {HOVER_PRESETS.map((preset) => (
+          <DropdownMenuItem
+            key={preset}
+            onClick={() => setHover(preset)}
+            className={cn('text-xs', hover === preset && 'font-semibold text-primary')}
+          >
+            {t(`editor.${HOVER_PRESET_LABEL_KEY[preset]}`, { defaultValue: preset })}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 /** Seletor rápido de altura (RowSpan) — renderizado sempre, se auto-oculta para blocos
  * auto-height (sem resize manual de altura). */
 function HeightQuickMenu({
@@ -445,6 +521,8 @@ function FloatingBlockToolbar({
         currentRowSpan={currentRowSpan}
         maxRowSpan={maxRowSpan}
       />
+
+      <AnimationQuickMenu block={block} editor={editor} t={t} />
 
       {/* Duplicar Bloco */}
       <Button
