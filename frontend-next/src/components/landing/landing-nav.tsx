@@ -6,16 +6,37 @@ import Image from 'next/image';
 import { Menu, X, ArrowUpRight, MessageCircle } from 'lucide-react';
 import { defaulHometData } from '@/lib/actions/cms/home/type';
 
-interface LandingNavProps {
-  whatsappNumber?: string;
+export interface NavItem {
+  href: string;
+  label: string;
+  mobileLabel?: string;
 }
+
+export interface LandingNavProps {
+  whatsappNumber?: string;
+  navItems?: NavItem[];
+}
+
+const defaultNavItems: NavItem[] = [
+  { href: '#sites', label: 'Sites', mobileLabel: 'Sites & Landing Pages' },
+  { href: '#sistemas', label: 'Sistemas', mobileLabel: 'Sistemas & Plataformas' },
+  { href: '#equipes', label: 'Equipes', mobileLabel: 'Equipes' },
+];
 
 export function LandingNav({
   whatsappNumber = defaulHometData.heroWhatsappNumber || '5534953301409',
+  navItems,
 }: LandingNavProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=Ol%C3%A1!%20Gostaria%20de%20conversar%20sobre%20um%20projeto%20com%20a%20EVRE.`;
+
+  const items = navItems && navItems.length > 0 ? navItems : defaultNavItems;
+
+  const mobileItems: NavItem[] = [...items];
+  if (!mobileItems.some(i => i.href === '#contato')) {
+    mobileItems.push({ href: '#contato', label: 'Contato', mobileLabel: 'Contato' });
+  }
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60);
@@ -40,11 +61,7 @@ export function LandingNav({
 
           {/* Desktop links */}
           <nav className="hidden items-center gap-8 md:flex" aria-label="Navegação principal">
-            {[
-              { href: '#sites', label: 'Sites' },
-              { href: '#sistemas', label: 'Sistemas' },
-              { href: '#equipes', label: 'Equipes' },
-            ].map(({ href, label }) => (
+            {items.map(({ href, label }) => (
               <a key={href} href={href} className="text-sm text-muted-foreground transition-colors hover:text-foreground">
                 {label}
               </a>
@@ -85,14 +102,9 @@ export function LandingNav({
         {/* Mobile menu */}
         {mobileOpen && (
           <div className="mt-4 flex flex-col gap-3 border-t border-border pt-4 md:hidden">
-            {[
-              { href: '#sites', label: 'Sites & Landing Pages' },
-              { href: '#sistemas', label: 'Sistemas & Plataformas' },
-              { href: '#equipes', label: 'Equipes' },
-              { href: '#contato', label: 'Contato' },
-            ].map(({ href, label }) => (
+            {mobileItems.map(({ href, label, mobileLabel }) => (
               <a key={href} href={href} className="py-1 text-sm text-muted-foreground hover:text-foreground" onClick={() => setMobileOpen(false)}>
-                {label}
+                {mobileLabel || label}
               </a>
             ))}
             <div className="flex flex-col gap-2 pt-2">

@@ -6,18 +6,26 @@ import ScrollTrigger from 'gsap/ScrollTrigger';
 import { defaulHometData } from '@/lib/actions/cms/home/type';
 import { LiquidDistortion } from './liquid-distortion';
 
-interface EquipesSectionProps {
+export interface EquipesSectionProps {
+  anchorId?: string;
   label?: string;
   title?: string;
   description?: string;
   cards?: Array<{ title: string; description: string }>;
 }
 
+const defaultCards = [
+  { title: 'Integração com\nseu processo', description: 'A EVRE entra no seu fluxo de trabalho existente. Sprints, revisões e entregas contínuas sem mudar como sua equipe funciona.' },
+  { title: 'Foco no que\nvocê precisa', description: 'Você define a prioridade, a EVRE executa. Sem overhead de gestão nem curva de aprendizado prolongado.' },
+  { title: 'Resultado\nverificável', description: 'Comece com um projeto de escopo definido. Avalie a qualidade do trabalho antes de qualquer comprometimento maior.' },
+];
+
 export function EquipesSection({
-  label = defaulHometData.reforcosLabel!,
-  title = defaulHometData.reforcosTitle!,
-  description = defaulHometData.reforcosDescription!,
-  cards = defaulHometData.equipesCards!,
+  anchorId = 'equipes',
+  label = 'Reforço de equipes',
+  title = 'Ferramentas que\na equipe\nrealmente usa.',
+  description = 'Cada equipe tem um jeito de trabalhar. Construímos o software que encaixa nesse jeito, não o contrário.',
+  cards = defaultCards,
 }: EquipesSectionProps) {
   const sectionRef = useRef<HTMLElement>(null);
 
@@ -61,7 +69,7 @@ export function EquipesSection({
   return (
     <section
       ref={sectionRef}
-      id="equipes"
+      id={anchorId}
       className="relative overflow-hidden"
       style={{ background: 'var(--lp-bg)', padding: 'clamp(4rem, 10vw, 10rem) max(2rem, env(safe-area-inset-left,0px))' }}
     >
@@ -135,3 +143,6 @@ export function EquipesSection({
     </section>
   );
 }
+
+export const CardsGridSection = EquipesSection;
+

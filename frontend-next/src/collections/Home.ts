@@ -59,111 +59,128 @@ export const Home: CollectionConfig = {
               defaultValue: '5534953301409',
             },
 
-            // Sites section
+            // Seções dinâmicas e agnósticas (Configurador)
             {
-              name: 'sitesLabel',
-              type: 'text',
-              label: 'Sites — Label da âncora',
-              required: true,
-              defaultValue: 'Sites & Landing Pages',
-            },
-            {
-              name: 'sitesTitle',
-              type: 'textarea',
-              label: 'Sites — Título',
-              required: true,
-            },
-            {
-              name: 'sitesDescription',
-              type: 'textarea',
-              label: 'Sites — Descrição',
-              required: true,
-            },
-
-            {
-              name: 'siteDemos',
-              type: 'array',
-              label: 'Sites — Demos (artefatos)',
-              fields: [
+              name: 'sections',
+              type: 'blocks',
+              label: 'Seções da Landing Page',
+              labels: {
+                singular: 'Seção',
+                plural: 'Seções',
+              },
+              blocks: [
                 {
-                  name: 'url',
-                  type: 'text',
-                  label: 'URL do artefato (ex: http://localhost:3000/api/artifacts/public/xxx)',
+                  slug: 'showcase',
+                  labels: {
+                    singular: 'Vitrine (Showcase com Demos)',
+                    plural: 'Vitrines (Showcases com Demos)',
+                  },
+                  fields: [
+                    {
+                      name: 'anchorId',
+                      type: 'text',
+                      label: 'ID da Âncora (ex: sites, sistemas)',
+                      required: true,
+                    },
+                    {
+                      name: 'navLabel',
+                      type: 'text',
+                      label: 'Texto no Menu / Navbar (opcional, ex: Sites)',
+                    },
+                    {
+                      name: 'label',
+                      type: 'text',
+                      label: 'Label da seção (ex: Sites & Landing Pages)',
+                      required: true,
+                    },
+                    {
+                      name: 'title',
+                      type: 'textarea',
+                      label: 'Título (use Enter para quebrar linha)',
+                      required: true,
+                    },
+                    {
+                      name: 'description',
+                      type: 'textarea',
+                      label: 'Descrição',
+                      required: true,
+                    },
+                    {
+                      name: 'mediaPosition',
+                      type: 'select',
+                      label: 'Posição do Mockup/Demonstração',
+                      defaultValue: 'right',
+                      options: [
+                        { label: 'Direita (Texto à esquerda, Mockup à direita)', value: 'right' },
+                        { label: 'Esquerda (Mockup à esquerda, Texto à direita)', value: 'left' },
+                      ],
+                    },
+                    {
+                      name: 'demos',
+                      type: 'array',
+                      label: 'Demos (artefatos)',
+                      fields: [
+                        {
+                          name: 'url',
+                          type: 'text',
+                          label: 'URL do artefato (ex: http://localhost:3000/api/artifacts/public/xxx)',
+                        },
+                        {
+                          name: 'label',
+                          type: 'text',
+                          label: 'Endereço exibido na barra (ex: casamelo.com.br)',
+                        },
+                      ],
+                    },
+                  ],
                 },
                 {
-                  name: 'label',
-                  type: 'text',
-                  label: 'Endereço exibido na barra (ex: casamelo.com.br)',
+                  slug: 'cardsGrid',
+                  labels: {
+                    singular: 'Grid de Cards',
+                    plural: 'Grids de Cards',
+                  },
+                  fields: [
+                    {
+                      name: 'anchorId',
+                      type: 'text',
+                      label: 'ID da Âncora (ex: equipes)',
+                      required: true,
+                    },
+                    {
+                      name: 'navLabel',
+                      type: 'text',
+                      label: 'Texto no Menu / Navbar (opcional, ex: Equipes)',
+                    },
+                    {
+                      name: 'label',
+                      type: 'text',
+                      label: 'Label da seção (ex: Reforço de equipes)',
+                      required: true,
+                    },
+                    {
+                      name: 'title',
+                      type: 'textarea',
+                      label: 'Título da seção',
+                      required: true,
+                    },
+                    {
+                      name: 'description',
+                      type: 'textarea',
+                      label: 'Descrição da seção',
+                      required: true,
+                    },
+                    {
+                      name: 'cards',
+                      type: 'array',
+                      label: 'Cards',
+                      fields: [
+                        { name: 'title', type: 'textarea', label: 'Título' },
+                        { name: 'description', type: 'textarea', label: 'Descrição' },
+                      ],
+                    },
+                  ],
                 },
-              ],
-            },
-
-            // Sistemas section
-            {
-              name: 'sistemasLabel',
-              type: 'text',
-              label: 'Sistemas — Label da âncora',
-              required: true,
-              defaultValue: 'Sistemas para empresas',
-            },
-            {
-              name: 'sistemasTitle',
-              type: 'textarea',
-              label: 'Sistemas — Título',
-              required: true,
-            },
-            {
-              name: 'sistemasDescription',
-              type: 'textarea',
-              label: 'Sistemas — Descrição',
-              required: true,
-            },
-
-            {
-              name: 'sistemaDemos',
-              type: 'array',
-              label: 'Sistemas — Demos (artefatos)',
-              fields: [
-                {
-                  name: 'url',
-                  type: 'text',
-                  label: 'URL do artefato (ex: http://localhost:3000/api/artifacts/public/xxx)',
-                },
-                {
-                  name: 'label',
-                  type: 'text',
-                  label: 'Label exibido na barra do frame (ex: CORE Gestão)',
-                },
-              ],
-            },
-
-            // Reforço de equipes section
-            {
-              name: 'reforcosLabel',
-              type: 'text',
-              label: 'Equipes — Label da âncora',
-              required: true,
-              defaultValue: 'Reforço de equipes',
-            },
-            {
-              name: 'reforcosTitle',
-              type: 'textarea',
-              label: 'Equipes — Título da seção',
-              required: true,
-            },
-            {
-              name: 'reforcosDescription',
-              type: 'textarea',
-              label: 'Equipes — Descrição da seção',
-              required: true,
-            },
-            {
-              name: 'equipesCards',
-              type: 'array',
-              label: 'Equipes — Cards',
-              fields: [
-                { name: 'title', type: 'textarea', label: 'Título' },
-                { name: 'description', type: 'textarea', label: 'Descrição' },
               ],
             },
 

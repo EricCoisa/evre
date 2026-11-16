@@ -1,5 +1,42 @@
 import { SEOMetadata } from "../types";
 
+export interface ShowcaseDemo {
+  url: string;
+  label: string;
+  id?: string;
+}
+
+export interface ShowcaseSectionBlock {
+  blockType: 'showcase';
+  id?: string;
+  anchorId: string;
+  navLabel?: string;
+  label: string;
+  title: string;
+  description: string;
+  mediaPosition?: 'left' | 'right';
+  demos?: ShowcaseDemo[];
+}
+
+export interface CardItem {
+  title: string;
+  description: string;
+  id?: string;
+}
+
+export interface CardsGridSectionBlock {
+  blockType: 'cardsGrid';
+  id?: string;
+  anchorId: string;
+  navLabel?: string;
+  label: string;
+  title: string;
+  description: string;
+  cards?: CardItem[];
+}
+
+export type HomeSectionBlock = ShowcaseSectionBlock | CardsGridSectionBlock;
+
 export interface HomeData {
   id: string;
   title: string;
@@ -10,23 +47,8 @@ export interface HomeData {
   heroCta: string;
   heroWhatsappNumber: string;
 
-  // Sites section
-  sitesLabel: string;
-  sitesTitle: string;
-  sitesDescription: string;
-  siteDemos: Array<{ url: string; label: string }>;
-
-  // Sistemas section
-  sistemasLabel: string;
-  sistemasTitle: string;
-  sistemasDescription: string;
-  sistemaDemos: Array<{ url: string; label: string }>;
-
-  // Reforço de equipes section
-  reforcosLabel: string;
-  reforcosTitle: string;
-  reforcosDescription: string;
-  equipesCards: Array<{ title: string; description: string }>;
+  // Seções dinâmicas e agnósticas (criadas e ordenadas pelo CMS)
+  sections: HomeSectionBlock[];
 
   // Contact form section
   contactFormLabel: string;
@@ -68,23 +90,40 @@ export const defaulHometData: Partial<HomeData> = {
   heroCta: 'Falar no WhatsApp',
   heroWhatsappNumber: '5534953301409',
 
-  sitesLabel: 'Sites & Landing Pages',
-  sitesTitle: 'Para quem quer vender\ne aparecer online.',
-  sitesDescription: 'Sites institucionais, lojas e portais digitais com design sob medida, integrados ao seu processo de vendas.',
-  siteDemos: [],
-
-  sistemasLabel: 'Sistemas para empresas',
-  sistemasTitle: 'Para quem precisa de mais\ndo que um site.',
-  sistemasDescription: 'Sistemas de gestão, plataformas operacionais e aplicativos mobile desenvolvidos para as regras específicas do seu negócio.',
-  sistemaDemos: [],
-
-  reforcosLabel: 'Reforço de equipes',
-  reforcosTitle: 'Ferramentas que\na equipe\nrealmente usa.',
-  reforcosDescription: 'Cada equipe tem um jeito de trabalhar. Construímos o software que encaixa nesse jeito, não o contrário.',
-  equipesCards: [
-    { title: 'Integração com\nseu processo', description: 'A EVRE entra no seu fluxo de trabalho existente. Sprints, revisões e entregas contínuas sem mudar como sua equipe funciona.' },
-    { title: 'Foco no que\nvocê precisa', description: 'Você define a prioridade, a EVRE executa. Sem overhead de gestão nem curva de aprendizado prolongado.' },
-    { title: 'Resultado\nverificável', description: 'Comece com um projeto de escopo definido. Avalie a qualidade do trabalho antes de qualquer comprometimento maior.' },
+  sections: [
+    {
+      blockType: 'showcase',
+      anchorId: 'sites',
+      navLabel: 'Sites',
+      label: 'Sites & Landing Pages',
+      title: 'Para quem quer vender\ne aparecer online.',
+      description: 'Sites institucionais, lojas e portais digitais com design sob medida, integrados ao seu processo de vendas.',
+      mediaPosition: 'right',
+      demos: [],
+    },
+    {
+      blockType: 'showcase',
+      anchorId: 'sistemas',
+      navLabel: 'Sistemas',
+      label: 'Sistemas para empresas',
+      title: 'Para quem precisa de mais\ndo que um site.',
+      description: 'Sistemas de gestão, plataformas operacionais e aplicativos mobile desenvolvidos para as regras específicas do seu negócio.',
+      mediaPosition: 'left',
+      demos: [],
+    },
+    {
+      blockType: 'cardsGrid',
+      anchorId: 'equipes',
+      navLabel: 'Equipes',
+      label: 'Reforço de equipes',
+      title: 'Ferramentas que\na equipe\nrealmente usa.',
+      description: 'Cada equipe tem um jeito de trabalhar. Construímos o software que encaixa nesse jeito, não o contrário.',
+      cards: [
+        { title: 'Integração com\nseu processo', description: 'A EVRE entra no seu fluxo de trabalho existente. Sprints, revisões e entregas contínuas sem mudar como sua equipe funciona.' },
+        { title: 'Foco no que\nvocê precisa', description: 'Você define a prioridade, a EVRE executa. Sem overhead de gestão nem curva de aprendizado prolongado.' },
+        { title: 'Resultado\nverificável', description: 'Comece com um projeto de escopo definido. Avalie a qualidade do trabalho antes de qualquer comprometimento maior.' },
+      ],
+    },
   ],
 
   contactFormLabel: 'Entre em contato',

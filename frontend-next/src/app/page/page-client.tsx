@@ -8,8 +8,7 @@ import type { CaptchaConfigDto } from '@/lib/generated/schemas';
 
 import { LandingNav } from '@/components/landing/landing-nav';
 import { HeroSection } from '@/components/landing/hero-section';
-import { SitesSection } from '@/components/landing/sites-section';
-import { SistemasSection } from '@/components/landing/sistemas-section';
+import { ShowcaseSection } from '@/components/landing/showcase-section';
 import { EquipesSection } from '@/components/landing/equipes-section';
 import { FinalCtaSection } from '@/components/landing/final-cta-section';
 import { LandingFooter } from '@/components/landing/landing-footer';
@@ -32,12 +31,20 @@ export function HomeClient({ initialData, captchaConfig }: HomeClientProps) {
     ...(homeData || {}),
   } as HomeData;
 
+  const sections = content.sections || defaulHometData.sections || [];
+
+  const navItems = sections.map((section) => ({
+    href: `#${section.anchorId}`,
+    label: section.navLabel || section.label.split('&')[0].trim(),
+    mobileLabel: section.label,
+  }));
+
   return (
     <div
       className="flex min-h-screen flex-col selection:bg-foreground selection:text-background"
       style={{ background: 'var(--lp-bg)', color: 'var(--lp-fg)' }}
     >
-      <LandingNav whatsappNumber={content.heroWhatsappNumber} />
+      <LandingNav whatsappNumber={content.heroWhatsappNumber} navItems={navItems} />
 
       <main className="flex flex-1 flex-col">
         <HeroSection
@@ -47,26 +54,38 @@ export function HomeClient({ initialData, captchaConfig }: HomeClientProps) {
           whatsappNumber={content.heroWhatsappNumber}
         />
 
-        <SitesSection
-          label={content.sitesLabel}
-          title={content.sitesTitle}
-          description={content.sitesDescription}
-          demos={content.siteDemos}
-        />
+        {sections.map((section, index) => {
+          const key = section.id || `${section.blockType}-${section.anchorId || index}`;
 
-        <SistemasSection
-          label={content.sistemasLabel}
-          title={content.sistemasTitle}
-          description={content.sistemasDescription}
-          demos={content.sistemaDemos}
-        />
+          if (section.blockType === 'showcase') {
+            return (
+              <ShowcaseSection
+                key={key}
+                anchorId={section.anchorId}
+                label={section.label}
+                title={section.title}
+                description={section.description}
+                mediaPosition={section.mediaPosition}
+                demos={section.demos}
+              />
+            );
+          }
 
-        <EquipesSection
-          label={content.reforcosLabel}
-          title={content.reforcosTitle}
-          description={content.reforcosDescription}
-          cards={content.equipesCards}
-        />
+          if (section.blockType === 'cardsGrid') {
+            return (
+              <EquipesSection
+                key={key}
+                anchorId={section.anchorId}
+                label={section.label}
+                title={section.title}
+                description={section.description}
+                cards={section.cards}
+              />
+            );
+          }
+
+          return null;
+        })}
 
         <FinalCtaSection
           title={content.ctaTitle}

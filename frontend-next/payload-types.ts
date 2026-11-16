@@ -136,35 +136,44 @@ export interface Home {
   heroDescription: string;
   heroCta: string;
   heroWhatsappNumber: string;
-  sitesLabel: string;
-  sitesTitle: string;
-  sitesDescription: string;
-  siteDemos?:
-    | {
-        url?: string | null;
-        label?: string | null;
-        id?: string | null;
-      }[]
-    | null;
-  sistemasLabel: string;
-  sistemasTitle: string;
-  sistemasDescription: string;
-  sistemaDemos?:
-    | {
-        url?: string | null;
-        label?: string | null;
-        id?: string | null;
-      }[]
-    | null;
-  reforcosLabel: string;
-  reforcosTitle: string;
-  reforcosDescription: string;
-  equipesCards?:
-    | {
-        title?: string | null;
-        description?: string | null;
-        id?: string | null;
-      }[]
+  sections?:
+    | (
+        | {
+            anchorId: string;
+            navLabel?: string | null;
+            label: string;
+            title: string;
+            description: string;
+            mediaPosition?: ('right' | 'left') | null;
+            demos?:
+              | {
+                  url?: string | null;
+                  label?: string | null;
+                  id?: string | null;
+                }[]
+              | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'showcase';
+          }
+        | {
+            anchorId: string;
+            navLabel?: string | null;
+            label: string;
+            title: string;
+            description: string;
+            cards?:
+              | {
+                  title?: string | null;
+                  description?: string | null;
+                  id?: string | null;
+                }[]
+              | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'cardsGrid';
+          }
+      )[]
     | null;
   ctaTitle: string;
   ctaButtonText: string;
@@ -351,35 +360,46 @@ export interface HomeSelect<T extends boolean = true> {
   heroDescription?: T;
   heroCta?: T;
   heroWhatsappNumber?: T;
-  sitesLabel?: T;
-  sitesTitle?: T;
-  sitesDescription?: T;
-  siteDemos?:
+  sections?:
     | T
     | {
-        url?: T;
-        label?: T;
-        id?: T;
-      };
-  sistemasLabel?: T;
-  sistemasTitle?: T;
-  sistemasDescription?: T;
-  sistemaDemos?:
-    | T
-    | {
-        url?: T;
-        label?: T;
-        id?: T;
-      };
-  reforcosLabel?: T;
-  reforcosTitle?: T;
-  reforcosDescription?: T;
-  equipesCards?:
-    | T
-    | {
-        title?: T;
-        description?: T;
-        id?: T;
+        showcase?:
+          | T
+          | {
+              anchorId?: T;
+              navLabel?: T;
+              label?: T;
+              title?: T;
+              description?: T;
+              mediaPosition?: T;
+              demos?:
+                | T
+                | {
+                    url?: T;
+                    label?: T;
+                    id?: T;
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        cardsGrid?:
+          | T
+          | {
+              anchorId?: T;
+              navLabel?: T;
+              label?: T;
+              title?: T;
+              description?: T;
+              cards?:
+                | T
+                | {
+                    title?: T;
+                    description?: T;
+                    id?: T;
+                  };
+              id?: T;
+              blockName?: T;
+            };
       };
   ctaTitle?: T;
   ctaButtonText?: T;
