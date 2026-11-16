@@ -20,6 +20,7 @@
     "payload:migrate": "payload migrate",
     "payload:migrate:create": "payload migrate:create",
     "payload:migrate:down": "payload migrate:down",
+    "reset": "tsx --env-file=.env.local scripts/reset.ts",
     "generate:api": "orval --config orval.config.ts && node scripts/generate-api-paths.mjs"
   },
   "dependencies": {

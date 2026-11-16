@@ -57,7 +57,7 @@ export function ArtifactFrame({ demos, className = '', style }: ArtifactFramePro
       <div className="relative overflow-hidden" style={{ height: '340px' }}>
         {demos.length === 0 ? (
           <div className="flex h-full items-center justify-center text-xs" style={{ color: 'var(--lp-muted)' }}>
-            Nenhum demo configurado no Payload CMS.
+            Nenhum demo configurado.
           </div>
         ) : (
           demos.map((demo, i) => (

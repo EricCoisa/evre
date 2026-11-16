@@ -155,7 +155,7 @@ export const Home: CollectionConfig = {
                     {
                       name: 'label',
                       type: 'text',
-                      label: 'Label da seção (ex: Reforço de equipes)',
+                      label: 'Label da seção (ex: Parceria em desenvolvimento)',
                       required: true,
                     },
                     {

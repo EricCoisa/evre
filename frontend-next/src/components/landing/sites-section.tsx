@@ -5,7 +5,7 @@ import { ShowcaseSection, ShowcaseSectionProps } from './showcase-section';
 export function SitesSection({
   label = 'Sites & Landing Pages',
   title = 'Para quem quer vender\ne aparecer online.',
-  description = 'Sites institucionais, lojas e portais digitais com design sob medida, integrados ao seu processo de vendas.',
+  description = 'Sites institucionais, landing pages com design sob medida, integrados ao seu processo de vendas.',
   demos = [],
 }: Partial<ShowcaseSectionProps>) {
   return (

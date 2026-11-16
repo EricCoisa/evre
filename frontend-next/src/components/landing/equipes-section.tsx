@@ -22,7 +22,7 @@ const defaultCards = [
 
 export function EquipesSection({
   anchorId = 'equipes',
-  label = 'Reforço de equipes',
+  label = 'Parceria em desenvolvimento',
   title = 'Ferramentas que\na equipe\nrealmente usa.',
   description = 'Cada equipe tem um jeito de trabalhar. Construímos o software que encaixa nesse jeito, não o contrário.',
   cards = defaultCards,
