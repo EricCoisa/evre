@@ -8,6 +8,10 @@ import { useState } from 'react';
 import { DataTable } from '@/components/data-table';
 import { getLeadColumns } from './components/lead-columns';
 import { buildTableQueryParams } from '@/lib/table-query-params';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { updateLeadStatus } from '@/lib/actions/lead/api';
+import type { LeadDto, LeadDtoStatus } from '@/lib/generated/schemas';
 
 export default function LeadPage() {
   const { t } = useTranslation('lead');
@@ -17,7 +21,18 @@ export default function LeadPage() {
 
   const queryParams = buildTableQueryParams(pagination, globalFilter, filters);
   const { data, error } = useLeads(queryParams);
-  const columns = getLeadColumns(t);
+  const queryClient = useQueryClient();
+
+  const handleStatusChange = async (lead: LeadDto, status: LeadDtoStatus) => {
+    const res = await updateLeadStatus(lead.id, { status });
+    if (res.success) {
+      await queryClient.invalidateQueries({ queryKey: ['leads'] });
+    } else {
+      toast.error(res.message ?? 'Erro ao atualizar status.');
+    }
+  };
+
+  const columns = getLeadColumns({ t, onStatusChange: handleStatusChange });
 
   return (
     <Container variant="dataTable" border={false}>

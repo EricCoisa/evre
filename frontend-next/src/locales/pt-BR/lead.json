@@ -11,5 +11,26 @@
   "email": "E-mail",
   "message": "Mensagem",
   "status": "Status",
-  "createdAt": "Recebido em"
+  "createdAt": "Recebido em",
+  "actions": "Ações",
+  "changeStatus": "Alterar status",
+  "markAsViewed": "Marcar como visto",
+  "markAsResolved": "Marcar como resolvido",
+  "markAsNew": "Reabrir",
+  "form": {
+    "labelName": "Nome",
+    "labelPhone": "Telefone",
+    "labelEmail": "E-mail",
+    "labelMessage": "Mensagem",
+    "placeholderName": "Seu nome",
+    "placeholderEmail": "voce@empresa.com",
+    "placeholderMessage": "Conte um pouco sobre o que você precisa…",
+    "cancel": "Cancelar",
+    "errorName": "Informe seu nome.",
+    "errorContact": "Informe telefone ou e-mail.",
+    "errorPhone": "Número de telefone inválido.",
+    "errorMessage": "Escreva uma mensagem.",
+    "errorCaptcha": "Resolva o captcha antes de enviar.",
+    "errorSubmit": "Erro ao enviar. Tente novamente."
+  }
 }

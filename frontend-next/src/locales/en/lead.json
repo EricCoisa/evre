@@ -11,5 +11,26 @@
   "email": "Email",
   "message": "Message",
   "status": "Status",
-  "createdAt": "Received at"
+  "createdAt": "Received at",
+  "actions": "Actions",
+  "changeStatus": "Change status",
+  "markAsViewed": "Mark as viewed",
+  "markAsResolved": "Mark as resolved",
+  "markAsNew": "Reopen",
+  "form": {
+    "labelName": "Name",
+    "labelPhone": "Phone",
+    "labelEmail": "Email",
+    "labelMessage": "Message",
+    "placeholderName": "Your name",
+    "placeholderEmail": "you@company.com",
+    "placeholderMessage": "Tell us a bit about what you need…",
+    "cancel": "Cancel",
+    "errorName": "Please enter your name.",
+    "errorContact": "Please provide a phone number or email.",
+    "errorPhone": "Invalid phone number.",
+    "errorMessage": "Please write a message.",
+    "errorCaptcha": "Please solve the captcha before submitting.",
+    "errorSubmit": "Failed to send. Please try again."
+  }
 }

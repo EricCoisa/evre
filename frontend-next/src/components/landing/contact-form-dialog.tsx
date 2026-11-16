@@ -15,8 +15,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { PhoneInput } from '@/components/ui/phone-input';
+import { PhoneInput, isValidPhone } from '@/components/ui/phone-input';
 import { useCaptcha } from '@/hooks/use-captcha';
+import { useTranslation } from '@/hooks/use-translation';
 import { createLead } from '@/lib/actions/lead/api';
 import type { CaptchaConfigDto } from '@/lib/generated/schemas';
 
@@ -33,15 +34,16 @@ interface ContactFormDialogProps {
 interface FormState { name: string; phone: string; email: string; message: string }
 
 function validate(f: FormState): string | null {
-  if (!f.name.trim()) return 'Informe seu nome.';
-  if (!f.phone.trim() && !f.email.trim()) return 'Informe telefone ou e-mail.';
-  if (!f.message.trim()) return 'Escreva uma mensagem.';
+  if (!f.name.trim()) return 'form.errorName';
+  if (!f.phone.trim() && !f.email.trim()) return 'form.errorContact';
+  if (f.phone.trim() && !isValidPhone(f.phone)) return 'form.errorPhone';
+  if (!f.message.trim()) return 'form.errorMessage';
   return null;
 }
 
 function ContactFormContent({
-  submitLabel = 'Enviar',
-  successMessage = 'Mensagem enviada! Entraremos em contato em breve.',
+  submitLabel,
+  successMessage,
   captcha,
   onClose,
 }: {
@@ -50,6 +52,7 @@ function ContactFormContent({
   captcha?: CaptchaConfigDto | null;
   onClose: () => void;
 }) {
+  const { t } = useTranslation('lead');
   const [form, setForm] = useState<FormState>({ name: '', phone: '', email: '', message: '' });
   const [submitting, setSubmitting] = useState(false);
 
@@ -60,13 +63,13 @@ function ContactFormContent({
       setForm((p) => ({ ...p, [key]: e.target.value }));
 
   const handleSubmit = async () => {
-    const error = validate(form);
-    if (error) { toast.error(error); return; }
+    const errorKey = validate(form);
+    if (errorKey) { toast.error(t(errorKey)); return; }
 
     let captchaToken: string | null = null;
     if (captchaEnabled) {
       captchaToken = await getToken();
-      if (!captchaToken) { toast.error('Resolva o captcha antes de enviar.'); return; }
+      if (!captchaToken) { toast.error(t('form.errorCaptcha')); return; }
     }
 
     setSubmitting(true);
@@ -84,7 +87,7 @@ function ContactFormContent({
         toast.success(successMessage);
         onClose();
       } else {
-        toast.error(res.message ?? 'Erro ao enviar. Tente novamente.');
+        toast.error(res.message ?? t('form.errorSubmit'));
       }
     } finally {
       setSubmitting(false);
@@ -95,12 +98,12 @@ function ContactFormContent({
     <>
       <div className="grid gap-4 py-2">
         <div className="grid gap-1.5">
-          <Label>Nome *</Label>
-          <Input placeholder="Seu nome" autoComplete="name" value={form.name} onChange={set('name')} disabled={submitting} />
+          <Label>{t('form.labelName')} *</Label>
+          <Input placeholder={t('form.placeholderName')} autoComplete="name" value={form.name} onChange={set('name')} disabled={submitting} />
         </div>
 
         <div className="grid gap-1.5">
-          <Label>Telefone</Label>
+          <Label>{t('form.labelPhone')}</Label>
           <PhoneInput
             value={form.phone}
             onChange={(v) => setForm((p) => ({ ...p, phone: v }))}
@@ -109,13 +112,13 @@ function ContactFormContent({
         </div>
 
         <div className="grid gap-1.5">
-          <Label>E-mail</Label>
-          <Input type="email" placeholder="voce@empresa.com" autoComplete="email" value={form.email} onChange={set('email')} disabled={submitting} />
+          <Label>{t('form.labelEmail')}</Label>
+          <Input type="email" placeholder={t('form.placeholderEmail')} autoComplete="email" value={form.email} onChange={set('email')} disabled={submitting} />
         </div>
 
         <div className="grid gap-1.5">
-          <Label>Mensagem *</Label>
-          <Textarea rows={4} placeholder="Conte um pouco sobre o que você precisa…" value={form.message} onChange={set('message')} disabled={submitting} />
+          <Label>{t('form.labelMessage')} *</Label>
+          <Textarea rows={4} placeholder={t('form.placeholderMessage')} value={form.message} onChange={set('message')} disabled={submitting} />
         </div>
 
         <div ref={containerRef} />
@@ -123,7 +126,7 @@ function ContactFormContent({
 
       <DialogFooter>
         <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
-          Cancelar
+          {t('form.cancel')}
         </Button>
         <Button type="button" onClick={handleSubmit} disabled={submitting}>
           {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

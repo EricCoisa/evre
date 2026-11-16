@@ -1,13 +1,24 @@
 "use client";
 
 import type { LeadDto } from '@/lib/actions/lead/types';
+import type { LeadDtoStatus } from '@/lib/generated/schemas';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataCell, TableHead } from '@/components/table-utils';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { MoreHorizontal } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import type { TFunc } from '@/hooks/use-translation';
 import { useTranslation } from '@/hooks/use-translation';
-import { leadStatusLabelKey, LEAD_STATUS_BADGE_VARIANT } from '@/lib/actions/lead/vocabulary';
+import { leadStatusLabelKey, LEAD_STATUS_BADGE_VARIANT, LEAD_STATUSES } from '@/lib/actions/lead/vocabulary';
 
 function StatusBadge({ status }: { status: string }) {
   const { t } = useTranslation('vocabulary');
@@ -15,7 +26,18 @@ function StatusBadge({ status }: { status: string }) {
   return <Badge variant={variant}>{t(leadStatusLabelKey(status))}</Badge>;
 }
 
-export function getLeadColumns(t: TFunc): ColumnDef<LeadDto>[] {
+const STATUS_LABEL_KEY: Record<string, string> = {
+  NEW: 'markAsNew',
+  VIEWED: 'markAsViewed',
+  RESOLVED: 'markAsResolved',
+};
+
+interface GetLeadColumnsProps {
+  t: TFunc;
+  onStatusChange: (lead: LeadDto, status: LeadDtoStatus) => void;
+}
+
+export function getLeadColumns({ t, onStatusChange }: GetLeadColumnsProps): ColumnDef<LeadDto>[] {
   return [
     {
       accessorKey: 'name',
@@ -62,6 +84,35 @@ export function getLeadColumns(t: TFunc): ColumnDef<LeadDto>[] {
       header: () => <TableHead>{t('createdAt')}</TableHead>,
       cell: ({ row }) => <DataCell>{formatDate(row.getValue('createdAt'))}</DataCell>,
       meta: { mobileOrder: 6, mobileWidth: 'half' },
+    },
+    {
+      id: 'actions',
+      header: () => <TableHead>{t('actions')}</TableHead>,
+      cell: ({ row }) => {
+        const lead = row.original;
+        const otherStatuses = LEAD_STATUSES.filter((s) => s !== lead.status);
+        return (
+          <DataCell>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-6 p-0 min-h-0">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>{t('changeStatus')}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {otherStatuses.map((status) => (
+                  <DropdownMenuItem key={status} onClick={() => onStatusChange(lead, status)}>
+                    {t(STATUS_LABEL_KEY[status])}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </DataCell>
+        );
+      },
+      meta: { mobileOrder: 7, mobileWidth: 'half' },
     },
   ];
 }
