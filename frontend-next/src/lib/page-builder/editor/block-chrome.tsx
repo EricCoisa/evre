@@ -55,7 +55,7 @@ import {
   type ColorScheme,
   type ColorSchemeVariant,
 } from '../class-names';
-import { EFFECT_META } from '../effects.meta';
+import { EFFECT_META, isKnownEffect, type EffectType } from '../effects.meta';
 import { TEXT_PRESET_CONFIG, normalizeTextPreset } from '../registry';
 import {
   COL_START_CLASS,
@@ -68,7 +68,9 @@ import {
   type PageBlock,
 } from '../schema';
 import { BlockInserter } from './block-inserter';
-import { useEditorOrThrow, type ActiveRichTextInfo } from './context';
+import { useEditingEffectParams, useEditorOrThrow, type ActiveRichTextInfo } from './context';
+import { EFFECT_GIZMOS } from './effect-gizmos';
+import { PropField } from './panel';
 import {
   canAcceptChildrenType,
   canDrop,
@@ -410,10 +412,19 @@ function EffectQuickMenu({
 }) {
   const current = block.effect?.type;
 
+  // "Nenhum" é ação direta (remover não precisa de Salvar/Cancelar); escolher um efeito real arma
+  // o modo de edição ao vivo (gizmo + Salvar/Cancelar) em vez de gravar na hora. A toolbar onde
+  // este dropdown vive (`FloatingBlockToolbar`) fica sempre montada (só fica escondida por CSS
+  // ao entrar em edição — ver `BlockChrome`), então não há desmontagem no meio do fechamento do
+  // Radix aqui; pode chamar direto.
   const setEffect = (type: string) => {
-    editor.patch(block.id, {
-      effect: type === 'none' ? undefined : { type, params: block.effect?.type === type ? block.effect.params : {} },
-    });
+    if (type === 'none') {
+      editor.patch(block.id, { effect: undefined });
+      if (editor.editingEffect?.blockId === block.id) editor.cancelEditingEffect();
+      return;
+    }
+    const initialParams = block.effect?.type === type ? (block.effect.params ?? {}) : {};
+    editor.startEditingEffect(block.id, type, initialParams);
   };
 
   return (
@@ -1136,6 +1147,70 @@ function BlockDropZones({
   );
 }
 
+/** Substitui a `FloatingBlockToolbar` enquanto o bloco está em edição de efeito — nome do efeito +
+ * Salvar/Cancelar, mesma posição/estilo da toolbar de sempre (foco total no ajuste, sem os
+ * outros controles competindo por espaço). */
+function EffectEditBar({
+  type,
+  onSave,
+  onCancel,
+  t,
+}: {
+  type: string;
+  onSave: () => void;
+  onCancel: () => void;
+  t: TFunc;
+}) {
+  const label = isKnownEffect(type) ? EFFECT_META[type].label : type;
+  return (
+    <div
+      className="bg-background absolute bottom-full mb-2.5 left-0 z-50 flex items-center gap-1.5 rounded-lg border border-border/80 p-1.5 shadow-md whitespace-nowrap"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <span className="px-1.5 text-xs font-medium">{label}</span>
+      <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={onCancel}>
+        {t('editor.effectCancel', { defaultValue: 'Cancelar' })}
+      </Button>
+      <Button type="button" size="sm" className="h-7 text-xs" onClick={onSave}>
+        {t('editor.effectSave', { defaultValue: 'Salvar' })}
+      </Button>
+    </div>
+  );
+}
+
+/** Gizmo custom do efeito (`EFFECT_GIZMOS`), quando existe, + os mesmos campos numéricos do
+ * painel (`PropField`) sempre visíveis — a esfera é um atalho, o campo numérico é o valor exato
+ * e o caminho acessível por teclado. Flutua abaixo do bloco pra não cobrir o preview ao vivo. */
+function EffectEditGizmo({ type }: { type: string }) {
+  const editor = useEditorOrThrow();
+  const params = useEditingEffectParams();
+  if (!isKnownEffect(type)) return null;
+
+  const meta = EFFECT_META[type as EffectType];
+  const Gizmo = EFFECT_GIZMOS[type as EffectType];
+  const onChange = editor.updateEditingEffectParams;
+
+  return (
+    <div
+      className="bg-background absolute top-full mt-2.5 left-0 z-50 w-56 space-y-2 rounded-lg border border-border/80 p-3 shadow-md"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {Gizmo ? <Gizmo params={params} onChange={onChange} /> : null}
+      <div className="space-y-2">
+        {meta.params.map((param) => (
+          <PropField
+            key={param.name}
+            meta={param}
+            value={params[param.name]}
+            fields={[]}
+            onChange={(v) => onChange({ [param.name]: v })}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** Casca visual do bloco com Toolbar Flutuante, Alças de Resize 2D e Zonas de Drop */
 export function BlockChrome({
   block,
@@ -1161,6 +1236,8 @@ export function BlockChrome({
   const isTextEditable = isTextEditableBlockType(block.type);
   const hasInteractiveChildren =
     isContainerType(block.type) || (block.children?.length ?? 0) > 0;
+  const editingEffectType =
+    editor.editingEffect?.blockId === block.id ? editor.editingEffect.type : undefined;
 
   const handleSelect = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -1190,13 +1267,33 @@ export function BlockChrome({
       {/* Alças 2D para Redimensionar Largura e Altura */}
       <BlockResizeHandles block={block} selected={selected} />
 
-      {/* Toolbar Flutuante Contextual — renderizada por último para sobrepor as alças e bordas */}
+      {/* A toolbar de sempre fica SEMPRE montada (só o CSS de `selected` muda) — nunca
+       * desmontamos/remontamos ela ao entrar/sair de edição de efeito. Ela embala vários
+       * `DropdownMenu` (Radix, com Portal próprio); descobrir isso ao vivo: desmontar e remontar
+       * esses portals bem na hora de Salvar (voltando da edição) é o que disparava
+       * "Blocked a frame with origin ... from accessing a cross-origin frame" — o novo rastreador
+       * de performance do React (dev-only) tenta logar os fibers recém-montados e, ao varrer a
+       * árvore, tropeça num iframe de outra origem em algum lugar da página (ex.: extensão do
+       * navegador). Em edição de efeito, ela só fica visualmente escondida (`selected=false`
+       * força a mesma classe de "não selecionado"); a barra Salvar/Cancelar + gizmo fica por
+       * cima, essa sim pode entrar e sair (são elementos simples, sem Portal). */}
       <FloatingBlockToolbar
         block={block}
-        selected={selected}
+        selected={selected && !editingEffectType}
         attributes={attributes as unknown as Record<string, unknown>}
         listeners={listeners as unknown as Record<string, unknown>}
       />
+      {editingEffectType ? (
+        <>
+          <EffectEditBar
+            type={editingEffectType}
+            onSave={editor.saveEditingEffect}
+            onCancel={editor.cancelEditingEffect}
+            t={t}
+          />
+          <EffectEditGizmo type={editingEffectType} />
+        </>
+      ) : null}
 
       {/* Inserção rápida dentro de um container (Grupo) ou quando selecionado em um bloco que aceite micro-elementos */}
       <ChildInserterSlot block={block} nested={nested} selected={selected} />

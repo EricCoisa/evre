@@ -35,7 +35,7 @@ import {
   EmptySlotDropZone,
   SortableList,
 } from './editor/block-chrome';
-import { useEditor, type EditorContextValue } from './editor/context';
+import { useEditingEffectParams, useEditor, type EditorContextValue } from './editor/context';
 import { EMPTY_LAYOUT } from './editor/mutations';
 import { buildVariableOptions } from './editor/panel';
 import type { RichTextVariableOption } from '@/components/rich-text-input';
@@ -446,6 +446,25 @@ function resolveBlockGridLayout(
   };
 }
 
+/** Só este componente assina o rascunho ao vivo do efeito em edição (`useEditingEffectParams`) —
+ * só é montado para o bloco que está sob edição (ver `Block`), então só ele re-renderiza a cada
+ * frame de arrasto do gizmo; o resto do canvas nunca assina esse store, nunca re-renderiza. */
+function LiveEffectPreview({ type, children }: { type: string; children: React.ReactNode }) {
+  const params = useEditingEffectParams();
+  return <>{wrapWithEffect(children, { type, params })}</>;
+}
+
+/** Conteúdo dentro do `BlockChrome`: plano, exceto para o ÚNICO bloco sob edição de efeito, que
+ * roda o efeito ao vivo — isolado do `Block` principal só pra manter a complexidade dele baixa. */
+function editorChromeContent(
+  content: React.ReactNode,
+  editingEffect: EditorContextValue['editingEffect'],
+  blockId: string,
+): React.ReactNode {
+  if (editingEffect?.blockId !== blockId) return content;
+  return <LiveEffectPreview type={editingEffect.type}>{content}</LiveEffectPreview>;
+}
+
 function Block({
   block,
   placed,
@@ -501,7 +520,7 @@ function Block({
   if (editor) {
     return (
       <BlockChrome block={block} spanClass={gridClass} style={gridStyle} nested={bare}>
-        {content}
+        {editorChromeContent(content, editor.editingEffect, block.id)}
       </BlockChrome>
     );
   }

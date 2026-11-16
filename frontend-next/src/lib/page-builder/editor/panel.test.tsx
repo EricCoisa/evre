@@ -485,3 +485,73 @@ describe('Rodapé — salvar/cancelar/padrão', () => {
     expect(onSaveAsDefault).toHaveBeenCalledTimes(1);
   });
 });
+
+/** Radix `Select` não abre de forma confiável sob jsdom (sem `hasPointerCapture` real) — mesma
+ * razão pela qual `comboboxNear`/`fieldGroup` acima nunca chegaram a ser usados num teste de
+ * abrir+escolher opção neste arquivo. Em vez de simular o dropdown, este botão aciona
+ * `startEditingEffect` do jeito que o `onValueChange` do Select chamaria — testa o resto do fluxo
+ * (painel em modo de edição, Salvar, Cancelar) de verdade, sem depender da abertura do portal. */
+function StartEditingTilt3DButton({ blockId }: { blockId: string }) {
+  const editor = useEditorOrThrow();
+  return (
+    <button onClick={() => editor.startEditingEffect(blockId, 'tilt3d', {})}>
+      arm-tilt3d-{blockId}
+    </button>
+  );
+}
+
+describe('BlockEffectSection — edição ao vivo', () => {
+  const layoutWithBlock: PageLayout = {
+    v: 1,
+    blocks: [{ id: 'b1', type: 'divider' }],
+  };
+
+  function renderArmed() {
+    const utils = render(
+      <EditorProvider initial={layoutWithBlock}>
+        <SelectBlockButton id="b1" />
+        <StartEditingTilt3DButton blockId="b1" />
+        <EditorPanel
+          pageKey="/dashboard"
+          dirty={false}
+          saving={false}
+          onSave={vi.fn()}
+          onCancel={vi.fn()}
+        />
+      </EditorProvider>,
+    );
+    fireEvent.click(screen.getByText('select-b1'));
+    fireEvent.click(screen.getByText('arm-tilt3d-b1'));
+    return utils;
+  }
+
+  it('efeito em edição mostra os campos ao vivo e Salvar/Cancelar', () => {
+    renderArmed();
+
+    expect(screen.getByRole('button', { name: /editor\.effectSave/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /editor\.effectCancel/ })).toBeInTheDocument();
+    expect(inputNear('rotateX')).toBeInTheDocument();
+  });
+
+  it('Salvar grava o efeito no bloco e volta ao resumo', async () => {
+    const user = userEvent.setup();
+    renderArmed();
+
+    await user.click(screen.getByRole('button', { name: /editor\.effectSave/ }));
+
+    expect(screen.queryByRole('button', { name: /editor\.effectSave/ })).not.toBeInTheDocument();
+    expect(screen.getByText('Inclinação 3D')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /editor\.effectEdit/ })).toBeInTheDocument();
+  });
+
+  it('Cancelar descarta e não grava nada no bloco', async () => {
+    const user = userEvent.setup();
+    renderArmed();
+
+    await user.click(screen.getByRole('button', { name: /editor\.effectCancel/ }));
+
+    expect(screen.queryByRole('button', { name: /editor\.effectSave/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /editor\.effectEdit/ })).not.toBeInTheDocument();
+    expect(screen.queryByText('Inclinação 3D')).not.toBeInTheDocument();
+  });
+});

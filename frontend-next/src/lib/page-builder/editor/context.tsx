@@ -52,6 +52,13 @@ export interface ActiveRichTextInfo {
   variables?: RichTextVariableOption[];
 }
 
+/** Qual bloco/tipo de efeito está em edição ao vivo agora — nunca os `params` (mudam a cada
+ * frame de arrasto do gizmo; ficam fora daqui de propósito, ver `getEditingEffectParams`). */
+export interface EditingEffectInfo {
+  blockId: string;
+  type: string;
+}
+
 export interface EditorContextValue {
   draft: PageLayout;
   /** Superfície sendo editada: decide blocos oferecidos, classNames válidos e tetos. */
@@ -61,6 +68,21 @@ export interface EditorContextValue {
   recordId?: string;
   dirty: boolean;
   selectedId: string | null;
+  /** Bloco/tipo de efeito em edição ao vivo (gizmo armado) — `null` fora desse modo. */
+  editingEffect: EditingEffectInfo | null;
+  /** Arma o modo: `initialParams` vira o rascunho local, fora do `draft` até Salvar. */
+  startEditingEffect: (blockId: string, type: string, initialParams: Record<string, unknown>) => void;
+  /** Descarta o rascunho sem tocar no layout. */
+  cancelEditingEffect: () => void;
+  /** Grava o rascunho como UM `patch` (uma entrada de undo) e sai do modo. */
+  saveEditingEffect: () => void;
+  /** Mescla no rascunho local — chamado a cada frame de arrasto do gizmo, nunca vira undo. Leitura
+   * é via `useEditingEffectParams()` (assinatura separada, só quem precisa reage a cada frame). */
+  updateEditingEffectParams: (patch: Record<string, unknown>) => void;
+  /** @internal usado por `useEditingEffectParams` — não ler direto. */
+  getEditingEffectParams: () => Record<string, unknown>;
+  /** @internal usado por `useEditingEffectParams` — não ler direto. */
+  subscribeEditingEffectParams: (listener: () => void) => () => void;
   /** Editor rich-text atualmente ativo/focado para exibição da barra suspensa contextual. */
   activeRichText: ActiveRichTextInfo | null;
   setActiveRichText: (info: ActiveRichTextInfo | null) => void;
@@ -129,6 +151,16 @@ export function useEditorOrThrow(): EditorContextValue {
   return ctx;
 }
 
+/** Assinatura separada do resto do contexto do editor, de propósito: os `params` do efeito em
+ * edição mudam a cada frame de arrasto do gizmo, e só quem chama este hook (o gizmo, o preview ao
+ * vivo do bloco em edição) re-renderiza a cada mudança — o resto do canvas (outros blocos) nunca
+ * reage, porque não lê este store. `useEditor()`/`editingEffect` continuam dando só o blockId/type,
+ * que muda raramente (armar/salvar/cancelar). */
+export function useEditingEffectParams(): Record<string, unknown> {
+  const editor = useEditorOrThrow();
+  return React.useSyncExternalStore(editor.subscribeEditingEffectParams, editor.getEditingEffectParams);
+}
+
 const UNDO_HISTORY_SIZE = 30;
 /** Pausa de digitação que encerra o agrupamento de undo de uma edição de texto em andamento. */
 const COALESCE_IDLE_MS = 800;
@@ -167,6 +199,13 @@ export function EditorProvider({
   const [activeRichText, setActiveRichText] = useState<ActiveRichTextInfo | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
+  // `editingEffect` (blockId/type) muda raramente — useState normal, entra no `value` memoizado.
+  // Os `params` ficam fora dele, num ref + pub-sub próprio (`useEditingEffectParams`): mudam a
+  // cada frame de arrasto do gizmo, e colocar isso no `value` recriaria o contexto inteiro (e
+  // re-renderizaria TODO bloco do canvas) a cada pixel arrastado.
+  const [editingEffect, setEditingEffect] = useState<EditingEffectInfo | null>(null);
+  const editingEffectParamsRef = useRef<Record<string, unknown>>({});
+  const editingEffectListenersRef = useRef(new Set<() => void>());
 
   // ponytail: `undo`/`redo` leem refs em vez de capturar variáveis para garantir o valor mais
   // recente quando chamados (ex.: atalho de teclado). useLayoutEffect corre antes do paint, então
@@ -174,10 +213,12 @@ export function EditorProvider({
   const draftRef = useRef(draft);
   const selectedIdRef = useRef(selectedId);
   const activeRichTextRef = useRef(activeRichText);
+  const editingEffectRef = useRef(editingEffect);
   useLayoutEffect(() => {
     draftRef.current = draft;
     selectedIdRef.current = selectedId;
     activeRichTextRef.current = activeRichText;
+    editingEffectRef.current = editingEffect;
   });
 
   // ponytail: JSON.stringify fora do useMemo — não bloqueia o path de digitação
@@ -267,9 +308,60 @@ export function EditorProvider({
     });
   }, []);
 
-  // Atalhos de teclado universais: Ctrl+Z / Cmd+Z e Ctrl+Y / Cmd+Shift+Z
+  // Leitura/escrita do rascunho local do efeito em edição — fora do `draft`/histórico de propósito
+  // (ver comentário na declaração de `editingEffectParamsRef`).
+  const getEditingEffectParams = useCallback(() => editingEffectParamsRef.current, []);
+
+  const subscribeEditingEffectParams = useCallback((listener: () => void) => {
+    editingEffectListenersRef.current.add(listener);
+    return () => editingEffectListenersRef.current.delete(listener);
+  }, []);
+
+  const notifyEditingEffectParams = useCallback(() => {
+    editingEffectListenersRef.current.forEach((listener) => listener());
+  }, []);
+
+  const updateEditingEffectParams = useCallback(
+    (patch: Record<string, unknown>) => {
+      editingEffectParamsRef.current = { ...editingEffectParamsRef.current, ...patch };
+      notifyEditingEffectParams();
+    },
+    [notifyEditingEffectParams],
+  );
+
+  // "Selecionar o efeito" arma a edição: susbtitui qualquer edição em andamento (um efeito em
+  // edição por vez, mesmo princípio de `activeRichText`).
+  const startEditingEffect = useCallback(
+    (blockId: string, type: string, initialParams: Record<string, unknown>) => {
+      editingEffectParamsRef.current = initialParams;
+      notifyEditingEffectParams();
+      setEditingEffect({ blockId, type });
+    },
+    [notifyEditingEffectParams],
+  );
+
+  const cancelEditingEffect = useCallback(() => {
+    setEditingEffect(null);
+  }, []);
+
+  const saveEditingEffect = useCallback(() => {
+    const current = editingEffectRef.current;
+    if (!current) return;
+    applyChange((d) =>
+      updateBlock(d, current.blockId, {
+        effect: { type: current.type, params: editingEffectParamsRef.current },
+      }),
+    );
+    setEditingEffect(null);
+  }, [applyChange]);
+
+  // Atalhos de teclado universais: Ctrl+Z / Cmd+Z, Ctrl+Y / Cmd+Shift+Z e Esc cancela o efeito em edição.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && editingEffectRef.current) {
+        setEditingEffect(null);
+        return;
+      }
       if (isEditableTarget(e.target) || !hasUndoModifier(e)) return;
 
       const key = e.key.toLowerCase();
@@ -303,6 +395,13 @@ export function EditorProvider({
       draggingId,
       setDraggingId,
       setActiveRichText,
+      editingEffect,
+      startEditingEffect,
+      cancelEditingEffect,
+      saveEditingEffect,
+      updateEditingEffectParams,
+      getEditingEffectParams,
+      subscribeEditingEffectParams,
       select: (id) => {
         setSelectedId(id);
         setActiveRichText((prev) => (prev && prev.blockId !== id ? null : prev));
@@ -394,6 +493,13 @@ export function EditorProvider({
     hasNoPast,
     hasNoFuture,
     applyChange,
+    editingEffect,
+    startEditingEffect,
+    cancelEditingEffect,
+    saveEditingEffect,
+    updateEditingEffectParams,
+    getEditingEffectParams,
+    subscribeEditingEffectParams,
   ]);
 
   return (

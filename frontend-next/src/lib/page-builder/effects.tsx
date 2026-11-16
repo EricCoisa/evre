@@ -10,13 +10,15 @@ export interface EffectProps {
   params: Record<string, unknown>;
 }
 
-function num(value: unknown): number | undefined {
+export function num(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
-const DEFAULT_ROTATE_X = 6;
-const DEFAULT_ROTATE_Y = 3;
-const DEFAULT_PERSPECTIVE = 1200;
+// Exportados pro gizmo (`editor/effect-gizmos.tsx`) usar o MESMO default do efeito real — nunca
+// dois números mágicos que podem divergir.
+export const DEFAULT_ROTATE_X = 6;
+export const DEFAULT_ROTATE_Y = 3;
+export const DEFAULT_PERSPECTIVE = 1200;
 
 /** Mesma técnica estática já usada em `sistemas-section.tsx`/`sites-section.tsx` — sem
  * mouse-tracking, custo zero de JS por frame. */

@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslation, type TFunc } from '@/hooks/use-translation';
 import { usePageSources } from '@/lib/actions/pageBuilder/queries';
@@ -76,7 +77,7 @@ import {
   normalizeSpan,
   type PageBlock,
 } from '../schema';
-import { useEditorOrThrow } from './context';
+import { useEditingEffectParams, useEditorOrThrow } from './context';
 import { setLayoutAnimation } from './mutations';
 
 export type ArtifactPickerSlot = React.ComponentType<{
@@ -508,29 +509,33 @@ function BlockForm({
           {QUICK_HEIGHTS.map((h) => {
             const minRowSpan = minRowSpanForType(block.type);
             const disabledOption = h.rowSpan > maxRowSpan || h.rowSpan < minRowSpan;
+            const shortLabel = h.label.split(' ')[0];
+            const tooltipText =
+              h.rowSpan > maxRowSpan
+                ? t('editor.heightBlockedByNeighbor', {
+                    defaultValue: 'Sem espaço livre abaixo deste bloco',
+                  })
+                : h.label;
             return (
-              <Button
-                key={h.rowSpan}
-                type="button"
-                variant={
-                  normalizeRowSpan(block.rowSpan, block.type) === h.rowSpan
-                    ? 'default'
-                    : 'outline'
-                }
-                size="sm"
-                className="h-7 px-1 text-xs"
-                disabled={disabledOption}
-                title={
-                  h.rowSpan > maxRowSpan
-                    ? t('editor.heightBlockedByNeighbor', {
-                        defaultValue: 'Sem espaço livre abaixo deste bloco',
-                      })
-                    : h.label
-                }
-                onClick={() => editor.setRowSpan(block.id, h.rowSpan)}
-              >
-                {h.label}
-              </Button>
+              <Tooltip key={h.rowSpan}>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant={
+                      normalizeRowSpan(block.rowSpan, block.type) === h.rowSpan
+                        ? 'default'
+                        : 'outline'
+                    }
+                    size="sm"
+                    className="h-7 px-1 text-xs"
+                    disabled={disabledOption}
+                    onClick={() => editor.setRowSpan(block.id, h.rowSpan)}
+                  >
+                    {shortLabel}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{tooltipText}</TooltipContent>
+              </Tooltip>
             );
           })}
         </div>
@@ -552,10 +557,7 @@ function BlockForm({
         onChange={(v) => editor.patch(block.id, { animation: v })}
       />
 
-      <BlockEffectSection
-        value={block.effect}
-        onChange={(v) => editor.patch(block.id, { effect: v })}
-      />
+      <BlockEffectSection blockId={block.id} value={block.effect} />
     </section>
   );
 }
@@ -821,8 +823,10 @@ function renderOptionsField(
   );
 }
 
-/** Um campo por entrada de `BlockPropMeta` — o `type` da meta decide o controle. */
-function PropField({
+/** Um campo por entrada de `BlockPropMeta` — o `type` da meta decide o controle. Exportado: o
+ * gizmo de efeito sem UI custom (`editor/block-chrome.tsx`) reusa o mesmo renderer de campo pros
+ * `params` em vez de duplicar um conjunto de inputs. */
+export function PropField({
   meta,
   value,
   fields,
@@ -1160,53 +1164,121 @@ function BlockAnimationSection({
   );
 }
 
-/** Seletor de efeito (`EFFECT_META`) + campos de parâmetro gerados pelo mesmo `PropField` que já
- * desenha `meta.props` de bloco — efeito novo ganha UI sem nenhum componente próprio. */
+/** Campos do efeito em edição — rascunho ao vivo (`useEditingEffectParams`), nunca o `value`
+ * salvo do bloco. Mesmos `PropField` que o fallback do gizmo no canvas usa (`block-chrome.tsx`). */
+function EffectEditingFields({ type }: { type: string }) {
+  const { t } = useTranslation('page-builder');
+  const editor = useEditorOrThrow();
+  const params = useEditingEffectParams();
+  const meta = isKnownEffect(type) ? EFFECT_META[type] : undefined;
+  if (!meta) return null;
+
+  return (
+    <div className="space-y-2 pt-1">
+      <p className="text-muted-foreground text-[11px]">{meta.description}</p>
+      {meta.params.map((param) => (
+        <PropField
+          key={param.name}
+          meta={param}
+          value={params[param.name]}
+          fields={[]}
+          onChange={(v) => editor.updateEditingEffectParams({ [param.name]: v })}
+        />
+      ))}
+      <div className="flex justify-end gap-1.5 pt-1">
+        <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={editor.cancelEditingEffect}>
+          {t('editor.effectCancel', { defaultValue: 'Cancelar' })}
+        </Button>
+        <Button type="button" size="sm" className="h-7 text-xs" onClick={editor.saveEditingEffect}>
+          {t('editor.effectSave', { defaultValue: 'Salvar' })}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/** Resumo do efeito já salvo (fora de edição) + botão para reabrir sem perder os valores. */
+function EffectSummary({ label, onEdit }: { label: string; onEdit: () => void }) {
+  const { t } = useTranslation('page-builder');
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-xs">{label}</span>
+      <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={onEdit}>
+        {t('editor.effectEdit', { defaultValue: 'Editar' })}
+      </Button>
+    </div>
+  );
+}
+
+/** Escolher um tipo (ou trocar) no select. */
+function EffectTypeSelect({ value, onChange }: { value: string; onChange: (type: string) => void }) {
+  const { t } = useTranslation('page-builder');
+  return (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger className="w-full">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="none">{t('editor.effectNone', { defaultValue: 'Nenhum' })}</SelectItem>
+        {Object.entries(EFFECT_META).map(([type, effectMeta]) => (
+          <SelectItem key={type} value={type}>
+            {effectMeta.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+/** O que mostrar: tipo efetivo (rascunho em edição ou valor salvo), seu meta, e se é hora do
+ * resumo ou do select — isolado pra `BlockEffectSection` não acumular a complexidade disso. */
+function resolveEffectDisplay(isEditingThis: boolean, editingType: string | undefined, value: PageBlock['effect']) {
+  const effectType = isEditingThis ? editingType : value?.type;
+  const meta = effectType && isKnownEffect(effectType) ? EFFECT_META[effectType] : undefined;
+  return { effectType, meta, showSummary: !isEditingThis && !!value };
+}
+
+/** Params iniciais do rascunho: mantém os valores salvos se for o mesmo tipo, senão começa vazio. */
+function initialParamsFor(value: PageBlock['effect'], type: string): Record<string, unknown> {
+  return value?.type === type ? (value.params ?? {}) : {};
+}
+
+/** Seletor de efeito (`EFFECT_META`). Escolher um tipo arma o modo de edição ao vivo
+ * (`startEditingEffect`) em vez de gravar na hora — o bloco passa a rodar o efeito de verdade no
+ * canvas (`renderer.tsx#LiveEffectPreview`) até Salvar/Cancelar. Efeito já salvo mostra um resumo
+ * + "Editar" pra reabrir sem perder os valores. */
 function BlockEffectSection({
+  blockId,
   value,
-  onChange,
 }: {
+  blockId: string;
   value: PageBlock['effect'];
-  onChange: (value: PageBlock['effect']) => void;
 }) {
   const { t } = useTranslation('page-builder');
-  const effectType = value?.type;
-  const meta = effectType && isKnownEffect(effectType) ? EFFECT_META[effectType] : undefined;
+  const editor = useEditorOrThrow();
+  const isEditingThis = editor.editingEffect?.blockId === blockId;
+  const { effectType, meta, showSummary } = resolveEffectDisplay(isEditingThis, editor.editingEffect?.type, value);
 
-  const setType = (type: string) => onChange(type === 'none' ? undefined : { type, params: {} });
-  const setParam = (name: string, paramValue: unknown) =>
-    onChange(value && { ...value, params: { ...value.params, [name]: paramValue } });
+  const setType = (type: string) => {
+    if (type === 'none') {
+      editor.patch(blockId, { effect: undefined });
+      return;
+    }
+    editor.startEditingEffect(blockId, type, initialParamsFor(value, type));
+  };
 
   return (
     <div className="space-y-1.5">
       <Label className="text-xs">{t('editor.effect', { defaultValue: 'Efeito' })}</Label>
-      <Select value={effectType ?? 'none'} onValueChange={setType}>
-        <SelectTrigger className="w-full">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="none">{t('editor.effectNone', { defaultValue: 'Nenhum' })}</SelectItem>
-          {Object.entries(EFFECT_META).map(([type, effectMeta]) => (
-            <SelectItem key={type} value={type}>
-              {effectMeta.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      {meta ? (
-        <div className="space-y-2 pt-1">
-          <p className="text-muted-foreground text-[11px]">{meta.description}</p>
-          {meta.params.map((param) => (
-            <PropField
-              key={param.name}
-              meta={param}
-              value={value?.params?.[param.name]}
-              fields={[]}
-              onChange={(v) => setParam(param.name, v)}
-            />
-          ))}
-        </div>
-      ) : null}
+      {showSummary ? (
+        <EffectSummary
+          label={meta?.label ?? value!.type}
+          onEdit={() => editor.startEditingEffect(blockId, value!.type, value!.params ?? {})}
+        />
+      ) : (
+        <EffectTypeSelect value={effectType ?? 'none'} onChange={setType} />
+      )}
+      {isEditingThis ? <EffectEditingFields type={editor.editingEffect!.type} /> : null}
     </div>
   );
 }

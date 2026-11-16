@@ -15349,6 +15349,69 @@
                       "type": "string",
                       "maxLength": 200
                     },
+                    "animation": {
+                      "type": "object",
+                      "properties": {
+                        "entrance": {
+                          "type": "string",
+                          "enum": [
+                            "none",
+                            "fade",
+                            "slide-up",
+                            "slide-down",
+                            "slide-left",
+                            "slide-right",
+                            "zoom-in"
+                          ]
+                        },
+                        "trigger": {
+                          "type": "string",
+                          "enum": [
+                            "load",
+                            "scroll"
+                          ]
+                        },
+                        "hover": {
+                          "type": "string",
+                          "enum": [
+                            "none",
+                            "lift",
+                            "scale",
+                            "glow"
+                          ]
+                        },
+                        "duration": {
+                          "type": "number",
+                          "minimum": 0.1,
+                          "exclusiveMinimum": false,
+                          "maximum": 1.5,
+                          "exclusiveMaximum": false
+                        },
+                        "delay": {
+                          "type": "number",
+                          "minimum": 0,
+                          "exclusiveMinimum": false,
+                          "maximum": 1,
+                          "exclusiveMaximum": false
+                        }
+                      }
+                    },
+                    "effect": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "params": {
+                          "type": "object",
+                          "additionalProperties": {}
+                        }
+                      },
+                      "required": [
+                        "type"
+                      ]
+                    },
                     "props": {
                       "type": "object",
                       "additionalProperties": {}
@@ -15413,6 +15476,69 @@
                             "type": "string",
                             "maxLength": 200
                           },
+                          "animation": {
+                            "type": "object",
+                            "properties": {
+                              "entrance": {
+                                "type": "string",
+                                "enum": [
+                                  "none",
+                                  "fade",
+                                  "slide-up",
+                                  "slide-down",
+                                  "slide-left",
+                                  "slide-right",
+                                  "zoom-in"
+                                ]
+                              },
+                              "trigger": {
+                                "type": "string",
+                                "enum": [
+                                  "load",
+                                  "scroll"
+                                ]
+                              },
+                              "hover": {
+                                "type": "string",
+                                "enum": [
+                                  "none",
+                                  "lift",
+                                  "scale",
+                                  "glow"
+                                ]
+                              },
+                              "duration": {
+                                "type": "number",
+                                "minimum": 0.1,
+                                "exclusiveMinimum": false,
+                                "maximum": 1.5,
+                                "exclusiveMaximum": false
+                              },
+                              "delay": {
+                                "type": "number",
+                                "minimum": 0,
+                                "exclusiveMinimum": false,
+                                "maximum": 1,
+                                "exclusiveMaximum": false
+                              }
+                            }
+                          },
+                          "effect": {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "params": {
+                                "type": "object",
+                                "additionalProperties": {}
+                              }
+                            },
+                            "required": [
+                              "type"
+                            ]
+                          },
                           "props": {
                             "type": "object",
                             "additionalProperties": {}
@@ -15443,6 +15569,53 @@
                     "id",
                     "type"
                   ]
+                }
+              },
+              "animation": {
+                "type": "object",
+                "properties": {
+                  "entrance": {
+                    "type": "string",
+                    "enum": [
+                      "none",
+                      "fade",
+                      "slide-up",
+                      "slide-down",
+                      "slide-left",
+                      "slide-right",
+                      "zoom-in"
+                    ]
+                  },
+                  "trigger": {
+                    "type": "string",
+                    "enum": [
+                      "load",
+                      "scroll"
+                    ]
+                  },
+                  "hover": {
+                    "type": "string",
+                    "enum": [
+                      "none",
+                      "lift",
+                      "scale",
+                      "glow"
+                    ]
+                  },
+                  "duration": {
+                    "type": "number",
+                    "minimum": 0.1,
+                    "exclusiveMinimum": false,
+                    "maximum": 1.5,
+                    "exclusiveMaximum": false
+                  },
+                  "delay": {
+                    "type": "number",
+                    "minimum": 0,
+                    "exclusiveMinimum": false,
+                    "maximum": 1,
+                    "exclusiveMaximum": false
+                  }
                 }
               }
             },

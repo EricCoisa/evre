@@ -50,7 +50,7 @@ export default function LeadPage() {
 
   const handleOpenChat = useCallback(
     (lead: LeadDto) => {
-      if (lead.phone) openChatForPhone(lead.phone, { name: lead.name ?? undefined });
+      if (lead.phone) openChatForPhone(String(lead.phone), { name: lead.name ?? undefined });
     },
     [openChatForPhone],
   );
@@ -65,6 +65,8 @@ export default function LeadPage() {
       toast.error(res.message ?? t('deleteError'));
     }
   };
+
+  const deleteTargetDisplayName = deleteTarget?.name ?? (deleteTarget?.email ? String(deleteTarget.email) : '');
 
   const handleSendEmail = useCallback((lead: LeadDto) => {
     if (lead.email) setEmailTarget({
@@ -95,7 +97,7 @@ export default function LeadPage() {
       onOpenChange={(open) => !open && setDeleteTarget(null)}
       onConfirm={handleDelete}
       title={t('deleteConfirmTitle')}
-      description={t('deleteConfirmDescription', { name: deleteTarget?.name ?? deleteTarget?.email ?? '' })}
+      description={t('deleteConfirmDescription', { name: deleteTargetDisplayName })}
       confirmVariant="destructive"
     />
     <SendEmailDialog
