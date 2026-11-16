@@ -187,7 +187,7 @@ export interface Home {
   meta?: {
     title?: string | null;
     description?: string | null;
-    cannonicalUrl?: string | null;
+    canonicalUrl?: string | null;
     /**
      * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
      */
@@ -415,7 +415,7 @@ export interface HomeSelect<T extends boolean = true> {
     | {
         title?: T;
         description?: T;
-        cannonicalUrl?: T;
+        canonicalUrl?: T;
         image?: T;
       };
   updatedAt?: T;

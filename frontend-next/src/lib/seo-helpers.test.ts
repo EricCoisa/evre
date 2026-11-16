@@ -78,7 +78,7 @@ describe('generateSEOMetadata', () => {
 describe('generateMetadataFromPayload', () => {
   it('usa title/description/canonical do meta do Payload quando presentes', () => {
     const data = {
-      meta: { title: 'Meta Title', description: 'Meta Desc', cannonicalUrl: 'https://x.com/a' },
+      meta: { title: 'Meta Title', description: 'Meta Desc', canonicalUrl: 'https://x.com/a' },
     };
 
     const metadata = generateMetadataFromPayload(data, { title: 'Fallback Title' }, undefined);

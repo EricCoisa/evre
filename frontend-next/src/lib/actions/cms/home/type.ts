@@ -141,6 +141,6 @@ export const defaulHometData: Partial<HomeData> = {
   meta: {
     title: 'EVRE Software House | Desenvolvimento de Software Sob Medida',
     description: 'Sites, sistemas e plataformas desenvolvidos sob medida para o seu modelo de negócio.',
-    cannonicalUrl: '/',
+    canonicalUrl: '/',
   },
 };

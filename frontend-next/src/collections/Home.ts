@@ -255,7 +255,7 @@ export const Home: CollectionConfig = {
             MetaTitleField({ hasGenerateFn: true }),
             MetaDescriptionField({ hasGenerateFn: true }),
             {
-              name: 'cannonicalUrl',
+              name: 'canonicalUrl',
               type: 'text',
               label: 'Canonical URL',
               hooks: {

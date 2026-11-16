@@ -82,14 +82,14 @@ function resolvePayloadMeta(
     title?: string;
     description?: string;
     image?: string | { url?: string; alt?: string };
-    cannonicalUrl?: string;
+    canonicalUrl?: string;
   } = data?.meta || {};
 
   return {
     title: meta.title || fallbacks.title,
     description: meta.description || fallbacks.description,
     image: meta.image,
-    canonicalUrl: meta.cannonicalUrl || fallbacks.canonicalUrl || siteUrl,
+    canonicalUrl: meta.canonicalUrl || fallbacks.canonicalUrl || siteUrl,
   };
 }
 
