@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getHomeData } from '@/lib/actions/cms/home/api';
+import { generateOrganizationSchema } from '@/lib/actions/cms/home/schema';
 import { getCaptchaConfig } from '@/lib/actions/captcha/api';
 import { HomeClient } from './page/page-client';
 import { generateMetadataFromPayload } from '@/lib/seo-helpers';
@@ -26,6 +27,18 @@ export default async function Home() {
     getCaptchaConfig(),
   ]);
 
-  return <HomeClient initialData={homeData} captchaConfig={captchaRes.data ?? null} />;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
+  return (
+    <>
+      {homeData && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(generateOrganizationSchema(homeData, siteUrl)) }}
+        />
+      )}
+      <HomeClient initialData={homeData} captchaConfig={captchaRes.data ?? null} />
+    </>
+  );
 }
 
