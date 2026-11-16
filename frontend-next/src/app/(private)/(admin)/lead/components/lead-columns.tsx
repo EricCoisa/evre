@@ -66,6 +66,110 @@ const STATUS_LABEL_KEY: Record<string, string> = {
   RESOLVED: 'markAsResolved',
 };
 
+interface ChatActionButtonProps {
+  lead: LeadDto;
+  t: TFunc;
+  onOpenChat: (lead: LeadDto) => void;
+  chatOperational?: boolean;
+  chatDisabledReason?: string;
+}
+
+function ChatActionButton({
+  lead,
+  t,
+  onOpenChat,
+  chatOperational,
+  chatDisabledReason,
+}: ChatActionButtonProps) {
+  const title = chatOperational ? t('openChat') : (chatDisabledReason ?? t('providerUnavailable'));
+  const label = t('openChatWith', { name: lead.name ?? lead.phone ?? '' });
+
+  return (
+    <Button
+      type="button"
+      size="icon-sm"
+      variant="ghost"
+      title={title}
+      aria-label={label}
+      disabled={!chatOperational || !lead.phone}
+      onClick={() => onOpenChat(lead)}
+    >
+      <MessageCircle className="size-4" />
+    </Button>
+  );
+}
+
+interface EmailActionButtonProps {
+  lead: LeadDto;
+  t: TFunc;
+  onSendEmail: (lead: LeadDto) => void;
+  emailOperational?: boolean;
+  emailDisabledReason?: string;
+}
+
+function EmailActionButton({
+  lead,
+  t,
+  onSendEmail,
+  emailOperational,
+  emailDisabledReason,
+}: EmailActionButtonProps) {
+  const title = emailOperational ? t('sendEmail') : (emailDisabledReason ?? t('providerUnavailable'));
+  const label = t('sendEmailTo', { name: lead.name ?? lead.email ?? '' });
+
+  return (
+    <Button
+      type="button"
+      size="icon-sm"
+      variant="ghost"
+      title={title}
+      aria-label={label}
+      disabled={!emailOperational || !lead.email}
+      onClick={() => onSendEmail(lead)}
+    >
+      <Mail className="size-4" />
+    </Button>
+  );
+}
+
+interface LeadActionsMenuProps {
+  lead: LeadDto;
+  t: TFunc;
+  onStatusChange: (lead: LeadDto, status: LeadDtoStatus) => void;
+  onDelete: (lead: LeadDto) => void;
+}
+
+function LeadActionsMenu({ lead, t, onStatusChange, onDelete }: LeadActionsMenuProps) {
+  const otherStatuses = LEAD_STATUSES.filter((s) => s !== lead.status);
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="sm" className="h-6 p-0 min-h-0">
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>{t('changeStatus')}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {otherStatuses.map((status) => (
+          <DropdownMenuItem key={status} onClick={() => onStatusChange(lead, status)}>
+            {t(STATUS_LABEL_KEY[status])}
+          </DropdownMenuItem>
+        ))}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="text-destructive focus:text-destructive"
+          onClick={() => onDelete(lead)}
+        >
+          <Trash2 className="size-4 mr-2" />
+          {t('delete')}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 interface GetLeadColumnsProps {
   t: TFunc;
   onStatusChange: (lead: LeadDto, status: LeadDtoStatus) => void;
@@ -139,60 +243,33 @@ export function getLeadColumns({
       header: () => <TableHead>{t('actions')}</TableHead>,
       cell: ({ row }) => {
         const lead = row.original;
-        const otherStatuses = LEAD_STATUSES.filter((s) => s !== lead.status);
         return (
           <DataCell className="flex gap-2 items-center">
             <MessageButton message={lead.message} label={t('message')} />
             {chatEnabled && onOpenChat && (
-              <Button
-                type="button"
-                size="icon-sm"
-                variant="ghost"
-                title={chatOperational ? t('openChat') : (chatDisabledReason ?? t('providerUnavailable'))}
-                aria-label={t('openChatWith', { name: lead.name ?? lead.phone ?? '' })}
-                disabled={!chatOperational || !lead.phone}
-                onClick={() => onOpenChat(lead)}
-              >
-                <MessageCircle className="size-4" />
-              </Button>
+              <ChatActionButton
+                lead={lead}
+                t={t}
+                onOpenChat={onOpenChat}
+                chatOperational={chatOperational}
+                chatDisabledReason={chatDisabledReason}
+              />
             )}
             {emailEnabled && onSendEmail && (
-              <Button
-                type="button"
-                size="icon-sm"
-                variant="ghost"
-                title={emailOperational ? t('sendEmail') : (emailDisabledReason ?? t('providerUnavailable'))}
-                aria-label={t('sendEmailTo', { name: lead.name ?? lead.email ?? '' })}
-                disabled={!emailOperational || !lead.email}
-                onClick={() => onSendEmail(lead)}
-              >
-                <Mail className="size-4" />
-              </Button>
+              <EmailActionButton
+                lead={lead}
+                t={t}
+                onSendEmail={onSendEmail}
+                emailOperational={emailOperational}
+                emailDisabledReason={emailDisabledReason}
+              />
             )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-6 p-0 min-h-0">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>{t('changeStatus')}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {otherStatuses.map((status) => (
-                  <DropdownMenuItem key={status} onClick={() => onStatusChange(lead, status)}>
-                    {t(STATUS_LABEL_KEY[status])}
-                  </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="text-destructive focus:text-destructive"
-                  onClick={() => onDelete(lead)}
-                >
-                  <Trash2 className="size-4 mr-2" />
-                  {t('delete')}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <LeadActionsMenu
+              lead={lead}
+              t={t}
+              onStatusChange={onStatusChange}
+              onDelete={onDelete}
+            />
           </DataCell>
         );
       },

@@ -61,6 +61,110 @@ const TRAIL_CAPACITY = 32;
 const FILTER_PAD_X = 0.15;
 const FILTER_PAD_Y = 0.25;
 
+interface TrailContext {
+  activeIndices: number[];
+  posX: Float32Array;
+  posY: Float32Array;
+  posT: Float32Array;
+  posS: Float32Array;
+  velX: Float32Array;
+  velY: Float32Array;
+  t: number;
+  life: number;
+  radiusSq: number;
+  cutoffDistSq: number;
+  torsion: number;
+}
+
+function getActiveTrailIndices(
+  t: number,
+  posT: Float32Array,
+  posS: Float32Array,
+  life: number
+): number[] {
+  const activeIndices: number[] = [];
+  for (let i = 0; i < TRAIL_CAPACITY; i++) {
+    const age = t - posT[i];
+    if (posS[i] > 0 && age >= 0 && age <= life) {
+      activeIndices.push(i);
+    }
+  }
+  return activeIndices;
+}
+
+function computePixelDisplacement(
+  px: number,
+  py: number,
+  ctx: TrailContext
+): { r: number; g: number } {
+  let dx = 0;
+  let dy = 0;
+
+  for (let a = 0; a < ctx.activeIndices.length; a++) {
+    const idx = ctx.activeIndices[a];
+    const dvx = px - ctx.posX[idx];
+    const dvy = py - ctx.posY[idx];
+    const distSq = dvx * dvx + dvy * dvy;
+    if (distSq > ctx.cutoffDistSq) continue;
+
+    const age = ctx.t - ctx.posT[idx];
+    const k = Math.exp(-distSq / ctx.radiusSq);
+    let fade = 1 - age / ctx.life;
+    fade *= fade;
+
+    const vx = ctx.velX[idx] * ctx.posS[idx];
+    const vy = ctx.velY[idx] * ctx.posS[idx];
+    const swirl = ctx.torsion * Math.sin(Math.sqrt(distSq) * 0.04 - age * 5.0);
+
+    const weight = k * fade;
+    dx += (vx - vy * swirl) * weight;
+    dy += (vy + vx * swirl) * weight;
+  }
+
+  if (dx === 0 && dy === 0) {
+    return { r: 128, g: 128 };
+  }
+
+  const m = Math.hypot(dx, dy);
+  if (m > 1) {
+    dx /= m;
+    dy /= m;
+  }
+
+  return {
+    r: Math.max(0, Math.min(255, Math.round(128 - dx * 127))),
+    g: Math.max(0, Math.min(255, Math.round(128 - dy * 127))),
+  };
+}
+
+function renderDisplacementMap(
+  bmpBuf: Uint8Array,
+  mapW: number,
+  mapH: number,
+  rowSize: number,
+  cssW: number,
+  cssH: number,
+  ctx: TrailContext
+) {
+  const spanX = 1 + 2 * FILTER_PAD_X;
+  const spanY = 1 + 2 * FILTER_PAD_Y;
+
+  for (let gy = 0; gy < mapH; gy++) {
+    const py = (-FILTER_PAD_Y + (gy / (mapH - 1)) * spanY) * cssH;
+    const rowOffset = 54 + (mapH - 1 - gy) * rowSize;
+
+    for (let gx = 0; gx < mapW; gx++) {
+      const px = (-FILTER_PAD_X + (gx / (mapW - 1)) * spanX) * cssW;
+      const { r, g } = computePixelDisplacement(px, py, ctx);
+
+      const pixelOffset = rowOffset + gx * 3;
+      bmpBuf[pixelOffset] = 128; // B
+      bmpBuf[pixelOffset + 1] = g; // G (Y displacement)
+      bmpBuf[pixelOffset + 2] = r; // R (X displacement)
+    }
+  }
+}
+
 export interface LiquidDistortionProps {
   children: React.ReactNode;
   className?: string;
@@ -160,14 +264,7 @@ export function LiquidDistortion({
       rafId = null;
       const t = nowSec();
 
-      // Collect active trail points
-      const activeIndices: number[] = [];
-      for (let i = 0; i < TRAIL_CAPACITY; i++) {
-        const age = t - posT[i];
-        if (posS[i] > 0 && age >= 0 && age <= life) {
-          activeIndices.push(i);
-        }
-      }
+      const activeIndices = getActiveTrailIndices(t, posT, posS, life);
 
       if (activeIndices.length === 0) {
         if (filterApplied) {
@@ -184,60 +281,22 @@ export function LiquidDistortion({
       const radiusSq = radius * radius;
       const cutoffDistSq = radiusSq * 4.5; // exp(-4.5) ~ 0.011
 
-      const spanX = 1 + 2 * FILTER_PAD_X;
-      const spanY = 1 + 2 * FILTER_PAD_Y;
+      const trailCtx: TrailContext = {
+        activeIndices,
+        posX,
+        posY,
+        posT,
+        posS,
+        velX,
+        velY,
+        t,
+        life,
+        radiusSq,
+        cutoffDistSq,
+        torsion,
+      };
 
-      for (let gy = 0; gy < mapH; gy++) {
-        const py = (-FILTER_PAD_Y + (gy / (mapH - 1)) * spanY) * cssH;
-        const rowOffset = 54 + (mapH - 1 - gy) * rowSize;
-
-        for (let gx = 0; gx < mapW; gx++) {
-          const px = (-FILTER_PAD_X + (gx / (mapW - 1)) * spanX) * cssW;
-
-          let dx = 0;
-          let dy = 0;
-
-          for (let a = 0; a < activeIndices.length; a++) {
-            const idx = activeIndices[a];
-            const dvx = px - posX[idx];
-            const dvy = py - posY[idx];
-            const distSq = dvx * dvx + dvy * dvy;
-            if (distSq > cutoffDistSq) continue;
-
-            const age = t - posT[idx];
-            const k = Math.exp(-distSq / radiusSq);
-            let fade = 1 - age / life;
-            fade *= fade;
-
-            const vx = velX[idx] * posS[idx];
-            const vy = velY[idx] * posS[idx];
-            const swirl = torsion * Math.sin(Math.sqrt(distSq) * 0.04 - age * 5.0);
-
-            const weight = k * fade;
-            dx += (vx - vy * swirl) * weight;
-            dy += (vy + vx * swirl) * weight;
-          }
-
-          let r = 128;
-          let g = 128;
-
-          if (dx !== 0 || dy !== 0) {
-            const m = Math.hypot(dx, dy);
-            if (m > 1) {
-              dx /= m;
-              dy /= m;
-            }
-            // Pull visual pixels along +d by sampling at -d
-            r = Math.max(0, Math.min(255, Math.round(128 - dx * 127)));
-            g = Math.max(0, Math.min(255, Math.round(128 - dy * 127)));
-          }
-
-          const pixelOffset = rowOffset + gx * 3;
-          bmpBuf[pixelOffset] = 128; // B
-          bmpBuf[pixelOffset + 1] = g; // G (Y displacement)
-          bmpBuf[pixelOffset + 2] = r; // R (X displacement)
-        }
-      }
+      renderDisplacementMap(bmpBuf, mapW, mapH, rowSize, cssW, cssH, trailCtx);
 
       const dataUrl = 'data:image/bmp;base64,' + uint8ToBase64(bmpBuf);
       feImage.setAttribute('href', dataUrl);

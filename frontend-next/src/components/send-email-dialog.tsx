@@ -82,20 +82,29 @@ export function SendEmailDialog({
   const [activeTab, setActiveTab] = useState('');
   const [varValues, setVarValues] = useState<Record<string, Record<string, string>>>({});
   const [to, setTo] = useState(defaultTo);
+  const [prevDefaultTo, setPrevDefaultTo] = useState(defaultTo);
   const [subject, setSubject] = useState('');
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [prevOpen, setPrevOpen] = useState(open);
 
-  useEffect(() => {
+  if (defaultTo !== prevDefaultTo) {
+    setPrevDefaultTo(defaultTo);
     setTo(defaultTo);
-  }, [defaultTo]);
+  }
+
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) {
+      setLoading(true);
+    }
+  }
 
   useEffect(() => {
     if (!open) return;
-    setLoading(true);
-    // defaultVars captured by closure — intentionally excluded from deps
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    let cancelled = false;
     void getEmailTemplates().then((res) => {
+      if (cancelled) return;
       const list = res.data ?? [];
       setTemplates(list);
       const initial: Record<string, Record<string, string>> = {};
@@ -112,7 +121,12 @@ export function SendEmailDialog({
       setActiveTab(first);
       setLoading(false);
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      cancelled = true;
+    };
+    // defaultVars is only captured upon opening to populate initial values.
+    // Intentionally omitted from deps so typing or parent re-renders don't overwrite user edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, defaultTemplateType]);
 
   const setVar = (templateType: string, name: string, value: string) => {
