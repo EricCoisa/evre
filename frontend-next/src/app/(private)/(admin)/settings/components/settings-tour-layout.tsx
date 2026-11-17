@@ -112,6 +112,14 @@ export function SettingsTourLayout({ sections, children, flags }: SettingsTourLa
         position: 'bottom',
         onEnter: () => setActiveTab('timeTrackingConfig'),
       },
+      {
+        content: t('tour_settings_analytics'),
+        tabId: 'analyticsConfig',
+        selectorId: 'settings-tab-analyticsConfig',
+        mobileSelectorId: 'settings-content-analyticsConfig',
+        position: 'bottom',
+        onEnter: () => setActiveTab('analyticsConfig'),
+      },
     ];
 
     const steps = filterStepsBySubNavSections(allSteps, sections);

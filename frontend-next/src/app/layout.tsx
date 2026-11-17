@@ -13,6 +13,7 @@ import { redirect } from 'next/navigation';
 import { getCookieConsent } from "@/lib/actions/cms/cookie-consent/api";
 import { CookieConsentBanner } from "@/components/cookie-consent-banner";
 import { Analytics } from "@/components/analytics";
+import type { AnalyticsConfigDto } from "@/lib/generated/schemas";
 
 export default async function RootLayout({
   children,
@@ -22,7 +23,7 @@ export default async function RootLayout({
 
   const [config, analyticsConfig] = await Promise.all([
     APINEXT.GET<SystemConfiguration<string>>(`/public-proxy?url=/system-configuration/default-theme`, { cache: 'no-store' }).catch(() => null),
-    APINEXT.GET<{ ga4Id: string; clarityId: string }>(`/public-proxy?url=/system-configuration/analytics-config`, { cache: 'force-cache' }).catch(() => null),
+    APINEXT.GET<AnalyticsConfigDto>(`/public-proxy?url=/system-configuration/analytics-config`, { cache: 'no-store' }).catch(() => null),
   ]);
 
   const headersList = headers();

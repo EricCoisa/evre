@@ -94,8 +94,9 @@ duplicado, e por que `SystemConfiguration`/`UserConfiguration` precisam ficar si
 | `GET` | `/system-configuration/default-theme` | **anônima** | Só a chave `SYSTEMCONFIG_THEME` |
 | `GET` | `/system-configuration/app-name` | **anônima** | Só a chave `SYSTEM_APP_NAME` |
 | `GET` | `/system-configuration/app-tagline` | **anônima** | Só a chave `SYSTEM_APP_TAGLINE` |
+| `GET` | `/system-configuration/analytics-config` | **anônima** | `{ ga4Id, clarityId }` (`AnalyticsConfigDto`) das chaves `SYSTEM_ANALYTICS_GA4_ID`/`SYSTEM_ANALYTICS_CLARITY_ID`; ID fora do formato volta vazio (`FindAnalyticsConfigUseCase`) |
 
-As quatro rotas anônimas são chaves específicas com rota própria, e ficam **antes** de `:id` no
+As rotas anônimas são chaves específicas com rota própria, e ficam **antes** de `:id` no
 controller (senão `signup` casaria como id). A rota genérica continua ADMIN — é o mesmo padrão que o
 PageBuilder usa em `GET /page-builder/system-layout`, descrito abaixo.
 
@@ -205,3 +206,10 @@ uma base já existente, já que nenhum DTO expõe esses campos.
 Hoje bloqueadas: `SYSTEMID` e `SYSTEMTOKEN` — identidade da instalação junto ao
 suporte (ver `clientLog`), mudam por provisionamento e não por tela.
 `src/domain/system-configuration/blocked-keys.spec.ts` falha se a trava sair do seed.
+
+## Analytics (GA4 / Clarity)
+
+`analytics-config` alimenta `components/analytics.tsx`, montado no `app/layout.tsx`. Os scripts só
+carregam depois do aceite de cookies (`useCookieConsent`, que escuta o evento disparado pelo
+`CookieConsentBanner`) e ID vazio desativa o serviço. A aba "Analytics" em `/settings` edita as duas
+chaves via `SystemConfigurationRow`.

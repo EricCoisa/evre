@@ -5,12 +5,10 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useLocalStorage } from '@/hooks/use-localStorage';
 import type { CookieConsentData } from '@/lib/actions/cms/cookie-consent/type';
-
-const STORAGE_KEY = 'cookie-consent';
-type Choice = 'accepted' | 'declined';
+import { COOKIE_CONSENT_CHANGE_EVENT, COOKIE_CONSENT_KEY, type CookieConsentChoice } from '@/hooks/use-cookie-consent';
 
 export function CookieConsentBanner({ data }: { data: CookieConsentData | null }) {
-  const { getValue, setValue } = useLocalStorage<Choice>(STORAGE_KEY);
+  const { getValue, setValue } = useLocalStorage<CookieConsentChoice>(COOKIE_CONSENT_KEY);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -20,10 +18,10 @@ export function CookieConsentBanner({ data }: { data: CookieConsentData | null }
 
   if (!data || !visible) return null;
 
-  const choose = (choice: Choice) => {
+  const choose = (choice: CookieConsentChoice) => {
     setValue(choice);
     setVisible(false);
-    window.dispatchEvent(new CustomEvent('cookie-consent-change'));
+    window.dispatchEvent(new CustomEvent(COOKIE_CONSENT_CHANGE_EVENT));
   };
 
   return (

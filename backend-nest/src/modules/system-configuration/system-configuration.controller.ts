@@ -13,6 +13,7 @@ import {
 } from '../../common/schemas/pagination.schema';
 import { commonPaginationQueries } from '../../common/swagger/pagination-queries';
 import { SystemConfigurationDto } from './dto/system-configuration.dto';
+import { AnalyticsConfigDto } from './dto/analytics-config.dto';
 import { CreateSystemConfigurationDto } from './dto/create-system-configuration.dto';
 import { UpdateSystemConfigurationDto } from './dto/update-system-configuration.dto';
 import type { PaginatedResponse } from '../../common/types/pagination.types';
@@ -20,6 +21,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../../common/types/auth.types';
 import { FindAllSystemConfigurationUseCase } from './use-cases/find-all.use-case';
 import { FindOneSystemConfigurationUseCase } from './use-cases/find-one.use-case';
+import { FindAnalyticsConfigUseCase } from './use-cases/find-analytics-config.use-case';
 import { FindSystemConfigByLabelKeyUseCase } from './use-cases/find-by-label-key.use-case';
 import { CreateSystemConfigurationUseCase } from './use-cases/create.use-case';
 import { UpdateSystemConfigurationUseCase } from './use-cases/update.use-case';
@@ -39,6 +41,7 @@ export class SystemConfigurationController {
     private readonly findAll$: FindAllSystemConfigurationUseCase,
     private readonly findOne$: FindOneSystemConfigurationUseCase,
     private readonly findByLabelKey$: FindSystemConfigByLabelKeyUseCase,
+    private readonly findAnalyticsConfig$: FindAnalyticsConfigUseCase,
     private readonly create$: CreateSystemConfigurationUseCase,
     private readonly update$: UpdateSystemConfigurationUseCase,
     private readonly remove$: RemoveSystemConfigurationUseCase,
@@ -167,20 +170,17 @@ export class SystemConfigurationController {
     status: 'OK',
     authenticated: false,
     response: {
-      success: [{ status: 'OK', description: 'IDs de analytics' }],
+      success: [
+        {
+          status: 'OK',
+          description: 'IDs de analytics',
+          schema: { dto: AnalyticsConfigDto },
+        },
+      ],
     },
   })
-  async findAnalyticsConfig(): Promise<{ ga4Id: string; clarityId: string }> {
-    const [ga4, clarity] = await Promise.all([
-      this.findByLabelKey$.execute('SYSTEM_ANALYTICS_GA4_ID').catch(() => null),
-      this.findByLabelKey$
-        .execute('SYSTEM_ANALYTICS_CLARITY_ID')
-        .catch(() => null),
-    ]);
-    return {
-      ga4Id: String(ga4?.value ?? ''),
-      clarityId: String(clarity?.value ?? ''),
-    };
+  async findAnalyticsConfig(): Promise<AnalyticsConfigDto> {
+    return this.findAnalyticsConfig$.execute();
   }
 
   @GetApi({

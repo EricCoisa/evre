@@ -6,6 +6,7 @@ import { LoggingModule } from '../logging/logging.module';
 import { TasksModule } from '../tasks/tasks.module';
 import { FindAllSystemConfigurationUseCase } from './use-cases/find-all.use-case';
 import { FindOneSystemConfigurationUseCase } from './use-cases/find-one.use-case';
+import { FindAnalyticsConfigUseCase } from './use-cases/find-analytics-config.use-case';
 import { FindSystemConfigByLabelKeyUseCase } from './use-cases/find-by-label-key.use-case';
 import { CreateSystemConfigurationUseCase } from './use-cases/create.use-case';
 import { UpdateSystemConfigurationUseCase } from './use-cases/update.use-case';
@@ -32,6 +33,7 @@ import { SettingsPageRouteCeiling } from './settings-page.route-ceiling';
     FindAllSystemConfigurationUseCase,
     FindOneSystemConfigurationUseCase,
     FindSystemConfigByLabelKeyUseCase,
+    FindAnalyticsConfigUseCase,
     CreateSystemConfigurationUseCase,
     UpdateSystemConfigurationUseCase,
     RemoveSystemConfigurationUseCase,

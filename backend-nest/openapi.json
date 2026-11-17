@@ -383,7 +383,14 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "IDs de analytics"
+            "description": "IDs de analytics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsConfigDto"
+                }
+              }
+            }
           }
         },
         "summary": "Busca IDs de analytics",
@@ -11265,6 +11272,25 @@
           "updatedAt",
           "secret",
           "blocked"
+        ]
+      },
+      "AnalyticsConfigDto": {
+        "type": "object",
+        "properties": {
+          "ga4Id": {
+            "type": "string",
+            "description": "Measurement ID do Google Analytics 4 (vazio = desativado)",
+            "example": "G-XXXXXXXXXX"
+          },
+          "clarityId": {
+            "type": "string",
+            "description": "Project ID do Microsoft Clarity (vazio = desativado)",
+            "example": "abc123xyz9"
+          }
+        },
+        "required": [
+          "ga4Id",
+          "clarityId"
         ]
       },
       "CreateSystemConfigurationDto": {
