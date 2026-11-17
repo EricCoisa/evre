@@ -11,7 +11,7 @@ export interface SEOProps {
   twitterCard?: 'summary' | 'summary_large_image' | 'app' | 'player';
 }
 
-function extractImageFromObject(image: Exclude<SEOProps['image'], string | undefined>, title?: string) {
+function extractImageFromObject(image: Exclude<SEOProps['image'], string> | undefined, title?: string) {
   return {
     url: image?.url || '',
     alt: image?.alt || title || '',

@@ -7,7 +7,8 @@
     "build": "turbo run build",
     "test": "turbo run test",
     "lint": "turbo run lint",
-    "typecheck": "turbo run typecheck"
+    "typecheck": "turbo run typecheck",
+    "ci:local": "C:/PROGRA~1/Git/bin/bash.exe scripts/ci-local.sh"
   },
   "devDependencies": {
     "playwright": "^1.64.1",

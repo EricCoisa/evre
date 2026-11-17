@@ -92,7 +92,6 @@ export function HomeClient({ initialData, captchaConfig }: HomeClientProps) {
           title={content.ctaTitle}
           buttonText={content.ctaButtonText}
           whatsappNumber={content.heroWhatsappNumber}
-          contactEmail={content.contactEmail}
           contactFormLabel={content.contactFormLabel}
           contactFormTitle={content.contactFormTitle}
           contactFormDescription={content.contactFormDescription}
