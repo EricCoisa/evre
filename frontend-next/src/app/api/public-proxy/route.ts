@@ -3,6 +3,7 @@ import { API_PATHS } from '@/lib/generated/paths';
 
 const ALLOWED_PATHS: readonly string[] = [
   API_PATHS.SYSTEM_CONFIGURATION_DEFAULT_THEME,
+  API_PATHS.SYSTEM_CONFIGURATION_ANALYTICS_CONFIG,
   // Adicione outros endpoints públicos permitidos aqui
 ];
 
