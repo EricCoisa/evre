@@ -6,6 +6,7 @@ import ScrollTrigger from 'gsap/ScrollTrigger';
 import { AsciiBackground } from './ascii-background';
 import { LiquidDistortion } from './liquid-distortion';
 import { defaulHometData } from '@/lib/actions/cms/home/type';
+import { makeWhatsappUrl } from './utils';
 import { BrandIconPlay, BrandIconSlash, BrandIconPlayInverse } from '@/components/brand-icons';
 
 interface HeroSectionProps {
@@ -22,7 +23,7 @@ export function HeroSection({
   whatsappNumber = defaulHometData.heroWhatsappNumber!,
 }: HeroSectionProps) {
   const sectionRef = useRef<HTMLElement>(null);
-  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=Ol%C3%A1!%20Gostaria%20de%20conversar%20sobre%20um%20projeto%20com%20a%20EVRE.`;
+  const whatsappUrl = makeWhatsappUrl(whatsappNumber);
 
   useEffect(() => {
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;

@@ -14,7 +14,7 @@ export interface EquipesSectionProps {
   cards?: Array<{ title: string; description: string }>;
 }
 
-const defaultSection = defaulHometData.sections![2] as CardsGridSectionBlock;
+const defaultSection = defaulHometData.sections!.find(s => s.blockType === 'cardsGrid')! as CardsGridSectionBlock;
 
 export function EquipesSection({
   anchorId = defaultSection.anchorId,

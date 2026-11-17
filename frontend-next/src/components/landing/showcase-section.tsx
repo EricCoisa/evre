@@ -102,11 +102,11 @@ export function ShowcaseSection({
     >
       <div className="mx-auto grid max-w-6xl items-center gap-10 md:grid-cols-2 md:gap-20">
         {/* Frame de demonstração / artefatos */}
-        <div className={`mb-6 md:mb-0 ${isMediaLeft ? 'order-2 md:order-1' : 'order-2 md:order-2'}`}>
+        <div className={`mb-6 md:mb-0 ${isMediaLeft ? 'order-2 md:order-1' : 'order-2'}`}>
           <ArtifactFrame
             demos={demos}
             interactive={demosInteractive}
-            className="showcase-frame max-md:[transform:none!important]"
+            className="showcase-frame"
             style={{
               transform: isMediaLeft
                 ? 'perspective(1200px) rotateX(6deg) rotateY(3deg)'

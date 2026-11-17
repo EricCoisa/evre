@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import ScrollTrigger from 'gsap/ScrollTrigger';
 import { defaulHometData } from '@/lib/actions/cms/home/type';
+import { makeWhatsappUrl } from './utils';
 import { ContactFormDialog } from '@/components/landing/contact-form-dialog';
 import { LiquidDistortion } from '@/components/landing/liquid-distortion';
 import type { CaptchaConfigDto } from '@/lib/generated/schemas';
@@ -33,7 +34,7 @@ export function FinalCtaSection({
 }: FinalCtaSectionProps) {
   const [formOpen, setFormOpen] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
-  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=Ol%C3%A1!%20Gostaria%20de%20conversar%20sobre%20um%20projeto%20com%20a%20EVRE.`;
+  const whatsappUrl = makeWhatsappUrl(whatsappNumber);
 
   useEffect(() => {
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Logo } from '@/components/logo';
 import { Menu, X, ArrowUpRight, MessageCircle } from 'lucide-react';
 import { defaulHometData } from '@/lib/actions/cms/home/type';
+import { makeWhatsappUrl } from './utils';
 
 export interface NavItem {
   href: string;
@@ -29,7 +30,7 @@ export function LandingNav({
 }: LandingNavProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=Ol%C3%A1!%20Gostaria%20de%20conversar%20sobre%20um%20projeto%20com%20a%20EVRE.`;
+  const whatsappUrl = makeWhatsappUrl(whatsappNumber);
 
   const items = navItems && navItems.length > 0 ? navItems : defaultNavItems;
 
