@@ -34,8 +34,15 @@ export function AsciiBackground({
     const rebuild = () => {
       const parent = canvas.parentElement;
       if (!parent) return;
-      W = canvas.width = parent.clientWidth;
-      H = canvas.height = parent.clientHeight;
+      const nextW = parent.clientWidth;
+      const nextH = parent.clientHeight;
+      if (cells.length > 0 && nextW === W && nextH <= H) return;
+      const dpr = window.devicePixelRatio || 1;
+      W = nextW;
+      H = nextH;
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       cells = [];
       const cols = Math.ceil(W / charDensity) + 1;
       const rows = Math.ceil(H / charDensity) + 1;
@@ -57,7 +64,9 @@ export function AsciiBackground({
     window.addEventListener('resize', rebuild);
 
     let t = 0;
+    let visible = true;
     const render = () => {
+      if (!visible) return;
       t += 0.003;
       ctx.clearRect(0, 0, W, H);
 
@@ -65,6 +74,7 @@ export function AsciiBackground({
       const cy = H * 0.4;
       const maxD = Math.sqrt(cx * cx + cy * cy);
 
+      const isDark = forceDark || document.documentElement.classList.contains('dark');
       cells.forEach(cell => {
         const dx = cell.x - cx;
         const dy = cell.y - cy;
@@ -73,20 +83,27 @@ export function AsciiBackground({
         const a = 0.025 + radial * 0.07 + Math.sin(t * cell.sp + cell.ph) * 0.015;
         if (a <= 0) return;
 
-        const isDark = forceDark || document.documentElement.classList.contains('dark');
         ctx.font = `${cell.sz}px 'Inter', monospace`;
         ctx.fillStyle = isDark
           ? `rgba(240,239,238,${Math.max(0, a)})`
-          : `rgba(20,20,20,${Math.max(0, a * 0.9)})`;
+          : `rgba(20,20,20,${Math.min(0.3, Math.max(0, a * 2.5))})`;
         ctx.fillText(cell.s, cell.x, cell.y);
       });
 
       animationFrameId = requestAnimationFrame(render);
     };
 
+    const observer = new IntersectionObserver(([entry]) => {
+      const wasVisible = visible;
+      visible = entry.isIntersecting;
+      if (visible && !wasVisible) render();
+    });
+    observer.observe(canvas);
+
     render();
 
     return () => {
+      observer.disconnect();
       window.removeEventListener('resize', rebuild);
       cancelAnimationFrame(animationFrameId);
     };
