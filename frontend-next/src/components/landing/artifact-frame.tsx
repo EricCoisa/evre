@@ -27,11 +27,11 @@ export function ArtifactFrame({ demos, interactive = true, className = '', style
 
   return (
     <div
-      className={`overflow-hidden rounded-lg border ${className}`}
+      className={`overflow-hidden rounded-xl border ${className}`}
       style={{
         background: 'var(--lp-elevated)',
         borderColor: 'var(--lp-border)',
-        boxShadow: '0 24px 60px rgba(0,0,0,0.35)',
+        boxShadow: '0 16px 36px -6px rgba(0,0,0,0.22), 0 4px 14px -2px rgba(0,0,0,0.08)',
         isolation: 'isolate',
         ...style,
       }}

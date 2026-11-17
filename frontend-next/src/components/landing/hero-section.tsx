@@ -44,21 +44,25 @@ export function HeroSection({
         .to('.hero-title', { clipPath: 'inset(-15% -15% -15% -5%)', duration: 0.9, ease: 'expo.out' })
         .to('.hero-desc', { clipPath: 'inset(0% 0 0 0)', duration: 0.75, ease: 'expo.out' }, '-=0.55')
         .to('.hero-actions', { clipPath: 'inset(0% 0 0 0)', duration: 0.75, ease: 'expo.out' }, '-=0.5')
+        .set(['.hero-title', '.hero-desc', '.hero-actions'], { clearProps: 'clipPath' })
         .to('.hero-brand-panel', { x: 0, opacity: 1, duration: 1.1, ease: 'expo.out' }, 0.3)
         .to('.hero-bicon', { rotateY: 0, rotateX: 0, opacity: 1, duration: 0.9, ease: 'expo.out', stagger: 0.09 }, 0.4);
 
-      // Scroll parallax
-      gsap.to('.hero-title', {
-        y: -70,
-        scrollTrigger: { trigger: sectionRef.current, start: 'top top', end: 'bottom top', scrub: 1.5 },
-      });
-      gsap.to('.hero-desc', {
-        y: -30, opacity: 0,
-        scrollTrigger: { trigger: sectionRef.current, start: 'center top', end: 'bottom top', scrub: 1 },
-      });
-      gsap.to('.hero-brand-panel', {
-        y: -130, rotateX: -6,
-        scrollTrigger: { trigger: sectionRef.current, start: 'top top', end: 'bottom top', scrub: 2 },
+      // Scroll parallax only on desktop
+      const mm = gsap.matchMedia();
+      mm.add('(min-width: 768px)', () => {
+        gsap.to('.hero-title', {
+          y: -70,
+          scrollTrigger: { trigger: sectionRef.current, start: 'top top', end: 'bottom top', scrub: 1.5 },
+        });
+        gsap.to('.hero-desc', {
+          y: -30, opacity: 0,
+          scrollTrigger: { trigger: sectionRef.current, start: 'center top', end: 'bottom top', scrub: 1 },
+        });
+        gsap.to('.hero-brand-panel', {
+          y: -130, rotateX: -6,
+          scrollTrigger: { trigger: sectionRef.current, start: 'top top', end: 'bottom top', scrub: 2 },
+        });
       });
     }, sectionRef);
 
@@ -69,7 +73,7 @@ export function HeroSection({
     <section
       ref={sectionRef}
       id="hero"
-      className="relative flex min-h-screen flex-col justify-center overflow-hidden px-6 pb-20 pt-32 md:px-8 md:pt-36"
+      className="relative flex min-h-screen flex-col justify-center overflow-hidden px-4 pb-16 pt-28 sm:px-6 sm:pb-20 sm:pt-32 md:px-8 md:pt-36"
       style={{ background: 'var(--lp-bg)' }}
     >
       <AsciiBackground charDensity={55} />
@@ -98,11 +102,11 @@ export function HeroSection({
 
       {/* Content */}
       <div className="relative z-10 mx-auto w-full max-w-6xl">
-        <LiquidDistortion className="mb-9 block w-fit" strength={32} radius={110}>
+        <LiquidDistortion className="mb-8 block w-full max-w-full" strength={32} radius={110}>
           <h1
-            className="hero-title font-black leading-none tracking-tight whitespace-pre-wrap"
+            className="hero-title font-black leading-[0.95] tracking-tight break-words [overflow-wrap:anywhere]"
             style={{
-              fontSize: 'clamp(3.5rem, 9vw, 9.5rem)',
+              fontSize: 'clamp(2.15rem, 8.2vw, 9.5rem)',
               letterSpacing: '-0.03em',
               color: 'var(--lp-fg)',
             }}
@@ -118,19 +122,19 @@ export function HeroSection({
           {description}
         </p>
 
-        <div className="hero-actions flex flex-wrap items-center gap-4">
+        <div className="hero-actions flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
           <a
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-sm px-6 py-3.5 text-sm font-bold tracking-wide transition-opacity hover:opacity-85"
+            className="inline-flex items-center justify-center gap-2 rounded-sm px-6 py-3.5 text-sm font-bold tracking-wide transition-opacity hover:opacity-85 text-center"
             style={{ background: 'var(--lp-fg)', color: 'var(--lp-bg)' }}
           >
             {cta}
           </a>
           <a
             href="#sites"
-            className="inline-flex items-center gap-2 text-sm transition-colors duration-200"
+            className="inline-flex items-center justify-center sm:justify-start gap-2 py-2 sm:py-0 text-sm transition-colors duration-200"
             style={{ color: 'var(--lp-muted)' }}
             onMouseEnter={e => (e.currentTarget.style.color = 'var(--lp-fg)')}
             onMouseLeave={e => (e.currentTarget.style.color = 'var(--lp-muted)')}

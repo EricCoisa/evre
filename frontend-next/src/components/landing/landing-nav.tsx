@@ -46,8 +46,13 @@ export function LandingNav({
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 flex justify-center px-4 pt-4 sm:pt-6">
+      {/* Top subtle backdrop fade on mobile so scrolling text doesn't show in the top gap */}
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-background via-background/60 to-transparent md:hidden"
+        aria-hidden="true"
+      />
       <nav
-        className="w-full max-w-5xl rounded-2xl border border-border bg-background/80 px-5 py-3 backdrop-blur-xl transition-all duration-500 dark:border-white/10 dark:bg-black/80"
+        className="relative w-full max-w-5xl rounded-2xl border border-border bg-background/80 px-5 py-3 backdrop-blur-xl transition-all duration-500 dark:border-white/10 dark:bg-black/80"
         style={{ boxShadow: scrolled ? '0 8px 40px rgba(0,0,0,0.18)' : '0 2px 12px rgba(0,0,0,0.06)' }}
       >
         <div className="flex items-center justify-between">

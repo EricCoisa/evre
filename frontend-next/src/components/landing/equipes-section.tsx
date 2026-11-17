@@ -32,27 +32,73 @@ export function EquipesSection({
     gsap.registerPlugin(ScrollTrigger);
 
     const ctx = gsap.context(() => {
-      gsap.set('.equipes-label', { x: -24 });
-      gsap.set('.equipes-title', { clipPath: 'inset(100% -10% 0% -5%)' });
-      gsap.set('.equipes-body', { clipPath: 'inset(100% 0 0 0)' });
-      gsap.set('.equipes-card', { y: 40, opacity: 0 });
+      const mm = gsap.matchMedia();
 
-      gsap.to('.equipes-label', {
-        x: 0,
-        scrollTrigger: { trigger: sectionRef.current, start: 'top 80%', end: 'top 40%', scrub: 1 },
+      // Mobile: Clean fade up entrance, no clipping or scrub freezing
+      mm.add('(max-width: 767px)', () => {
+        gsap.set(['.equipes-label', '.equipes-title', '.equipes-body'], {
+          clipPath: 'none',
+          opacity: 0,
+          y: 20,
+        });
+        gsap.set('.equipes-card', { opacity: 0, y: 24 });
+
+        gsap.to(['.equipes-label', '.equipes-title', '.equipes-body'], {
+          opacity: 1,
+          y: 0,
+          stagger: 0.1,
+          duration: 0.6,
+          ease: 'power2.out',
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: 'top 85%',
+            toggleActions: 'play none none none',
+          },
+        });
+
+        gsap.to('.equipes-card', {
+          opacity: 1,
+          y: 0,
+          stagger: 0.12,
+          duration: 0.6,
+          ease: 'power2.out',
+          scrollTrigger: {
+            trigger: sectionRef.current?.querySelector('.equipes-grid') || sectionRef.current,
+            start: 'top 85%',
+            toggleActions: 'play none none none',
+          },
+        });
       });
-      gsap.to('.equipes-title', {
-        clipPath: 'inset(-15% -10% -15% -5%)',
-        scrollTrigger: { trigger: sectionRef.current, start: 'top 75%', end: 'top 25%', scrub: 1.5 },
-      });
-      gsap.to('.equipes-body', {
-        clipPath: 'inset(0% 0 0 0)',
-        scrollTrigger: { trigger: sectionRef.current, start: 'top 65%', end: 'top 20%', scrub: 1.5 },
-      });
-      gsap.to('.equipes-card', {
-        y: 0, opacity: 1,
-        stagger: 0.08,
-        scrollTrigger: { trigger: '.equipes-grid', start: 'top 80%', end: 'top 20%', scrub: 2 },
+
+      // Desktop: scrubbed entrance
+      mm.add('(min-width: 768px)', () => {
+        gsap.set('.equipes-label', { x: -24 });
+        gsap.set('.equipes-title', { clipPath: 'inset(100% -10% 0% -5%)' });
+        gsap.set('.equipes-body', { clipPath: 'inset(100% 0 0 0)' });
+        gsap.set('.equipes-card', { y: 40, opacity: 0 });
+
+        gsap.to('.equipes-label', {
+          x: 0,
+          scrollTrigger: { trigger: sectionRef.current, start: 'top 80%', end: 'top 40%', scrub: 1 },
+        });
+        gsap.to('.equipes-title', {
+          clipPath: 'inset(-15% -10% -15% -5%)',
+          scrollTrigger: { trigger: sectionRef.current, start: 'top 75%', end: 'top 25%', scrub: 1.5 },
+        });
+        gsap.to('.equipes-body', {
+          clipPath: 'inset(0% 0 0 0)',
+          scrollTrigger: { trigger: sectionRef.current, start: 'top 65%', end: 'top 20%', scrub: 1.5 },
+        });
+        gsap.to('.equipes-card', {
+          y: 0, opacity: 1,
+          stagger: 0.08,
+          scrollTrigger: {
+            trigger: sectionRef.current?.querySelector('.equipes-grid') || sectionRef.current,
+            start: 'top 80%',
+            end: 'top 20%',
+            scrub: 2,
+          },
+        });
       });
     }, sectionRef);
 
@@ -66,24 +112,24 @@ export function EquipesSection({
     <section
       ref={sectionRef}
       id={anchorId}
-      className="relative overflow-hidden"
-      style={{ background: 'var(--lp-bg)', padding: 'clamp(4rem, 10vw, 10rem) max(2rem, env(safe-area-inset-left,0px))' }}
+      className="relative overflow-hidden scroll-mt-24"
+      style={{ background: 'var(--lp-bg)', padding: 'clamp(3.5rem, 8vw, 8rem) max(1.5rem, env(safe-area-inset-left,0px)) clamp(4.5rem, 9vw, 9rem)' }}
     >
       <div className="mx-auto max-w-6xl">
         {/* Header */}
-        <div className="mb-20 max-w-2xl">
+        <div className="mb-12 max-w-2xl sm:mb-20">
           <div
-            className="equipes-label mb-7 flex items-center gap-3 text-xs font-medium uppercase tracking-widest"
+            className="equipes-label mb-5 flex items-center gap-3 text-xs font-medium uppercase tracking-widest sm:mb-7"
             style={{ color: 'var(--lp-muted)' }}
           >
             <span className="font-mono font-black select-none flex-shrink-0" aria-hidden="true">{'>'}</span>
             {label}
           </div>
 
-          <LiquidDistortion className="mb-6 block w-fit">
+          <LiquidDistortion className="mb-5 block w-full max-w-full sm:mb-6">
             <h2
-              className="equipes-title font-black leading-none tracking-tight whitespace-pre-wrap"
-              style={{ fontSize: 'clamp(2rem, 5vw, 4.25rem)', letterSpacing: '-0.025em', color: 'var(--lp-fg)' }}
+              className="equipes-title font-black leading-[1.05] tracking-tight break-words [overflow-wrap:anywhere]"
+              style={{ fontSize: 'clamp(1.85rem, 5vw, 4.25rem)', letterSpacing: '-0.025em', color: 'var(--lp-fg)' }}
             >
               {title}
             </h2>
@@ -99,7 +145,7 @@ export function EquipesSection({
           {cells.map((cell, i) => (
             <div
               key={i}
-              className="equipes-card group relative overflow-hidden rounded-lg border p-8 transition-colors duration-300"
+              className="equipes-card group relative overflow-hidden rounded-lg border p-6 sm:p-8 transition-colors duration-300"
               style={{
                 background: 'var(--lp-elevated)',
                 borderColor: 'var(--lp-border)',
