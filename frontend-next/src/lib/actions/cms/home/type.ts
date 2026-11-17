@@ -15,6 +15,7 @@ export interface ShowcaseSectionBlock {
   title: string;
   description: string;
   mediaPosition?: 'left' | 'right';
+  demosInteractive?: boolean;
   demos?: ShowcaseDemo[];
 }
 

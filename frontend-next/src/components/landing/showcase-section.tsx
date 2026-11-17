@@ -12,6 +12,7 @@ export interface ShowcaseSectionProps {
   title: string;
   description: string;
   mediaPosition?: 'left' | 'right';
+  demosInteractive?: boolean;
   demos?: Array<{ url: string; label: string }>;
 }
 
@@ -21,6 +22,7 @@ export function ShowcaseSection({
   title,
   description,
   mediaPosition = 'right',
+  demosInteractive = true,
   demos = [],
 }: ShowcaseSectionProps) {
   const sectionRef = useRef<HTMLElement>(null);
@@ -75,6 +77,7 @@ export function ShowcaseSection({
         <div className={isMediaLeft ? 'order-2 md:order-1' : 'order-2 md:order-2'}>
           <ArtifactFrame
             demos={demos}
+            interactive={demosInteractive}
             className="showcase-frame"
             style={{
               transform: isMediaLeft

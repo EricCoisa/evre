@@ -4,6 +4,7 @@ import * as migration_20261115_000001_home_site_demos from './20261115_000001_ho
 import * as migration_20261115_000002_home_sistema_demos from './20261115_000002_home_sistema_demos';
 import * as migration_20261115_000003_home_equipes_cards from './20261115_000003_home_equipes_cards';
 import * as migration_20261116_000000_home_dynamic_sections from './20261116_000000_home_dynamic_sections';
+import * as migration_20261116_000001_home_demos_interactive from './20261116_000001_home_demos_interactive';
 
 export const migrations = [
   {
@@ -35,5 +36,10 @@ export const migrations = [
     up: migration_20261116_000000_home_dynamic_sections.up,
     down: migration_20261116_000000_home_dynamic_sections.down,
     name: '20261116_000000_home_dynamic_sections'
+  },
+  {
+    up: migration_20261116_000001_home_demos_interactive.up,
+    down: migration_20261116_000001_home_demos_interactive.down,
+    name: '20261116_000001_home_demos_interactive'
   },
 ];

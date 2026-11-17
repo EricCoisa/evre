@@ -5,11 +5,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 interface ArtifactFrameProps {
   demos: Array<{ url: string; label: string }>;
+  interactive?: boolean;
   className?: string;
   style?: CSSProperties;
 }
 
-export function ArtifactFrame({ demos, className = '', style }: ArtifactFrameProps) {
+export function ArtifactFrame({ demos, interactive = true, className = '', style }: ArtifactFrameProps) {
   const [current, setCurrent] = useState(0);
   const [loadedSet, setLoadedSet] = useState(() => new Set<number>());
 
@@ -76,7 +77,7 @@ export function ArtifactFrame({ demos, className = '', style }: ArtifactFramePro
                 height: '100%',
                 border: 'none',
                 opacity: i === current ? 1 : 0,
-                pointerEvents: i === current ? 'auto' : 'none',
+                pointerEvents: interactive && i === current ? 'auto' : 'none',
               }}
             />
           ))

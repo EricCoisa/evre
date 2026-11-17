@@ -116,6 +116,12 @@ export const Home: CollectionConfig = {
                       ],
                     },
                     {
+                      name: 'demosInteractive',
+                      type: 'checkbox',
+                      label: 'Permitir interação com os demos (desmarque para o scroll da página não ficar preso no iframe)',
+                      defaultValue: true,
+                    },
+                    {
                       name: 'demos',
                       type: 'array',
                       label: 'Demos (artefatos)',

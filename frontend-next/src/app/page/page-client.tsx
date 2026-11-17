@@ -66,6 +66,7 @@ export function HomeClient({ initialData, captchaConfig }: HomeClientProps) {
                 title={section.title}
                 description={section.description}
                 mediaPosition={section.mediaPosition}
+                demosInteractive={section.demosInteractive}
                 demos={section.demos}
               />
             );

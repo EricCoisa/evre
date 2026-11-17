@@ -145,6 +145,7 @@ export interface Home {
             title: string;
             description: string;
             mediaPosition?: ('right' | 'left') | null;
+            demosInteractive?: boolean | null;
             demos?:
               | {
                   url?: string | null;
@@ -372,6 +373,7 @@ export interface HomeSelect<T extends boolean = true> {
               title?: T;
               description?: T;
               mediaPosition?: T;
+              demosInteractive?: T;
               demos?:
                 | T
                 | {
