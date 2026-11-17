@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { HomeData, defaulHometData } from '@/lib/actions/cms/home/type';
 import { usePreviewPolling } from '@/hooks/use-preview-polling';
 import { getHomeData } from '@/lib/actions/cms/home/api';
@@ -20,6 +20,8 @@ interface HomeClientProps {
 
 export function HomeClient({ initialData, captchaConfig }: HomeClientProps) {
   const [homeData, setHomeData] = useState<HomeData | null>(initialData);
+  const navLogoRef = useRef<HTMLAnchorElement>(null);
+  const navBrandIconsRef = useRef<HTMLAnchorElement>(null);
 
   usePreviewPolling(async () => {
     const data = await getHomeData();
@@ -44,7 +46,7 @@ export function HomeClient({ initialData, captchaConfig }: HomeClientProps) {
       className="flex min-h-screen flex-col selection:bg-foreground selection:text-background"
       style={{ background: 'var(--lp-bg)', color: 'var(--lp-fg)' }}
     >
-      <LandingNav whatsappNumber={content.heroWhatsappNumber} navItems={navItems} />
+      <LandingNav whatsappNumber={content.heroWhatsappNumber} navItems={navItems} navLogoRef={navLogoRef} navBrandIconsRef={navBrandIconsRef} />
 
       <main className="flex flex-1 flex-col">
         <HeroSection
@@ -52,6 +54,8 @@ export function HomeClient({ initialData, captchaConfig }: HomeClientProps) {
           description={content.heroDescription}
           cta={content.heroCta}
           whatsappNumber={content.heroWhatsappNumber}
+          navLogoRef={navLogoRef}
+          navBrandIconsRef={navBrandIconsRef}
         />
 
         {sections.map((section, index) => {

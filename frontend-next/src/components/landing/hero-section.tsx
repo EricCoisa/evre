@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
 import Link from 'next/link';
 import gsap from 'gsap';
 import ScrollTrigger from 'gsap/ScrollTrigger';
@@ -16,6 +16,30 @@ interface HeroSectionProps {
   description?: string;
   cta?: string;
   whatsappNumber?: string;
+  navLogoRef?: RefObject<HTMLAnchorElement | null>;
+  navBrandIconsRef?: RefObject<HTMLAnchorElement | null>;
+}
+
+const HERO_ICONS = [
+  { C: BrandIconPlay, name: 'play' },
+  { C: BrandIconSlash, name: 'slash' },
+  { C: BrandIconPlayInverse, name: 'play-inverse' },
+];
+
+function HeroBrandIcons({ size }: { size: string }) {
+  return (
+    <>
+      {HERO_ICONS.map(({ C, name }) => (
+        <div
+          key={name}
+          className="hero-bicon"
+          style={{ width: size, height: size, transformStyle: 'preserve-3d', willChange: 'transform' }}
+        >
+          <C />
+        </div>
+      ))}
+    </>
+  );
 }
 
 export function HeroSection({
@@ -23,6 +47,8 @@ export function HeroSection({
   description = defaulHometData.heroDescription!,
   cta = defaulHometData.heroCta!,
   whatsappNumber = defaulHometData.heroWhatsappNumber!,
+  navLogoRef,
+  navBrandIconsRef,
 }: HeroSectionProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const whatsappUrl = makeWhatsappUrl(whatsappNumber);
@@ -73,8 +99,8 @@ export function HeroSection({
       });
 
       mm.add('(max-width: 767px)', () => {
-        const navLogo = document.querySelector('.nav-logo-mobile');
-        const navBrandIcons = document.querySelector('.nav-brand-icons');
+        const navLogo = navLogoRef?.current ?? null;
+        const navBrandIcons = navBrandIconsRef?.current ?? null;
 
         if (navLogo) {
           gsap.set(navLogo, { opacity: 0, y: 8, scale: 0.95 });
@@ -146,20 +172,7 @@ export function HeroSection({
         style={{ perspective: '900px', color: 'var(--lp-fg)' }}
         aria-hidden="true"
       >
-        {[BrandIconPlay, BrandIconSlash, BrandIconPlayInverse].map((Icon, i) => (
-          <div
-            key={i}
-            className="hero-bicon"
-            style={{
-              width: 'clamp(90px, 10vw, 150px)',
-              height: 'clamp(90px, 10vw, 150px)',
-              transformStyle: 'preserve-3d',
-              willChange: 'transform',
-            }}
-          >
-            <Icon />
-          </div>
-        ))}
+        <HeroBrandIcons size="clamp(90px, 10vw, 150px)" />
       </div>
 
       {/* Content */}
@@ -195,20 +208,7 @@ export function HeroSection({
             style={{ perspective: '600px', color: 'var(--lp-fg)' }}
             aria-hidden="true"
           >
-            {[BrandIconPlay, BrandIconSlash, BrandIconPlayInverse].map((Icon, i) => (
-              <div
-                key={i}
-                className="hero-bicon"
-                style={{
-                  width: 'clamp(32px, 8.5vw, 48px)',
-                  height: 'clamp(32px, 8.5vw, 48px)',
-                  transformStyle: 'preserve-3d',
-                  willChange: 'transform',
-                }}
-              >
-                <Icon />
-              </div>
-            ))}
+            <HeroBrandIcons size="clamp(32px, 8.5vw, 48px)" />
           </div>
         </div>
 
@@ -231,10 +231,7 @@ export function HeroSection({
           </a>
           <a
             href="#sites"
-            className="inline-flex items-center justify-center sm:justify-start gap-2 py-2 sm:py-0 text-sm transition-colors duration-200"
-            style={{ color: 'var(--lp-muted)' }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'var(--lp-fg)')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'var(--lp-muted)')}
+            className="inline-flex items-center justify-center sm:justify-start gap-2 py-2 sm:py-0 text-sm transition-colors duration-200 [color:var(--lp-muted)] hover:[color:var(--lp-fg)]"
           >
             Ver o que fazemos <span>→</span>
           </a>

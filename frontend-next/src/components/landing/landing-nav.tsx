@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, type RefObject } from 'react';
 import Link from 'next/link';
 import { Logo } from '@/components/logo';
-import { BrandIconsBlink } from '@/components/brand-icons';
+import { BrandIconsBlink } from '@/components/brand-icons-blink';
 import { Menu, X, ArrowUpRight, MessageCircle } from 'lucide-react';
 import { defaulHometData } from '@/lib/actions/cms/home/type';
 import { makeWhatsappUrl } from './utils';
@@ -18,6 +18,8 @@ export interface NavItem {
 export interface LandingNavProps {
   whatsappNumber?: string;
   navItems?: NavItem[];
+  navLogoRef?: RefObject<HTMLAnchorElement | null>;
+  navBrandIconsRef?: RefObject<HTMLAnchorElement | null>;
 }
 
 const defaultNavItems: NavItem[] = defaulHometData.sections!.map(section => ({
@@ -29,6 +31,8 @@ const defaultNavItems: NavItem[] = defaulHometData.sections!.map(section => ({
 export function LandingNav({
   whatsappNumber = defaulHometData.heroWhatsappNumber!,
   navItems,
+  navLogoRef,
+  navBrandIconsRef,
 }: LandingNavProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -36,10 +40,13 @@ export function LandingNav({
 
   const items = navItems && navItems.length > 0 ? navItems : defaultNavItems;
 
-  const mobileItems: NavItem[] = [...items];
-  if (!mobileItems.some(i => i.href === '#contato')) {
-    mobileItems.push({ href: '#contato', label: 'Contato', mobileLabel: 'Contato' });
-  }
+  const mobileItems = useMemo(() => {
+    const list = [...items];
+    if (!list.some(i => i.href === '#contato')) {
+      list.push({ href: '#contato', label: 'Contato', mobileLabel: 'Contato' });
+    }
+    return list;
+  }, [items]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 45);
@@ -72,10 +79,12 @@ export function LandingNav({
           <div className="relative flex items-center md:hidden">
             {/* Logo Mobile — sincronizada via GSAP com a hero */}
             <Link
+              ref={navLogoRef}
               href="/"
               className={cn(
                 'nav-logo-mobile flex items-center hover:opacity-90',
-                mobileOpen && '!opacity-100 !translate-y-0 !scale-100 !pointer-events-auto'
+                // ponytail: !important overrides GSAP inline styles enquanto o menu mobile está aberto
+                mobileOpen && '!opacity-100 ![transform:none]'
               )}
               aria-label="EVRE Software House"
             >
@@ -84,6 +93,7 @@ export function LandingNav({
 
             {/* Brand icons Mobile — exibido quando a logo na nav estiver oculta */}
             <Link
+              ref={navBrandIconsRef}
               href="/"
               className={cn(
                 'nav-brand-icons absolute left-0 flex items-center transition-opacity hover:opacity-90 text-foreground',

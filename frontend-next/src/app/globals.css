@@ -116,6 +116,28 @@
   --lp-nav-mobile: rgba(9,9,9,0.97);
 }
 
+@keyframes brand-icon-blink-sequence {
+  0%, 100% {
+    opacity: var(--brand-blink-min-op, 0.2);
+    transform: scale(var(--brand-blink-min-sc, 0.96));
+  }
+  20%, 40% {
+    opacity: var(--brand-blink-max-op, 1);
+    transform: scale(var(--brand-blink-max-sc, 1.06));
+  }
+  60% {
+    opacity: var(--brand-blink-min-op, 0.2);
+    transform: scale(var(--brand-blink-min-sc, 0.96));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .brand-icon-seq-item {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

@@ -86,7 +86,7 @@ export interface HomeResponse {
 
 export const defaulHometData: Partial<HomeData> = {
   title: 'Home',
-  heroTitle: 'Desenvolvimento\nde software\nsob medida.',
+  heroTitle: 'Desenvolvimento\nde software\nsob medida',
   heroDescription: 'Sistemas, plataformas e sites desenvolvidos para o seu modelo de negócio.',
   heroCta: 'Falar no WhatsApp',
   heroWhatsappNumber: '5534953301409',
@@ -107,7 +107,7 @@ export const defaulHometData: Partial<HomeData> = {
       anchorId: 'sistemas',
       navLabel: 'Sistemas',
       label: 'Sistemas para empresas',
-      title: 'Para quem precisa de mais\ndo que um site.',
+      title: 'Nem todo projeto se resolve com um site',
       description: 'Sistemas de gestão, plataformas operacionais e aplicativos mobile desenvolvidos para as regras específicas do seu negócio.',
       mediaPosition: 'left',
       demos: [],
@@ -117,7 +117,7 @@ export const defaulHometData: Partial<HomeData> = {
       anchorId: 'equipes',
       navLabel: 'Equipes',
       label: 'Parceria em desenvolvimento',
-      title: 'Sua equipe com mais capacidade de produção.',
+      title: 'Sua equipe com mais capacidade de produção',
       description: 'Somamos conhecimento técnico à sua operação, seja para atender novas demandas ou fortalecer projetos em andamento.',
       cards: [
         { title: 'Integração com\nseu processo', description: 'A EVRE entra no seu fluxo de trabalho existente. Sprints, revisões e entregas exatamente como sua equipe funciona.' },
