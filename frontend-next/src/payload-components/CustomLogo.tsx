@@ -1,6 +1,7 @@
 import React from 'react'
 import Image from 'next/image'
-import { SITE_NAME, siteInitials } from '@/lib/site'
+import { Logo } from '@/components/logo'
+import { siteInitials } from '@/lib/site'
 
 interface CustomLogoProps {
   className?: string
@@ -9,19 +10,10 @@ interface CustomLogoProps {
 export default function CustomLogo({ className }: CustomLogoProps) {
   return (
     <div className={`flex items-center gap-3 ${className || ''}`}>
-      <Image
-        src="/logo.svg"
-        alt={SITE_NAME}
-        width={40}
-        height={40}
-        className="rounded-lg"
-        priority
-      />
-      <div className="flex flex-col">
-        <span className="text-xs text-muted-foreground">
-          Admin Panel
-        </span>
-      </div>
+      <Logo priority className="h-10 w-32" />
+      <span className="text-xs text-muted-foreground">
+        Admin Panel
+      </span>
     </div>
   )
 }

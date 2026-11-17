@@ -1,5 +1,5 @@
 "use client";
-import Image from "next/image";
+import { Logo } from "@/components/logo";
 import { useTranslation } from "react-i18next";
 import { BrandIconPlay, BrandIconSlash, BrandIconPlayInverse } from "@/components/brand-icons";
 
@@ -20,9 +20,7 @@ export function Banner({ variant = "login" }: { variant?: BannerVariant }) {
       </div>
 
       {/* Logo */}
-      <div className="relative h-8 w-28 slide-in-left">
-        <Image src="/brand/evre/logo-white.svg" alt="EVRE" fill priority className="object-contain object-left" />
-      </div>
+      <Logo variant="white" priority className="slide-in-left" />
 
       {/* Main content */}
       <div className="mx-auto w-full max-w-md slide-in-left relative z-10">

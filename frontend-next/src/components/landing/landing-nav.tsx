@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import { Logo } from '@/components/logo';
 import { Menu, X, ArrowUpRight, MessageCircle } from 'lucide-react';
 import { defaulHometData } from '@/lib/actions/cms/home/type';
 
@@ -53,10 +53,7 @@ export function LandingNav({
         <div className="flex items-center justify-between">
           {/* Logo — black em light, white em dark */}
           <Link href="/" className="flex items-center transition-opacity hover:opacity-90" aria-label="EVRE Software House">
-            <div className="relative h-8 w-28 sm:w-32">
-              <Image src="/brand/evre/logo-black.svg" alt="EVRE" fill priority className="object-contain object-left dark:hidden" />
-              <Image src="/brand/evre/logo-white.svg" alt="EVRE" fill priority className="hidden object-contain object-left dark:block" />
-            </div>
+            <Logo priority className="w-28 sm:w-32" />
           </Link>
 
           {/* Desktop links */}

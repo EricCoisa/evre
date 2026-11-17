@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
+import { Logo } from '@/components/logo';
 import { defaulHometData } from '@/lib/actions/cms/home/type';
 
 interface LandingFooterProps {
@@ -19,8 +19,8 @@ export function LandingFooter({
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-col items-start justify-between gap-10 md:flex-row md:items-center">
           {/* Logo */}
-          <Link href="/" className="relative h-6 w-24 flex-shrink-0 opacity-60 hover:opacity-90 transition-opacity" aria-label="EVRE Software House">
-            <Image src="/brand/evre/logo-white.svg" alt="EVRE" fill className="object-contain object-left dark:invert-0 invert" />
+          <Link href="/" className="shrink-0 opacity-60 hover:opacity-90 transition-opacity" aria-label="EVRE Software House">
+            <Logo className="h-6 w-24" />
           </Link>
 
           {/* Links */}

@@ -656,3 +656,7 @@ aside.nav * {
 li:has(#card-users) {
   display: none !important;
 }
+html[data-theme='dark'] .evre-logo-on-light,
+html[data-theme='light'] .evre-logo-on-dark {
+  display: none;
+}
