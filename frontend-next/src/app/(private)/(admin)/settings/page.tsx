@@ -15,6 +15,7 @@ import { CaptchaConfig } from "./components/captcha-config-tab";
 import { MessagingConfig } from "./components/messaging-config-tab";
 import { NotificationConfig } from "./components/notification-config-tab";
 import { TimeTrackingConfig } from "./components/time-tracking-config-tab";
+import { AnalyticsConfig } from "./components/analytics-config-tab";
 import { SettingsTourLayout } from "./components/settings-tour-layout";
 import {
   Sliders,
@@ -27,6 +28,7 @@ import {
   Bot,
   MessageSquare,
   Clock,
+  BarChart2,
 } from "lucide-react";
 
 interface SettingsFlags {
@@ -96,6 +98,12 @@ function getSettingsSections(flags: SettingsFlags): SubNavSection[] {
           icon: <ShieldCheck className="size-4" />,
         },
         {
+          id: 'analyticsConfig',
+          idAttr: 'settings-tab-analyticsConfig',
+          label: <LangLabel text="analyticsConfiguration" langJson="settings" />,
+          icon: <BarChart2 className="size-4" />,
+        },
+        {
           id: 'oauthConfig',
           idAttr: 'settings-tab-oauthConfig',
           label: <LangLabel text="oauthConfiguration" langJson="settings" />,
@@ -149,6 +157,7 @@ function SettingsTabsContent({ flags }: { flags: SettingsFlags }) {
       <TabsContent value="emailConfig" id="settings-content-emailConfig"><EmailConfig /></TabsContent>
       <TabsContent value="storageConfig" id="settings-content-storageConfig"><StorageConfig /></TabsContent>
       <TabsContent value="captchaConfig" id="settings-content-captchaConfig"><CaptchaConfig /></TabsContent>
+      <TabsContent value="analyticsConfig" id="settings-content-analyticsConfig"><AnalyticsConfig /></TabsContent>
       {flags.aiAgent && <TabsContent value="agenteConfig" id="settings-content-agenteConfig"><AiConfig /></TabsContent>}
       {flags.oauth && <TabsContent value="oauthConfig" id="settings-content-oauthConfig"><OAuthConfig /></TabsContent>}
       {flags.messaging && <TabsContent value="messagingConfig" id="settings-content-messagingConfig"><MessagingConfig /></TabsContent>}

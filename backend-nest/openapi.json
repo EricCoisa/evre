@@ -376,6 +376,22 @@
         ]
       }
     },
+    "/system-configuration/analytics-config": {
+      "get": {
+        "description": "Retorna GA4 e Clarity IDs para o layout público, sem sessão",
+        "operationId": "SystemConfigurationController_findAnalyticsConfig",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "IDs de analytics"
+          }
+        },
+        "summary": "Busca IDs de analytics",
+        "tags": [
+          "system-configuration"
+        ]
+      }
+    },
     "/system-configuration/{id}": {
       "get": {
         "description": "Retorna uma configuração do sistema pelo ID",

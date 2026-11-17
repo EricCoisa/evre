@@ -11,6 +11,8 @@ export const SYSTEM_CONFIG_KEYS = {
   aiSystemPrompt: 'SYSTEM_AI_SYSTEM_PROMPT',
   agentOwnKey: 'SYSTEM_AGENT_OWN_KEY',
   timeTrackingForgottenThresholdHours: 'TIME_TRACKING_FORGOTTEN_THRESHOLD_HOURS',
+  analyticsGa4Id: 'SYSTEM_ANALYTICS_GA4_ID',
+  analyticsClarityId: 'SYSTEM_ANALYTICS_CLARITY_ID',
 } as const;
 
 export type SystemConfigKey = (typeof SYSTEM_CONFIG_KEYS)[keyof typeof SYSTEM_CONFIG_KEYS];

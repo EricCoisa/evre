@@ -161,6 +161,29 @@ export class SystemConfigurationController {
   }
 
   @GetApi({
+    path: 'analytics-config',
+    summary: 'Busca IDs de analytics',
+    description: 'Retorna GA4 e Clarity IDs para o layout público, sem sessão',
+    status: 'OK',
+    authenticated: false,
+    response: {
+      success: [{ status: 'OK', description: 'IDs de analytics' }],
+    },
+  })
+  async findAnalyticsConfig(): Promise<{ ga4Id: string; clarityId: string }> {
+    const [ga4, clarity] = await Promise.all([
+      this.findByLabelKey$.execute('SYSTEM_ANALYTICS_GA4_ID').catch(() => null),
+      this.findByLabelKey$
+        .execute('SYSTEM_ANALYTICS_CLARITY_ID')
+        .catch(() => null),
+    ]);
+    return {
+      ga4Id: String(ga4?.value ?? ''),
+      clarityId: String(clarity?.value ?? ''),
+    };
+  }
+
+  @GetApi({
     path: ':id',
     summary: 'Busca configuração por ID',
     description: 'Retorna uma configuração do sistema pelo ID',

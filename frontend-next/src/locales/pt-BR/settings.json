@@ -311,5 +311,13 @@
   "tour_settings_notification": "Configure canais e preferências de disparo de notificações do sistema por e-mail ou WhatsApp.",
   "tour_settings_messaging": "Conecte números e canais de WhatsApp Business (Meta Cloud API ou Evolution) para envio de mensagens.",
   "tour_settings_ai": "Gerencie os provedores de inteligência artificial (OpenAI, Anthropic) e personalize o comportamento do Agente.",
-  "tour_settings_time_tracking": "Ajuste os parâmetros operacionais do controle de tempo trabalhado e alertas de cronômetro esquecido."
+  "tour_settings_time_tracking": "Ajuste os parâmetros operacionais do controle de tempo trabalhado e alertas de cronômetro esquecido.",
+  "analyticsConfiguration": "Analytics",
+  "analytics_config_title": "Rastreamento e Analytics",
+  "analytics_config_desc": "IDs dos serviços de analytics carregados no frontend. Deixe em branco para desativar o serviço correspondente.",
+  "analytics_ga4_id": "Google Analytics 4 (Measurement ID)",
+  "analytics_ga4_id_desc": "Measurement ID da propriedade GA4 (formato G-XXXXXXXXXX). Encontre em Analytics → Admin → Data Streams → Web.",
+  "analytics_clarity_id": "Microsoft Clarity (Project ID)",
+  "analytics_clarity_id_desc": "ID do projeto Clarity (sequência alfanumérica). Encontre em clarity.microsoft.com → seu projeto → Settings.",
+  "tour_settings_analytics": "Configure os IDs do Google Analytics 4 e Microsoft Clarity para rastrear comportamento de usuários no frontend."
 }

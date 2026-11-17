@@ -349,6 +349,16 @@ export async function seedSystemConfigurations(prisma: PrismaClient) {
       valueType: 'NUMBER',
       value: '8',
     },
+    { 
+      labelKey: 'SYSTEM_ANALYTICS_GA4_ID',
+      valueType: 'STRING', 
+      value: '' 
+    },
+    { 
+      labelKey: 'SYSTEM_ANALYTICS_CLARITY_ID', 
+      valueType: 'STRING', 
+      value: '' 
+    },
   ];
 
   // Limpa placeholders legados que possam ter ficado em bancos locais existentes

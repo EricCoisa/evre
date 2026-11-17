@@ -12,6 +12,7 @@ import { isServerAuthenticated } from "@/lib/actions/auth/server-auth";
 import { redirect } from 'next/navigation';
 import { getCookieConsent } from "@/lib/actions/cms/cookie-consent/api";
 import { CookieConsentBanner } from "@/components/cookie-consent-banner";
+import { Analytics } from "@/components/analytics";
 
 export default async function RootLayout({
   children,
@@ -19,7 +20,10 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
 
-  const config = await APINEXT.GET<SystemConfiguration<string>>(`/public-proxy?url=/system-configuration/default-theme`, { cache: 'no-store' }).catch(() => null);
+  const [config, analyticsConfig] = await Promise.all([
+    APINEXT.GET<SystemConfiguration<string>>(`/public-proxy?url=/system-configuration/default-theme`, { cache: 'no-store' }).catch(() => null),
+    APINEXT.GET<{ ga4Id: string; clarityId: string }>(`/public-proxy?url=/system-configuration/analytics-config`, { cache: 'force-cache' }).catch(() => null),
+  ]);
 
   const headersList = headers();
   const pathname = (await headersList).get('x-pathname') || '/';
@@ -46,6 +50,7 @@ export default async function RootLayout({
             <ThemeProvider defaultTheme={config ? config.value : undefined}>
               {children}
               <CookieConsentBanner data={cookieConsent} />
+              <Analytics ga4Id={analyticsConfig?.ga4Id ?? ''} clarityId={analyticsConfig?.clarityId ?? ''} />
               <Toaster />
             </ThemeProvider>
           </AppProvider>

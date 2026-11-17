@@ -23,6 +23,7 @@ export function CookieConsentBanner({ data }: { data: CookieConsentData | null }
   const choose = (choice: Choice) => {
     setValue(choice);
     setVisible(false);
+    window.dispatchEvent(new CustomEvent('cookie-consent-change'));
   };
 
   return (
