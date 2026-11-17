@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import Link from 'next/link';
 import gsap from 'gsap';
 import ScrollTrigger from 'gsap/ScrollTrigger';
 import { AsciiBackground } from './ascii-background';
 import { LiquidDistortion } from './liquid-distortion';
 import { defaulHometData } from '@/lib/actions/cms/home/type';
 import { makeWhatsappUrl } from './utils';
+import { Logo } from '@/components/logo';
 import { BrandIconPlay, BrandIconSlash, BrandIconPlayInverse } from '@/components/brand-icons';
 
 interface HeroSectionProps {
@@ -39,10 +41,12 @@ export function HeroSection({
       gsap.set('.hero-brand-panel', { x: 80, opacity: 0 });
       gsap.set('.hero-brand-panel-mobile', { x: 30, opacity: 0 });
       gsap.set('.hero-bicon', { rotateY: -40, rotateX: 20, opacity: 0 });
+      gsap.set('.hero-mobile-logo', { opacity: 0, y: -15 });
 
       // Entrance timeline
       const tl = gsap.timeline({ delay: 0.15 });
       tl
+        .to('.hero-mobile-logo', { opacity: 1, y: 0, duration: 0.8, ease: 'expo.out' }, 0.05)
         .to('.hero-title', { clipPath: 'inset(-15% -15% -15% -5%)', duration: 0.9, ease: 'expo.out' })
         .to('.hero-desc', { clipPath: 'inset(0% 0 0 0)', duration: 0.75, ease: 'expo.out' }, '-=0.55')
         .to('.hero-actions', { clipPath: 'inset(0% 0 0 0)', duration: 0.75, ease: 'expo.out' }, '-=0.5')
@@ -51,7 +55,7 @@ export function HeroSection({
         .to('.hero-brand-panel-mobile', { x: 0, opacity: 1, duration: 1.1, ease: 'expo.out' }, 0.3)
         .to('.hero-bicon', { rotateY: 0, rotateX: 0, opacity: 1, duration: 0.9, ease: 'expo.out', stagger: 0.09 }, 0.4);
 
-      // Scroll parallax only on desktop
+      // Scroll parallax: desktop and mobile
       const mm = gsap.matchMedia();
       mm.add('(min-width: 768px)', () => {
         gsap.to('.hero-title', {
@@ -66,6 +70,61 @@ export function HeroSection({
           y: -130, rotateX: -6,
           scrollTrigger: { trigger: sectionRef.current, start: 'top top', end: 'bottom top', scrub: 2 },
         });
+      });
+
+      mm.add('(max-width: 767px)', () => {
+        const navLogo = document.querySelector('.nav-logo-mobile');
+        const navBrandIcons = document.querySelector('.nav-brand-icons');
+
+        if (navLogo) {
+          gsap.set(navLogo, { opacity: 0, y: 8, scale: 0.95 });
+        }
+        if (navBrandIcons) {
+          gsap.set(navBrandIcons, { opacity: 1, y: 0, scale: 1 });
+        }
+
+        const scrollTl = gsap.timeline({
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: 'top top',
+            end: '+=90',
+            scrub: true,
+          },
+        });
+
+        scrollTl.to('.hero-mobile-logo', {
+          opacity: 0,
+          y: -24,
+          scale: 0.92,
+          ease: 'none',
+        }, 0);
+
+        if (navLogo) {
+          scrollTl.to(navLogo, {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            ease: 'none',
+          }, 0);
+        }
+
+        if (navBrandIcons) {
+          scrollTl.to(navBrandIcons, {
+            opacity: 0,
+            y: -6,
+            scale: 0.9,
+            ease: 'none',
+          }, 0);
+        }
+
+        return () => {
+          if (navLogo) {
+            gsap.set(navLogo, { clearProps: 'all' });
+          }
+          if (navBrandIcons) {
+            gsap.set(navBrandIcons, { clearProps: 'all' });
+          }
+        };
       });
     }, sectionRef);
 
@@ -105,6 +164,17 @@ export function HeroSection({
 
       {/* Content */}
       <div className="relative z-10 mx-auto w-full max-w-6xl">
+        {/* Mobile top logo — visible on mobile, centered exactly between nav and hero title */}
+        <div className="hero-mobile-logo -mt-28 mb-[85px] flex w-full justify-center md:hidden" aria-hidden="true">
+          <Link href="/" className="flex items-center justify-center" aria-label="EVRE Software House">
+            <Logo
+              priority
+              className="h-11 w-52 sm:h-14 sm:w-64"
+              imgClassName="!object-center"
+            />
+          </Link>
+        </div>
+
         <div className="relative mb-9 w-full">
           <LiquidDistortion className="block w-fit" strength={32} radius={110}>
             <h1

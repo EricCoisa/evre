@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Logo } from '@/components/logo';
+import { BrandIconsBlink } from '@/components/brand-icons';
 import { Menu, X, ArrowUpRight, MessageCircle } from 'lucide-react';
 import { defaulHometData } from '@/lib/actions/cms/home/type';
 import { makeWhatsappUrl } from './utils';
+import { cn } from '@/lib/cn';
 
 export interface NavItem {
   href: string;
@@ -40,7 +42,7 @@ export function LandingNav({
   }
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 60);
+    const onScroll = () => setScrolled(window.scrollY > 45);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
@@ -57,10 +59,41 @@ export function LandingNav({
         style={{ boxShadow: scrolled ? '0 8px 40px rgba(0,0,0,0.18)' : '0 2px 12px rgba(0,0,0,0.06)' }}
       >
         <div className="flex items-center justify-between">
-          {/* Logo — black em light, white em dark */}
-          <Link href="/" className="flex items-center transition-opacity hover:opacity-90" aria-label="EVRE Software House">
+          {/* Desktop Logo — sempre visível, sem interferência de GSAP ou transforms */}
+          <Link
+            href="/"
+            className="hidden items-center transition-opacity hover:opacity-90 md:flex"
+            aria-label="EVRE Software House"
+          >
             <Logo priority className="w-28 sm:w-32" />
           </Link>
+
+          {/* Mobile Logo / Brand Icons Container */}
+          <div className="relative flex items-center md:hidden">
+            {/* Logo Mobile — sincronizada via GSAP com a hero */}
+            <Link
+              href="/"
+              className={cn(
+                'nav-logo-mobile flex items-center hover:opacity-90',
+                mobileOpen && '!opacity-100 !translate-y-0 !scale-100 !pointer-events-auto'
+              )}
+              aria-label="EVRE Software House"
+            >
+              <Logo priority className="w-28" />
+            </Link>
+
+            {/* Brand icons Mobile — exibido quando a logo na nav estiver oculta */}
+            <Link
+              href="/"
+              className={cn(
+                'nav-brand-icons absolute left-0 flex items-center transition-opacity hover:opacity-90 text-foreground',
+                mobileOpen && '!opacity-0 !pointer-events-none'
+              )}
+              aria-label="EVRE"
+            >
+              <BrandIconsBlink size={20} duration={1.8} minOpacity={0.35} maxOpacity={1} />
+            </Link>
+          </div>
 
           {/* Desktop links */}
           <nav className="hidden items-center gap-8 md:flex" aria-label="Navegação principal">
