@@ -36,20 +36,4 @@ describe('FinalCtaSection', () => {
     expect(whatsappLink.getAttribute('href')).toContain('5511999999999');
     expect(screen.getByText('custom@exemplo.com')).toBeInTheDocument();
   });
-
-  it('copies the e-mail to the clipboard when clicking the email button', async () => {
-    const user = userEvent.setup();
-    const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.defineProperty(navigator, 'clipboard', {
-      value: { writeText },
-      configurable: true,
-    });
-
-    render(<FinalCtaSection />);
-
-    const copyButton = screen.getByRole('button', { name: /contato@evre\.com\.br/ });
-    await user.click(copyButton);
-
-    expect(writeText).toHaveBeenCalledWith('contato@evre.com.br');
-  });
 });

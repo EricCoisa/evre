@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import Modal from '@/components/modal';
 import { Button } from '@/components/ui/button';
@@ -76,16 +77,16 @@ export function SendEmailDialog({
   const [templates, setTemplates] = useState<EmailTemplateInfo[]>([]);
   const [activeTab, setActiveTab] = useState('');
   const [varValues, setVarValues] = useState<Record<string, Record<string, string>>>({});
-  const [to, setTo] = useState(defaultTo);
+  const [toOverride, setTo] = useState<string | null>(null);
   const [subject, setSubject] = useState('');
   const [sending, setSending] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
-  useEffect(() => { setTo(defaultTo); }, [defaultTo]);
+  const to = toOverride ?? defaultTo;
+  const loading = open && !loaded;
 
   useEffect(() => {
-    if (!open) { setLoading(false); return; }
-    setLoading(true);
+    if (!open) return;
     let cancelled = false;
     void getEmailTemplates().then((res) => {
       if (cancelled) return;
@@ -103,9 +104,9 @@ export function SendEmailDialog({
           ? defaultTemplateType
           : (list[0]?.type ?? '');
       setActiveTab(first);
-      setLoading(false);
+      setLoaded(true);
     });
-    return () => { cancelled = true; };
+    return () => { cancelled = true; setLoaded(false); };
     // defaultVars is only captured upon opening to populate initial values.
     // Intentionally omitted from deps so typing or parent re-renders don't overwrite user edits.
     // eslint-disable-next-line react-hooks/exhaustive-deps

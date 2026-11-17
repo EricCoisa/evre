@@ -35,27 +35,29 @@ export function StartTimerModal({
   const startTimerMutation = useStartTimer();
   const { data: projectsData } = useProjects({ limit: 50 });
 
-  const projects = Array.isArray(projectsData)
-    ? projectsData
-    : (projectsData as { data?: { id: string; name: string }[] })?.data ?? [];
+  const fields = useMemo<FormBuilderField[]>(() => {
+    const projects = Array.isArray(projectsData)
+      ? projectsData
+      : (projectsData as { data?: { id: string; name: string }[] })?.data ?? [];
 
-  const fields = useMemo<FormBuilderField[]>(() => [
-    {
-      name: 'description',
-      label: t('startTimerWhat'),
-      placeholder: t('startTimerPlaceholder'),
-    },
-    {
-      name: 'projectId',
-      label: t('projectLabel'),
-      type: 'select',
-      placeholder: t('selectProjectPlaceholder'),
-      options: [
-        { value: 'none', label: t('noProjectAvulso') },
-        ...projects.map((p) => ({ value: p.id, label: p.name })),
-      ],
-    },
-  ], [t, projects]);
+    return [
+      {
+        name: 'description',
+        label: t('startTimerWhat'),
+        placeholder: t('startTimerPlaceholder'),
+      },
+      {
+        name: 'projectId',
+        label: t('projectLabel'),
+        type: 'select',
+        placeholder: t('selectProjectPlaceholder'),
+        options: [
+          { value: 'none', label: t('noProjectAvulso') },
+          ...projects.map((p) => ({ value: p.id, label: p.name })),
+        ],
+      },
+    ];
+  }, [t, projectsData]);
 
   return (
     <FormBuilderModal

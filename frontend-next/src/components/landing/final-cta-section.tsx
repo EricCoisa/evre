@@ -12,7 +12,6 @@ interface FinalCtaSectionProps {
   title?: string;
   buttonText?: string;
   whatsappNumber?: string;
-  contactEmail?: string;
   contactFormLabel?: string;
   contactFormTitle?: string;
   contactFormDescription?: string;
@@ -21,31 +20,10 @@ interface FinalCtaSectionProps {
   captcha?: CaptchaConfigDto | null;
 }
 
-function CopyEmailButton({ email }: { email: string }) {
-  const [copied, setCopied] = useState(false);
-  const copy = () => {
-    navigator.clipboard.writeText(email);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-  return (
-    <button
-      onClick={copy}
-      className="inline-flex items-center gap-2 text-sm transition-colors duration-200"
-      style={{ color: copied ? 'var(--lp-fg)' : 'var(--lp-muted)' }}
-      onMouseEnter={e => (e.currentTarget.style.color = 'var(--lp-fg)')}
-      onMouseLeave={e => { if (!copied) e.currentTarget.style.color = 'var(--lp-muted)'; }}
-    >
-      {copied ? '✓ copiado' : email}
-    </button>
-  );
-}
-
 export function FinalCtaSection({
   title = defaulHometData.ctaTitle!,
   buttonText = defaulHometData.ctaButtonText!,
   whatsappNumber = defaulHometData.heroWhatsappNumber!,
-  contactEmail = defaulHometData.contactEmail!,
   contactFormLabel = defaulHometData.contactFormLabel!,
   contactFormTitle = defaulHometData.contactFormTitle!,
   contactFormDescription = defaulHometData.contactFormDescription!,
@@ -133,7 +111,6 @@ export function FinalCtaSection({
             captcha={captcha}
           />
 
-          <CopyEmailButton email={contactEmail} />
         </div>
       </div>
     </section>
