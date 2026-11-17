@@ -7,7 +7,9 @@ describe('LandingNav', () => {
   it('renders logo, desktop links and default CTAs', () => {
     render(<LandingNav />);
 
-    expect(screen.getByRole('link', { name: 'EVRE Software House' })).toHaveAttribute('href', '/');
+    const logos = screen.getAllByRole('link', { name: 'EVRE Software House' });
+    expect(logos.length).toBeGreaterThanOrEqual(1);
+    logos.forEach(logo => expect(logo).toHaveAttribute('href', '/'));
     expect(screen.getByRole('link', { name: 'Sites' })).toHaveAttribute('href', '#sites');
     expect(screen.getByRole('link', { name: 'Sistemas' })).toHaveAttribute('href', '#sistemas');
     expect(screen.getByRole('link', { name: 'Equipes' })).toHaveAttribute('href', '#equipes');

@@ -155,7 +155,7 @@ export function HeroSection({
     }, sectionRef);
 
     return () => ctx.revert();
-  }, []);
+  }, [navBrandIconsRef, navLogoRef]);
 
   return (
     <section

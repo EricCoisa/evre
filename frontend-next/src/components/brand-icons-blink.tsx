@@ -25,6 +25,16 @@ const SIZE_PRESETS: Record<'xs' | 'sm' | 'md' | 'lg' | 'xl', number> = {
   xl: 96,
 };
 
+function resolveDimension(size: BrandIconsBlinkProps['size']): string | number | undefined {
+  if (typeof size === 'number') {
+    return `${size}px`;
+  }
+  if (typeof size === 'string' && size in SIZE_PRESETS) {
+    return `${SIZE_PRESETS[size as keyof typeof SIZE_PRESETS]}px`;
+  }
+  return size;
+}
+
 const ICONS = [
   { Component: BrandIconPlay, name: 'play' },
   { Component: BrandIconSlash, name: 'slash' },
@@ -42,12 +52,7 @@ export function BrandIconsBlink({
   style,
   ...props
 }: BrandIconsBlinkProps) {
-  const dimension =
-    typeof size === 'number'
-      ? `${size}px`
-      : typeof size === 'string' && size in SIZE_PRESETS
-        ? `${SIZE_PRESETS[size as keyof typeof SIZE_PRESETS]}px`
-        : size;
+  const dimension = resolveDimension(size);
 
   return (
     <div
