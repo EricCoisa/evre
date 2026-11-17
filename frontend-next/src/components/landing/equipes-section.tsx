@@ -126,9 +126,9 @@ export function EquipesSection({
             {label}
           </div>
 
-          <LiquidDistortion className="mb-5 block w-full max-w-full sm:mb-6">
+          <LiquidDistortion className="mb-5 block w-fit max-w-full sm:mb-6">
             <h2
-              className="equipes-title font-black leading-[1.05] tracking-tight break-words [overflow-wrap:anywhere]"
+              className="equipes-title font-black leading-none tracking-tight whitespace-pre-wrap"
               style={{ fontSize: 'clamp(1.85rem, 5vw, 4.25rem)', letterSpacing: '-0.025em', color: 'var(--lp-fg)' }}
             >
               {title}

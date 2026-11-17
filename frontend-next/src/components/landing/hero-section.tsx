@@ -37,6 +37,7 @@ export function HeroSection({
       gsap.set('.hero-desc', { clipPath: 'inset(100% 0 0 0)' });
       gsap.set('.hero-actions', { clipPath: 'inset(100% 0 0 0)' });
       gsap.set('.hero-brand-panel', { x: 80, opacity: 0 });
+      gsap.set('.hero-brand-panel-mobile', { x: 30, opacity: 0 });
       gsap.set('.hero-bicon', { rotateY: -40, rotateX: 20, opacity: 0 });
 
       // Entrance timeline
@@ -47,6 +48,7 @@ export function HeroSection({
         .to('.hero-actions', { clipPath: 'inset(0% 0 0 0)', duration: 0.75, ease: 'expo.out' }, '-=0.5')
         .set(['.hero-title', '.hero-desc', '.hero-actions'], { clearProps: 'clipPath' })
         .to('.hero-brand-panel', { x: 0, opacity: 1, duration: 1.1, ease: 'expo.out' }, 0.3)
+        .to('.hero-brand-panel-mobile', { x: 0, opacity: 1, duration: 1.1, ease: 'expo.out' }, 0.3)
         .to('.hero-bicon', { rotateY: 0, rotateX: 0, opacity: 1, duration: 0.9, ease: 'expo.out', stagger: 0.09 }, 0.4);
 
       // Scroll parallax only on desktop
@@ -103,18 +105,42 @@ export function HeroSection({
 
       {/* Content */}
       <div className="relative z-10 mx-auto w-full max-w-6xl">
-        <LiquidDistortion className="mb-8 block w-full max-w-full" strength={32} radius={110}>
-          <h1
-            className="hero-title font-black leading-[0.95] tracking-tight break-words [overflow-wrap:anywhere]"
-            style={{
-              fontSize: 'clamp(2.15rem, 8.2vw, 9.5rem)',
-              letterSpacing: '-0.03em',
-              color: 'var(--lp-fg)',
-            }}
+        <div className="relative mb-9 w-full">
+          <LiquidDistortion className="block w-fit" strength={32} radius={110}>
+            <h1
+              className="hero-title font-black leading-none tracking-tight whitespace-pre-wrap"
+              style={{
+                fontSize: 'clamp(1.85rem, 8.2vw, 9.5rem)',
+                letterSpacing: '-0.03em',
+                color: 'var(--lp-fg)',
+              }}
+            >
+              {title}
+            </h1>
+          </LiquidDistortion>
+
+          {/* Mobile brand icons — positioned in the open area to the right of 'sob medida.' */}
+          <div
+            className="hero-brand-panel-mobile absolute right-0 bottom-1 flex gap-2 lg:hidden"
+            style={{ perspective: '600px', color: 'var(--lp-fg)' }}
+            aria-hidden="true"
           >
-            {title}
-          </h1>
-        </LiquidDistortion>
+            {[BrandIconPlay, BrandIconSlash, BrandIconPlayInverse].map((Icon, i) => (
+              <div
+                key={i}
+                className="hero-bicon"
+                style={{
+                  width: 'clamp(32px, 8.5vw, 48px)',
+                  height: 'clamp(32px, 8.5vw, 48px)',
+                  transformStyle: 'preserve-3d',
+                  willChange: 'transform',
+                }}
+              >
+                <Icon />
+              </div>
+            ))}
+          </div>
+        </div>
 
         <p
           className="hero-desc mb-10 max-w-sm text-base leading-relaxed md:text-lg"

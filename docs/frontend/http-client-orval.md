@@ -99,7 +99,7 @@ git diff --exit-code backend-nest/openapi.json
 
 Falha se `openapi.json` no repo estiver desatualizado em relação ao código.
 
-**CI: gerar antes de lint/test, não só no build.** `src/lib/generated/` é gitignored e só existe via `orval` — o `prebuild` do `package.json` roda isso automaticamente antes do `next build`, mas o job de CI roda `lint`/`vitest` **antes** do `build`. Sem um passo explícito de `pnpm generate:api` logo após o `pnpm install`, qualquer teste ou rota que importe de `@/lib/generated/*` quebra em CI com `Failed to resolve import` — mesmo passando localmente (onde o dev já rodou `generate:api` alguma vez). Ver `.github/workflows/ci.yml`, job `frontend`.
+**CI: gerar antes de lint/test, não só no build.** `src/lib/generated/` é gitignored e só existe via `orval` — o `prebuild` do `package.json` roda isso automaticamente antes do `next build`, mas o job de CI roda `lint`/`vitest` **antes** do `build`. Sem um passo explícito de `pnpm generate:api` logo após o `pnpm install`, qualquer teste ou rota que importe de `@/lib/generated/*` quebra em CI com `Failed to resolve import` — mesmo passando localmente (onde o dev já rodou `generate:api` alguma vez). Ver `.github/workflows/coolify-deploy.yml`, job `frontend`.
 
 **Falha no `openapi:export` é silenciosa rio abaixo.** O script carrega o `AppOpenApiModule` inteiro, então qualquer erro de import num arquivo transitivamente alcançado derruba o export — mesmo um arquivo sem relação com o contrato HTTP, como uma tool de IA em `modules/*/ai-tools/`. Quando isso acontece o `openapi.json` simplesmente para de acompanhar o código, e o sintoma aparece longe dali: uma rota ou scope novo que não chega à UI. O `git diff --exit-code` acima é o detector.
 

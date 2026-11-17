@@ -185,8 +185,6 @@
 
 @layer theme {
   :root {
-    --radius: 0.75rem;
-
     /* Layout dimensions */
     --sidebar-width: 280px;
     --sidebar-collapsed-width: 80px;
@@ -195,11 +193,6 @@
     /* Improved shadows */
     --shadow-card-light: 0 1px 3px 0 #0b142620, 0 1px 2px -1px #0b142677;
     --shadow-card: 0 1px 3px 0 #0b1426a8, 0 1px 2px -1px #0b1426a8;
-    --shadow-sm: 0 1px 2px 0 #0b142608;
-    --shadow-md: 0 4px 6px -1px #0b142612, 0 2px 4px -2px #0b142608;
-    --shadow-lg: 0 10px 15px -3px #0b142612, 0 4px 6px -4px #0b142608;
-    --shadow-xl: 0 20px 25px -5px #0b142612, 0 10px 10px -5px #0b142605;
-    --shadow-2xl: 0 25px 50px -12px #0b142629;
 
     /* Success state */
     --success: #0d9348;
@@ -527,17 +520,4 @@
     filter: blur(8px);
     z-index: -1;
   }
-}
-
-
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-  }
-
-
 }

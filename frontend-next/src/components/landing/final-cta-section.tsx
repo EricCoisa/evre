@@ -112,9 +112,9 @@ export function FinalCtaSection({
       <div className="mx-auto mb-14 max-w-6xl sm:mb-20" style={{ height: '1px', background: 'var(--lp-border)' }} />
 
       <div className="mx-auto max-w-6xl">
-        <LiquidDistortion className="mb-10 block w-full max-w-full sm:mb-16" strength={32} radius={110}>
+        <LiquidDistortion className="mb-10 block w-fit max-w-full sm:mb-16" strength={32} radius={110}>
           <h2
-            className="cta-title font-black leading-[0.95] tracking-tight break-words [overflow-wrap:anywhere]"
+            className="cta-title font-black leading-none tracking-tight whitespace-pre-wrap"
             style={{
               fontSize: 'clamp(2.25rem, 8.5vw, 10.5rem)',
               letterSpacing: '-0.03em',

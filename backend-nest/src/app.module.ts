@@ -54,6 +54,7 @@ import { ProjectModule } from './modules/project/project.module';
 import { TimeTrackingModule } from './modules/time-tracking/time-tracking.module';
 import { LeadModule } from './modules/lead/lead.module';
 import { PdfModule } from './modules/pdf/pdf.module';
+import { EmailModule } from './modules/email/email.module';
 
 @Module({
   imports: [
@@ -115,6 +116,7 @@ import { PdfModule } from './modules/pdf/pdf.module';
     ResourceAccessModule,
     PayloadUserModule,
     LoggingModule,
+    EmailModule,
     AuthModule,
     UserModule,
     HealthModule,
